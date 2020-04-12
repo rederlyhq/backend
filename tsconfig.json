@@ -1,0 +1,14 @@
+
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "ES5",
+        "outDir": "ts-built",
+        "rootDir": "src",
+
+        "noImplicitAny": true,
+        "removeComments": true,
+        "preserveConstEnums": true,
+        "sourceMap": true
+    },
+}

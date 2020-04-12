@@ -1,12 +1,12 @@
 import configurations from './configurations';
+const router = require('./routes')
+
 import express = require('express');
 
-const { port } = configurations.server;
+const { port, basePath } = configurations.server;
 
 const app = express()
 
-app.get('/', (req, res) => {
-    res.send('Server running...');
-});
+app.use(basePath, router);
 
 app.listen(port, () => console.log(`Server started up and listening on port: ${port}`))

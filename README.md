@@ -1,1 +1,29 @@
 # backend
+
+## Configurations
+* Configurations are read from an environement variables in: src\configurations.ts
+* These environment can be set by the system or by a .env file located at the root of this project (gitignored), .env expects keyvalue pairs with no space (i.e. `SERVER_PORT=8080`)
+* You can not include or leave these values blank to get default values
+
+### Available configurations
+#### Server
+| Environment variable | Description | Default value |
+| --- | --- | --- |
+| SERVER_PORT | The port the server listens for requests on | 8080 |
+| SERVER_BASE_PATH | The prefix for all path (i.e. `/rederly/api` | |
+
+#### Database
+| Environment variable | Description | Default value |
+| --- | --- | --- |
+| DB_HOST | The host url for the database | localhost |
+| DB_NAME | The name of the database | rederly |
+| DB_USER | The user the login to the database | postgres |
+| DB_PASSWORD | The password for the user to login to the database | password |
+| DB_LOGGING | Whether or not queries should be output, used for debugging | false |
+
+#### Email
+| Environment variable | Description | Default value |
+| --- | --- | --- |
+| EMAIL_USER | The user used for authentication for sending emails (the sendgrid username) | sendgriduser |
+| EMAIL_KEY | The password for the user for sending emails (the sendgrid password) | sendgridpassword |
+| EMAIL_FROM | The email address that will be sending the email | verifiedsendgridemail |

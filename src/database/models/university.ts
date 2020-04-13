@@ -1,48 +1,45 @@
-import { Sequelize, Model, DataTypes, BuildOptions, HasOneGetAssociationMixin } from 'sequelize';
+import { Sequelize, Model, DataTypes, BuildOptions } from 'sequelize';
 import { HasManyGetAssociationsMixin, HasManyAddAssociationMixin, HasManyHasAssociationMixin, Association, HasManyCountAssociationsMixin, HasManyCreateAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize'
-import University from './university';
+import User from './user';
 
-export default class User extends Model {
+export default class University extends Model {
   public id!: number; // Note that the `null assertion` `!` is required in strict mode.
-  public university_id!: number;
-  public username!: string;
-  public email!: string;
-  public password!: string;
-
-  public getUniversity!: HasOneGetAssociationMixin<University>;
-
-  public readonly university!: University;
+  public university_name!: string;
+  public prof_email_domain!: string;
+  public student_email_domain!: string;
 
   // timestamps!
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
 
-User.init({
+University.init({
     id: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
     },
-    university_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
-    username: {
+    university_name: {
       type: DataTypes.TEXT,
       allowNull: false,
     },
-    email: {
+    prof_email_domain: {
       type: DataTypes.TEXT,
       allowNull: false,
     },
-    password: {
+    student_email_domain: {
       type: DataTypes.TEXT,
       allowNull: false,
     },
   }, {
-    tableName: 'users',
+    tableName: 'university',
     sequelize: appSequelize, // this bit is important
   });
 
+// Here we associate which actually populates out pre-declared `association` static and other methods.
+University.hasMany(User, {
+  sourceKey: 'id',
+  foreignKey: 'university_id',
+  as: 'university' // this determines the name in `associations`!
+});

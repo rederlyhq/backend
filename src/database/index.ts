@@ -2,6 +2,7 @@
 import appSequelize from './app-sequelize';
 
 import user from './models/user';
+import university from './models/university';
 
 (async () => {
     try {
@@ -14,6 +15,7 @@ import user from './models/user';
 })();
 const database = {
     user,
+    university,
     appSequelize
 }
 

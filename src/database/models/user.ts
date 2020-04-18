@@ -11,6 +11,7 @@ export default class User extends Model {
   public email!: string;
   public password!: string;
   public verify_token?: string;
+  public verified!: boolean;
 
   public getUniversity!: HasOneGetAssociationMixin<University>;
 
@@ -47,6 +48,11 @@ User.init({
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  verified: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  }
 }, {
   tableName: 'users',
   sequelize: appSequelize, // this bit is important

@@ -3,6 +3,7 @@ import appSequelize from './app-sequelize';
 
 import user from './models/user';
 import university from './models/university';
+import session from './models/session';
 
 (async () => {
     try {
@@ -15,6 +16,7 @@ import university from './models/university';
 const database = {
     user,
     university,
+    session,
     appSequelize
 }
 

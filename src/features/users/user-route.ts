@@ -5,13 +5,15 @@ const router = require('express').Router();
 import validate from '../../middleware/joi-validator'
 import { registerValidation, loginValidation, verifyValidation } from "./user-route-validation";
 import Boom = require("boom");
+import passport = require("passport");
+import { authenticationMiddleware } from "../../middleware/auth";
 
 router.post('/login',
     validate(loginValidation),
-    // TODO add passport auth
+    passport.authenticate('local'),
     async (req: Request, res: Response, next: any) => {
         const newSession = await userController.login(req.body.email, req.body.password);
-        if(newSession) {
+        if (newSession) {
             const MILLIS_PER_HOUR = 3600000;
             const cookieOptions = {
                 maxAge: MILLIS_PER_HOUR // TODO add a configuration for session life
@@ -37,6 +39,7 @@ router.post('/register',
     });
 
 router.get('/verify',
+    authenticationMiddleware,
     validate(verifyValidation),
     (req: Request, res: Response) => {
         return res.status(200).send(); // TODO create a response

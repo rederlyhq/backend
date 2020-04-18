@@ -5,6 +5,7 @@ const router = require('./routes')
 
 import express = require('express');
 import morgan = require('morgan');
+import passport = require('passport');
 
 const { port, basePath } = configurations.server;
 
@@ -12,6 +13,8 @@ const app = express();
 app.use(morgan("combined", { stream: { write: message => logger.info(message) } }));
 
 app.use(bodyParser.json());
+
+app.use(passport.initialize());
 
 // TODO logger (winston)
 // TODO route logger (morgan)

@@ -1,4 +1,5 @@
 import emailHelper from '../../utilities/email-helper';
+import logger from '../../utilities/logger';
 import { v4 as uuidv4 } from 'uuid';
 import User from '../../database/models/user';
 import Bluebird = require('bluebird');
@@ -37,20 +38,20 @@ class UserController {
                 throw new Error('No associated university');
             }
             if(universities.length > 1) {
-                console.error(`Multiple universities found ${universities.length}`);
+                logger.error(`Multiple universities found ${universities.length}`);
             }
             university = universities[0];
         } catch(e) {
-            console.error(e);
+            logger.error(e);
             return "Universery " + e.message;
         }
 
         if(university.student_email_domain === emailDomain) {
-            console.log('User is student');
+            logger.info('User is student');
         } else if(university.prof_email_domain === emailDomain) {
-            console.log('User is professor');
+            logger.info('User is professor');
         } else {
-            console.error('This should not be possible since the email domain came up in the university query');
+            logger.error('This should not be possible since the email domain came up in the university query');
         }
         userObject.university_id = university.id;
         userObject.verify_token = uuidv4();
@@ -58,7 +59,7 @@ class UserController {
             newUser = await this.createUser(userObject);
         } catch (e) {
             // TODO error handling
-            console.error(e);
+            logger.error(e);
             return "Create " + e.message;
         }
 

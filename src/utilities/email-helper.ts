@@ -1,4 +1,5 @@
 import configurations from '../configurations';
+import logger from '../utilities/logger';
 const nodemailer = require('nodemailer');
 const sgTransport = require('nodemailer-sendgrid-transport');
 
@@ -39,10 +40,10 @@ class EmailHelper {
 
     sendEmail(options: SendEmailOptions): Promise<any> {
         if(!configurations.email.enabled) {
-            console.warn('Email is disabled, returning empty promise...');
+            logger.warn('Email is disabled, returning empty promise...');
             return Promise.resolve();
         }
-        
+
         const email = {
             from: this.from,
             to: options.email,

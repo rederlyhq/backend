@@ -1,11 +1,12 @@
 require('dotenv').config();
 import configurations from './configurations';
+import logger from './utilities/logger';
 const enableddMarker = new Array(20).join('*');
 const disableddMarker = new Array(20).join('#');
 if(configurations.email.enabled) {
-    console.log(`${enableddMarker} EMAIL ENABLED ${enableddMarker}`);
+    logger.info(`${enableddMarker} EMAIL ENABLED ${enableddMarker}`);
 } else {
-    console.log(`${disableddMarker} EMAIL DISABLED ${disableddMarker}`);
+    logger.info(`${disableddMarker} EMAIL DISABLED ${disableddMarker}`);
 }
 
 import './database';

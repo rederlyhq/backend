@@ -1,4 +1,5 @@
 import configurations from './configurations';
+import logger from './utilities/logger';
 import bodyParser = require('body-parser');
 const router = require('./routes')
 
@@ -15,4 +16,4 @@ app.use(bodyParser.json());
 // TODO rate limiter
 app.use(basePath, router);
 
-app.listen(port, () => console.log(`Server started up and listening on port: ${port}`))
+app.listen(port, () => logger.info(`Server started up and listening on port: ${port}`))

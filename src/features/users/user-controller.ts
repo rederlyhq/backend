@@ -136,6 +136,16 @@ class UserController {
         }
         return newUser;
     }
+
+    verifyUser(verifyToken:any) {
+        return User.update({
+            verified: true
+        }, {
+            where: {
+                verify_token: verifyToken
+            }
+        })
+    }
 }
 const userController = new UserController();
 export default userController;

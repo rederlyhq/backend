@@ -40,6 +40,7 @@ router.post('/register',
 router.get('/verify',
     validate(verifyValidation),
     (req: Request, res: Response) => {
+        userController.verifyUser(req.query.verify_token);
         return res.status(200).send(); // TODO create a response
     });
 

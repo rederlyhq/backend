@@ -4,17 +4,23 @@ import userController from "./user-controller";
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator'
 import { registerValidation, loginValidation, verifyValidation } from "./user-route-validation";
+import Boom = require("boom");
 
 router.post('/login',
     validate(loginValidation),
     // TODO add passport auth
-    (req: Request, res: Response) => {
-        const MILLIS_PER_HOUR = 3600000;
-        const cookieOptions = {
-            maxAge: MILLIS_PER_HOUR // TODO add a configuration for session life
-        };
-        res.cookie('sessionToken', 'test', cookieOptions);
-        return res.status(200).send(); // TODO create a response
+    async (req: Request, res: Response, next: any) => {
+        const loginResult = await userController.login(req.body.email, req.body.password);
+        if(loginResult) {
+            const MILLIS_PER_HOUR = 3600000;
+            const cookieOptions = {
+                maxAge: MILLIS_PER_HOUR // TODO add a configuration for session life
+            };
+            res.cookie('sessionToken', 'test', cookieOptions);
+            return res.status(200).send(); // TODO create a response    
+        } else {
+            next(Boom.badRequest('Invalid login'));
+        }
     });
 
 router.post('/register',

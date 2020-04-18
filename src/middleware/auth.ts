@@ -7,7 +7,7 @@ import Session from "../database/models/session";
 const LocalStrategy = require('passport-local').Strategy;
 
 export const authenticationMiddleware = async (req: any, res: any, next: any) => {
-    if (!req.cookies || !req.cookies.sessionId) {
+    if (!req.cookies || !req.cookies.sessionToken) {
         return next(Boom.unauthorized());
     }
     //authenticate cookie
@@ -54,7 +54,6 @@ export const validateSession = async (uuid: string) => {
 };
 
 passport.serializeUser(async (user: any, done) => {
-    logger.info('test3');
     try {
         const session = await userController.createSession(user.id);
         return done(null, session);
@@ -64,7 +63,6 @@ passport.serializeUser(async (user: any, done) => {
 });
 
 passport.deserializeUser(async (id: number, done) => {
-    logger.info('test2');
     try {
         let user = userController.getUserById(id);
         return done(null, user);
@@ -75,7 +73,6 @@ passport.deserializeUser(async (id: number, done) => {
 
 
 passport.use(new LocalStrategy({ usernameField: "email" }, async (email: string, password: string, done: any) => {
-    logger.info('test');
     // TODO track ip?
     const session: Session = await userController.login(email, password);
     if (session) {

@@ -10,14 +10,15 @@ router.post('/login',
     validate(loginValidation),
     // TODO add passport auth
     async (req: Request, res: Response, next: any) => {
-        const loginResult = await userController.login(req.body.email, req.body.password);
-        if(loginResult) {
+        const newSession = await userController.login(req.body.email, req.body.password);
+        if(newSession) {
             const MILLIS_PER_HOUR = 3600000;
             const cookieOptions = {
                 maxAge: MILLIS_PER_HOUR // TODO add a configuration for session life
             };
-            res.cookie('sessionToken', 'test', cookieOptions);
+            res.cookie('sessionToken', newSession.uuid, cookieOptions);
             return res.status(200).send(); // TODO create a response    
+
         } else {
             next(Boom.badRequest('Invalid login'));
         }

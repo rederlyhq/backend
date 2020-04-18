@@ -5,6 +5,7 @@ import User from '../../database/models/user';
 import Bluebird = require('bluebird');
 import universityController from '../universities/university-controller';
 import University from '../../database/models/university';
+import { hashPassword } from '../../utilities/encryption-helper';
 
 interface RegisterUserOptions {
     userObject:any,
@@ -55,6 +56,7 @@ class UserController {
         }
         userObject.university_id = university.id;
         userObject.verify_token = uuidv4();
+        userObject.password = await hashPassword(userObject.password);
         try {
             newUser = await this.createUser(userObject);
         } catch (e) {

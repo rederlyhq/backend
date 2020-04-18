@@ -5,7 +5,7 @@ import User from '../../database/models/user';
 import Bluebird = require('bluebird');
 import universityController from '../universities/university-controller';
 import University from '../../database/models/university';
-import { hashPassword } from '../../utilities/encryption-helper';
+import { hashPassword, comparePassword } from '../../utilities/encryption-helper';
 
 interface RegisterUserOptions {
     userObject:any,
@@ -16,8 +16,21 @@ class UserController {
     constructor() {
     }
 
+    getUserByEmail(email:string): Bluebird<User> {
+        return User.findOne({
+            where: {
+                email
+            }
+        })
+    }
+
     createUser(userObject: any): Bluebird<User> {
         return User.create(userObject);
+    }
+
+    async login(email: string, password: string) {
+        let user:User = await this.getUserByEmail(email);
+        return comparePassword(password, user.password)
     }
 
     async registerUser(options: RegisterUserOptions) {

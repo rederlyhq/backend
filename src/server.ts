@@ -4,10 +4,12 @@ import bodyParser = require('body-parser');
 const router = require('./routes')
 
 import express = require('express');
+import morgan = require('morgan');
 
 const { port, basePath } = configurations.server;
 
-const app = express()
+const app = express();
+app.use(morgan("combined", { stream: { write: message => logger.info(message) }}));
 
 app.use(bodyParser.json());
 

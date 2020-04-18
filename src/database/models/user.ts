@@ -9,6 +9,7 @@ export default class User extends Model {
   public username!: string;
   public email!: string;
   public password!: string;
+  public verify_token?: string;
 
   public getUniversity!: HasOneGetAssociationMixin<University>;
 
@@ -40,6 +41,10 @@ User.init({
     password: {
       type: DataTypes.TEXT,
       allowNull: false,
+    },
+    verify_token: {
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
   }, {
     tableName: 'users',

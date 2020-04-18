@@ -1,6 +1,7 @@
 import configurations from './configurations';
 import logger from './utilities/logger';
 import bodyParser = require('body-parser');
+import cookieParser = require('cookie-parser');
 const router = require('./routes')
 
 import express = require('express');
@@ -13,6 +14,7 @@ const app = express();
 app.use(morgan("combined", { stream: { write: message => logger.info(message) } }));
 
 app.use(bodyParser.json());
+app.use(cookieParser());
 
 app.use(passport.initialize());
 

@@ -53,9 +53,9 @@ export const validateSession = async (uuid: string) => {
     }
 };
 
-passport.serializeUser(async (user: any, done) => {
+passport.serializeUser(async (session: any, done) => {
+    return done(null, session);
     try {
-        const session = await userController.createSession(user.id);
         return done(null, session);
     } catch (err) {
         return done(err, null);

@@ -60,6 +60,11 @@ class UserController {
         let user: User = await this.getUserByEmail(email);
         if (user == null)
             return null;
+            
+        if (!user.verified) {
+            return null;
+        }
+        
         if (await comparePassword(password, user.password)) {
             return this.createSession(user.id);
         }

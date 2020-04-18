@@ -24,6 +24,7 @@
 #### Email
 | Environment variable | Description | Default value |
 | --- | --- | --- |
+| EMAIL_ENABLED | Whether or not emails should be sent (for dev this should be false | false |
 | EMAIL_USER | The user used for authentication for sending emails (the sendgrid username) | sendgriduser |
 | EMAIL_KEY | The password for the user for sending emails (the sendgrid password) | sendgridpassword |
 | EMAIL_FROM | The email address that will be sending the email | verifiedsendgridemail |

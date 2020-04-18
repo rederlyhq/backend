@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import configurations from '../../configurations';
 import userController from "./user-controller";
 const router = require('express').Router();
+import validate from '../../middleware/joi-validator'
+import { registerValidation } from "./user-route-validation";
 
 router.post('/login',
     // TODO add req validation
@@ -16,6 +18,7 @@ router.post('/login',
     });
 
 router.post('/register',
+validate(registerValidation),
 // TODO add req validation
 // TODO add passport auth
 async (req: Request, res: Response) => {

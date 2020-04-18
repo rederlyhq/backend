@@ -28,7 +28,6 @@ router.post('/login',
 
 router.post('/register',
     validate(registerValidation),
-    // TODO add passport auth
     async (req: Request, res: Response, next: any) => {
         const baseUrl = `${req.protocol}://${req.get('host')}/${configurations.server.basePath}`;
         const newUser = await userController.registerUser({
@@ -39,9 +38,16 @@ router.post('/register',
     });
 
 router.get('/verify',
-    authenticationMiddleware,
     validate(verifyValidation),
     (req: Request, res: Response) => {
+        return res.status(200).send(); // TODO create a response
+    });
+
+router.post('/logout',
+    authenticationMiddleware,
+    async (req: any, res: Response) => {
+        await userController.logout(req.session.dataValues.uuid);
+        res.clearCookie('sessionToken');
         return res.status(200).send(); // TODO create a response
     });
 

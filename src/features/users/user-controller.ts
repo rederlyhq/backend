@@ -66,6 +66,16 @@ class UserController {
         return null;
     }
 
+    async logout(uuid: string) {
+        return Session.update({
+            active: false
+        }, {
+            where: {
+                uuid
+            }
+        });
+    }
+
     async registerUser(options: RegisterUserOptions) {
         const {
             baseUrl,

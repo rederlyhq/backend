@@ -26,6 +26,14 @@ class UserController {
         })
     }
 
+    getUserById(id: number): Bluebird<User> {
+        return User.findOne({
+            where: {
+                id
+            }
+        })
+    }
+
     createUser(userObject: any): Bluebird<User> {
         return User.create(userObject);
     }

@@ -17,15 +17,8 @@ export const authenticationMiddleware = async (req: any, res: any, next: any) =>
         req.session = session;
         return next();
     } catch (err) {
-        res.clearCookie('sessionId');
-        return res.redirect(parseInt(err.statusCode), '/');
-        // //if the session is invalid clear the cookie and redirect to login
-        // if (err.statusCode === 401) {
-        //     res.clearCookie('sessionId');
-        //     return res.redirect(parseInt(err.statusCode), '/');
-        // } else {
-        //     return res.status(err.statusCode).json(err);
-        // }
+        res.clearCookie('sessionToken');
+        return res.redirect(parseInt(err.output.statusCode), '/');
     }
 };
 
@@ -36,30 +29,30 @@ export const validateSession = async (uuid: string) => {
         if (!session) {
             let response = 'Invalid session';
             logger.warn(response);
-            return Promise.reject(Boom.unauthorized('Invalid session'));
+            throw Boom.unauthorized(response);
         } else {
             let timeNow = moment();
             let expiresAt = moment(session.expires_at);
             if (timeNow.isAfter(expiresAt)) {
                 const response = 'Session expired';
                 logger.warn(response);
-                return Promise.reject(response);
+                throw Boom.unauthorized(response);
             } else {
-                return Promise.resolve(session);
+                return session;
             }
         }
     } catch (err) {
-        return Promise.reject(err);
+        if(err.isBoom !== true) {
+            logger.error(err);
+            throw Boom.internal();    
+        } else {
+            throw err;
+        }
     }
 };
 
 passport.serializeUser(async (session: any, done) => {
     return done(null, session);
-    try {
-        return done(null, session);
-    } catch (err) {
-        return done(err, null);
-    }
 });
 
 passport.deserializeUser(async (id: number, done) => {

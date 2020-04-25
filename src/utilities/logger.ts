@@ -1,5 +1,14 @@
 import winston = require('winston');
+const {
+    format
+} = winston;
+
 const logger = winston.createLogger({
+    format: format.combine(
+        format.errors({ stack: true }),
+        format.metadata(),
+        format.json(),
+      ),
     transports: [
         new winston.transports.File({
             level:            'info',

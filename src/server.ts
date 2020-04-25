@@ -7,20 +7,31 @@ const router = require('./routes')
 import express = require('express');
 import morgan = require('morgan');
 import passport = require('passport');
+import rateLimit = require("express-rate-limit");
+
 
 const { port, basePath } = configurations.server;
 
+const {
+    windowLength,
+    maxRequests
+} = configurations.server.limiter;
+
 const app = express();
 app.use(morgan("combined", { stream: { write: message => logger.info(message) } }));
+
+const limiter = rateLimit({
+    windowMs: windowLength,
+    max: maxRequests
+  });
+
+app.use(limiter);
 
 app.use(bodyParser.json());
 app.use(cookieParser());
 
 app.use(passport.initialize());
 
-// TODO logger (winston)
-// TODO route logger (morgan)
-// TODO rate limiter
 app.use(basePath, router);
 
 

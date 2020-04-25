@@ -1,5 +1,13 @@
-function fromBooleanField(value: string): boolean {
+const fromBooleanField = (value: string): boolean => {
     return value ? value.toLowerCase() === 'true' : null
+}
+
+const fromIntValue = (value: string, defaultValue: number): number => {
+    const result = parseInt(value);
+    if(isNaN(result)) {
+        return defaultValue;
+    }
+    return result;
 }
 
 export default {
@@ -19,5 +27,9 @@ export default {
         user: process.env.EMAIL_USER || '',
         key: process.env.EMAIL_KEY || '',
         from: process.env.EMAIL_FROM || ''
+    },
+    auth: {
+        // in hours
+        sessionLife: fromIntValue(process.env.AUTH_SESSION_LIFE, 24)
     }
 }

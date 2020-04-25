@@ -15,9 +15,8 @@ router.post('/login',
     async (req: Request, res: Response, next: NextFunction) => {
         const newSession = await userController.login(req.body.email, req.body.password);
         if (newSession) {
-            const MILLIS_PER_HOUR = 3600000;
             const cookieOptions = {
-                maxAge: MILLIS_PER_HOUR // TODO add a configuration for session life
+                expires: newSession.expires_at
             };
             res.cookie('sessionToken', newSession.uuid, cookieOptions);
             next(httpResponse.Ok());

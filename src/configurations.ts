@@ -13,7 +13,11 @@ const fromIntValue = (value: string, defaultValue: number): number => {
 export default {
     server: {
         port: process.env.SERVER_PORT || '3000',
-        basePath: process.env.SERVER_BASE_PATH || ''
+        basePath: process.env.SERVER_BASE_PATH || '',
+        limiter: {
+            windowLength: fromIntValue(process.env.SERVER_LIMITER_WINDOW_LENGTH, 60000),
+            maxRequests: fromIntValue(process.env.SERVER_LIMITER_MAX_REQUESTS, 100),
+        }
     },
     db: {
         host: process.env.DB_HOST || 'localhost',

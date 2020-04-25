@@ -9,10 +9,16 @@ import { hashPassword, comparePassword } from '../../utilities/encryption-helper
 import Session from '../../database/models/session';
 import moment = require('moment');
 import configurations from '../../configurations';
+import NoAssociatedUniversityError from '../../exceptions/no-associated-university-error';
 
 interface RegisterUserOptions {
     userObject: any,
     baseUrl: string
+}
+
+interface RegisterUserResponse {
+    user: User,
+    emailSent: boolean
 }
 
 const {
@@ -86,7 +92,7 @@ class UserController {
         });
     }
 
-    async registerUser(options: RegisterUserOptions) {
+    async registerUser(options: RegisterUserOptions): Promise<RegisterUserResponse> {
         const {
             baseUrl,
             userObject
@@ -97,21 +103,17 @@ class UserController {
         let newUser;
         let university: University;
 
-        try {
-            const universities = await universityController.getUniversitiesAssociatedWithEmail({
-                emailDomain
-            });
-            if (universities.length < 1) {
-                throw new Error('No associated university');
-            }
-            if (universities.length > 1) {
-                logger.error(`Multiple universities found ${universities.length}`);
-            }
-            university = universities[0];
-        } catch (e) {
-            logger.error(e);
-            return "Universery " + e.message;
+        const universities = await universityController.getUniversitiesAssociatedWithEmail({
+            emailDomain
+        });
+        if (universities.length < 1) {
+            throw new NoAssociatedUniversityError(`There is no university associated with the email domain ${emailDomain}`);
         }
+        if (universities.length > 1) {
+            logger.error(`Multiple universities found ${universities.length}`);
+        }
+        university = universities[0];
+
 
         if (university.student_email_domain === emailDomain) {
             logger.info('User is student');
@@ -126,11 +128,10 @@ class UserController {
         try {
             newUser = await this.createUser(userObject);
         } catch (e) {
-            // TODO error handling
-            logger.error(e);
-            return "Create " + e.message;
+            throw e;
         }
 
+        let emailSent = false;
         try {
             await emailHelper.sendEmail({
                 content: `Hello,
@@ -140,11 +141,15 @@ class UserController {
                 email: newUser.email,
                 subject: 'Please veryify account'
             });
+            emailSent = configurations.email.enabled;
         } catch (e) {
-            // TODO error handling
-            return "Send Email " + e.message;
+            logger.error(e);
         }
-        return newUser;
+
+        return {
+            user: newUser,
+            emailSent
+        }
     }
 
     verifyUser(verifyToken:any) {

@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import configurations from '../../configurations';
 import userController from "./user-controller";
 const router = require('express').Router();
@@ -7,11 +7,12 @@ import { registerValidation, loginValidation, verifyValidation } from "./user-ro
 import Boom = require("boom");
 import passport = require("passport");
 import { authenticationMiddleware } from "../../middleware/auth";
+import httpResponse from "../../utilities/http-response";
 
 router.post('/login',
     validate(loginValidation),
     passport.authenticate('local'),
-    async (req: Request, res: Response, next: any) => {
+    async (req: Request, res: Response, next: NextFunction) => {
         const newSession = await userController.login(req.body.email, req.body.password);
         if (newSession) {
             const MILLIS_PER_HOUR = 3600000;
@@ -19,8 +20,7 @@ router.post('/login',
                 maxAge: MILLIS_PER_HOUR // TODO add a configuration for session life
             };
             res.cookie('sessionToken', newSession.uuid, cookieOptions);
-            return res.status(200).send(); // TODO create a response    
-
+            next(httpResponse.Ok());
         } else {
             next(Boom.badRequest('Invalid login'));
         }
@@ -28,28 +28,28 @@ router.post('/login',
 
 router.post('/register',
     validate(registerValidation),
-    async (req: Request, res: Response, next: any) => {
+    async (req: Request, res: Response, next: NextFunction) => {
         const baseUrl = `${req.protocol}://${req.get('host')}/${configurations.server.basePath}`;
         const newUser = await userController.registerUser({
             userObject: req.body,
             baseUrl
         });
-        return res.status(200).json(newUser); // TODO create a response
+        next(httpResponse.Created('User registered successfully', newUser));
     });
 
 router.get('/verify',
     validate(verifyValidation),
-    (req: Request, res: Response) => {
+    (req: Request, res: Response, next: NextFunction) => {
         userController.verifyUser(req.query.verify_token);
-        return res.status(200).send(); // TODO create a response
+        next(httpResponse.Ok("Verified"));
     });
 
 router.post('/logout',
     authenticationMiddleware,
-    async (req: any, res: Response) => {
+    async (req: any, res: Response, next: NextFunction) => {
         await userController.logout(req.session.dataValues.uuid);
         res.clearCookie('sessionToken');
-        return res.status(200).send(); // TODO create a response
+        next(httpResponse.Ok("Logged out"));
     });
 
 module.exports = router;

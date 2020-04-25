@@ -8,11 +8,16 @@ import University from '../../database/models/university';
 import { hashPassword, comparePassword } from '../../utilities/encryption-helper';
 import Session from '../../database/models/session';
 import moment = require('moment');
+import configurations from '../../configurations';
 
 interface RegisterUserOptions {
     userObject: any,
     baseUrl: string
 }
+
+const {
+    sessionLife
+} = configurations.auth;
 
 class UserController {
     constructor() {
@@ -47,7 +52,7 @@ class UserController {
     }
 
     createSession(userId: number): Bluebird<Session> {
-        const expiresAt: Date = moment().add(1, 'hour').toDate();
+        const expiresAt: Date = moment().add(sessionLife, 'hour').toDate();
         return Session.create({
             user_id: userId,
             uuid: uuidv4(),

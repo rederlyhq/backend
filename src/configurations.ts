@@ -30,6 +30,7 @@ export default {
     },
     auth: {
         // in hours
-        sessionLife: fromIntValue(process.env.AUTH_SESSION_LIFE, 24)
+        sessionLife: fromIntValue(process.env.AUTH_SESSION_LIFE, 24),
+        costFactor: fromIntValue(process.env.AUTH_COST_FACTOR, 8)
     }
 }

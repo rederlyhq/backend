@@ -54,7 +54,8 @@ class UserController {
     getSession(uuid: string): Bluebird<Session> {
         return Session.findOne({
             where: {
-                uuid
+                uuid,
+                active: true
             }
         })
     }

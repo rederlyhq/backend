@@ -10,6 +10,7 @@ import { authenticationMiddleware } from "../../middleware/auth";
 import httpResponse from "../../utilities/http-response";
 import * as asyncHandler from 'express-async-handler'
 import NoAssociatedUniversityError from "../../exceptions/no-associated-university-error";
+import AlreadyExistsError from "../../exceptions/already-exists-error";
 
 router.post('/login',
     validate(loginValidation),
@@ -38,8 +39,10 @@ router.post('/register',
             });
             next(httpResponse.Created('User registered successfully', newUser));
         } catch(e) {
-            if(e instanceof NoAssociatedUniversityError) {
+            if (e instanceof NoAssociatedUniversityError) {
                 next(Boom.notFound(e.message));
+            } else if (e instanceof AlreadyExistsError) {
+                next(Boom.badRequest(e.message));
             } else {
                 throw e;
             }

@@ -10,6 +10,8 @@ import Session from '../../database/models/session';
 import moment = require('moment');
 import configurations from '../../configurations';
 import NoAssociatedUniversityError from '../../exceptions/no-associated-university-error';
+import { UniqueConstraintError } from 'sequelize';
+import AlreadyExistsError from '../../exceptions/already-exists-error';
 
 interface RegisterUserOptions {
     userObject: any,
@@ -97,7 +99,7 @@ class UserController {
             baseUrl,
             userObject
         } = options;
-        // TODO add verification (we should add email verification at the route level)
+
         const emailDomain = userObject.email.split('@')[1];
 
         let newUser;
@@ -128,6 +130,11 @@ class UserController {
         try {
             newUser = await this.createUser(userObject);
         } catch (e) {
+            if(e instanceof UniqueConstraintError) {
+                if(Object.keys(e.fields).includes('email')) {
+                    throw new AlreadyExistsError(`The email ${e.fields.email} already exists`);
+                }
+            }
             throw e;
         }
 

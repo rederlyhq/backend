@@ -15,8 +15,8 @@ import AlreadyExistsError from "../../exceptions/already-exists-error";
 router.post('/login',
     validate(loginValidation),
     passport.authenticate('local'),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-        const newSession = await userController.login(req.body.email, req.body.password);
+    asyncHandler(async (req: any, res: Response, next: NextFunction) => {
+        const newSession = req.session.passport.user;
         if (newSession) {
             const cookieOptions = {
                 expires: newSession.expires_at

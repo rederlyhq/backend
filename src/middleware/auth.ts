@@ -74,10 +74,16 @@ passport.deserializeUser(async (id: number, done) => {
 
 passport.use(new LocalStrategy({ usernameField: "email" }, async (email: string, password: string, done: any) => {
     // TODO track ip?
-    const session: Session = await userController.login(email, password);
-    if (session) {
-        done(null, session)
-    } else {
-        done('error')
+    try {
+        const session: Session = await userController.login(email, password);
+        if (session) {
+            done(null, session)
+        } else {
+            // This could be invalid credentials, not verified, or user not found
+            done(Boom.unauthorized('Invalid login'))
+        }    
+    } catch (e) {
+        logger.error(e);
+        done(Boom.internal());
     }
 }));

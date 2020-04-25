@@ -9,8 +9,15 @@
 #### Server
 | Environment variable | Description | Default value |
 | --- | --- | --- |
-| SERVER_PORT | The port the server listens for requests on | 8080 |
+| SERVER_PORT | The port the server listens for requests on | 3000 |
 | SERVER_BASE_PATH | The prefix for all path (i.e. `/rederly/api` | |
+
+##### Limiter
+| Environment variable | Description | Default value |
+| --- | --- | --- |
+| SERVER_LIMITER_WINDOW_LENGTH | The window in which the max requests are allowed to be made (provided in milliseconds) | 60000 (ms, which is 1 minute) |
+| SERVER_LIMITER_MAX_REQUESTS | The amount of requests that a single client is allowed to make in the above window | 100 |
+
 
 #### Database
 | Environment variable | Description | Default value |
@@ -28,3 +35,9 @@
 | EMAIL_USER | The user used for authentication for sending emails (the sendgrid username) | sendgriduser |
 | EMAIL_KEY | The password for the user for sending emails (the sendgrid password) | sendgridpassword |
 | EMAIL_FROM | The email address that will be sending the email | verifiedsendgridemail |
+
+#### Auth
+| Environment variable | Description | Default value |
+| --- | --- | --- |
+| AUTH_SESSION_LIFE | The number of hours a session token is good for | 24 |
+| AUTH_COST_FACTOR | The cost factor for bcrypt to hash the password (this is important for preventing brute force attacks as it makes the hash take time to calculate) | 8 |

@@ -1,8 +1,12 @@
 import bcrypt = require('bcrypt');
+import configurations from '../configurations';
+
+const {
+    costFactor
+} = configurations.auth;
 
 export function hashPassword(password: string) {
-    // TODO add cost factor to configurations
-    return bcrypt.hash(password, 8)
+    return bcrypt.hash(password, costFactor)
     .then((result:any) => {
         if(result) {
             return result;

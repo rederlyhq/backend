@@ -18,7 +18,7 @@ interface RegisterUserOptions {
 }
 
 interface RegisterUserResponse {
-    user: User;
+    id: number;
     emailSent: boolean;
 }
 
@@ -158,7 +158,7 @@ class UserController {
         }
 
         return {
-            user: newUser,
+            id: newUser.id,
             emailSent
         }
     }

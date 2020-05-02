@@ -160,14 +160,16 @@ class UserController {
         }
     }
 
-    verifyUser(verifyToken:any) {
-        return User.update({
+    async verifyUser(verifyToken:any): Promise<boolean> {
+        const updateResp = await User.update({
             verified: true
         }, {
             where: {
-                verify_token: verifyToken
+                verify_token: verifyToken,
+                verified: false
             }
-        })
+        });
+        return updateResp[0] > 0;
     }
 }
 const userController = new UserController();

@@ -4,6 +4,7 @@ import appSequelize from './app-sequelize';
 import user from './models/user';
 import university from './models/university';
 import session from './models/session';
+import permission from './models/permission';
 
 export const sync = async (): Promise<void> => {
     try {
@@ -18,6 +19,7 @@ const database = {
     user,
     university,
     session,
+    permission,
     appSequelize
 }
 

@@ -11,6 +11,7 @@ import configurations from '../../configurations';
 import NoAssociatedUniversityError from '../../exceptions/no-associated-university-error';
 import { UniqueConstraintError } from 'sequelize';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
+import Role from '../permissions/roles';
 
 interface RegisterUserOptions {
     userObject: User;
@@ -19,6 +20,7 @@ interface RegisterUserOptions {
 
 interface RegisterUserResponse {
     id: number;
+    role_id: number;
     emailSent: boolean;
 }
 
@@ -118,12 +120,17 @@ class UserController {
 
 
         if (university.student_email_domain === emailDomain) {
-            logger.info('User is student');
+            // Database field
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            userObject.role_id = Role.STUDENT;
         } else if (university.prof_email_domain === emailDomain) {
-            logger.info('User is professor');
+            // Database field
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            userObject.role_id = Role.PROFESSOR;
         } else {
-            logger.error('This should not be possible since the email domain came up in the university query');
+            throw new Error('This should not be possible since the email domain came up in the university query');
         }
+
         // Database object
         // eslint-disable-next-line @typescript-eslint/camelcase
         userObject.university_id = university.id;
@@ -159,6 +166,9 @@ class UserController {
 
         return {
             id: newUser.id,
+            // Database field
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            role_id: newUser.role_id,
             emailSent
         }
     }

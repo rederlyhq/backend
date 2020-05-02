@@ -5,7 +5,7 @@ import user from './models/user';
 import university from './models/university';
 import session from './models/session';
 
-(async () => {
+(async (): Promise<void> => {
     try {
         appSequelize.authenticate();
         appSequelize.sync()    

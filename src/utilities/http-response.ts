@@ -7,6 +7,8 @@ interface HttpResponse {
     status: string;
 }
 
+// data is any object to pass back to the user
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const createObject = (status: string, statusCode: number, message?: string, data?: any): HttpResponse => {
     const resp: HttpResponse = {
         statusCode,

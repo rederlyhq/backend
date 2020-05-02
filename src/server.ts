@@ -2,7 +2,9 @@ import configurations from './configurations';
 import logger from './utilities/logger';
 import bodyParser = require('body-parser');
 import cookieParser = require('cookie-parser');
-const router = require('./routes')
+// Switching to import caused errors
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const router = require('./routes');
 
 import express = require('express');
 import morgan = require('morgan');
@@ -19,7 +21,7 @@ const {
 } = configurations.server.limiter;
 
 const app = express();
-app.use(morgan("combined", { stream: { write: message => logger.info(message) } }));
+app.use(morgan("combined", { stream: { write: (message): void => {logger.info(message) }} }));
 
 const limiter = rateLimit({
     windowMs: windowLength,

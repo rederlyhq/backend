@@ -14,13 +14,13 @@ import { UniqueConstraintError } from 'sequelize';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 
 interface RegisterUserOptions {
-    userObject: any,
-    baseUrl: string
+    userObject: any;
+    baseUrl: string;
 }
 
 interface RegisterUserResponse {
-    user: User,
-    emailSent: boolean
+    user: User;
+    emailSent: boolean;
 }
 
 const {
@@ -28,9 +28,6 @@ const {
 } = configurations.auth;
 
 class UserController {
-    constructor() {
-    }
-
     getUserByEmail(email: string): Bluebird<User> {
         return User.findOne({
             where: {
@@ -63,29 +60,33 @@ class UserController {
     createSession(userId: number): Bluebird<Session> {
         const expiresAt: Date = moment().add(sessionLife, 'hour').toDate();
         return Session.create({
+            // Database field
+            // eslint-disable-next-line @typescript-eslint/camelcase
             user_id: userId,
             uuid: uuidv4(),
+            // Database field
+            // eslint-disable-next-line @typescript-eslint/camelcase
             expires_at: expiresAt,
             active: true
         })
     }
 
-    async login(email: string, password: string) {
-        let user: User = await this.getUserByEmail(email);
+    async login(email: string, password: string): Promise<Session> {
+        const user: User = await this.getUserByEmail(email);
         if (user == null)
             return null;
-            
+
         if (!user.verified) {
             return null;
         }
-        
+
         if (await comparePassword(password, user.password)) {
             return this.createSession(user.id);
         }
         return null;
     }
 
-    async logout(uuid: string) {
+    async logout(uuid: string): Promise<[number, Session[]]> {
         return Session.update({
             active: false
         }, {
@@ -104,7 +105,6 @@ class UserController {
         const emailDomain = userObject.email.split('@')[1];
 
         let newUser;
-        let university: University;
 
         const universities = await universityController.getUniversitiesAssociatedWithEmail({
             emailDomain
@@ -115,7 +115,7 @@ class UserController {
         if (universities.length > 1) {
             logger.error(`Multiple universities found ${universities.length}`);
         }
-        university = universities[0];
+        const university = universities[0];
 
 
         if (university.student_email_domain === emailDomain) {
@@ -125,14 +125,18 @@ class UserController {
         } else {
             logger.error('This should not be possible since the email domain came up in the university query');
         }
+        // Database object
+        // eslint-disable-next-line @typescript-eslint/camelcase
         userObject.university_id = university.id;
+        // Database object
+        // eslint-disable-next-line @typescript-eslint/camelcase
         userObject.verify_token = uuidv4();
         userObject.password = await hashPassword(userObject.password);
         try {
             newUser = await this.createUser(userObject);
         } catch (e) {
-            if(e instanceof UniqueConstraintError) {
-                if(Object.keys(e.fields).includes('email')) {
+            if (e instanceof UniqueConstraintError) {
+                if (Object.keys(e.fields).includes('email')) {
                     throw new AlreadyExistsError(`The email ${e.fields.email} already exists`);
                 }
             }
@@ -160,11 +164,13 @@ class UserController {
         }
     }
 
-    async verifyUser(verifyToken:any): Promise<boolean> {
+    async verifyUser(verifyToken: string): Promise<boolean> {
         const updateResp = await User.update({
             verified: true
         }, {
             where: {
+                // Database object
+                // eslint-disable-next-line @typescript-eslint/camelcase
                 verify_token: verifyToken,
                 verified: false
             }

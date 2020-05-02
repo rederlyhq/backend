@@ -17,6 +17,8 @@ export const loginValidation = {
 
 export const verifyValidation = {
     query: {
+        // Database field
+        // eslint-disable-next-line @typescript-eslint/camelcase
         verify_token: Joi.string().required()
     }
 }

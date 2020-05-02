@@ -15,8 +15,10 @@ import AlreadyExistsError from "../../exceptions/already-exists-error";
 router.post('/login',
     validate(loginValidation),
     passport.authenticate('local'),
-    asyncHandler(async (req: any, res: Response, next: NextFunction) => {
-        const newSession = req.session.passport.user;
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        // TODO fix Request object for session
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const newSession = (req as any).session.passport.user;
         if (newSession) {
             const cookieOptions = {
                 expires: newSession.expires_at
@@ -38,7 +40,7 @@ router.post('/register',
                 baseUrl
             });
             next(httpResponse.Created('User registered successfully', newUser));
-        } catch(e) {
+        } catch (e) {
             if (e instanceof NoAssociatedUniversityError) {
                 next(Boom.notFound(e.message));
             } else if (e instanceof AlreadyExistsError) {
@@ -52,8 +54,8 @@ router.post('/register',
 router.get('/verify',
     validate(verifyValidation),
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-        const verified = await userController.verifyUser(req.query.verify_token);
-        if(verified) {
+        const verified = await userController.verifyUser(req.query.verify_token as string);
+        if (verified) {
             next(httpResponse.Ok("Verified"));
         } else {
             next(Boom.badRequest("Invalid verification token"));
@@ -62,8 +64,10 @@ router.get('/verify',
 
 router.post('/logout',
     authenticationMiddleware,
-    asyncHandler(async (req: any, res: Response, next: NextFunction) => {
-        await userController.logout(req.session.dataValues.uuid);
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        // TODO fix Request object for session
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await userController.logout((req as any).session.dataValues.uuid);
         res.clearCookie('sessionToken');
         next(httpResponse.Ok("Logged out"));
     }));

@@ -47,6 +47,7 @@
     "@typescript-eslint/eslint-plugin": "^2.30.0",
     "@typescript-eslint/parser": "^2.30.0",
     "eslint": "^6.8.0",
+    "nodemon": "^2.0.3",
     "sequelize-cli": "^5.5.1",
     "ts-node": "^8.8.2",
     "typescript": "^3.8.3"
@@ -54,10 +55,21 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "ts-node src/index.ts",
+    "start:watch": "nodemon -x npm start",
     "debug": "npm run build && node --inspect ts-built/index.js",
     "build": "tsc",
     "sequelize": "sequelize",
     "lint": "eslint src/ --ext .ts"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "**/*.test.ts",
+      "**/*.spec.ts"
+    ],
+    "watch": [
+      "src"
+    ],
+    "ext": "ts"
   },
   "repository": {
     "type": "git",

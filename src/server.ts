@@ -59,4 +59,11 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     }
 });
 
-app.listen(port, () => logger.info(`Server started up and listening on port: ${port}`))
+export const listen = (): Promise<null> => {
+    return new Promise((resolve) => {
+        app.listen(port, () => {
+            logger.info(`Server started up and listening on port: ${port}`);
+            resolve();
+        });
+    });
+}

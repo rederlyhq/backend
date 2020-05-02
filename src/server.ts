@@ -8,6 +8,7 @@ import express = require('express');
 import morgan = require('morgan');
 import passport = require('passport');
 import rateLimit = require("express-rate-limit");
+import Boom = require('boom');
 
 
 const { port, basePath } = configurations.server;
@@ -22,7 +23,8 @@ app.use(morgan("combined", { stream: { write: message => logger.info(message) } 
 
 const limiter = rateLimit({
     windowMs: windowLength,
-    max: maxRequests
+    max: maxRequests,
+    handler: (req, res, next) => next(Boom.tooManyRequests())
   });
 
 app.use(limiter);

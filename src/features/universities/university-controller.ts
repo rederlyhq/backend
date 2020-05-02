@@ -7,10 +7,6 @@ interface GetUniversitiesAssociatedWithEmail {
 }
 
 class UniversityController {
-    constructor() {
-
-    }
-
     getUniversitiesAssociatedWithEmail(options: GetUniversitiesAssociatedWithEmail): Bluebird<University[]> {
         const {
             emailDomain

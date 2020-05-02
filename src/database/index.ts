@@ -5,14 +5,15 @@ import user from './models/user';
 import university from './models/university';
 import session from './models/session';
 
-(async (): Promise<void> => {
+export const sync = async (): Promise<void> => {
     try {
-        appSequelize.authenticate();
-        appSequelize.sync()
+        await appSequelize.authenticate();
+        await appSequelize.sync()
     } catch (e) {
         logger.error('Could not init sequelize', e)
     }
-})();
+};
+
 const database = {
     user,
     university,

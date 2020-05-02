@@ -9,9 +9,13 @@ if (configurations.email.enabled) {
     logger.info(`${disableddMarker} EMAIL DISABLED ${disableddMarker}`);
 }
 
-import './database';
-import './server';
+import { sync } from './database';
+import { listen } from './server';
 
+(async (): Promise<void> => {
+    await sync();
+    await listen();
+})();
 // import emailHelper from './utilities/email-helper';
 
 // emailHelper.sendEmail({

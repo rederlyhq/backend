@@ -1,5 +1,6 @@
-import { Sequelize, Model, DataTypes, BuildOptions, HasOneGetAssociationMixin } from 'sequelize';
-import { HasManyGetAssociationsMixin, HasManyAddAssociationMixin, HasManyHasAssociationMixin, Association, HasManyCountAssociationsMixin, HasManyCreateAssociationMixin } from 'sequelize';
+// Database fields are not camel case
+/* eslint-disable @typescript-eslint/camelcase */
+import { Model, DataTypes, HasOneGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize'
 import University from './university';
 import Session from './session';

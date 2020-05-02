@@ -52,8 +52,12 @@ router.post('/register',
 router.get('/verify',
     validate(verifyValidation),
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-        await userController.verifyUser(req.query.verify_token);
-        next(httpResponse.Ok("Verified"));
+        const verified = await userController.verifyUser(req.query.verify_token);
+        if(verified) {
+            next(httpResponse.Ok("Verified"));
+        } else {
+            next(Boom.badRequest("Invalid verification token"));
+        }
     }));
 
 router.post('/logout',

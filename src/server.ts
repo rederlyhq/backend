@@ -23,13 +23,13 @@ const {
 } = configurations.server.limiter;
 
 const app = express();
-app.use(morgan("combined", { stream: { write: (message): void => {logger.info(message) }} }));
+app.use(morgan("combined", { stream: { write: (message): void => { logger.info(message) } } }));
 
 const limiter = rateLimit({
     windowMs: windowLength,
     max: maxRequests,
     handler: (req, res, next) => next(Boom.tooManyRequests())
-  });
+});
 
 app.use(limiter);
 

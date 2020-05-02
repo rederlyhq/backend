@@ -8,7 +8,7 @@ import session from './models/session';
 (async (): Promise<void> => {
     try {
         appSequelize.authenticate();
-        appSequelize.sync()    
+        appSequelize.sync()
     } catch (e) {
         logger.error('Could not init sequelize', e)
     }

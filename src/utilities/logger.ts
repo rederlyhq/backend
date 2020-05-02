@@ -19,7 +19,14 @@ const logger = winston.createLogger({
       maxFiles: 5,
       // colorize:         false
     }),
-    new winston.transports.Console()
+    new winston.transports.Console({
+      format: format.combine(
+        winston.format.colorize(),
+        winston.format.timestamp(),
+        winston.format.align(),
+        winston.format.printf(info => `${info.timestamp} [${info.level}]: ${info.message}`),
+      )
+    })
   ]
 });
 export default logger;

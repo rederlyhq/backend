@@ -6,5 +6,6 @@ const router = express.Router();
 
 router.use('/users', require('./features/users/user-route'));
 router.use('/courses', require('./features/courses/course-route'));
+router.use('/curriculum', require('./features/curriculum/curriculum-route'));
 
 module.exports = router;

@@ -2,6 +2,8 @@ import configurations from '../configurations';
 import logger from '../utilities/logger';
 import nodemailer = require('nodemailer');
 import Mail = require('nodemailer/lib/mailer');
+// There is no type def for sendgrid-transport
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const sgTransport = require('nodemailer-sendgrid-transport');
 
 interface EmailHelperOptions {
@@ -43,6 +45,8 @@ class EmailHelper {
 
     }
 
+    // Returns the object that sendgrid returns which is any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sendEmail(options: SendEmailOptions): Promise<any> {
         if (!configurations.email.enabled) {
             logger.warn('Email is disabled, returning empty promise...');

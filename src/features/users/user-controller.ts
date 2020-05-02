@@ -4,7 +4,6 @@ import { v4 as uuidv4 } from 'uuid';
 import User from '../../database/models/user';
 import Bluebird = require('bluebird');
 import universityController from '../universities/university-controller';
-import University from '../../database/models/university';
 import { hashPassword, comparePassword } from '../../utilities/encryption-helper';
 import Session from '../../database/models/session';
 import moment = require('moment');
@@ -14,7 +13,7 @@ import { UniqueConstraintError } from 'sequelize';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 
 interface RegisterUserOptions {
-    userObject: any;
+    userObject: User;
     baseUrl: string;
 }
 
@@ -44,7 +43,7 @@ class UserController {
         })
     }
 
-    createUser(userObject: any): Bluebird<User> {
+    createUser(userObject: User): Bluebird<User> {
         return User.create(userObject);
     }
 

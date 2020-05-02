@@ -44,6 +44,9 @@
     "@types/uuid": "^7.0.2",
     "@types/validator": "^13.0.0",
     "@types/winston": "^2.4.4",
+    "@typescript-eslint/eslint-plugin": "^2.30.0",
+    "@typescript-eslint/parser": "^2.30.0",
+    "eslint": "^6.8.0",
     "sequelize-cli": "^5.5.1",
     "ts-node": "^8.8.2",
     "typescript": "^3.8.3"
@@ -53,7 +56,8 @@
     "start": "ts-node src/index.ts",
     "debug": "npm run build && node --inspect ts-built/index.js",
     "build": "tsc",
-    "sequelize": "sequelize"
+    "sequelize": "sequelize",
+    "lint": "eslint src/ --ext .ts"
   },
   "repository": {
     "type": "git",

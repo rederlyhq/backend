@@ -1,18 +1,19 @@
 import configurations from '../configurations';
 import logger from '../utilities/logger';
-const nodemailer = require('nodemailer');
+import nodemailer = require('nodemailer');
+import Mail = require('nodemailer/lib/mailer');
 const sgTransport = require('nodemailer-sendgrid-transport');
 
 interface EmailHelperOptions {
-    user: string,
-    key: string,
-    from: string,
+    user: string;
+    key: string;
+    from: string;
 }
 
 interface SendEmailOptions {
-    content: string,
-    email: string,
-    subject: string
+    content: string;
+    email: string;
+    subject: string;
 }
 
 class EmailHelper {
@@ -20,7 +21,7 @@ class EmailHelper {
     private key: string;
     private from: string;
 
-    private client:any;
+    private client: Mail;
 
     constructor(options: EmailHelperOptions) {
         this.user = options.user;
@@ -29,17 +30,21 @@ class EmailHelper {
 
         const clientOptions = {
             auth: {
-              api_user: this.user,
-              api_key: this.key, // TODO figure out why api key doesn't work
+                // defined configuartion param
+                // eslint-disable-next-line @typescript-eslint/camelcase
+                api_user: this.user,
+                // defined configuartion param
+                // eslint-disable-next-line @typescript-eslint/camelcase
+                api_key: this.key, // TODO figure out why api key doesn't work
             }
-          }
-        
+        }
+
         this.client = nodemailer.createTransport(sgTransport(clientOptions));
-        
+
     }
 
     sendEmail(options: SendEmailOptions): Promise<any> {
-        if(!configurations.email.enabled) {
+        if (!configurations.email.enabled) {
             logger.warn('Email is disabled, returning empty promise...');
             return Promise.resolve();
         }
@@ -49,18 +54,22 @@ class EmailHelper {
             to: options.email,
             subject: options.subject,
             text: options.content
-          };
-          
-          return new Promise<any>((resolve: (data: any) => void, reject: (err: any) => void) => {
-            this.client.sendMail(email, function(err:any, info:any){
-                if (err){
-                  reject(err);
+        };
+
+        // Nodemailer's callback uses any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return new Promise<any>((resolve: (data: any) => void, reject: (err: Error) => void) => {
+            // Nodemailer's callback uses any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            this.client.sendMail(email, (err: Error, info: any) => {
+                if (err) {
+                    reject(err);
                 }
                 else {
                     resolve(info);
                 }
-            });  
-          });
+            });
+        });
     }
 }
 

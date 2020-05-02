@@ -26,9 +26,9 @@ export const validateSession = async (uuid: string): Promise<Session> => {
             }
         }
     } catch (err) {
-        if(err.isBoom !== true) {
+        if (err.isBoom !== true) {
             logger.error(err);
-            throw Boom.internal();    
+            throw Boom.internal();
         } else {
             throw err;
         }
@@ -76,7 +76,7 @@ passport.use(new LocalStrategy({ usernameField: "email" }, async (email: string,
         } else {
             // This could be invalid credentials, not verified, or user not found
             done(Boom.unauthorized('Invalid login'))
-        }    
+        }
     } catch (e) {
         logger.error(e);
         done(Boom.internal());

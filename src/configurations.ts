@@ -4,7 +4,7 @@ const fromBooleanField = (value: string): boolean => {
 
 const fromIntValue = (value: string, defaultValue: number): number => {
     const result = parseInt(value);
-    if(isNaN(result)) {
+    if (isNaN(result)) {
         return defaultValue;
     }
     return result;

@@ -6,13 +6,28 @@ import { authenticationMiddleware } from "../../middleware/auth";
 import httpResponse from "../../utilities/http-response";
 import * as asyncHandler from 'express-async-handler'
 import { createCourseValidation, getCourseValidation } from "./course-route-validation";
+import Session from "../../database/models/session";
 
 router.post('/',
     authenticationMiddleware,
     validate(createCourseValidation),
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        // TODO figure out session for request
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const session = (req as any).session as Session;
+        const user = await session.getUser();
+        const university = await user.getUniversity();
+
         try {
-            const newCourse = await courseController.createCourse(req.body);
+            const newCourse = await courseController.createCourse({
+                // Database field
+                // eslint-disable-next-line @typescript-eslint/camelcase
+                instructor_id: user.id,
+                // Database field
+                // eslint-disable-next-line @typescript-eslint/camelcase
+                university_id: university.id,
+                ...req.body
+            });
             next(httpResponse.Created('Course successfully', newCourse));
         } catch (e) {
             next(e)

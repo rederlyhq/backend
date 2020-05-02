@@ -6,13 +6,25 @@ import httpResponse from "../../utilities/http-response";
 import * as asyncHandler from 'express-async-handler'
 import { getCurriculumValidation, createCurriculumValidation } from "./curriculum-route-validation";
 import curriculumController from "./curriculum-controller";
+import Session from "../../database/models/session";
 
 router.post('/',
     authenticationMiddleware,
     validate(createCurriculumValidation),
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const newCurriculum = await curriculumController.createCurriculum(req.body);
+            // TODO figure out session for request
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const session = (req as any).session as Session;
+            const user = await session.getUser();
+            const university = await user.getUniversity();
+
+            const newCurriculum = await curriculumController.createCurriculum({
+                // Database field
+                // eslint-disable-next-line @typescript-eslint/camelcase
+                university_id: university.id,
+                ...req.body
+            });
             next(httpResponse.Created('Curriculum successfully', newCurriculum));
         } catch (e) {
             next(e)

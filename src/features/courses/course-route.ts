@@ -12,13 +12,13 @@ router.post('/',
     authenticationMiddleware,
     validate(createCourseValidation),
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-        // TODO figure out session for request
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const session = (req as any).session as Session;
-        const user = await session.getUser();
-        const university = await user.getUniversity();
-
         try {
+            // TODO figure out session for request
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const session = (req as any).session as Session;
+            const user = await session.getUser();
+            const university = await user.getUniversity();
+
             const newCourse = await courseController.createCourse({
                 // Database field
                 // eslint-disable-next-line @typescript-eslint/camelcase

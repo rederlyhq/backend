@@ -1,19 +1,19 @@
 import { Request, Response, NextFunction } from "express";
-import courseController from "./course-controller";
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator'
 import { authenticationMiddleware } from "../../middleware/auth";
 import httpResponse from "../../utilities/http-response";
 import * as asyncHandler from 'express-async-handler'
-import { createCourseValidation, getCourseValidation } from "./course-route-validation";
+import { getCurriculumValidation, createCurriculumValidation } from "./curriculum-route-validation";
+import curriculumController from "./curriculum-controller";
 
 router.post('/',
     authenticationMiddleware,
-    validate(createCourseValidation),
+    validate(createCurriculumValidation),
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const newCourse = await courseController.createCourse(req.body);
-            next(httpResponse.Created('Course successfully', newCourse));
+            const newCurriculum = await curriculumController.createCurriculum(req.body);
+            next(httpResponse.Created('Curriculum successfully', newCurriculum));
         } catch (e) {
             next(e)
         }
@@ -23,8 +23,8 @@ router.get('/',
     authenticationMiddleware,
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const courses = await courseController.getCourses();
-            next(httpResponse.Ok('Fetched successfully', courses));
+            const curriculums = await curriculumController.getCurriculums();
+            next(httpResponse.Ok('Fetched successfully', curriculums));
         } catch (e) {
             next(e)
         }
@@ -32,11 +32,11 @@ router.get('/',
 
 router.get('/:id',
     authenticationMiddleware,
-    validate(getCourseValidation),
+    validate(getCurriculumValidation),
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const course = await courseController.getCourseById(parseInt(req.params.id));
-            next(httpResponse.Ok('Fetched successfully', course));
+            const curriculum = await curriculumController.getCurriculumById(parseInt(req.params.id));
+            next(httpResponse.Ok('Fetched successfully', curriculum));
         } catch (e) {
             next(e)
         }

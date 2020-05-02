@@ -1,6 +1,6 @@
 import University from "../../database/models/university";
 import Bluebird = require("bluebird");
-const Sequelize = require('sequelize');
+import Sequelize = require('sequelize');
 
 interface GetUniversitiesAssociatedWithEmail {
     emailDomain: string;

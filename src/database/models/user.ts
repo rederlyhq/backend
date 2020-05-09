@@ -3,7 +3,7 @@
 import { Model, DataTypes, HasOneGetAssociationMixin, BelongsToGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize'
 import University from './university';
-import Session from './session';
+// import Session from './session';
 import Permission from './permission';
 
 export default class User extends Model {
@@ -68,12 +68,12 @@ User.init({
   sequelize: appSequelize, // this bit is important
 });
 
-// Here we associate which actually populates out pre-declared `association` static and other methods.
-User.hasMany(Session, {
-  sourceKey: 'id',
-  foreignKey: 'user_id',
-  as: 'user' // this determines the name in `associations`!
-});
+// // Here we associate which actually populates out pre-declared `association` static and other methods.
+// User.hasMany(Session, {
+//   sourceKey: 'id',
+//   foreignKey: 'user_id',
+//   as: 'user' // this determines the name in `associations`!
+// });
 
 User.belongsTo(Permission, {
   foreignKey: 'role_id',

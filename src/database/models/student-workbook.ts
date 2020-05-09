@@ -10,6 +10,8 @@ export default class StudentWorkbook extends Model {
     public userId!: number;
     public courseWWTopicQuestionId!: number;
     public randomSeed!: number;
+    // This is a jsonb field so it could be any (from db)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public submitted!: any;
     public result!: number
     public time!: Date;

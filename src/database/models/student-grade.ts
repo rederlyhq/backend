@@ -1,4 +1,4 @@
-import { Model, DataTypes, HasOneGetAssociationMixin, BelongsToGetAssociationMixin } from 'sequelize';
+import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize'
 import CourseWWTopicQuestion from './course-ww-topic-question';
 import User from './user';

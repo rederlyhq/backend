@@ -9,6 +9,12 @@ interface EnrollByCodeOptions {
     userId: number;
 }
 
+interface CourseListOptions {
+    filter: {
+        instructorId: number
+    }
+}
+
 class CourseController {
     getCourseById(id: number): Bluebird<Course> {
         return Course.findOne({
@@ -18,8 +24,16 @@ class CourseController {
         })
     }
 
-    getCourses(): Bluebird<Course[]> {
-        return Course.findAll();
+    getCourses(options: CourseListOptions): Bluebird<Course[]> {
+        // Where is a dynamic sequelize object
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const where: any = {};
+        if(options.filter.instructorId !== null && options.filter.instructorId !== undefined) {
+            where.instructorId = options.filter.instructorId;
+        } 
+        return Course.findAll({
+            where
+        });
     }
 
     createCourse(courseObject: Course): Bluebird<Course> {

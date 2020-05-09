@@ -36,7 +36,11 @@ router.get('/',
     authenticationMiddleware,
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const courses = await courseController.getCourses();
+            const courses = await courseController.getCourses({
+                filter: {
+                    instructorId: req.query.instructorId && parseInt((req.query as any).instructorId)
+                }
+            });
             next(httpResponse.Ok('Fetched successfully', courses));
         } catch (e) {
             next(e)

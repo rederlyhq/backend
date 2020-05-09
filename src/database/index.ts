@@ -1,11 +1,11 @@
 import logger from '../utilities/logger';
 import appSequelize from './app-sequelize';
 
-import user from './models/user';
-import university from './models/university';
-import session from './models/session';
-import permission from './models/permission';
-import course from './models/course';
+import User from './models/user';
+import University from './models/university';
+import Session from './models/session';
+import Permission from './models/permission';
+import Course from './models/course';
 import UniversityCurriculumPermission from './models/university_curriculum_permission';
 
 export const sync = async (): Promise<void> => {
@@ -18,11 +18,11 @@ export const sync = async (): Promise<void> => {
 };
 
 const database = {
-    user,
-    university,
-    session,
-    permission,
-    course,
+    User,
+    University,
+    Session,
+    Permission,
+    Course,
     UniversityCurriculumPermission,
     appSequelize
 }

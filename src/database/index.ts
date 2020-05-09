@@ -9,7 +9,7 @@ import permission from './models/permission';
 export const sync = async (): Promise<void> => {
     try {
         await appSequelize.authenticate();
-        await appSequelize.sync()
+        await appSequelize.sync();
     } catch (e) {
         logger.error('Could not init sequelize', e)
     }

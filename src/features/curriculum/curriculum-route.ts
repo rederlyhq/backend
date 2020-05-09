@@ -20,9 +20,7 @@ router.post('/',
             const university = await user.getUniversity();
 
             const newCurriculum = await curriculumController.createCurriculum({
-                // Database field
-                // eslint-disable-next-line @typescript-eslint/camelcase
-                university_id: university.id,
+                universityId: university.id,
                 ...req.body
             });
             next(httpResponse.Created('Curriculum successfully', newCurriculum));

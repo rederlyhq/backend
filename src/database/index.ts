@@ -17,6 +17,7 @@ import TopicCalendar from './models/topic-calendar';
 import TopicType from './models/topic-type';
 import CourseWWTopicQuestion from './models/course-ww-topic-question';
 import StudentGrade from './models/student-grade';
+import StudentWorkbook from './models/student-workbook';
 
 export const sync = async (): Promise<void> => {
     try {
@@ -44,6 +45,7 @@ const database = {
     TopicType,
     CourseWWTopicQuestion,
     StudentGrade,
+    StudentWorkbook,
     appSequelize
 }
 

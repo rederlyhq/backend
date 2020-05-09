@@ -13,7 +13,7 @@ export default class StudentGrade extends Model {
   public firstAttempts!: number;
   public latestAttempts!: number;
 
-  public getUser!: HasOneGetAssociationMixin<User>;
+  public getUser!: BelongsToGetAssociationMixin<User>;
   public getCourseWWTopicQuestion!: BelongsToGetAssociationMixin<CourseWWTopicQuestion>;
 
   public user!: User;

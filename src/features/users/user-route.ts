@@ -77,4 +77,11 @@ router.post('/logout',
         next(httpResponse.Ok("Logged out"));
     }));
 
+router.get('/',
+    authenticationMiddleware,
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        const users = await userController.list();
+        next(httpResponse.Ok(null, users));
+    }));
+
 module.exports = router;

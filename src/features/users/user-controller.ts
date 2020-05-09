@@ -37,6 +37,19 @@ class UserController {
         })
     }
 
+    list(): Bluebird<User[]> {
+        return User.findAll({
+            attributes: [
+                'id',
+                'universityId',
+                'roleId',
+                'username',
+                'email',
+                'university_id',
+            ]
+        });
+    }
+
     getUserById(id: number): Bluebird<User> {
         return User.findOne({
             where: {

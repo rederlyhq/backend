@@ -10,6 +10,7 @@ import UniversityCurriculumPermission from './models/university_curriculum_permi
 import CurriculumUnitContent from './models/curriculum_unit_content';
 import CurriculumTopicContent from './models/curriculum-topic-content';
 import CurriculumWWTopicQuestion from './models/course-ww-topic-question';
+import StudentEnrollment from './models/student-enrollment';
 
 export const sync = async (): Promise<void> => {
     try {
@@ -30,6 +31,7 @@ const database = {
     CurriculumUnitContent,
     CurriculumTopicContent,
     CurriculumWWTopicQuestion,
+    StudentEnrollment,
     appSequelize
 }
 

@@ -9,7 +9,7 @@ import Course from './models/course';
 import UniversityCurriculumPermission from './models/university_curriculum_permission';
 import CurriculumUnitContent from './models/curriculum_unit_content';
 import CurriculumTopicContent from './models/curriculum-topic-content';
-import CurriculumWWTopicQuestion from './models/course-ww-topic-question';
+import CurriculumWWTopicQuestion from './models/curriculum-ww-topic-question';
 import StudentEnrollment from './models/student-enrollment';
 import CourseUnitContent from './models/course-unit-content';
 import CourseTopicContent from './models/course-topic-content';

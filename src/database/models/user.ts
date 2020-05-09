@@ -81,3 +81,9 @@ User.belongsTo(Permission, {
   targetKey: 'id',
   as: 'role'
 });
+
+User.belongsTo(University, {
+  foreignKey: 'university_id',
+  targetKey: 'id',
+  as: 'university'
+});

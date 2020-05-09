@@ -13,6 +13,7 @@ import CurriculumWWTopicQuestion from './models/course-ww-topic-question';
 import StudentEnrollment from './models/student-enrollment';
 import CourseUnitContent from './models/course-unit-content';
 import CourseTopicContent from './models/course-topic-content';
+import TopicCalendar from './models/topic-calendar';
 
 export const sync = async (): Promise<void> => {
     try {
@@ -36,6 +37,7 @@ const database = {
     StudentEnrollment,
     CourseUnitContent,
     CourseTopicContent,
+    TopicCalendar,
     appSequelize
 }
 

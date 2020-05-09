@@ -5,8 +5,10 @@ import validate from '../../middleware/joi-validator'
 import { authenticationMiddleware } from "../../middleware/auth";
 import httpResponse from "../../utilities/http-response";
 import * as asyncHandler from 'express-async-handler'
-import { createCourseValidation, getCourseValidation } from "./course-route-validation";
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation } from "./course-route-validation";
 import Session from "../../database/models/session";
+import Boom = require("boom");
+import NotFoundError from "../../exceptions/not-found-error";
 
 router.post('/',
     authenticationMiddleware,
@@ -50,6 +52,27 @@ router.get('/:id',
             next(httpResponse.Ok('Fetched successfully', course));
         } catch (e) {
             next(e)
+        }
+    }));
+
+router.post('/enroll',
+    authenticationMiddleware,
+    validate(enrollInCourseValidation),
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        // TODO block multiple enrollment
+        try {
+            const enrollment = await courseController.enroll({
+                ...req.body,
+                enrollDate: new Date(), // TODO make model default this or use created at
+                dropDate: new Date() // TODO allow this to be null then remove this
+            })
+            next(httpResponse.Ok('Enrolled', enrollment));
+        } catch (e) {
+            if (e instanceof NotFoundError) {
+                next(Boom.notFound(e.message));
+            } else {
+                next(e);
+            }
         }
     }));
 

@@ -17,3 +17,10 @@ export const getCourseValidation = {
         id: Joi.number().required(),
     }
 }
+
+export const enrollInCourseValidation = {
+    body: {
+        courseId: Joi.number().required(),
+        userId: Joi.number().required()
+    }
+}

@@ -50,4 +50,4 @@ Session.belongsTo(User, {
     foreignKey: 'userId',
     targetKey: 'id',
     as: 'user'
-  });
+});

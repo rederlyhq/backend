@@ -1,6 +1,5 @@
 import { Model, DataTypes } from 'sequelize';
-import appSequelize from '../app-sequelize'
-import User from './user';
+import appSequelize from '../app-sequelize';
 
 export default class University extends Model {
   public id!: number; // Note that the `null assertion` `!` is required in strict mode.
@@ -37,11 +36,4 @@ University.init({
 }, {
   tableName: 'university',
   sequelize: appSequelize, // this bit is important
-});
-
-// Here we associate which actually populates out pre-declared `association` static and other methods.
-University.hasMany(User, {
-  sourceKey: 'id',
-  foreignKey: 'universityId',
-  as: 'university' // this determines the name in `associations`!
 });

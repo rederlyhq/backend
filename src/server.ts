@@ -2,9 +2,13 @@ import configurations from './configurations';
 import logger from './utilities/logger';
 import bodyParser = require('body-parser');
 import cookieParser = require('cookie-parser');
-const router = require('./routes')
+// Switching to import caused errors
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const router = require('./routes');
 
 import express = require('express');
+import { Request, Response, NextFunction } from "express";
+
 import morgan = require('morgan');
 import passport = require('passport');
 import rateLimit = require("express-rate-limit");
@@ -19,13 +23,13 @@ const {
 } = configurations.server.limiter;
 
 const app = express();
-app.use(morgan("combined", { stream: { write: message => logger.info(message) } }));
+app.use(morgan("combined", { stream: { write: (message): void => { logger.info(message) } } }));
 
 const limiter = rateLimit({
     windowMs: windowLength,
     max: maxRequests,
     handler: (req, res, next) => next(Boom.tooManyRequests())
-  });
+});
 
 app.use(limiter);
 
@@ -38,7 +42,10 @@ app.use(basePath, router);
 
 
 //General Exception Handler
-app.use((err: any, req: any, res: any, next: any) => {
+// next is a required parameter, without having it requests result in a response of object
+// TODO: err is Boom | Error | any, the any is errors that we have to define
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     logger.warn(err.message);
     if (err.output) {
         return res.status(err.output.statusCode).json(err.output.payload);
@@ -52,4 +59,11 @@ app.use((err: any, req: any, res: any, next: any) => {
     }
 });
 
-app.listen(port, () => logger.info(`Server started up and listening on port: ${port}`))
+export const listen = (): Promise<null> => {
+    return new Promise((resolve) => {
+        app.listen(port, () => {
+            logger.info(`Server started up and listening on port: ${port}`);
+            resolve();
+        });
+    });
+}

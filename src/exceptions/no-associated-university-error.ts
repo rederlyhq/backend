@@ -1,4 +1,4 @@
-export default class NoAssociatedUniversityError extends Error{
+export default class NoAssociatedUniversityError extends Error {
     public name: string;
     constructor(message: string) {
         super(message);

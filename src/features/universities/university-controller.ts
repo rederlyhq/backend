@@ -1,17 +1,13 @@
 import University from "../../database/models/university";
 import Bluebird = require("bluebird");
-const Sequelize = require('sequelize');
+import Sequelize = require('sequelize');
 
-interface getUniversitiesAssociatedWithEmail {
-    emailDomain:string
+interface GetUniversitiesAssociatedWithEmail {
+    emailDomain: string;
 }
 
 class UniversityController {
-    constructor() {
-
-    }
-
-    getUniversitiesAssociatedWithEmail(options: getUniversitiesAssociatedWithEmail): Bluebird<University[]> {
+    getUniversitiesAssociatedWithEmail(options: GetUniversitiesAssociatedWithEmail): Bluebird<University[]> {
         const {
             emailDomain
         } = options;
@@ -19,9 +15,13 @@ class UniversityController {
         return University.findAll({
             where: Sequelize.or(
                 {
+                    // Database field, disabling
+                    // eslint-disable-next-line @typescript-eslint/camelcase
                     prof_email_domain: emailDomain
                 },
                 {
+                    // Database field, disabling
+                    // eslint-disable-next-line @typescript-eslint/camelcase
                     student_email_domain: emailDomain
                 },
             )

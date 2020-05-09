@@ -24,13 +24,11 @@ router.post('/login',
         const role = await user.getRole();
         if (newSession) {
             const cookieOptions = {
-                expires: newSession.expires_at
+                expires: newSession.expiresAt
             };
             res.cookie('sessionToken', newSession.uuid, cookieOptions);
             next(httpResponse.Ok(null, {
-                // Database field
-                // eslint-disable-next-line @typescript-eslint/camelcase
-                role_id: role.id
+                roleId: role.id
             }));
         } else {
             next(Boom.badRequest('Invalid login'));
@@ -61,7 +59,7 @@ router.post('/register',
 router.get('/verify',
     validate(verifyValidation),
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-        const verified = await userController.verifyUser(req.query.verify_token as string);
+        const verified = await userController.verifyUser(req.query.verifyToken as string);
         if (verified) {
             next(httpResponse.Ok("Verified"));
         } else {

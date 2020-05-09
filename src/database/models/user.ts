@@ -1,5 +1,3 @@
-// Database fields are not camel case
-/* eslint-disable @typescript-eslint/camelcase */
 import { Model, DataTypes, HasOneGetAssociationMixin, BelongsToGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize'
 import University from './university';
@@ -8,12 +6,12 @@ import Permission from './permission';
 
 export default class User extends Model {
   public id!: number; // Note that the `null assertion` `!` is required in strict mode.
-  public university_id!: number;
-  public role_id!: number;
+  public universityId!: number;
+  public roleId!: number;
   public username!: string;
   public email!: string;
   public password!: string;
-  public verify_token?: string;
+  public verifyToken?: string;
   public verified!: boolean;
 
   public getUniversity!: HasOneGetAssociationMixin<University>;
@@ -33,11 +31,13 @@ User.init({
     autoIncrement: true,
     primaryKey: true,
   },
-  university_id: {
+  universityId: {
+    field: 'university_id',
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  role_id: {
+  roleId: {
+    field: 'role_id',
     type: DataTypes.INTEGER,
     allowNull: false,
   },  
@@ -54,7 +54,8 @@ User.init({
     type: DataTypes.TEXT,
     allowNull: false,
   },
-  verify_token: {
+  verifyToken: {
+    field: 'verify_token',
     type: DataTypes.TEXT,
     allowNull: true,
   },
@@ -76,7 +77,7 @@ User.init({
 // });
 
 User.belongsTo(Permission, {
-  foreignKey: 'role_id',
+  foreignKey: 'roleId',
   targetKey: 'id',
   as: 'role'
 });

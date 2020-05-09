@@ -15,14 +15,10 @@ class UniversityController {
         return University.findAll({
             where: Sequelize.or(
                 {
-                    // Database field, disabling
-                    // eslint-disable-next-line @typescript-eslint/camelcase
-                    prof_email_domain: emailDomain
+                    profEmailDomain: emailDomain
                 },
                 {
-                    // Database field, disabling
-                    // eslint-disable-next-line @typescript-eslint/camelcase
-                    student_email_domain: emailDomain
+                    studentEmailDomain: emailDomain
                 },
             )
         })

@@ -1,14 +1,12 @@
-// Database fields are not camel case
-/* eslint-disable @typescript-eslint/camelcase */
 import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize'
 import User from './user';
 
 export default class University extends Model {
   public id!: number; // Note that the `null assertion` `!` is required in strict mode.
-  public university_name!: string;
-  public prof_email_domain!: string;
-  public student_email_domain!: string;
+  public universityName!: string;
+  public profEmailDomain!: string;
+  public studentEmailDomain!: string;
 
   // timestamps!
   public readonly createdAt!: Date;
@@ -21,15 +19,18 @@ University.init({
     autoIncrement: true,
     primaryKey: true,
   },
-  university_name: {
+  universityName: {
+    field: 'university_name',
     type: DataTypes.TEXT,
     allowNull: false,
   },
-  prof_email_domain: {
+  profEmailDomain: {
+    field: 'prof_email_domain',
     type: DataTypes.TEXT,
     allowNull: false,
   },
-  student_email_domain: {
+  studentEmailDomain: {
+    field: 'student_email_domain',
     type: DataTypes.TEXT,
     allowNull: false,
   },
@@ -41,6 +42,6 @@ University.init({
 // Here we associate which actually populates out pre-declared `association` static and other methods.
 University.hasMany(User, {
   sourceKey: 'id',
-  foreignKey: 'university_id',
+  foreignKey: 'universityId',
   as: 'university' // this determines the name in `associations`!
 });

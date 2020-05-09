@@ -20,7 +20,7 @@ interface RegisterUserOptions {
 
 interface RegisterUserResponse {
     id: number;
-    role_id: number;
+    roleId: number;
     emailSent: boolean;
 }
 
@@ -61,13 +61,9 @@ class UserController {
     createSession(userId: number): Bluebird<Session> {
         const expiresAt: Date = moment().add(sessionLife, 'hour').toDate();
         return Session.create({
-            // Database field
-            // eslint-disable-next-line @typescript-eslint/camelcase
-            user_id: userId,
+            userId,
             uuid: uuidv4(),
-            // Database field
-            // eslint-disable-next-line @typescript-eslint/camelcase
-            expires_at: expiresAt,
+            expiresAt: expiresAt,
             active: true
         })
     }
@@ -119,24 +115,16 @@ class UserController {
         const university = universities[0];
 
 
-        if (university.student_email_domain === emailDomain) {
-            // Database field
-            // eslint-disable-next-line @typescript-eslint/camelcase
-            userObject.role_id = Role.STUDENT;
-        } else if (university.prof_email_domain === emailDomain) {
-            // Database field
-            // eslint-disable-next-line @typescript-eslint/camelcase
-            userObject.role_id = Role.PROFESSOR;
+        if (university.studentEmailDomain === emailDomain) {
+            userObject.roleId = Role.STUDENT;
+        } else if (university.profEmailDomain === emailDomain) {
+            userObject.roleId = Role.PROFESSOR;
         } else {
             throw new Error('This should not be possible since the email domain came up in the university query');
         }
 
-        // Database object
-        // eslint-disable-next-line @typescript-eslint/camelcase
-        userObject.university_id = university.id;
-        // Database object
-        // eslint-disable-next-line @typescript-eslint/camelcase
-        userObject.verify_token = uuidv4();
+        userObject.universityId = university.id;
+        userObject.verifyToken = uuidv4();
         userObject.password = await hashPassword(userObject.password);
         try {
             newUser = await this.createUser(userObject);
@@ -154,7 +142,7 @@ class UserController {
             await emailHelper.sendEmail({
                 content: `Hello,
 
-                Please verify your account by clicking this url: ${baseUrl}/users/verify?verify_token=${newUser.verify_token}
+                Please verify your account by clicking this url: ${baseUrl}/users/verify?verify_token=${newUser.verifyToken}
                 `,
                 email: newUser.email,
                 subject: 'Please veryify account'
@@ -166,9 +154,7 @@ class UserController {
 
         return {
             id: newUser.id,
-            // Database field
-            // eslint-disable-next-line @typescript-eslint/camelcase
-            role_id: newUser.role_id,
+            roleId: newUser.roleId,
             emailSent
         }
     }
@@ -178,9 +164,7 @@ class UserController {
             verified: true
         }, {
             where: {
-                // Database object
-                // eslint-disable-next-line @typescript-eslint/camelcase
-                verify_token: verifyToken,
+                verifyToken,
                 verified: false
             }
         });

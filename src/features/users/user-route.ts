@@ -11,6 +11,7 @@ import httpResponse from "../../utilities/http-response";
 import * as asyncHandler from 'express-async-handler'
 import NoAssociatedUniversityError from "../../exceptions/no-associated-university-error";
 import AlreadyExistsError from "../../exceptions/already-exists-error";
+import Session from "../../database/models/session";
 
 router.post('/login',
     validate(loginValidation),
@@ -18,13 +19,19 @@ router.post('/login',
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
         // TODO fix Request object for session
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const newSession = (req as any).session.passport.user;
+        const newSession = (req as any).session.passport.user as Session;
+        const user = await newSession.getUser();
+        const role = await user.getRole();
         if (newSession) {
             const cookieOptions = {
                 expires: newSession.expires_at
             };
             res.cookie('sessionToken', newSession.uuid, cookieOptions);
-            next(httpResponse.Ok());
+            next(httpResponse.Ok(null, {
+                // Database field
+                // eslint-disable-next-line @typescript-eslint/camelcase
+                role_id: role.id
+            }));
         } else {
             next(Boom.badRequest('Invalid login'));
         }

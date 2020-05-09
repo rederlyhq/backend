@@ -76,4 +76,27 @@ router.post('/enroll',
         }
     }));
 
+router.post('/enroll/:code',
+    authenticationMiddleware,
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        // TODO figure out session for request
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const session = (req as any).session as Session;
+
+        // TODO block multiple enrollment
+        try {
+            const enrollment = await courseController.enrollByCode({
+                code: req.params.code,
+                userId: session.userId
+            });
+            next(httpResponse.Ok('Enrolled', enrollment));
+        } catch (e) {
+            if (e instanceof NotFoundError) {
+                next(Boom.notFound(e.message));
+            } else {
+                next(e);
+            }
+        }
+    }));
+
 module.exports = router;

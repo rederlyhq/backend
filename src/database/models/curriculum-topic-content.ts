@@ -1,6 +1,6 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
-import CurriculumUnitContent from './curriculum_unit_content';
+import CurriculumUnitContent from './curriculum-unit-content';
 
 export default class CurriculumTopicContent extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.

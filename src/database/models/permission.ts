@@ -1,11 +1,9 @@
-// Database fields are not camel case
-/* eslint-disable @typescript-eslint/camelcase */
 import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize'
 
 export default class Permission extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
-    public role_name!: string;
+    public roleName!: string;
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -18,7 +16,8 @@ Permission.init({
         autoIncrement: true,
         primaryKey: true,
     },
-    role_name: {
+    roleName: {
+        field: 'role_name',
         type: DataTypes.TEXT,
         allowNull: false
     },

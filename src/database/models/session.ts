@@ -1,14 +1,12 @@
-// Database fields are not camel case
-/* eslint-disable @typescript-eslint/camelcase */
 import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 import User from './user';
 
 export default class Session extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
-    public user_id!: number; // Note that the `null assertion` `!` is required in strict mode.
+    public userId!: number; // Note that the `null assertion` `!` is required in strict mode.
     public uuid!: string;
-    public expires_at!: Date;
+    public expiresAt!: Date;
     public active!: boolean;
 
     public getUser!: BelongsToGetAssociationMixin<User>;
@@ -24,7 +22,8 @@ Session.init({
         autoIncrement: true,
         primaryKey: true,
     },
-    user_id: {
+    userId: {
+        field: 'user_id',
         type: DataTypes.INTEGER,
         allowNull: false
     },
@@ -32,7 +31,8 @@ Session.init({
         type: DataTypes.TEXT,
         allowNull: false
     },
-    expires_at: {
+    expiresAt: {
+        field: 'expires_at',
         type: DataTypes.DATE,
         allowNull: false
     },
@@ -47,7 +47,7 @@ Session.init({
 });
 
 Session.belongsTo(User, {
-    foreignKey: 'user_id',
+    foreignKey: 'userId',
     targetKey: 'id',
     as: 'user'
   });

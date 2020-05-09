@@ -5,17 +5,17 @@ const {
     costFactor
 } = configurations.auth;
 
-export function hashPassword(password: string) {
+export function hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, costFactor)
-    .then((result:any) => {
-        if(result) {
-            return result;
-        } else {
-            throw new Error('No result obtained from bcrypt');
-        }
-    })
+        .then((result: string) => {
+            if (result) {
+                return result;
+            } else {
+                throw new Error('No result obtained from bcrypt');
+            }
+        })
 }
 
-export function comparePassword(password:string, hash:string) {
+export function comparePassword(password: string, hash: string): Promise<boolean> {
     return bcrypt.compare(password, hash);
 }

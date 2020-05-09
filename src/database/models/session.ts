@@ -1,7 +1,7 @@
 // Database fields are not camel case
 /* eslint-disable @typescript-eslint/camelcase */
 import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
-import appSequelize from '../app-sequelize'
+import appSequelize from '../app-sequelize';
 import User from './user';
 
 export default class Session extends Model {
@@ -12,8 +12,6 @@ export default class Session extends Model {
     public active!: boolean;
 
     public getUser!: BelongsToGetAssociationMixin<User>;
-
-    public readonly user!: User;  
 
     // timestamps!
     public readonly createdAt!: Date;

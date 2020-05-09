@@ -27,7 +27,7 @@ CurriculumWWTopicQuestion.init({
     field: 'curriculum_topic_content_id',
     type: DataTypes.INTEGER,
     allowNull: false,
-  },  
+  },
   problemNumber: {
     field: 'problem_number',
     type: DataTypes.INTEGER,

@@ -1,12 +1,10 @@
-// Database fields are not camel case
-/* eslint-disable @typescript-eslint/camelcase */
 import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize'
 
 export default class Curriculum extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
-    public university_id!: number;
-    public curriculum_name!: string;
+    public universityId!: number;
+    public name!: string;
     public active!: boolean;
     public public!: boolean;
 
@@ -21,11 +19,12 @@ Curriculum.init({
         autoIncrement: true,
         primaryKey: true,
     },
-    university_id: {
+    universityId: {
+        field: 'university_id',
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    curriculum_name: {
+    name: {
         type: DataTypes.TEXT,
         allowNull: false
     },

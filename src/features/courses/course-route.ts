@@ -20,12 +20,8 @@ router.post('/',
             const university = await user.getUniversity();
 
             const newCourse = await courseController.createCourse({
-                // Database field
-                // eslint-disable-next-line @typescript-eslint/camelcase
-                instructor_id: user.id,
-                // Database field
-                // eslint-disable-next-line @typescript-eslint/camelcase
-                university_id: university.id,
+                instructorId: user.id,
+                universityId: university.id,
                 ...req.body
             });
             next(httpResponse.Created('Course successfully', newCourse));

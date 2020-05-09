@@ -1,20 +1,18 @@
-// Database fields are not camel case
-/* eslint-disable @typescript-eslint/camelcase */
 import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize'
 import User from './user';
 
 export default class Course extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
-    public curriculum_id!: number;
-    public instructor_id!: number;
-    public university_id!: number;
-    public course_name!: string;
-    public course_code!: string;
-    public course_start!: Date;
-    public course_end!: Date;
-    public section_code!: string;
-    public semester_code!: string;
+    public curriculumId!: number;
+    public instructorId!: number;
+    public universityId!: number;
+    public name!: string;
+    public code!: string;
+    public start!: Date;
+    public end!: Date;
+    public sectionCode!: string;
+    public semesterCode!: string;
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -27,39 +25,44 @@ Course.init({
         autoIncrement: true,
         primaryKey: true,
     },
-    curriculum_id: {
+    curriculumId: {
+        field: 'curriculum_id',
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    instructor_id: {
+    instructorId: {
+        field: 'instructor_id',
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    university_id: {
+    universityId: {
+        field: 'university_id',
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    course_name: {
+    name: {
         type: DataTypes.TEXT,
         allowNull: false
     },
-    course_code: {
+    code: {
         type: DataTypes.TEXT,
         allowNull: false
     },
-    course_start: {
+    start: {
         type: DataTypes.DATE,
         allowNull: false
     },
-    course_end: {
+    end: {
         type: DataTypes.DATE,
         allowNull: false
     },
-    section_code: {
+    sectionCode: {
+        field: 'section_code',
         type: DataTypes.TEXT,
         allowNull: false
     },
-    semester_code: {
+    semesterCode: {
+        field: 'semester_code',
         type: DataTypes.TEXT,
         allowNull: false
     },
@@ -69,7 +72,7 @@ Course.init({
 });
 
 Course.belongsTo(User, {
-    foreignKey: 'instructor_id',
+    foreignKey: 'instructorId',
     targetKey: 'id',
     as: 'instructor'
   });

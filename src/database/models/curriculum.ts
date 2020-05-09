@@ -19,6 +19,7 @@ Curriculum.init({
         autoIncrement: true,
         primaryKey: true,
     },
+    // TODO switch to mapping table
     universityId: {
         field: 'university_id',
         type: DataTypes.INTEGER,

@@ -40,7 +40,7 @@ User.init({
     field: 'role_id',
     type: DataTypes.INTEGER,
     allowNull: false,
-  },  
+  },
   username: {
     type: DataTypes.TEXT,
     allowNull: false,

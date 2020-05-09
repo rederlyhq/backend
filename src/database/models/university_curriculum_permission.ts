@@ -4,50 +4,50 @@ import University from './university';
 import Curriculum from './curriculum';
 
 export default class UniversityCurriculumPermission extends Model {
-  public id!: number; // Note that the `null assertion` `!` is required in strict mode.
-  public universityId!: number;
-  public curriculumId!: number;
+    public id!: number; // Note that the `null assertion` `!` is required in strict mode.
+    public universityId!: number;
+    public curriculumId!: number;
 
-  public getUniversity!: HasOneGetAssociationMixin<University>;
-  public getCurriculum!: BelongsToGetAssociationMixin<Curriculum>;
+    public getUniversity!: HasOneGetAssociationMixin<University>;
+    public getCurriculum!: BelongsToGetAssociationMixin<Curriculum>;
 
-  public readonly university!: University;
-  public readonly curriculum!: Curriculum;
+    public readonly university!: University;
+    public readonly curriculum!: Curriculum;
 
-  // timestamps!
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+    // timestamps!
+    public readonly createdAt!: Date;
+    public readonly updatedAt!: Date;
 }
 
 UniversityCurriculumPermission.init({
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true,
-  },
-  universityId: {
-    field: 'university_id',
-    type: DataTypes.INTEGER,
-    allowNull: false,
-  },
-  curriculumId: {
-    field: 'curriculum_id',
-    type: DataTypes.INTEGER,
-    allowNull: false,
-  },  
+    id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+    },
+    universityId: {
+        field: 'university_id',
+        type: DataTypes.INTEGER,
+        allowNull: false,
+    },
+    curriculumId: {
+        field: 'curriculum_id',
+        type: DataTypes.INTEGER,
+        allowNull: false,
+    },
 }, {
-  tableName: 'university_curriculum_permission',
-  sequelize: appSequelize, // this bit is important
+    tableName: 'university_curriculum_permission',
+    sequelize: appSequelize, // this bit is important
 });
 
 UniversityCurriculumPermission.belongsTo(Curriculum, {
-  foreignKey: 'curriculumId',
-  targetKey: 'id',
-  as: 'curriculum'
+    foreignKey: 'curriculumId',
+    targetKey: 'id',
+    as: 'curriculum'
 });
 
 UniversityCurriculumPermission.belongsTo(University, {
-  foreignKey: 'university_id',
-  targetKey: 'id',
-  as: 'university'
+    foreignKey: 'university_id',
+    targetKey: 'id',
+    as: 'university'
 });

@@ -75,4 +75,4 @@ Course.belongsTo(User, {
     foreignKey: 'instructorId',
     targetKey: 'id',
     as: 'instructor'
-  });
+});

@@ -2,6 +2,7 @@ import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize'
 import CurriculumTopicContent from './curriculum-topic-content';
 import TopicCalendar from './topic-calendar';
+import TopicType from './topic-type';
 
 export default class CourseTopicContent extends Model {
   public id!: number; // Note that the `null assertion` `!` is required in strict mode.
@@ -13,9 +14,10 @@ export default class CourseTopicContent extends Model {
 
   public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
   public getTopicCalendar!: BelongsToGetAssociationMixin<TopicCalendar>;
+  public getTopicType!: BelongsToGetAssociationMixin<TopicType>;
 
 public readonly curriculumTopicContent!: CurriculumTopicContent;
-// public readonly topicType!: TopicType;
+public readonly topicType!: TopicType;
   public readonly topicCalendar!: TopicCalendar;
 
   // timestamps!
@@ -69,4 +71,8 @@ CourseTopicContent.belongsTo(TopicCalendar, {
     as: 'topicCalendar'
   });
 
-// TODO other associations
+  CourseTopicContent.belongsTo(TopicType, {
+    foreignKey: 'topicTypeId',
+    targetKey: 'id',
+    as: 'topicType'
+  });

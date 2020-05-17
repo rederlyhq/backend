@@ -40,7 +40,7 @@ router.post('/register',
     validate(registerValidation),
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const baseUrl = `${req.protocol}://${req.get('host')}/${configurations.server.basePath}`;
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
             const newUser = await userController.registerUser({
                 userObject: req.body,
                 baseUrl

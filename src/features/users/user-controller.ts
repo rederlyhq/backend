@@ -154,10 +154,10 @@ class UserController {
             await emailHelper.sendEmail({
                 content: `Hello,
 
-                Please verify your account by clicking this url: ${baseUrl}/users/verify?verify_token=${newUser.verifyToken}
+                Please verify your account by clicking this url: ${baseUrl}/verify/${newUser.verifyToken}
                 `,
                 email: newUser.email,
-                subject: 'Please veryify account'
+                subject: 'Please verify account'
             });
             emailSent = configurations.email.enabled;
         } catch (e) {

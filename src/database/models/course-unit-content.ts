@@ -1,43 +1,48 @@
-import { Model, DataTypes } from 'sequelize';
+import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize'
+import Course from './course';
 
-export default class Curriculum extends Model {
+export default class CourseUnitContent extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
-    public universityId!: number;
+    public courseId!: number;
     public name!: string;
     public active!: boolean;
-    public public!: boolean;
+
+    public getCourse!: BelongsToGetAssociationMixin<Course>;
+
+    public readonly course!: Course;
 
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 }
 
-Curriculum.init({
+CourseUnitContent.init({
     id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
     },
-    // TODO switch to mapping table
-    universityId: {
-        field: 'university_id',
+    courseId: {
+        field: 'course_id',
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,
     },
     name: {
         type: DataTypes.TEXT,
-        allowNull: false
+        allowNull: false,
     },
     active: {
         type: DataTypes.BOOLEAN,
-        allowNull: false
-    },
-    public: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false
+        allowNull: false,
     },
 }, {
-    tableName: 'curriculum',
+    tableName: 'course_unit_content',
     sequelize: appSequelize, // this bit is important
+});
+
+CourseUnitContent.belongsTo(Course, {
+    foreignKey: 'courseId',
+    targetKey: 'id',
+    as: 'course'
 });

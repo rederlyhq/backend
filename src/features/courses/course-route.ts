@@ -5,8 +5,10 @@ import validate from '../../middleware/joi-validator'
 import { authenticationMiddleware } from "../../middleware/auth";
 import httpResponse from "../../utilities/http-response";
 import * as asyncHandler from 'express-async-handler'
-import { createCourseValidation, getCourseValidation } from "./course-route-validation";
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation } from "./course-route-validation";
 import Session from "../../database/models/session";
+import Boom = require("boom");
+import NotFoundError from "../../exceptions/not-found-error";
 
 router.post('/',
     authenticationMiddleware,
@@ -20,12 +22,8 @@ router.post('/',
             const university = await user.getUniversity();
 
             const newCourse = await courseController.createCourse({
-                // Database field
-                // eslint-disable-next-line @typescript-eslint/camelcase
-                instructor_id: user.id,
-                // Database field
-                // eslint-disable-next-line @typescript-eslint/camelcase
-                university_id: university.id,
+                instructorId: user.id,
+                universityId: university.id,
                 ...req.body
             });
             next(httpResponse.Created('Course successfully', newCourse));
@@ -38,7 +36,11 @@ router.get('/',
     authenticationMiddleware,
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const courses = await courseController.getCourses();
+            const courses = await courseController.getCourses({
+                filter: {
+                    instructorId: req.query.instructorId && parseInt((req.query as any).instructorId)
+                }
+            });
             next(httpResponse.Ok('Fetched successfully', courses));
         } catch (e) {
             next(e)
@@ -54,6 +56,50 @@ router.get('/:id',
             next(httpResponse.Ok('Fetched successfully', course));
         } catch (e) {
             next(e)
+        }
+    }));
+
+router.post('/enroll',
+    authenticationMiddleware,
+    validate(enrollInCourseValidation),
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        // TODO block multiple enrollment
+        try {
+            const enrollment = await courseController.enroll({
+                ...req.body,
+                enrollDate: new Date(), // TODO make model default this or use created at
+                dropDate: new Date() // TODO allow this to be null then remove this
+            })
+            next(httpResponse.Ok('Enrolled', enrollment));
+        } catch (e) {
+            if (e instanceof NotFoundError) {
+                next(Boom.notFound(e.message));
+            } else {
+                next(e);
+            }
+        }
+    }));
+
+router.post('/enroll/:code',
+    authenticationMiddleware,
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        // TODO figure out session for request
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const session = (req as any).session as Session;
+
+        // TODO block multiple enrollment
+        try {
+            const enrollment = await courseController.enrollByCode({
+                code: req.params.code,
+                userId: session.userId
+            });
+            next(httpResponse.Ok('Enrolled', enrollment));
+        } catch (e) {
+            if (e instanceof NotFoundError) {
+                next(Boom.notFound(e.message));
+            } else {
+                next(e);
+            }
         }
     }));
 

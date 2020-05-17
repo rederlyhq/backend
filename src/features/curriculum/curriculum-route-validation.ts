@@ -1,10 +1,8 @@
-// Allowing camel case for db fields
-/* eslint-disable @typescript-eslint/camelcase */
 import * as Joi from 'joi';
 
 export const createCurriculumValidation = {
     body: {
-        curriculum_name: Joi.string().required(),
+        name: Joi.string().required(),
         active: Joi.boolean().required(),
         public: Joi.boolean().required(),
     }

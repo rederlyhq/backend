@@ -24,13 +24,11 @@ router.post('/login',
         const role = await user.getRole();
         if (newSession) {
             const cookieOptions = {
-                expires: newSession.expires_at
+                expires: newSession.expiresAt
             };
             res.cookie('sessionToken', newSession.uuid, cookieOptions);
             next(httpResponse.Ok(null, {
-                // Database field
-                // eslint-disable-next-line @typescript-eslint/camelcase
-                role_id: role.id,
+                roleId: role.id,
                 name: user.username
             }));
         } else {
@@ -42,7 +40,7 @@ router.post('/register',
     validate(registerValidation),
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const baseUrl = `${req.protocol}://${req.get('host')}/${configurations.server.basePath}`;
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
             const newUser = await userController.registerUser({
                 userObject: req.body,
                 baseUrl
@@ -62,7 +60,7 @@ router.post('/register',
 router.get('/verify',
     validate(verifyValidation),
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-        const verified = await userController.verifyUser(req.query.verify_token as string);
+        const verified = await userController.verifyUser(req.query.verifyToken as string);
         if (verified) {
             next(httpResponse.Ok("Verified"));
         } else {
@@ -78,6 +76,13 @@ router.post('/logout',
         await userController.logout((req as any).session.dataValues.uuid);
         res.clearCookie('sessionToken');
         next(httpResponse.Ok("Logged out"));
+    }));
+
+router.get('/',
+    authenticationMiddleware,
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        const users = await userController.list();
+        next(httpResponse.Ok(null, users));
     }));
 
 module.exports = router;

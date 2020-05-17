@@ -16,7 +16,7 @@ export const validateSession = async (uuid: string): Promise<Session> => {
             throw Boom.unauthorized(response);
         } else {
             const timeNow = moment();
-            const expiresAt = moment(session.expires_at);
+            const expiresAt = moment(session.expiresAt);
             if (timeNow.isAfter(expiresAt)) {
                 const response = 'Session expired';
                 logger.warn(response);

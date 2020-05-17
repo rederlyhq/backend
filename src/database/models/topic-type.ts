@@ -1,28 +1,21 @@
 import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize'
 
-export default class Permission extends Model {
+export default class TopicType extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
-    public roleName!: string;
 
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 }
 
-Permission.init({
+TopicType.init({
     id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
     },
-    roleName: {
-        field: 'role_name',
-        type: DataTypes.TEXT,
-        allowNull: false
-    },
 }, {
-    tableName: 'permission',
+    tableName: 'topic_type',
     sequelize: appSequelize, // this bit is important
 });
-

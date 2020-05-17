@@ -1,11 +1,23 @@
 import logger from '../utilities/logger';
 import appSequelize from './app-sequelize';
 
-import user from './models/user';
-import university from './models/university';
-import session from './models/session';
-import permission from './models/permission';
-import course from './models/course';
+import User from './models/user';
+import University from './models/university';
+import Session from './models/session';
+import Permission from './models/permission';
+import Course from './models/course';
+import UniversityCurriculumPermission from './models/university-curriculum-permission';
+import CurriculumUnitContent from './models/curriculum-unit-content';
+import CurriculumTopicContent from './models/curriculum-topic-content';
+import CurriculumWWTopicQuestion from './models/curriculum-ww-topic-question';
+import StudentEnrollment from './models/student-enrollment';
+import CourseUnitContent from './models/course-unit-content';
+import CourseTopicContent from './models/course-topic-content';
+import TopicCalendar from './models/topic-calendar';
+import TopicType from './models/topic-type';
+import CourseWWTopicQuestion from './models/course-ww-topic-question';
+import StudentGrade from './models/student-grade';
+import StudentWorkbook from './models/student-workbook';
 
 export const sync = async (): Promise<void> => {
     try {
@@ -17,11 +29,23 @@ export const sync = async (): Promise<void> => {
 };
 
 const database = {
-    user,
-    university,
-    session,
-    permission,
-    course,
+    User,
+    University,
+    Session,
+    Permission,
+    Course,
+    UniversityCurriculumPermission,
+    CurriculumUnitContent,
+    CurriculumTopicContent,
+    CurriculumWWTopicQuestion,
+    StudentEnrollment,
+    CourseUnitContent,
+    CourseTopicContent,
+    TopicCalendar,
+    TopicType,
+    CourseWWTopicQuestion,
+    StudentGrade,
+    StudentWorkbook,
     appSequelize
 }
 

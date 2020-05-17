@@ -1,21 +1,26 @@
-// Allowing camel case for db fields
-/* eslint-disable @typescript-eslint/camelcase */
 import * as Joi from 'joi';
 
 export const createCourseValidation = {
     body: {
-        curriculum_id: Joi.number().required(),
-        course_name: Joi.string().required(),
-        course_code: Joi.string().required(),
-        course_start: Joi.date().required(),
-        course_end: Joi.date().required(),
-        section_code: Joi.string().required(),
-        semester_code: Joi.string().required()
+        curriculumId: Joi.number().required(),
+        name: Joi.string().required(),
+        code: Joi.string().required(),
+        start: Joi.date().required(),
+        end: Joi.date().required(),
+        sectionCode: Joi.string().required(),
+        semesterCode: Joi.string().required()
     }
 }
 
 export const getCourseValidation = {
     params: {
         id: Joi.number().required(),
+    }
+}
+
+export const enrollInCourseValidation = {
+    body: {
+        courseId: Joi.number().required(),
+        userId: Joi.number().required()
     }
 }

@@ -12,6 +12,7 @@ import NoAssociatedUniversityError from '../../exceptions/no-associated-universi
 import { UniqueConstraintError } from 'sequelize';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import Role from '../permissions/roles';
+import { ListOptions } from '../../generic-interfaces/list-options';
 
 interface RegisterUserOptions {
     userObject: User;
@@ -22,6 +23,16 @@ interface RegisterUserResponse {
     id: number;
     roleId: number;
     emailSent: boolean;
+}
+
+interface ListUserFilter {
+    userIds: number[] | number;
+}
+
+interface EmailOptions {
+    listUsersFilter: ListUserFilter;
+    content: string;
+    subject: string;
 }
 
 const {
@@ -37,16 +48,49 @@ class UserController {
         })
     }
 
-    list(): Bluebird<User[]> {
+    list(listOptions?: ListOptions<ListUserFilter>): Bluebird<User[]> {
+        // Dynamic sequelize where object
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const where: any = {};
+        if (listOptions) {
+            if(listOptions.filters) {
+                if(listOptions.filters.userIds) {
+                    where.id = listOptions.filters.userIds
+                }
+            }
+        }
         return User.findAll({
+            where,
             attributes: [
                 'id',
                 'universityId',
                 'roleId',
                 'username',
                 'email',
+                'university_id',
             ]
         });
+    }
+
+    async email(emailOptions?: EmailOptions): Promise<number[]> {
+        const users = await this.list({
+            filters: emailOptions.listUsersFilter
+        });
+
+        // TODO see if there is a less impactfull way to send out emails to multiple recipients
+        // I tried bcc: users.map(user => user.email) but I got an error that an email address was required
+        const emailPromises = [];
+        for(let i = 0; i < users.length; i++) {
+            emailPromises.push(emailHelper.sendEmail({
+                content: emailOptions.content,
+                subject: emailOptions.subject,
+                email: users[i].email
+            }));
+        }
+
+        await Promise.all(emailPromises);
+
+        return users.map(user => user.id);
     }
 
     getUserById(id: number): Bluebird<User> {

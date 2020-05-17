@@ -1,9 +1,8 @@
 import { Request, Response, NextFunction } from "express";
-import configurations from '../../configurations';
 import userController from "./user-controller";
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator'
-import { registerValidation, loginValidation, verifyValidation } from "./user-route-validation";
+import { registerValidation, loginValidation, verifyValidation, listUsers, emailUsers } from "./user-route-validation";
 import Boom = require("boom");
 import passport = require("passport");
 import { authenticationMiddleware } from "../../middleware/auth";
@@ -70,6 +69,7 @@ router.get('/verify',
 
 router.post('/logout',
     authenticationMiddleware,
+    // validate(), // TODO: should we have a no param validate to block all parameters?
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
         // TODO fix Request object for session
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -80,9 +80,30 @@ router.post('/logout',
 
 router.get('/',
     authenticationMiddleware,
+    validate(listUsers),
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-        const users = await userController.list();
+        const users = await userController.list({
+            filters: {
+                // TODO set types in Request
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                userIds: (req.query as any).userIds
+            }
+        });
         next(httpResponse.Ok(null, users));
+    }));
+
+router.post('/email',
+    authenticationMiddleware,
+    validate(emailUsers),
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        const result = await userController.email({
+            listUsersFilter: {
+                userIds: req.body.userIds
+            },
+            content: req.body.content,
+            subject: req.body.subject
+        });
+        next(httpResponse.Ok(null, result));
     }));
 
 module.exports = router;

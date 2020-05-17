@@ -42,6 +42,12 @@ export default class User extends Model {
       targetKey: 'id',
       as: 'university'
     });
+
+    User.hasMany(StudentEnrollment, {
+      foreignKey: 'user_id',
+      sourceKey: 'id',
+      as: 'courseEnrollments'
+    });
     /* eslint-enable @typescript-eslint/no-use-before-define */
   }
 }
@@ -93,3 +99,4 @@ User.init({
 import University from './university';
 // import Session from './session';
 import Permission from './permission';
+import StudentEnrollment from './student-enrollment';

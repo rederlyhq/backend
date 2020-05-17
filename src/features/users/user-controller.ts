@@ -29,7 +29,7 @@ interface RegisterUserResponse {
 
 interface ListUserFilter {
     userIds?: number[] | number;
-    courseId?: number[] | number;
+    courseId?: number;
 }
 
 interface EmailOptions {

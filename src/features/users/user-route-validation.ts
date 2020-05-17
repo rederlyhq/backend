@@ -32,7 +32,7 @@ export const listUsers: ValidationObject = {
     params: {},
     query: {
         userIds: Joi.alternatives().try(Joi.array().items(Joi.number()), Joi.number()).optional(),
-        courseId: Joi.number().optional()
+        courseId: Joi.number().optional(),
     },
     body: {},
 }

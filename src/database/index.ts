@@ -28,7 +28,7 @@ export const sync = async (): Promise<void> => {
     }
 };
 
-const database = {
+const models = [
     User,
     University,
     Session,
@@ -46,6 +46,15 @@ const database = {
     CourseWWTopicQuestion,
     StudentGrade,
     StudentWorkbook,
+]
+models.forEach((model: any) => {
+    if(typeof model.createAssociations === 'function') {
+        model.createAssociations();
+    }
+})
+
+const database = {
+    ...models,
     appSequelize
 }
 

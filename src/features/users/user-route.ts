@@ -11,7 +11,6 @@ import * as asyncHandler from 'express-async-handler'
 import NoAssociatedUniversityError from "../../exceptions/no-associated-university-error";
 import AlreadyExistsError from "../../exceptions/already-exists-error";
 import Session from "../../database/models/session";
-import emailHelper from "../../utilities/email-helper";
 
 router.post('/login',
     validate(loginValidation),
@@ -97,23 +96,14 @@ router.post('/email',
     authenticationMiddleware,
     validate(emailUsers),
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-        const users = await userController.list({
-            filters: {
+        const result = await userController.email({
+            listUsersFilter: {
                 userIds: req.body.userIds
-            }
+            },
+            content: req.body.content,
+            subject: req.body.subject
         });
-        // TODO switch this from loop to bcc?
-        const emailPromises = [];
-        for(let i = 0; i < users.length; i++) {
-            emailPromises.push(emailHelper.sendEmail({
-                content: req.body.content as string,
-                subject: req.body.subject as string,
-                email: users[i].email
-            }));
-        }
-        await Promise.all(emailPromises);
-        // TODO change this to indicate problems
-        next(httpResponse.Ok(null, users.map(user => user.id)));
+        next(httpResponse.Ok(null, result));
     }));
 
 module.exports = router;

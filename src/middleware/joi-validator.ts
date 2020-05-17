@@ -13,6 +13,7 @@ export default function validate(schema: Joi.SchemaLike, options: Joi.Validation
         const toValidate: any = {};
         if (!schema) {
             next();
+            return;
         }
 
         ['params', 'body', 'query'].forEach((key: string) => {

@@ -5,7 +5,8 @@ export default class User extends Model {
   public id!: number; // Note that the `null assertion` `!` is required in strict mode.
   public universityId!: number;
   public roleId!: number;
-  public username!: string;
+  public firstName!: string;
+  public lastName!: string;
   public email!: string;
   public password!: string;
   public verifyToken?: string;
@@ -68,7 +69,13 @@ User.init({
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  username: {
+  firstName: {
+    field: 'first_name',
+    type: DataTypes.TEXT,
+    allowNull: false,
+  },
+  lastName: {
+    field: 'last_name',
     type: DataTypes.TEXT,
     allowNull: false,
   },

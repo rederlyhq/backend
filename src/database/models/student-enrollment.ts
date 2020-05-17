@@ -1,7 +1,5 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
-import appSequelize from '../app-sequelize'
-import Course from './course';
-import User from './user';
+import appSequelize from '../app-sequelize';
 
 export default class StudentEnrollment extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
@@ -19,6 +17,23 @@ export default class StudentEnrollment extends Model {
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
+
+    static createAssociations(): void {
+        // This is a hack to add the associations later to avoid cyclic dependencies
+        /* eslint-disable @typescript-eslint/no-use-before-define */
+        StudentEnrollment.belongsTo(Course, {
+            foreignKey: 'courseId',
+            targetKey: 'id',
+            as: 'course'
+        });
+
+        StudentEnrollment.belongsTo(User, {
+            foreignKey: 'userId',
+            targetKey: 'id',
+            as: 'user'
+        });
+        /* eslint-enable @typescript-eslint/no-use-before-define */
+    }
 }
 
 StudentEnrollment.init({
@@ -52,14 +67,5 @@ StudentEnrollment.init({
     sequelize: appSequelize, // this bit is important
 });
 
-StudentEnrollment.belongsTo(Course, {
-    foreignKey: 'courseId',
-    targetKey: 'id',
-    as: 'course'
-});
-
-StudentEnrollment.belongsTo(User, {
-    foreignKey: 'userId',
-    targetKey: 'id',
-    as: 'user'
-});
+import Course from './course';
+import User from './user';

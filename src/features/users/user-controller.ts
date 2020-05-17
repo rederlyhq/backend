@@ -13,6 +13,8 @@ import { UniqueConstraintError } from 'sequelize';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import Role from '../permissions/roles';
 import { ListOptions } from '../../generic-interfaces/list-options';
+import StudentEnrollment from '../../database/models/student-enrollment';
+import Course from '../../database/models/course';
 
 interface RegisterUserOptions {
     userObject: User;
@@ -26,7 +28,8 @@ interface RegisterUserResponse {
 }
 
 interface ListUserFilter {
-    userIds: number[] | number;
+    userIds?: number[] | number;
+    courseId?: number;
 }
 
 interface EmailOptions {
@@ -48,19 +51,36 @@ class UserController {
         })
     }
 
-    list(listOptions?: ListOptions<ListUserFilter>): Bluebird<User[]> {
+    list(listOptions?: ListOptions<ListUserFilter>): Promise<User[]> {
         // Dynamic sequelize where object
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const where: any = {};
+        // Dynamic sequelize where object
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const include: any = [];
         if (listOptions) {
             if(listOptions.filters) {
                 if(listOptions.filters.userIds) {
                     where.id = listOptions.filters.userIds
                 }
+                if(listOptions.filters.courseId) {
+                    include.push({
+                        model: StudentEnrollment,
+                        attributes: [],
+                        as: 'courseEnrollments',
+                        include: [{
+                            model: Course,
+                            attributes: [],
+                            as: 'course'
+                        }]
+                    })
+                    where['$courseEnrollments.course.id$'] = listOptions.filters.courseId;
+                }
             }
         }
         return User.findAll({
             where,
+            include,
             attributes: [
                 'id',
                 'universityId',

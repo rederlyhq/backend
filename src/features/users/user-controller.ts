@@ -12,6 +12,7 @@ import NoAssociatedUniversityError from '../../exceptions/no-associated-universi
 import { UniqueConstraintError } from 'sequelize';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import Role from '../permissions/roles';
+import { ListOptions } from '../../generic-interfaces/list-options';
 
 interface RegisterUserOptions {
     userObject: User;
@@ -22,6 +23,10 @@ interface RegisterUserResponse {
     id: number;
     roleId: number;
     emailSent: boolean;
+}
+
+interface ListUserFilter {
+    userIds: number[] | number;
 }
 
 const {
@@ -37,7 +42,31 @@ class UserController {
         })
     }
 
-    list(): Bluebird<User[]> {
+    list(listOptions?: ListOptions<ListUserFilter>): Bluebird<User[]> {
+        // Dynamic sequelize where object
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const where: any = {};
+        if (listOptions) {
+            if(listOptions.filters) {
+                if(listOptions.filters.userIds) {
+                    where.id = listOptions.filters.userIds
+                }
+            }
+        }
+        return User.findAll({
+            where,
+            attributes: [
+                'id',
+                'universityId',
+                'roleId',
+                'username',
+                'email',
+                'university_id',
+            ]
+        });
+    }
+
+    email(): Bluebird<User[]> {
         return User.findAll({
             attributes: [
                 'id',

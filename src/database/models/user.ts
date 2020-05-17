@@ -1,8 +1,5 @@
 import { Model, DataTypes, HasOneGetAssociationMixin, BelongsToGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize'
-import University from './university';
-// import Session from './session';
-import Permission from './permission';
 
 export default class User extends Model {
   public id!: number; // Note that the `null assertion` `!` is required in strict mode.
@@ -23,6 +20,36 @@ export default class User extends Model {
   // timestamps!
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+
+  static createAssociations(): void {
+    // This is a hack to add the associations later to avoid cyclic dependencies
+    /* eslint-disable @typescript-eslint/no-use-before-define */
+    // // Here we associate which actually populates out pre-declared `association` static and other methods.
+    // User.hasMany(Session, {
+    //   sourceKey: 'id',
+    //   foreignKey: 'user_id',
+    //   as: 'user' // this determines the name in `associations`!
+    // });
+
+    User.belongsTo(Permission, {
+      foreignKey: 'roleId',
+      targetKey: 'id',
+      as: 'role'
+    });
+
+    User.belongsTo(University, {
+      foreignKey: 'universityId',
+      targetKey: 'id',
+      as: 'university'
+    });
+
+    User.hasMany(StudentEnrollment, {
+      foreignKey: 'user_id',
+      sourceKey: 'id',
+      as: 'courseEnrollments'
+    });
+    /* eslint-enable @typescript-eslint/no-use-before-define */
+  }
 }
 
 User.init({
@@ -69,21 +96,7 @@ User.init({
   sequelize: appSequelize, // this bit is important
 });
 
-// // Here we associate which actually populates out pre-declared `association` static and other methods.
-// User.hasMany(Session, {
-//   sourceKey: 'id',
-//   foreignKey: 'user_id',
-//   as: 'user' // this determines the name in `associations`!
-// });
-
-User.belongsTo(Permission, {
-  foreignKey: 'roleId',
-  targetKey: 'id',
-  as: 'role'
-});
-
-User.belongsTo(University, {
-  foreignKey: 'universityId',
-  targetKey: 'id',
-  as: 'university'
-});
+import University from './university';
+// import Session from './session';
+import Permission from './permission';
+import StudentEnrollment from './student-enrollment';

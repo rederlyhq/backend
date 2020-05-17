@@ -5,7 +5,7 @@ import validate from '../../middleware/joi-validator'
 import { authenticationMiddleware } from "../../middleware/auth";
 import httpResponse from "../../utilities/http-response";
 import * as asyncHandler from 'express-async-handler'
-import { createCourseValidation, getCourseValidation, enrollInCourseValidation } from "./course-route-validation";
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation } from "./course-route-validation";
 import Session from "../../database/models/session";
 import Boom = require("boom");
 import NotFoundError from "../../exceptions/not-found-error";
@@ -34,11 +34,15 @@ router.post('/',
 
 router.get('/',
     authenticationMiddleware,
+    validate(listCoursesValidation),
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
         try {
             const courses = await courseController.getCourses({
                 filter: {
-                    instructorId: req.query.instructorId && parseInt((req.query as any).instructorId)
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    instructorId: (req.query as any).instructorId as number,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    enrolledUserId: (req.query as any).enrolledUserId as number,
                 }
             });
             next(httpResponse.Ok('Fetched successfully', courses));

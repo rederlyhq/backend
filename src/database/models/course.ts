@@ -1,8 +1,24 @@
 import { Model, DataTypes } from 'sequelize';
-import appSequelize from '../app-sequelize'
-import User from './user';
+import appSequelize from '../app-sequelize';
 
 export default class Course extends Model {
+    static createAssociations(): void {
+        // This is a hack to add the associations later to avoid cyclic dependencies
+        /* eslint-disable @typescript-eslint/no-use-before-define */
+        Course.belongsTo(User, {
+            foreignKey: 'instructorId',
+            targetKey: 'id',
+            as: 'instructor'
+        });
+
+        Course.hasMany(StudentEnrollment, {
+            foreignKey: 'courseId',
+            sourceKey: 'id',
+            as: 'enrolledStudents'
+        });
+        /* eslint-enable @typescript-eslint/no-use-before-define */
+    }
+
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
     public curriculumId!: number;
     public instructorId!: number;
@@ -71,8 +87,6 @@ Course.init({
     sequelize: appSequelize, // this bit is important
 });
 
-Course.belongsTo(User, {
-    foreignKey: 'instructorId',
-    targetKey: 'id',
-    as: 'instructor'
-});
+import User from './user';
+import StudentEnrollment from './student-enrollment';
+

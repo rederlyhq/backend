@@ -30,7 +30,8 @@ router.post('/login',
             next(httpResponse.Ok(null, {
                 // Database field
                 // eslint-disable-next-line @typescript-eslint/camelcase
-                role_id: role.id
+                role_id: role.id,
+                name: user.username
             }));
         } else {
             next(Boom.badRequest('Invalid login'));

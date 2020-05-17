@@ -28,7 +28,8 @@ router.post('/login',
             res.cookie('sessionToken', newSession.uuid, cookieOptions);
             next(httpResponse.Ok(null, {
                 roleId: role.id,
-                name: user.username
+                firstName: user.firstName,
+                lastName: user.lastName,
             }));
         } else {
             next(Boom.badRequest('Invalid login'));

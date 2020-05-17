@@ -85,7 +85,8 @@ class UserController {
                 'id',
                 'universityId',
                 'roleId',
-                'username',
+                'firstName',
+                'lastName',
                 'email',
                 'university_id',
             ]

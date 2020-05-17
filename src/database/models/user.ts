@@ -83,7 +83,7 @@ User.belongsTo(Permission, {
 });
 
 User.belongsTo(University, {
-  foreignKey: 'university_id',
+  foreignKey: 'universityId',
   targetKey: 'id',
   as: 'university'
 });

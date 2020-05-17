@@ -45,7 +45,6 @@ class UserController {
                 'roleId',
                 'username',
                 'email',
-                'university_id',
             ]
         });
     }

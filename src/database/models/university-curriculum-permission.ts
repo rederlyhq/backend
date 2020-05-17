@@ -47,7 +47,7 @@ UniversityCurriculumPermission.belongsTo(Curriculum, {
 });
 
 UniversityCurriculumPermission.belongsTo(University, {
-    foreignKey: 'university_id',
+    foreignKey: 'universityId',
     targetKey: 'id',
     as: 'university'
 });

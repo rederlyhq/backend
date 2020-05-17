@@ -88,7 +88,7 @@ router.get('/',
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 userIds: (req.query as any).userIds,
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                courseId: (req.query as any).courseId
+                courseId: (req.query as any).courseId,
             }
         });
         next(httpResponse.Ok(null, users));

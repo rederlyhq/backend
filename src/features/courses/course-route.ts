@@ -39,7 +39,10 @@ router.get('/',
         try {
             const courses = await courseController.getCourses({
                 filter: {
-                    instructorId: req.query.instructorId && parseInt((req.query as any).instructorId)
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    instructorId: (req.query as any).instructorId as number,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    enrolledUserId: (req.query as any).enrolledUserId as number,
                 }
             });
             next(httpResponse.Ok('Fetched successfully', courses));

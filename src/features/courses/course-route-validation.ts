@@ -35,7 +35,8 @@ export const enrollInCourseValidation = {
 export const listCoursesValidation = {
     params: {},
     query: {
-        instructorId: Joi.string().optional()
+        instructorId: Joi.string().optional(),
+        enrolledUserId: Joi.string().optional(),
     },
     body: {},
 }

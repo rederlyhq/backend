@@ -11,8 +11,9 @@ interface EnrollByCodeOptions {
 
 interface CourseListOptions {
     filter: {
-        instructorId: number
-    }
+        instructorId: number;
+        enrolledUserId: number;
+    };
 }
 
 class CourseController {
@@ -28,11 +29,24 @@ class CourseController {
         // Where is a dynamic sequelize object
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const where: any = {};
-        if(options.filter.instructorId !== null && options.filter.instructorId !== undefined) {
+        const include = [];
+        if (options.filter.instructorId !== null && options.filter.instructorId !== undefined) {
             where.instructorId = options.filter.instructorId;
-        } 
+        }
+
+        if (options.filter.enrolledUserId !== null && options.filter.enrolledUserId !== undefined) {
+            include.push({
+                model: StudentEnrollment,
+                attributes: [],
+                as: 'enrolledStudents',
+            });
+            // TODO it doesn't like userId here and requires user_id, but it let's use use the sequelize field elseware
+            where['$enrolledStudents.user_id$'] = options.filter.enrolledUserId;
+        }
+
         return Course.findAll({
-            where
+            where,
+            include,
         });
     }
 

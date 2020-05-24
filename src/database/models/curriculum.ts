@@ -29,6 +29,14 @@ Curriculum.init({
         type: DataTypes.TEXT,
         allowNull: false
     },
+    subject: {
+        type: DataTypes.TEXT,
+        allowNull: false
+    },
+    comment: {
+        type: DataTypes.TEXT,
+        allowNull: false
+    },
     active: {
         type: DataTypes.BOOLEAN,
         allowNull: false

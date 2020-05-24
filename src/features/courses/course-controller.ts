@@ -3,6 +3,9 @@ import Course from '../../database/models/course';
 import StudentEnrollment from '../../database/models/student-enrollment';
 import { ForeignKeyConstraintError } from 'sequelize';
 import NotFoundError from '../../exceptions/not-found-error';
+import CourseUnitContent from '../../database/models/course-unit-content';
+import CourseTopicContent from '../../database/models/course-topic-content';
+import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 
 interface EnrollByCodeOptions {
     code: string;
@@ -17,11 +20,23 @@ interface CourseListOptions {
 }
 
 class CourseController {
-    getCourseById(id: number): Bluebird<Course> {
+    getCourseById(id: number): Promise<Course> {
         return Course.findOne({
             where: {
-                id
-            }
+                id,
+            },
+            include: [{
+                model: CourseUnitContent,
+                as: 'units',
+                include: [{
+                    model: CourseTopicContent,
+                    as: 'topics',
+                    include: [{
+                        model: CourseWWTopicQuestion,
+                        as: 'questions',
+                    }]    
+                }]
+            }]
         })
     }
 
@@ -54,6 +69,18 @@ class CourseController {
         return Course.create(courseObject);
     }
 
+    createUnit(courseUnitContent: CourseUnitContent): Promise<CourseUnitContent> {
+        return CourseUnitContent.create(courseUnitContent);
+    }
+
+    createTopic(courseTopicContent: CourseTopicContent): Promise<CourseTopicContent> {
+        return CourseTopicContent.create(courseTopicContent);
+    }
+
+    createQuestion(question: CourseWWTopicQuestion): Promise<CourseWWTopicQuestion> {
+        return CourseWWTopicQuestion.create(question);
+    }
+
     getCourseByCode(code: string): Promise<Course> {
         return Course.findOne({
             where: {
@@ -76,7 +103,7 @@ class CourseController {
     async enrollByCode(enrollment: EnrollByCodeOptions): Promise<StudentEnrollment> {
         try {
             const course = await this.getCourseByCode(enrollment.code);
-            if(course === null) {
+            if (course === null) {
                 throw new NotFoundError('Could not find course with the given code');
             }
             return this.enroll({

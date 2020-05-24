@@ -12,10 +12,6 @@ export default class CourseWWTopicQuestion extends Model {
     public hidden!: boolean;
     public active!: boolean;
 
-    public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
-
-    public readonly curriculumTopicContent!: CurriculumTopicContent;
-
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -27,8 +23,8 @@ CourseWWTopicQuestion.init({
         autoIncrement: true,
         primaryKey: true,
     },
-    curriculumTopicContentId: {
-        field: 'curriculum_topic_content_id',
+    courseTopicContentId: {
+        field: 'course_topic_content_id',
         type: DataTypes.INTEGER,
         allowNull: false,
     },
@@ -37,7 +33,7 @@ CourseWWTopicQuestion.init({
         type: DataTypes.INTEGER,
         allowNull: false,
     },
-    webworkQuestionWWPath: {
+    webworkQuestionPath: {
         field: 'webwork_question_ww_path',
         type: DataTypes.TEXT,
         allowNull: false,
@@ -52,11 +48,11 @@ CourseWWTopicQuestion.init({
         allowNull: false,
     },
     hidden: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.BOOLEAN,
         allowNull: false,
     },
     active: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.BOOLEAN,
         allowNull: false,
     },
 }, {

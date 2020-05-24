@@ -13,7 +13,6 @@ import CurriculumWWTopicQuestion from './models/curriculum-ww-topic-question';
 import StudentEnrollment from './models/student-enrollment';
 import CourseUnitContent from './models/course-unit-content';
 import CourseTopicContent from './models/course-topic-content';
-import TopicCalendar from './models/topic-calendar';
 import TopicType from './models/topic-type';
 import CourseWWTopicQuestion from './models/course-ww-topic-question';
 import StudentGrade from './models/student-grade';
@@ -43,7 +42,6 @@ const models = [
     StudentEnrollment,
     CourseUnitContent,
     CourseTopicContent,
-    TopicCalendar,
     TopicType,
     CourseWWTopicQuestion,
     StudentGrade,

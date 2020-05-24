@@ -1,6 +1,5 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
-import CurriculumUnitContent from './curriculum-unit-content';
 
 export default class CurriculumTopicContent extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
@@ -15,6 +14,23 @@ export default class CurriculumTopicContent extends Model {
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
+
+    static createAssociations(): void {
+        // This is a hack to add the associations later to avoid cyclic dependencies
+        /* eslint-disable @typescript-eslint/no-use-before-define */
+        CurriculumTopicContent.belongsTo(CurriculumUnitContent, {
+            foreignKey: 'curriculumUnitContentId',
+            targetKey: 'id',
+            as: 'curriculumUnitContent'
+        });
+    
+        CurriculumTopicContent.hasMany(CurriculumWWTopicQuestion, {
+          foreignKey: 'curriculumTopicContentId',
+          sourceKey: 'id',
+          as: 'questions'
+        });
+        /* eslint-enable @typescript-eslint/no-use-before-define */
+      }
 }
 
 CurriculumTopicContent.init({
@@ -41,8 +57,5 @@ CurriculumTopicContent.init({
     sequelize: appSequelize, // this bit is important
 });
 
-CurriculumTopicContent.belongsTo(CurriculumUnitContent, {
-    foreignKey: 'curriculumUnitContentId',
-    targetKey: 'id',
-    as: 'curriculumUnitContent'
-});
+import CurriculumUnitContent from './curriculum-unit-content';
+import CurriculumWWTopicQuestion from './curriculum-ww-topic-question';

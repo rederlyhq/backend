@@ -4,9 +4,11 @@ import validate from '../../middleware/joi-validator'
 import { authenticationMiddleware } from "../../middleware/auth";
 import httpResponse from "../../utilities/http-response";
 import * as asyncHandler from 'express-async-handler'
-import { getCurriculumValidation, createCurriculumValidation } from "./curriculum-route-validation";
+import { getCurriculumValidation, createCurriculumValidation, createCurriculumUnitValidation, createCurriculumTopicValidation, createCurriculumTopicQuestionValidation } from "./curriculum-route-validation";
 import curriculumController from "./curriculum-controller";
 import Session from "../../database/models/session";
+import UniversityCurriculumPermission from "../../database/models/university-curriculum-permission";
+import logger from "../../utilities/logger";
 
 router.post('/',
     authenticationMiddleware,
@@ -20,12 +22,68 @@ router.post('/',
             const university = await user.getUniversity();
 
             const newCurriculum = await curriculumController.createCurriculum({
-                universityId: university.id,
+                universityId: university.id, // TODO remove
                 ...req.body
             });
-            next(httpResponse.Created('Curriculum successfully', newCurriculum));
+
+            try {
+                // TODO add transaction and error handling
+                await curriculumController.createUniversityCurriculumPermission({
+                    curriculumId: newCurriculum.id,
+                    universityId: university.id,
+                } as UniversityCurriculumPermission);
+                // TODO figure out type
+            } catch(e) {
+                logger.error(e);
+            }
+            next(httpResponse.Created('Curriculum created successfully', newCurriculum));
         } catch (e) {
             next(e)
+        }
+    }));
+
+router.post('/unit',
+    authenticationMiddleware,
+    validate(createCurriculumUnitValidation),
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const newUnit = await curriculumController.createUnit({
+                ...req.body
+            });
+            // TODO handle not found case
+            next(httpResponse.Created('Unit created successfully', newUnit));
+        } catch (e) {
+            next(e);
+        }
+    }));
+
+router.post('/topic',
+    authenticationMiddleware,
+    validate(createCurriculumTopicValidation),
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const newTopic = await curriculumController.createTopic({
+                ...req.body
+            });
+            // TODO handle not found case
+            next(httpResponse.Created('Topic created successfully', newTopic));
+        } catch (e) {
+            next(e);
+        }
+    }));
+
+router.post('/question',
+    authenticationMiddleware,
+    validate(createCurriculumTopicQuestionValidation),
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const newQuestion = await curriculumController.createQuestion({
+                ...req.body
+            });
+            // TODO handle not found case
+            next(httpResponse.Created('Question created successfully', newQuestion));
+        } catch (e) {
+            next(e);
         }
     }));
 

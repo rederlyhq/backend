@@ -1,6 +1,5 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize'
-import Curriculum from './curriculum';
 
 export default class CurriculumUnitContent extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
@@ -15,6 +14,23 @@ export default class CurriculumUnitContent extends Model {
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
+
+    static createAssociations(): void {
+        // This is a hack to add the associations later to avoid cyclic dependencies
+        /* eslint-disable @typescript-eslint/no-use-before-define */
+        CurriculumUnitContent.belongsTo(Curriculum, {
+            foreignKey: 'curriculumId',
+            targetKey: 'id',
+            as: 'curriculum'
+        });
+    
+        CurriculumUnitContent.hasMany(CurriculumTopicContent, {
+          foreignKey: 'curriculumUnitContentId',
+          sourceKey: 'id',
+          as: 'topics'
+        });
+        /* eslint-enable @typescript-eslint/no-use-before-define */
+      }
 }
 
 CurriculumUnitContent.init({
@@ -41,8 +57,5 @@ CurriculumUnitContent.init({
     sequelize: appSequelize, // this bit is important
 });
 
-CurriculumUnitContent.belongsTo(Curriculum, {
-    foreignKey: 'curriculumId',
-    targetKey: 'id',
-    as: 'curriculum'
-});
+import Curriculum from './curriculum';
+import CurriculumTopicContent from './curriculum-topic-content';

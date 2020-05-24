@@ -3,6 +3,7 @@ import Course from '../../database/models/course';
 import StudentEnrollment from '../../database/models/student-enrollment';
 import { ForeignKeyConstraintError } from 'sequelize';
 import NotFoundError from '../../exceptions/not-found-error';
+import CourseUnitContent from '../../database/models/course-unit-content';
 
 interface EnrollByCodeOptions {
     code: string;
@@ -54,6 +55,9 @@ class CourseController {
         return Course.create(courseObject);
     }
 
+    createUnit(courseUnitContent: CourseUnitContent): Promise<CourseUnitContent> {
+        return CourseUnitContent.create(courseUnitContent);
+    }
     getCourseByCode(code: string): Promise<Course> {
         return Course.findOne({
             where: {

@@ -3,8 +3,11 @@ import * as Joi from 'joi';
 export const createCurriculumValidation = {
     body: {
         name: Joi.string().required(),
-        active: Joi.boolean().required(),
-        public: Joi.boolean().required(),
+        subject: Joi.string().required(),
+        comment: Joi.string().required(),
+        active: Joi.boolean().optional().default(true),
+        public: Joi.boolean().optional().default(true),
+        // university is assumed
     }
 }
 

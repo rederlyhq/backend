@@ -81,7 +81,7 @@ router.post('/question',
                 ...req.body
             });
             // TODO handle not found case
-            next(httpResponse.Created('Qustion created successfully', newQuestion));
+            next(httpResponse.Created('Question created successfully', newQuestion));
         } catch (e) {
             next(e);
         }

@@ -9,6 +9,19 @@ import { createCourseValidation, getCourseValidation, enrollInCourseValidation, 
 import Session from "../../database/models/session";
 import Boom = require("boom");
 import NotFoundError from "../../exceptions/not-found-error";
+import multer = require("multer");
+import WebWorkDef from "../../utilities/web-work-def-parser";
+
+const fileUpload = multer();
+
+router.post('/def',
+    authenticationMiddleware,
+    // validate(createCourseValidation),
+    fileUpload.single('def-file'),
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        const parsedDefFile = new WebWorkDef(req.file.buffer.toString())
+        res.json(parsedDefFile);
+    }));
 
 router.post('/',
     authenticationMiddleware,

@@ -46,6 +46,12 @@ export default class CourseTopicContent extends Model {
             targetKey: 'id',
             as: 'topicType'
         });
+
+        CourseTopicContent.hasMany(CourseWWTopicQuestion, {
+            foreignKey: 'courseTopicContentId',
+            sourceKey: 'id',
+            as: 'questions'
+        });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }
@@ -107,4 +113,5 @@ CourseTopicContent.init({
 
 import CurriculumTopicContent from './curriculum-topic-content';
 import TopicType from './topic-type';import CourseUnitContent from './course-unit-content';
+import CourseWWTopicQuestion from './course-ww-topic-question';
 

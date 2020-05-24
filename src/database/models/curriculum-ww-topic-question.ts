@@ -6,7 +6,7 @@ export default class CurriculumWWTopicQuestion extends Model {
   public id!: number; // Note that the `null assertion` `!` is required in strict mode.
   public curriculumTopicContentId!: number;
   public problemNumber!: number;
-  public webworkQuestionWWPath!: string;
+  public webworkQuestionPath!: string;
 
   public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
 
@@ -33,7 +33,7 @@ CurriculumWWTopicQuestion.init({
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  webworkQuestionWWPath: {
+  webworkQuestionPath: {
     field: 'webwork_question_ww_path',
     type: DataTypes.TEXT,
     allowNull: false,

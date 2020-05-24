@@ -1,5 +1,5 @@
 import { Model, DataTypes } from 'sequelize';
-import appSequelize from '../app-sequelize'
+import appSequelize from '../app-sequelize';
 
 export default class Curriculum extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
@@ -11,6 +11,17 @@ export default class Curriculum extends Model {
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
+
+    static createAssociations(): void {
+        // This is a hack to add the associations later to avoid cyclic dependencies
+        /* eslint-disable @typescript-eslint/no-use-before-define */
+        Curriculum.hasMany(CurriculumUnitContent, {
+            foreignKey: 'curriculumId',
+            sourceKey: 'id',
+            as: 'units'
+        });
+        /* eslint-enable @typescript-eslint/no-use-before-define */
+    }
 }
 
 Curriculum.init({
@@ -29,6 +40,14 @@ Curriculum.init({
         type: DataTypes.TEXT,
         allowNull: false
     },
+    subject: {
+        type: DataTypes.TEXT,
+        allowNull: false
+    },
+    comment: {
+        type: DataTypes.TEXT,
+        allowNull: false
+    },
     active: {
         type: DataTypes.BOOLEAN,
         allowNull: false
@@ -41,3 +60,5 @@ Curriculum.init({
     tableName: 'curriculum',
     sequelize: appSequelize, // this bit is important
 });
+
+import CurriculumUnitContent from './curriculum-unit-content';

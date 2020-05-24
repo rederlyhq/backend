@@ -12,9 +12,18 @@ export const createCourseValidation: ValidationObject = {
         end: Joi.date().required(),
         sectionCode: Joi.string().required(),
         semesterCode: Joi.string().required()
+        // universityId is assumed
+        // userId is assumed
     }
 }
 
+export const createCourseUnitValidation = {
+    body: {
+        name: Joi.string().required(),
+        active: Joi.boolean().optional().default(true),
+        courseId: Joi.number().required(),
+    }
+}
 export const getCourseValidation = {
     params: {
         id: Joi.number().required(),

@@ -5,7 +5,7 @@ import validate from '../../middleware/joi-validator'
 import { authenticationMiddleware } from "../../middleware/auth";
 import httpResponse from "../../utilities/http-response";
 import * as asyncHandler from 'express-async-handler'
-import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation } from "./course-route-validation";
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation } from "./course-route-validation";
 import Session from "../../database/models/session";
 import Boom = require("boom");
 import NotFoundError from "../../exceptions/not-found-error";
@@ -29,6 +29,21 @@ router.post('/',
             next(httpResponse.Created('Course successfully', newCourse));
         } catch (e) {
             next(e)
+        }
+    }));
+
+router.post('/unit',
+    authenticationMiddleware,
+    validate(createCourseUnitValidation),
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const newUnit = await courseController.createUnit({
+                ...req.body
+            });
+            // TODO handle not found case
+            next(httpResponse.Created('Course Unit created successfully', newUnit));
+        } catch (e) {
+            next(e);
         }
     }));
 

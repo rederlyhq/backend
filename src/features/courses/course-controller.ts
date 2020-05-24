@@ -5,6 +5,7 @@ import { ForeignKeyConstraintError } from 'sequelize';
 import NotFoundError from '../../exceptions/not-found-error';
 import CourseUnitContent from '../../database/models/course-unit-content';
 import CourseTopicContent from '../../database/models/course-topic-content';
+import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 
 interface EnrollByCodeOptions {
     code: string;
@@ -62,6 +63,10 @@ class CourseController {
 
     createTopic(courseTopicContent: CourseTopicContent): Promise<CourseTopicContent> {
         return CourseTopicContent.create(courseTopicContent);
+    }
+    
+    createQuestion(question: CourseWWTopicQuestion): Promise<CourseWWTopicQuestion> {
+        return CourseWWTopicQuestion.create(question);
     }
 
     getCourseByCode(code: string): Promise<Course> {

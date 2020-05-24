@@ -39,6 +39,20 @@ export const createCourseTopicValidation = {
     }
 }
 
+export const createCourseTopicQuestionValidation = {
+    body: {
+        problemNumber: Joi.number().required(),
+        webworkQuestionPath: Joi.string().required(),
+        courseTopicContentId: Joi.number().required(),
+        weight: Joi.number().required(),
+        maxAttempts: Joi.number().required(),
+        hidden: Joi.boolean().required(),
+        optional: Joi.boolean().required(),
+        active: Joi.boolean().optional().default(true)
+    }
+}
+
+
 export const getCourseValidation = {
     params: {
         id: Joi.number().required(),

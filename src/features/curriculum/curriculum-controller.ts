@@ -10,7 +10,19 @@ class CurriculumController {
         return Curriculum.findOne({
             where: {
                 id
-            }
+            },
+            include: [{
+                model: CurriculumUnitContent,
+                as: 'units',
+                include: [{
+                    model: CurriculumTopicContent,
+                    as: 'topics',
+                    include: [{
+                        model: CurriculumWWTopicQuestion,
+                        as: 'questions'
+                    }]
+                }]
+            }]
         })
     }
 

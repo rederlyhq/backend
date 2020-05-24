@@ -18,6 +18,7 @@ import TopicType from './models/topic-type';
 import CourseWWTopicQuestion from './models/course-ww-topic-question';
 import StudentGrade from './models/student-grade';
 import StudentWorkbook from './models/student-workbook';
+import Curriculum from './models/curriculum';
 
 export const sync = async (): Promise<void> => {
     try {
@@ -35,6 +36,7 @@ const models = [
     Permission,
     Course,
     UniversityCurriculumPermission,
+    Curriculum,
     CurriculumUnitContent,
     CurriculumTopicContent,
     CurriculumWWTopicQuestion,

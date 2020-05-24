@@ -24,6 +24,21 @@ export const createCourseUnitValidation = {
         courseId: Joi.number().required(),
     }
 }
+
+export const createCourseTopicValidation = {
+    body: {
+        courseUnitContentId: Joi.number().required(),
+        curriculumTopicContentId: Joi.number().optional(),
+        name: Joi.string().required(),
+        active: Joi.boolean().optional().default(true),
+        topicTypeId: Joi.number().optional().default(1),
+        startDate: Joi.date().required(),
+        endDate: Joi.date().required(),
+        deadDate: Joi.date().required(),
+        partialExtend: Joi.boolean().required()
+    }
+}
+
 export const getCourseValidation = {
     params: {
         id: Joi.number().required(),

@@ -9,6 +9,11 @@ export default class CourseTopicContent extends Model {
     public name!: string;
     public active!: boolean;
 
+    public startDate!: Date;
+    public endDate!: Date;
+    public deadDate!: Date;
+    public partialExtend!: boolean;
+
 
 
     public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
@@ -54,7 +59,7 @@ CourseTopicContent.init({
     curriculumTopicContentId: {
         field: 'curriculum_topic_content_id',
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true,
     },
     courseUnitContentId: {
         field: 'course_unit_content_id',
@@ -80,8 +85,8 @@ CourseTopicContent.init({
         type: DataTypes.DATE,
         allowNull: false,
     },
-    dueDate: {
-        field: 'drop_date',
+    endDate: {
+        field: 'end_date',
         type: DataTypes.DATE,
         allowNull: false,
     },

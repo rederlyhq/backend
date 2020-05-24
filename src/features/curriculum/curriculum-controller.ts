@@ -3,6 +3,7 @@ import Curriculum from '../../database/models/curriculum';
 import UniversityCurriculumPermission from '../../database/models/university-curriculum-permission';
 import CurriculumUnitContent from '../../database/models/curriculum-unit-content';
 import CurriculumTopicContent from '../../database/models/curriculum-topic-content';
+import CurriculumWWTopicQuestion from '../../database/models/curriculum-ww-topic-question';
 
 class CurriculumController {
     getCurriculumById(id: number): Bluebird<Curriculum> {
@@ -31,6 +32,10 @@ class CurriculumController {
 
     createTopic(topic: CurriculumTopicContent): Promise<CurriculumTopicContent> {
         return CurriculumTopicContent.create(topic);
+    }
+
+    createQuestion(question: CurriculumWWTopicQuestion): Promise<CurriculumWWTopicQuestion> {
+        return CurriculumWWTopicQuestion.create(question);
     }
 }
 

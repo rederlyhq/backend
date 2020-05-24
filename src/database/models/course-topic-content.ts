@@ -1,28 +1,48 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize'
-import CurriculumTopicContent from './curriculum-topic-content';
-import TopicCalendar from './topic-calendar';
-import TopicType from './topic-type';
 
 export default class CourseTopicContent extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
     public curriculumTopicContentId!: number;
-    public topicCalendarId!: number;
+    public courseUnitContentId!: number;
     public topicTypeId!: number;
     public name!: string;
     public active!: boolean;
 
+
+
     public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
-    public getTopicCalendar!: BelongsToGetAssociationMixin<TopicCalendar>;
     public getTopicType!: BelongsToGetAssociationMixin<TopicType>;
 
     public readonly curriculumTopicContent!: CurriculumTopicContent;
     public readonly topicType!: TopicType;
-    public readonly topicCalendar!: TopicCalendar;
 
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
+
+    static createAssociations(): void {
+        // This is a hack to add the associations later to avoid cyclic dependencies
+        /* eslint-disable @typescript-eslint/no-use-before-define */
+        CourseTopicContent.belongsTo(CurriculumTopicContent, {
+            foreignKey: 'curriculumTopicContentId',
+            targetKey: 'id',
+            as: 'curriculumTopicContent'
+        });
+        
+        CourseTopicContent.belongsTo(CourseUnitContent, {
+            foreignKey: 'courseUnitContentId',
+            targetKey: 'id',
+            as: 'unit'
+        });
+
+        CourseTopicContent.belongsTo(TopicType, {
+            foreignKey: 'topicTypeId',
+            targetKey: 'id',
+            as: 'topicType'
+        });
+        /* eslint-enable @typescript-eslint/no-use-before-define */
+    }
 }
 
 CourseTopicContent.init({
@@ -36,8 +56,8 @@ CourseTopicContent.init({
         type: DataTypes.INTEGER,
         allowNull: false,
     },
-    topicCalendarId: {
-        field: 'topic_calendar_id',
+    courseUnitContentId: {
+        field: 'course_unit_content_id',
         type: DataTypes.INTEGER,
         allowNull: false,
     },
@@ -54,25 +74,32 @@ CourseTopicContent.init({
         type: DataTypes.BOOLEAN,
         allowNull: false,
     },
+
+    startDate: {
+        field: 'enroll_date',
+        type: DataTypes.DATE,
+        allowNull: false,
+    },
+    dueDate: {
+        field: 'drop_date',
+        type: DataTypes.DATE,
+        allowNull: false,
+    },
+    deadDate: {
+        field: 'dead_date',
+        type: DataTypes.DATE,
+        allowNull: false,
+    },
+    partialExtend: {
+        field: 'partial_extend',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+    },
 }, {
     tableName: 'course_topic_content',
     sequelize: appSequelize, // this bit is important
 });
 
-CourseTopicContent.belongsTo(CurriculumTopicContent, {
-    foreignKey: 'curriculumTopicContentId',
-    targetKey: 'id',
-    as: 'curriculumTopicContent'
-});
+import CurriculumTopicContent from './curriculum-topic-content';
+import TopicType from './topic-type';import CourseUnitContent from './course-unit-content';
 
-CourseTopicContent.belongsTo(TopicCalendar, {
-    foreignKey: 'topicCalendarId',
-    targetKey: 'id',
-    as: 'topicCalendar'
-});
-
-CourseTopicContent.belongsTo(TopicType, {
-    foreignKey: 'topicTypeId',
-    targetKey: 'id',
-    as: 'topicType'
-});

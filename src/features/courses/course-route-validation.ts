@@ -12,8 +12,46 @@ export const createCourseValidation: ValidationObject = {
         end: Joi.date().required(),
         sectionCode: Joi.string().required(),
         semesterCode: Joi.string().required()
+        // universityId is assumed
+        // userId is assumed
     }
 }
+
+export const createCourseUnitValidation = {
+    body: {
+        name: Joi.string().required(),
+        active: Joi.boolean().optional().default(true),
+        courseId: Joi.number().required(),
+    }
+}
+
+export const createCourseTopicValidation = {
+    body: {
+        courseUnitContentId: Joi.number().required(),
+        curriculumTopicContentId: Joi.number().optional(),
+        name: Joi.string().required(),
+        active: Joi.boolean().optional().default(true),
+        topicTypeId: Joi.number().optional().default(1),
+        startDate: Joi.date().required(),
+        endDate: Joi.date().required(),
+        deadDate: Joi.date().required(),
+        partialExtend: Joi.boolean().required()
+    }
+}
+
+export const createCourseTopicQuestionValidation = {
+    body: {
+        problemNumber: Joi.number().required(),
+        webworkQuestionPath: Joi.string().required(),
+        courseTopicContentId: Joi.number().required(),
+        weight: Joi.number().required(),
+        maxAttempts: Joi.number().required(),
+        hidden: Joi.boolean().required(),
+        optional: Joi.boolean().required(),
+        active: Joi.boolean().optional().default(true)
+    }
+}
+
 
 export const getCourseValidation = {
     params: {

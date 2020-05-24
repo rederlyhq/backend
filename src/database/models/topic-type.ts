@@ -3,6 +3,7 @@ import appSequelize from '../app-sequelize'
 
 export default class TopicType extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
+    public name!: string;
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -15,6 +16,11 @@ TopicType.init({
         autoIncrement: true,
         primaryKey: true,
     },
+    name: {
+        field: 'name',
+        type: DataTypes.TEXT,
+        allowNull: false
+    }
 }, {
     tableName: 'topic_type',
     sequelize: appSequelize, // this bit is important

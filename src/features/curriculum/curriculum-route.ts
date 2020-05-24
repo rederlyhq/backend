@@ -4,7 +4,7 @@ import validate from '../../middleware/joi-validator'
 import { authenticationMiddleware } from "../../middleware/auth";
 import httpResponse from "../../utilities/http-response";
 import * as asyncHandler from 'express-async-handler'
-import { getCurriculumValidation, createCurriculumValidation } from "./curriculum-route-validation";
+import { getCurriculumValidation, createCurriculumValidation, createCurriculumUnitValidation, createCurriculumTopicValidation } from "./curriculum-route-validation";
 import curriculumController from "./curriculum-controller";
 import Session from "../../database/models/session";
 import UniversityCurriculumPermission from "../../database/models/university-curriculum-permission";
@@ -36,10 +36,39 @@ router.post('/',
             } catch(e) {
                 logger.error(e);
             }
-            next(httpResponse.Created('Curriculum successfully', newCurriculum));
+            next(httpResponse.Created('Curriculum created successfully', newCurriculum));
         } catch (e) {
             next(e)
         }
+    }));
+
+router.post('/unit',
+    authenticationMiddleware,
+    validate(createCurriculumUnitValidation),
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const newUnit = await curriculumController.createUnit({
+                ...req.body
+            });
+            // TODO handle not found case
+            next(httpResponse.Created('Unit created successfully', newUnit));
+        } catch (e) {
+            next(e);
+        }
+    }));
+
+router.post('/topic',
+    authenticationMiddleware,
+    validate(createCurriculumTopicValidation),
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        throw new Error('Not implemented');
+    }));
+
+router.post('/question',
+    authenticationMiddleware,
+    validate(createCurriculumUnitValidation),
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        throw new Error('Not implemented');
     }));
 
 router.get('/',

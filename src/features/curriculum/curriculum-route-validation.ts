@@ -23,7 +23,7 @@ export const createCurriculumTopicValidation = {
     body: {
         name: Joi.string().required(),
         active: Joi.boolean().optional().default(true),
-        curriculumUnitId: Joi.number().required(),
+        curriculumUnitContentId: Joi.number().required(),
     }
 }
 

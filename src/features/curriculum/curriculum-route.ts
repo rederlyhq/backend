@@ -61,7 +61,15 @@ router.post('/topic',
     authenticationMiddleware,
     validate(createCurriculumTopicValidation),
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-        throw new Error('Not implemented');
+        try {
+            const newTopic = await curriculumController.createTopic({
+                ...req.body
+            });
+            // TODO handle not found case
+            next(httpResponse.Created('Topic created successfully', newTopic));
+        } catch (e) {
+            next(e);
+        }
     }));
 
 router.post('/question',

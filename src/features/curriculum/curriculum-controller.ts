@@ -1,6 +1,6 @@
 import Bluebird = require('bluebird');
 import Curriculum from '../../database/models/curriculum';
-
+import UniversityCurriculumPermission from '../../database/models/university-curriculum-permission';
 
 class CurriculumController {
     getCurriculumById(id: number): Bluebird<Curriculum> {
@@ -15,8 +15,12 @@ class CurriculumController {
         return Curriculum.findAll();
     }
 
-    createCurriculum(courseObject: Curriculum): Bluebird<Curriculum> {
+    createCurriculum(courseObject: Curriculum): Promise<Curriculum> {
         return Curriculum.create(courseObject);
+    }
+
+    createUniversityCurriculumPermission(universityCurriculumPermission: UniversityCurriculumPermission): Promise<UniversityCurriculumPermission> {
+        return UniversityCurriculumPermission.create(universityCurriculumPermission);
     }
 }
 

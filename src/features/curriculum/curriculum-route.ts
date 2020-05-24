@@ -7,6 +7,8 @@ import * as asyncHandler from 'express-async-handler'
 import { getCurriculumValidation, createCurriculumValidation } from "./curriculum-route-validation";
 import curriculumController from "./curriculum-controller";
 import Session from "../../database/models/session";
+import UniversityCurriculumPermission from "../../database/models/university-curriculum-permission";
+import logger from "../../utilities/logger";
 
 router.post('/',
     authenticationMiddleware,
@@ -20,9 +22,20 @@ router.post('/',
             const university = await user.getUniversity();
 
             const newCurriculum = await curriculumController.createCurriculum({
-                universityId: university.id,
+                universityId: university.id, // TODO remove
                 ...req.body
             });
+
+            try {
+                // TODO add transaction and error handling
+                await curriculumController.createUniversityCurriculumPermission({
+                    curriculumId: newCurriculum.id,
+                    universityId: university.id,
+                } as UniversityCurriculumPermission);
+                // TODO figure out type
+            } catch(e) {
+                logger.error(e);
+            }
             next(httpResponse.Created('Curriculum successfully', newCurriculum));
         } catch (e) {
             next(e)

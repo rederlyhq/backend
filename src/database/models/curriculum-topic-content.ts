@@ -35,6 +35,7 @@ export default class CurriculumTopicContent extends Model {
 
 CurriculumTopicContent.init({
     id: {
+        field: 'curriculum_topic_content_id',
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
@@ -45,10 +46,12 @@ CurriculumTopicContent.init({
         allowNull: false,
     },
     name: {
+        field: 'curriculum_topic_content_name',
         type: DataTypes.TEXT,
         allowNull: false,
     },
     active: {
+        field: 'curriculum_topic_content_active',
         type: DataTypes.BOOLEAN,
         allowNull: false,
     },

@@ -19,6 +19,7 @@ export default class CurriculumWWTopicQuestion extends Model {
 
 CurriculumWWTopicQuestion.init({
   id: {
+    field: 'curriculum_ww_topic_question_id',
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
@@ -29,12 +30,12 @@ CurriculumWWTopicQuestion.init({
     allowNull: false,
   },
   problemNumber: {
-    field: 'problem_number',
+    field: 'curriculum_ww_topic_question_problem_number',
     type: DataTypes.INTEGER,
     allowNull: false,
   },
   webworkQuestionPath: {
-    field: 'webwork_question_ww_path',
+    field: 'curriculum_ww_topic_question_webwork_question_ww_path',
     type: DataTypes.TEXT,
     allowNull: false,
   },

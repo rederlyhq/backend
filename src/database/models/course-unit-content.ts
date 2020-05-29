@@ -35,6 +35,7 @@ export default class CourseUnitContent extends Model {
 
 CourseUnitContent.init({
     id: {
+        field: 'course_unit_content_id',
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
@@ -45,10 +46,12 @@ CourseUnitContent.init({
         allowNull: false,
     },
     name: {
+        field: 'course_unit_content_name',
         type: DataTypes.TEXT,
         allowNull: false,
     },
     active: {
+        field: 'course_unit_content_active',
         type: DataTypes.BOOLEAN,
         allowNull: false,
     },

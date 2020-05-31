@@ -116,14 +116,14 @@ class CourseController {
             });
         }
 
-        const rendererQuestion = await rendererHelper.getProblem({
+        const rendererData = await rendererHelper.getProblem({
             sourceFilePath: courseQuestion.webworkQuestionPath,
             problemSeed: studentGrade.randomSeed,
             formURL: question.formURL,
         });
         return {
             // courseQuestion,
-            rendererQuestion
+            rendererData
         }
     }
 

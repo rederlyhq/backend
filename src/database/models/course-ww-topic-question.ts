@@ -6,7 +6,7 @@ export default class CourseWWTopicQuestion extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
     public curriculumTopicContentId!: number;
     public problemNumber!: number;
-    public webworkQuestionWWPath!: string;
+    public webworkQuestionPath!: string;
     public weight!: number;
     public maxAttempts!: number;
     public hidden!: boolean;

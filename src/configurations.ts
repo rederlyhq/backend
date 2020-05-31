@@ -36,5 +36,8 @@ export default {
         // in hours
         sessionLife: fromIntValue(process.env.AUTH_SESSION_LIFE, 24),
         costFactor: fromIntValue(process.env.AUTH_COST_FACTOR, 8)
+    },
+    renderer: {
+        url: process.env.RENDERER_URL || 'http://localhost:3000',
     }
 }

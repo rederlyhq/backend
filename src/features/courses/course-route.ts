@@ -5,7 +5,7 @@ import validate from '../../middleware/joi-validator'
 import { authenticationMiddleware } from "../../middleware/auth";
 import httpResponse from "../../utilities/http-response";
 import * as asyncHandler from 'express-async-handler'
-import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation } from "./course-route-validation";
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation } from "./course-route-validation";
 import Session from "../../database/models/session";
 import Boom = require("boom");
 import NotFoundError from "../../exceptions/not-found-error";
@@ -90,6 +90,32 @@ router.post('/question',
         }
     }));
 
+router.get('/question/:id',
+    authenticationMiddleware,
+    validate(getQuestionValidation),
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        // TODO figure out session for request
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const session = (req as any).session as Session;
+
+        try {
+            // TODO handle not found case
+            const question = await courseController.getQuestion({
+                questionId: parseInt(req.params.id),
+                userId: session.userId,
+                formURL: `${req.protocol}://${req.get('host')}${req.originalUrl}`
+            });
+            // next(httpResponse.Ok('Fetched question successfully', question));
+            
+            // If testing renderer integration from the browser without the front end simply return the rendered html
+            // To do so first uncomment the below res.send and comment out the above next
+            // Also when in the browser console add your auth token (`document.cookie = "sessionToken=UUID;`)
+            // Don't forget to do this in post as well
+            res.send(question.rendererQuestion.renderedHTML);
+        } catch (e) {
+            next(e);
+        }
+    }));
 router.get('/',
     authenticationMiddleware,
     validate(listCoursesValidation),

@@ -11,6 +11,9 @@ import Boom = require("boom");
 import NotFoundError from "../../exceptions/not-found-error";
 import multer = require("multer");
 import WebWorkDef from "../../utilities/web-work-def-parser";
+import * as proxy from 'express-http-proxy';
+import * as qs from 'qs';
+import configurations from "../../configurations";
 
 const fileUpload = multer();
 
@@ -116,6 +119,42 @@ router.get('/question/:id',
             next(e);
         }
     }));
+
+router.post('/question/:id',
+    authenticationMiddleware,
+    proxy(configurations.renderer.url, {
+        proxyReqPathResolver: (req) => {
+            return `/rendered?${qs.stringify({
+                format: 'json',
+                template:'simple',
+                formURL: `${req.protocol}://${req.get('host')}${req.originalUrl}`,
+            })}`;
+        },
+        userResDecorator: async (proxyRes: Response<any>, proxyResData: any, userReq: any , userRes: Response<any>) => {
+            let data = proxyResData.toString('utf8');
+            data = JSON.parse(data);
+
+            await courseController.submitAnswer({
+                userId: userReq.session.userId,
+                questionId: userReq.params.id,
+                score: data.problem_result.score,
+                submitted: data,
+            });
+
+            // There is no way to get next callback, however anything thrown will get sent to next
+            // Using the below line will responde with a 201 the way we do in our routes
+            // throw httpResponse.Ok('Answer submitted for question', {
+            //     rendererData: data
+            // });
+
+            // If testing renderer integration from the browser without the front end simply return the rendered html
+            // To do so first uncomment the below return and comment out the above throw
+            // Also when in the browser console add your auth token (`document.cookie = "sessionToken=UUID;`)
+            // Don't forget to do this in get as well
+            return data.renderedHTML;
+        }
+    }));
+
 router.get('/',
     authenticationMiddleware,
     validate(listCoursesValidation),

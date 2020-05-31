@@ -7,6 +7,7 @@ import CourseUnitContent from '../../database/models/course-unit-content';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 import rendererHelper from '../../utilities/renderer-helper';
+import StudentWorkbook from '../../database/models/student-workbook';
 import StudentGrade from '../../database/models/student-grade';
 
 interface EnrollByCodeOptions {
@@ -125,6 +126,36 @@ class CourseController {
             rendererQuestion
         }
     }
+
+    async submitAnswer(options: any): Promise<any> {
+        const studentGrade = await StudentGrade.findOne({
+            where: {
+                userId: options.userId,
+                courseWWTopicQuestionId: options.questionId
+            }
+        });
+
+        const bestScore = Math.max(studentGrade.bestScore, options.score);
+
+        studentGrade.bestScore = bestScore;
+        studentGrade.numAttempts++;
+        if(studentGrade.numAttempts === 1) {
+            studentGrade.firstAttempts = options.score;
+        }
+        studentGrade.latestAttempts = options.score;
+        await studentGrade.save();
+
+        return StudentWorkbook.create({
+            studentGradeId: studentGrade.id,
+            userId: options.userId,
+            courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
+            randomSeed: studentGrade.randomSeed,
+            submitted: options.submitted,
+            result: options.score,
+            time: new Date()
+        })
+    }
+
     getCourseByCode(code: string): Promise<Course> {
         return Course.findOne({
             where: {

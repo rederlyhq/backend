@@ -52,6 +52,14 @@ export const createCourseTopicQuestionValidation = {
     }
 }
 
+export const getQuestionValidation: ValidationObject = {
+    params: {
+        id: Joi.number().required()
+    },
+    query: {},
+    body: {}
+}
+
 
 export const getCourseValidation = {
     params: {

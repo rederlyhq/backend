@@ -41,3 +41,8 @@
 | --- | --- | --- |
 | AUTH_SESSION_LIFE | The number of hours a session token is good for | 24 |
 | AUTH_COST_FACTOR | The cost factor for bcrypt to hash the password (this is important for preventing brute force attacks as it makes the hash take time to calculate) | 8 |
+
+#### Renderer
+| Environment variable | Description | Default value |
+| --- | --- | --- |
+| RENDERER_URL | The base url for the renderer | http://localhost:3000 |

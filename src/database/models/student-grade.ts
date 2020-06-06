@@ -41,7 +41,7 @@ export default class StudentGrade extends Model {
     StudentGrade.belongsTo(CourseWWTopicQuestion, {
       foreignKey: 'courseWWTopicQuestionId',
       targetKey: 'id',
-      as: 'courseWWTopicQuestion'
+      as: 'question'
     });
 
     StudentGrade.hasMany(StudentWorkbook, {

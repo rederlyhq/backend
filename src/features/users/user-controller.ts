@@ -15,6 +15,8 @@ import Role from '../permissions/roles';
 import { ListOptions } from '../../generic-interfaces/list-options';
 import StudentEnrollment from '../../database/models/student-enrollment';
 import Course from '../../database/models/course';
+import StudentGrade from '../../database/models/student-grade';
+import StudentWorkbook from '../../database/models/student-workbook';
 
 interface RegisterUserOptions {
     userObject: User;
@@ -134,13 +136,29 @@ class UserController {
                 'password'
             );
         }
+
+        const sequelizeInclude = [];
+        const sequelizeGradeInclude: any = {};
+        if(options.includeGrades === IncludeGradeOptions.JUST_GRADE || options.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
+            sequelizeGradeInclude.model = StudentGrade;
+            sequelizeGradeInclude.as = 'grades';
+            sequelizeInclude.push(sequelizeGradeInclude);
+        }
+
+        if(options.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
+            sequelizeGradeInclude.include = {
+                model: StudentWorkbook,
+                as: 'workbooks'
+            }    
+        }
         return User.findOne({
             where: {
                 id: options.id
             },
             attributes: {
                 exclude: excludedAttributes
-            }
+            },
+            include: sequelizeInclude
         })
     }
 

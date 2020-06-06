@@ -38,6 +38,18 @@ interface EmailOptions {
     subject: string;
 }
 
+enum IncludeGradeOptions {
+    JUST_GRADE = 'JUST_GRADE',
+    WITH_ATTEMPTS = 'WITH_ATTEMPTS',
+    NO = ''
+}
+interface GetUserOptions {
+    id: number;
+    includeGrades?: IncludeGradeOptions;
+    courseId?: number;
+    includeSensitive?: boolean;
+}
+
 const {
     sessionLife
 } = configurations.auth;
@@ -59,11 +71,11 @@ class UserController {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const include: any = [];
         if (listOptions) {
-            if(listOptions.filters) {
-                if(listOptions.filters.userIds) {
+            if (listOptions.filters) {
+                if (listOptions.filters.userIds) {
                     where.id = listOptions.filters.userIds
                 }
-                if(listOptions.filters.courseId) {
+                if (listOptions.filters.courseId) {
                     include.push({
                         model: StudentEnrollment,
                         attributes: [],
@@ -101,7 +113,7 @@ class UserController {
         // TODO see if there is a less impactfull way to send out emails to multiple recipients
         // I tried bcc: users.map(user => user.email) but I got an error that an email address was required
         const emailPromises = [];
-        for(let i = 0; i < users.length; i++) {
+        for (let i = 0; i < users.length; i++) {
             emailPromises.push(emailHelper.sendEmail({
                 content: emailOptions.content,
                 subject: emailOptions.subject,
@@ -114,10 +126,20 @@ class UserController {
         return users.map(user => user.id);
     }
 
-    getUserById(id: number): Bluebird<User> {
+    getUser(options: GetUserOptions): Promise<User> {
+        const excludedAttributes = [];
+        if (!options.includeSensitive) {
+            excludedAttributes.push(
+                'verifyToken',
+                'password'
+            );
+        }
         return User.findOne({
             where: {
-                id
+                id: options.id
+            },
+            attributes: {
+                exclude: excludedAttributes
             }
         })
     }

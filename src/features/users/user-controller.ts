@@ -1,3 +1,4 @@
+import * as _ from "lodash";
 import emailHelper from '../../utilities/email-helper';
 import logger from '../../utilities/logger';
 import { v4 as uuidv4 } from 'uuid';
@@ -9,7 +10,7 @@ import Session from '../../database/models/session';
 import moment = require('moment');
 import configurations from '../../configurations';
 import NoAssociatedUniversityError from '../../exceptions/no-associated-university-error';
-import { UniqueConstraintError } from 'sequelize';
+import { UniqueConstraintError, Op } from 'sequelize';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import Role from '../permissions/roles';
 import { ListOptions } from '../../generic-interfaces/list-options';
@@ -17,6 +18,9 @@ import StudentEnrollment from '../../database/models/student-enrollment';
 import Course from '../../database/models/course';
 import StudentGrade from '../../database/models/student-grade';
 import StudentWorkbook from '../../database/models/student-workbook';
+import CourseWWTopicQuestion from "../../database/models/course-ww-topic-question";
+import CourseTopicContent from "../../database/models/course-topic-content";
+import CourseUnitContent from "../../database/models/course-unit-content";
 
 interface RegisterUserOptions {
     userObject: User;
@@ -142,15 +146,44 @@ class UserController {
         if(options.includeGrades === IncludeGradeOptions.JUST_GRADE || options.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
             sequelizeGradeInclude.model = StudentGrade;
             sequelizeGradeInclude.as = 'grades';
+            sequelizeGradeInclude.include = [];
+            if(!_.isNil(options.courseId)) {
+                sequelizeGradeInclude.include.push({
+                    model: CourseWWTopicQuestion,
+                    as: 'question',
+                    attributes: [], // Don't care about the data, just the where
+                    include: {
+                        model: CourseTopicContent,
+                        as: 'topic',
+                        include: {
+                            model: CourseUnitContent,
+                            as: 'unit',
+                            include: {
+                                model: Course,
+                                as: 'course',
+                                where: {
+                                    id: options.courseId
+                                }
+                            },
+                            where: {} // If you don't include where the course where won't propogate down
+                        },
+                        where: {} // If you don't include where the course where won't propogate down
+                    },
+                    where: {} // If you don't include where the course where won't propogate down
+                });
+
+            }
+
             sequelizeInclude.push(sequelizeGradeInclude);
         }
 
         if(options.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
-            sequelizeGradeInclude.include = {
+            sequelizeGradeInclude.include.push({
                 model: StudentWorkbook,
                 as: 'workbooks'
-            }    
+            });
         }
+
         return User.findOne({
             where: {
                 id: options.id

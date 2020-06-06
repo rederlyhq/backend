@@ -21,6 +21,7 @@ import StudentWorkbook from '../../database/models/student-workbook';
 import CourseWWTopicQuestion from "../../database/models/course-ww-topic-question";
 import CourseTopicContent from "../../database/models/course-topic-content";
 import CourseUnitContent from "../../database/models/course-unit-content";
+import IncludeGradeOptions from "./include-grade-options";
 
 interface RegisterUserOptions {
     userObject: User;
@@ -44,11 +45,6 @@ interface EmailOptions {
     subject: string;
 }
 
-enum IncludeGradeOptions {
-    JUST_GRADE = 'JUST_GRADE',
-    WITH_ATTEMPTS = 'WITH_ATTEMPTS',
-    NO = ''
-}
 interface GetUserOptions {
     id: number;
     includeGrades?: IncludeGradeOptions;

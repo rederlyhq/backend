@@ -95,6 +95,18 @@ router.get('/',
         next(httpResponse.Ok(null, users));
     }));
 
+router.get('/:id',
+    authenticationMiddleware,
+    // validate(listUsers),
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        const users = await userController.getUser({
+            id: parseInt(req.params.id),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            courseId: (req.query as any).courseId,
+        });
+        next(httpResponse.Ok(null, users));
+    }));
+
 router.post('/email',
     authenticationMiddleware,
     validate(emailUsers),

@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import userController from "./user-controller";
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator'
-import { registerValidation, loginValidation, verifyValidation, listUsers, emailUsers } from "./user-route-validation";
+import { registerValidation, loginValidation, verifyValidation, listUsers, emailUsers, getUser } from "./user-route-validation";
 import Boom = require("boom");
 import passport = require("passport");
 import { authenticationMiddleware } from "../../middleware/auth";
@@ -97,12 +97,14 @@ router.get('/',
 
 router.get('/:id',
     authenticationMiddleware,
-    // validate(listUsers),
+    validate(getUser),
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
         const users = await userController.getUser({
             id: parseInt(req.params.id),
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             courseId: (req.query as any).courseId,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            includeGrades: (req.query as any).includeGrades
         });
         next(httpResponse.Ok(null, users));
     }));

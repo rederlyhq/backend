@@ -38,6 +38,17 @@ export const listUsers: ValidationObject = {
     body: {},
 }
 
+export const getUser: ValidationObject = {
+    params: {
+        id: Joi.number().required()
+    },
+    query: {
+        courseId: Joi.number().optional(),
+        includeGrades: Joi.string().optional(),
+    },
+    body: {},
+}
+
 export const emailUsers: ValidationObject = {
     params: {},
     query: {},

@@ -1,10 +1,11 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize'
 import CurriculumTopicContent from './curriculum-topic-content';
+import CourseTopicContent from './course-topic-content';
 
 export default class CourseWWTopicQuestion extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
-    public curriculumTopicContentId!: number;
+    public courseTopicContentId!: number;
     public problemNumber!: number;
     public webworkQuestionPath!: string;
     public weight!: number;
@@ -60,8 +61,8 @@ CourseWWTopicQuestion.init({
     sequelize: appSequelize, // this bit is important
 });
 
-CourseWWTopicQuestion.belongsTo(CurriculumTopicContent, {
-    foreignKey: 'curriculumTopicContentId',
+CourseWWTopicQuestion.belongsTo(CourseTopicContent, {
+    foreignKey: 'courseTopicContentId',
     targetKey: 'id',
-    as: 'curriculumTopicContent'
+    as: 'topic'
 });

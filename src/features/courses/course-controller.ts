@@ -27,6 +27,16 @@ interface GetQuestionOptions {
     questionId: number;
 }
 
+interface UpdateTopicOptions {
+    where: {
+        id: number;
+    };
+    updates: {
+        startDate: Date;
+        endDate: Date;    
+    };
+}
+
 class CourseController {
     getCourseById(id: number): Promise<Course> {
         return Course.findOne({
@@ -83,6 +93,14 @@ class CourseController {
 
     createTopic(courseTopicContent: CourseTopicContent): Promise<CourseTopicContent> {
         return CourseTopicContent.create(courseTopicContent);
+    }
+
+    async updateTopic(options: UpdateTopicOptions): Promise<number> {
+        const updates = await CourseTopicContent.update(options.updates, {
+            where: options.where
+        });
+        // updates count
+        return updates[0];
     }
 
     createQuestion(question: CourseWWTopicQuestion): Promise<CourseWWTopicQuestion> {

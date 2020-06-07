@@ -77,7 +77,7 @@ StudentGrade.init({
   },
   bestScore: {
     field: 'best_score',
-    type: DataTypes.INTEGER,
+    type: DataTypes.FLOAT,
     allowNull: true,
   },
   numAttempts: {
@@ -87,12 +87,12 @@ StudentGrade.init({
   },
   firstAttempts: {
     field: 'first_attempts',
-    type: DataTypes.INTEGER,
+    type: DataTypes.FLOAT,
     allowNull: true,
   },
   latestAttempts: {
     field: 'latest_attempts',
-    type: DataTypes.INTEGER,
+    type: DataTypes.FLOAT,
     allowNull: true,
   },
 }, {

@@ -1,7 +1,5 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize'
-import CourseWWTopicQuestion from './course-ww-topic-question';
-import User from './user';
 
 export default class StudentGrade extends Model {
   public id!: number; // Note that the `null assertion` `!` is required in strict mode.
@@ -23,6 +21,37 @@ export default class StudentGrade extends Model {
   // timestamps!
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+
+  static createAssociations(): void {
+    // This is a hack to add the associations later to avoid cyclic dependencies
+    /* eslint-disable @typescript-eslint/no-use-before-define */
+    // // Here we associate which actually populates out pre-declared `association` static and other methods.
+    // User.hasMany(Session, {
+    //   sourceKey: 'id',
+    //   foreignKey: 'user_id',
+    //   as: 'user' // this determines the name in `associations`!
+    // });
+
+    StudentGrade.belongsTo(User, {
+      foreignKey: 'userId',
+      targetKey: 'id',
+      as: 'user'
+    });
+    
+    StudentGrade.belongsTo(CourseWWTopicQuestion, {
+      foreignKey: 'courseWWTopicQuestionId',
+      targetKey: 'id',
+      as: 'question'
+    });
+
+    StudentGrade.hasMany(StudentWorkbook, {
+      foreignKey: 'studentGradeId',
+      sourceKey: 'id',
+      as: 'workbooks'
+    });
+    /* eslint-enable @typescript-eslint/no-use-before-define */
+  }
+
 }
 
 StudentGrade.init({
@@ -71,14 +100,6 @@ StudentGrade.init({
   sequelize: appSequelize, // this bit is important
 });
 
-StudentGrade.belongsTo(User, {
-  foreignKey: 'userId',
-  targetKey: 'id',
-  as: 'user'
-});
+import CourseWWTopicQuestion from './course-ww-topic-question';
+import User from './user';import StudentWorkbook from './student-workbook';
 
-StudentGrade.belongsTo(CourseWWTopicQuestion, {
-  foreignKey: 'courseWWTopicQuestionId',
-  targetKey: 'id',
-  as: 'courseWWTopicQuestion'
-});

@@ -30,6 +30,7 @@ router.post('/login',
                 roleId: role.id,
                 firstName: user.firstName,
                 lastName: user.lastName,
+                userId: user.id
             }));
         } else {
             next(Boom.badRequest('Invalid login'));

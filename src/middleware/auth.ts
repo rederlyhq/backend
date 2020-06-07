@@ -59,7 +59,10 @@ passport.serializeUser(async (session: Session, done) => {
 
 passport.deserializeUser(async (id: number, done: (err: Boom<null>, user?: unknown) => void): Promise<void> => {
     try {
-        const user = userController.getUserById(id);
+        const user = userController.getUser({
+            id,
+            includeSensitive: true
+        });
         return done(null, user);
     } catch (err) {
         return done(err);

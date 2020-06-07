@@ -1,5 +1,6 @@
 import * as Joi from 'joi';
 import { ValidationObject } from '../../generic-interfaces/validation-object';
+import IncludeGradeOptions from './include-grade-options';
 
 export const registerValidation: ValidationObject = {
     params: {},
@@ -34,6 +35,17 @@ export const listUsers: ValidationObject = {
     query: {
         userIds: Joi.alternatives().try(Joi.array().items(Joi.number()), Joi.number()).optional(),
         courseId: Joi.number().optional(),
+    },
+    body: {},
+}
+
+export const getUser: ValidationObject = {
+    params: {
+        id: Joi.number().required()
+    },
+    query: {
+        courseId: Joi.number().optional(),
+        includeGrades: Joi.string().valid(Object.keys(IncludeGradeOptions)).optional(),
     },
     body: {},
 }

@@ -39,6 +39,17 @@ export const createCourseTopicValidation = {
     }
 }
 
+export const updateCourseTopicValidation: ValidationObject = {
+    params: {
+        id: Joi.number().required()
+    },
+    body: {
+        startDate: Joi.date().required(),
+        endDate: Joi.date().required(),
+    },
+    query: {},
+}
+
 export const createCourseTopicQuestionValidation = {
     body: {
         problemNumber: Joi.number().required(),

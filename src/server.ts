@@ -23,7 +23,7 @@ const {
 } = configurations.server.limiter;
 
 const app = express();
-app.use(morgan("combined", { stream: { write: (message): void => { logger.info(message) } } }));
+app.use(morgan("dev", { stream: { write: (message): void => { logger.info(message) } } }));
 
 const limiter = rateLimit({
     windowMs: windowLength,

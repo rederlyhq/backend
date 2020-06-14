@@ -37,6 +37,7 @@ interface RegisterUserResponse {
 interface ListUserFilter {
     userIds?: number[] | number;
     courseId?: number;
+    includeGrades?: IncludeGradeOptions;
 }
 
 interface EmailOptions {
@@ -74,6 +75,51 @@ class UserController {
         const include: any = [];
         if (listOptions) {
             if (listOptions.filters) {
+
+                const sequelizeInclude = [];
+                const sequelizeGradeInclude: any = {};
+                if(listOptions.filters.includeGrades === IncludeGradeOptions.JUST_GRADE || listOptions.filters.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
+                    sequelizeGradeInclude.model = StudentGrade;
+                    sequelizeGradeInclude.as = 'grades';
+                    sequelizeGradeInclude.include = [];
+                    if(!_.isNil(listOptions.filters.courseId)) {
+                        sequelizeGradeInclude.include.push({
+                            model: CourseWWTopicQuestion,
+                            as: 'question',
+                            attributes: [], // Don't care about the data, just the where
+                            include: {
+                                model: CourseTopicContent,
+                                as: 'topic',
+                                include: {
+                                    model: CourseUnitContent,
+                                    as: 'unit',
+                                    include: {
+                                        model: Course,
+                                        as: 'course',
+                                        where: {
+                                            id: listOptions.filters.courseId
+                                        }
+                                    },
+                                    where: {} // If you don't include where the course where won't propogate down
+                                },
+                                where: {} // If you don't include where the course where won't propogate down
+                            },
+                            where: {} // If you don't include where the course where won't propogate down
+                        });
+        
+                    }
+        
+                    sequelizeInclude.push(sequelizeGradeInclude);
+                }
+        
+                if(listOptions.filters.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
+                    sequelizeGradeInclude.include.push({
+                        model: StudentWorkbook,
+                        as: 'workbooks'
+                    });
+                }
+                include.push(...sequelizeInclude);
+
                 if (listOptions.filters.userIds) {
                     where.id = listOptions.filters.userIds
                 }

@@ -35,6 +35,7 @@ export const listUsers: ValidationObject = {
     query: {
         userIds: Joi.alternatives().try(Joi.array().items(Joi.number()), Joi.number()).optional(),
         courseId: Joi.number().optional(),
+        includeGrades: Joi.string().valid(Object.keys(IncludeGradeOptions)).optional(),
     },
     body: {},
 }

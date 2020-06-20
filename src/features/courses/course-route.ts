@@ -126,7 +126,7 @@ router.get('/question/:id',
             const question = await courseController.getQuestion({
                 questionId: parseInt(req.params.id),
                 userId: session.userId,
-                formURL: `${req.protocol}://${req.get('host')}${req.originalUrl}`
+                formURL: req.originalUrl
             });
             next(httpResponse.Ok('Fetched question successfully', question));
 
@@ -147,7 +147,7 @@ router.post('/question/:id',
             return `/rendered?${qs.stringify({
                 format: 'json',
                 template: 'simple',
-                formURL: `${req.protocol}://${req.get('host')}${req.originalUrl}`,
+                formURL: req.originalUrl,
             })}`;
         },
         userResDecorator: async (proxyRes: Response<any>, proxyResData: any, userReq: any, userRes: Response<any>) => {

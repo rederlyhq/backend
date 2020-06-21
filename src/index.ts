@@ -1,4 +1,5 @@
 require('dotenv').config();
+import './extensions';
 import configurations from './configurations';
 import logger from './utilities/logger';
 const enableddMarker = new Array(20).join('*');
@@ -16,10 +17,3 @@ import { listen } from './server';
     await sync();
     await listen();
 })();
-// import emailHelper from './utilities/email-helper';
-
-// emailHelper.sendEmail({
-//     content: "New email",
-//     email: "tommylettieri@gmail.com",
-//     subject: "TESTEST"
-// })

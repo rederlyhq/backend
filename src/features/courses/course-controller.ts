@@ -9,6 +9,11 @@ import CourseWWTopicQuestion from '../../database/models/course-ww-topic-questio
 import rendererHelper from '../../utilities/renderer-helper';
 import StudentWorkbook from '../../database/models/student-workbook';
 import StudentGrade from '../../database/models/student-grade';
+import User from '../../database/models/user';
+import userController from '../users/user-controller';
+// When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const Sequelize = require('sequelize');
 
 interface EnrollByCodeOptions {
     code: string;
@@ -211,6 +216,58 @@ class CourseController {
             }
             throw e;
         }
+    }
+
+    async findMissingGrades(): Promise<any[]> {
+        const result = await User.findAll({
+            include: [{
+                model: StudentEnrollment,
+                as: 'courseEnrollments',
+                include: [{
+                    model: Course,
+                    as: 'course',
+                    include: [{
+                        model: CourseUnitContent,
+                        as: 'units',
+                        include: [{
+                            model: CourseTopicContent,
+                            as: 'topics',
+                            include: [{
+                                model: CourseWWTopicQuestion,
+                                as: 'questions',
+                                include: [{
+                                    model: StudentGrade,
+                                    as: 'grades',
+                                    required: false
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            }],
+            where: {
+                '$courseEnrollments.course.units.topics.questions.grades.id$': {
+                    [Sequelize.Op.eq]: null
+                }
+            }
+        });
+
+        const results: any[] = [];
+        result.forEach((student: any) => {
+            student.courseEnrollments.forEach((studentEnrollment: any) => {
+                studentEnrollment.course.units.forEach((unit: any) => {
+                    unit.topics.forEach((topic: any) => {
+                        topic.questions.forEach((question: any) => {
+                            results.push({
+                                student,
+                                question,
+                            });
+                        });
+                    });
+                });
+            })
+        })
+        return results;
     }
 }
 

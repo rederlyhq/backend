@@ -11,6 +11,7 @@ import StudentWorkbook from '../../database/models/student-workbook';
 import StudentGrade from '../../database/models/student-grade';
 import User from '../../database/models/user';
 import userController from '../users/user-controller';
+import logger from '../../utilities/logger';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -268,6 +269,22 @@ class CourseController {
             })
         })
         return results;
+    }
+
+    async syncMissingGrades(): Promise<void> {
+        const missingGrades = await this.findMissingGrades();
+        logger.info(`Found ${missingGrades.length} missing grades`)
+        await missingGrades.asyncForEach(async (missingGrade: any) => {
+            await StudentGrade.create({
+                userId: missingGrade.student.id,
+                courseWWTopicQuestionId: missingGrade.question.id,
+                randomSeed: Math.floor(Math.random() * 999999),
+                bestScore: 0,
+                numAttempts: 0,
+                firstAttempts: 0,
+                latestAttempts: 0,
+            });
+        });
     }
 }
 

@@ -68,6 +68,9 @@
     "start:watch": "nodemon -x npm start",
     "debug": "node --inspect=5858 -r ts-node/register ./src/index.ts",
     "debug:watch": "nodemon -x npm run debug",
+    "cli": "ts-node ./src/cli.ts",
+    "cli:debug": "node --inspect=5858 -r ts-node/register ./src/cli.ts",
+    "cli:debug:watch": "nodemon -x npm run cli:debug",
     "build": "tsc",
     "sequelize": "sequelize",
     "lint": "eslint src/ --ext .ts"

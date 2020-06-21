@@ -10,6 +10,10 @@ router.use('/users', require('./features/users/user-route'));
 router.use('/courses', require('./features/courses/course-route'));
 router.use('/curriculum', require('./features/curriculum/curriculum-route'));
 
-router.use('/webwork2_files', proxy(configurations.renderer.url));
+router.use('/webwork2_files', proxy(configurations.renderer.url, {
+    proxyReqPathResolver: (req) => {
+        return req.originalUrl;
+    }
+}));
 
 module.exports = router;

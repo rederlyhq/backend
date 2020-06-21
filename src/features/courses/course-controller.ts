@@ -1,3 +1,4 @@
+import * as _ from "lodash";
 import Bluebird = require('bluebird');
 import Course from '../../database/models/course';
 import StudentEnrollment from '../../database/models/student-enrollment';
@@ -10,7 +11,6 @@ import rendererHelper from '../../utilities/renderer-helper';
 import StudentWorkbook from '../../database/models/student-workbook';
 import StudentGrade from '../../database/models/student-grade';
 import User from '../../database/models/user';
-import userController from '../users/user-controller';
 import logger from '../../utilities/logger';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -40,6 +40,15 @@ interface UpdateTopicOptions {
     updates: {
         startDate: Date;
         endDate: Date;    
+    };
+}
+
+interface GetGradesOptions {
+    where: {
+        courseId?: number;
+        unitId?: number;
+        topicId?: number;
+        questionId?: number;
     };
 }
 
@@ -284,6 +293,33 @@ class CourseController {
                 firstAttempts: 0,
                 latestAttempts: 0,
             });
+        });
+    }
+
+    async getGrades(options: GetGradesOptions): Promise<StudentGrade[]> {
+        const {
+            courseId,
+            questionId,
+            topicId,
+            unitId
+        } = options.where;
+
+        const setFilterCount = [
+            courseId,
+            questionId,
+            topicId,
+            unitId
+        ].reduce((accumulator, val) => accumulator + (!_.isNil(val) && 1 || 0), 0);
+
+        if(setFilterCount !== 1) {
+            throw new Error(`One filter must be set by found ${setFilterCount}`);
+        }
+        
+        return StudentGrade.findAll({
+            include: [{
+                model: User,
+                as: 'user',
+            }]
         });
     }
 }

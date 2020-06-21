@@ -97,3 +97,14 @@ export const listCoursesValidation = {
     },
     body: {},
 }
+
+export const getGrades = {
+    params: {},
+    query: {
+        courseId: Joi.number().optional(),
+        unitId: Joi.number().optional(),
+        topicId: Joi.number().optional(),
+        questionId: Joi.number().optional(),
+    },
+    body: {},
+}

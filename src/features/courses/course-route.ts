@@ -5,7 +5,7 @@ import validate from '../../middleware/joi-validator'
 import { authenticationMiddleware } from "../../middleware/auth";
 import httpResponse from "../../utilities/http-response";
 import * as asyncHandler from 'express-async-handler'
-import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation } from "./course-route-validation";
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGrades } from "./course-route-validation";
 import Session from "../../database/models/session";
 import Boom = require("boom");
 import NotFoundError from "../../exceptions/not-found-error";
@@ -75,6 +75,25 @@ router.post('/topic',
             next(httpResponse.Created('Course Topic created successfully', newTopic));
         } catch (e) {
             next(e);
+        }
+    }));
+
+router.get('/grades',
+    authenticationMiddleware,
+    validate(getGrades),
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const grades = await courseController.getGrades({
+                where: {
+                    courseId: (req.query as any).courseId as number,
+                    questionId: (req.query as any).questionId as number,
+                    topicId: (req.query as any).topicId as number,
+                    unitId: (req.query as any).unitId as number
+                }
+            });
+            next(httpResponse.Ok('Fetched successfully', grades));
+        } catch (e) {
+            next(e)
         }
     }));
 

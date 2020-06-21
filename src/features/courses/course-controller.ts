@@ -328,6 +328,7 @@ class CourseController {
         const masteredProblemCountCalculationString = 'COUNT(CASE WHEN best_score >= 1 THEN num_attempts END)';
         const inProgressProblemCountCalculationString = `${totalProblemCountCalculationString} - ${pendingProblemCountCalculationString} - ${masteredProblemCountCalculationString}`;
 
+        // Include cannot be null or undefined, coerce to empty array
         let includeOthers = false;
         let unitInclude;
         if (includeOthers || _.isNil(courseId) === false) {
@@ -361,6 +362,26 @@ class CourseController {
             }];
         }
 
+        let attributes: sequelize.FindAttributeOptions;
+        // Group cannot be empty array, use null if there is no group clause
+        let group: sequelize.GroupOption;
+        if (_.isNil(questionId) === false) {
+            attributes = [
+                'id', 
+                'bestScore',
+                'numAttempts'
+            ]
+            group = null;
+        } else {
+            attributes = [
+                [sequelize.fn('avg', sequelize.col('best_score')), 'average'],
+                [sequelize.literal(pendingProblemCountCalculationString), 'pendingProblemCount'],
+                [sequelize.literal(masteredProblemCountCalculationString), 'masteredProblemCount'],
+                [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
+            ];
+            group = ['user.id', 'user.first_name', 'user.last_name', ];
+        }
+
         return StudentGrade.findAll({
             include: [{
                 model: User,
@@ -372,15 +393,9 @@ class CourseController {
                 attributes: [],
                 include: questionInclude || [],
             }],
-            attributes: [
-                'user.id', 
-                [sequelize.fn('avg', sequelize.col('best_score')), 'average'],
-                [sequelize.literal(pendingProblemCountCalculationString), 'pendingProblemCount'],
-                [sequelize.literal(masteredProblemCountCalculationString), 'masteredProblemCount'],
-                [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
-            ],
+            attributes,
             where,
-            group: ['user.id', 'user.first_name', 'user.last_name', ]
+            group
         });
     }
 }

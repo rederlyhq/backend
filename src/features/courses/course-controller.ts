@@ -12,6 +12,7 @@ import StudentWorkbook from '../../database/models/student-workbook';
 import StudentGrade from '../../database/models/student-grade';
 import User from '../../database/models/user';
 import logger from '../../utilities/logger';
+import sequelize = require("sequelize");
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -326,23 +327,36 @@ class CourseController {
             include: [{
                 model: User,
                 as: 'user',
+                attributes: ['id', 'firstName', 'lastName']
             }, {
                 model: CourseWWTopicQuestion,
                 as: 'question',
+                attributes: [],
                 include: [{
                     model: CourseTopicContent,
                     as: 'topic',
+                    attributes: [],
                     include: [{
                         model: CourseUnitContent,
                         as: 'unit',
+                        attributes: [],
                         include: [{
                             model: Course,
                             as: 'course',
+                            attributes: [],
                         }],
                     }],
                 }],
             }],
-            where
+            attributes: [
+                'user.id', 
+                [sequelize.fn('avg', sequelize.col('best_score')), 'average'],
+                [sequelize.literal('COUNT(CASE WHEN num_attempts = 0 THEN num_attempts END)'), 'pendingProblemCount'],
+                [sequelize.literal('COUNT(CASE WHEN num_attempts > 0 THEN num_attempts END)'), 'inProgressProblemCount'],
+                [sequelize.literal('COUNT(CASE WHEN best_score >= 1 THEN num_attempts END)'), 'masteredProblemCount'],
+            ],
+            where,
+            group: ['user.id', 'user.first_name', 'user.last_name', ]
         });
     }
 }

@@ -313,7 +313,7 @@ class CourseController {
         ].reduce((accumulator, val) => accumulator + (!_.isNil(val) && 1 || 0), 0);
 
         if (setFilterCount !== 1) {
-            throw new Error(`One filter must be set by found ${setFilterCount}`);
+            throw new Error(`One filter must be set but found ${setFilterCount}`);
         }
 
         const where = _({

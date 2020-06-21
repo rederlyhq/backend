@@ -323,6 +323,11 @@ class CourseController {
             '$question.id$': questionId,
         }).omitBy(_.isUndefined).value();
 
+        const totalProblemCountCalculationString = 'COUNT(question.id)';
+        const pendingProblemCountCalculationString = 'COUNT(CASE WHEN num_attempts = 0 THEN num_attempts END)';
+        const masteredProblemCountCalculationString = 'COUNT(CASE WHEN best_score >= 1 THEN num_attempts END)';
+        const inProgressProblemCountCalculationString = `${totalProblemCountCalculationString} - ${pendingProblemCountCalculationString} - ${masteredProblemCountCalculationString}`;
+
         return StudentGrade.findAll({
             include: [{
                 model: User,
@@ -351,9 +356,9 @@ class CourseController {
             attributes: [
                 'user.id', 
                 [sequelize.fn('avg', sequelize.col('best_score')), 'average'],
-                [sequelize.literal('COUNT(CASE WHEN num_attempts = 0 THEN num_attempts END)'), 'pendingProblemCount'],
-                [sequelize.literal('COUNT(CASE WHEN num_attempts > 0 THEN num_attempts END)'), 'inProgressProblemCount'],
-                [sequelize.literal('COUNT(CASE WHEN best_score >= 1 THEN num_attempts END)'), 'masteredProblemCount'],
+                [sequelize.literal(pendingProblemCountCalculationString), 'pendingProblemCount'],
+                [sequelize.literal(masteredProblemCountCalculationString), 'masteredProblemCount'],
+                [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
             ],
             where,
             group: ['user.id', 'user.first_name', 'user.last_name', ]

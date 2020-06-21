@@ -39,7 +39,7 @@ interface UpdateTopicOptions {
     };
     updates: {
         startDate: Date;
-        endDate: Date;    
+        endDate: Date;
     };
 }
 
@@ -67,7 +67,7 @@ class CourseController {
                     include: [{
                         model: CourseWWTopicQuestion,
                         as: 'questions',
-                    }]    
+                    }]
                 }]
             }]
         })
@@ -137,7 +137,7 @@ class CourseController {
             }
         });
 
-        if(studentGrade === null) {
+        if (studentGrade === null) {
             studentGrade = await StudentGrade.create({
                 userId: question.userId,
                 courseWWTopicQuestionId: question.questionId,
@@ -172,7 +172,7 @@ class CourseController {
 
         studentGrade.bestScore = bestScore;
         studentGrade.numAttempts++;
-        if(studentGrade.numAttempts === 1) {
+        if (studentGrade.numAttempts === 1) {
             studentGrade.firstAttempts = options.score;
         }
         studentGrade.latestAttempts = options.score;
@@ -311,15 +311,38 @@ class CourseController {
             unitId
         ].reduce((accumulator, val) => accumulator + (!_.isNil(val) && 1 || 0), 0);
 
-        if(setFilterCount !== 1) {
+        if (setFilterCount !== 1) {
             throw new Error(`One filter must be set by found ${setFilterCount}`);
         }
-        
+
+        const where = _({
+            '$question.topic.unit.course.id$': courseId,
+            '$question.topic.unit.id$': unitId,
+            '$question.topic.id$': topicId,
+            '$question.id$': questionId,
+        }).omitBy(_.isUndefined).value();
+
         return StudentGrade.findAll({
             include: [{
                 model: User,
                 as: 'user',
-            }]
+            }, {
+                model: CourseWWTopicQuestion,
+                as: 'question',
+                include: [{
+                    model: CourseTopicContent,
+                    as: 'topic',
+                    include: [{
+                        model: CourseUnitContent,
+                        as: 'unit',
+                        include: [{
+                            model: Course,
+                            as: 'course',
+                        }],
+                    }],
+                }],
+            }],
+            where
         });
     }
 }

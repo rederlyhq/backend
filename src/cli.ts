@@ -1,7 +1,9 @@
 require('dotenv').config();
 import './extensions';
 import configurations from './configurations';
+// TODO change logger to just use console in this case
 import logger from './utilities/logger';
+
 const enableddMarker = new Array(20).join('*');
 const disableddMarker = new Array(20).join('#');
 if (configurations.email.enabled) {
@@ -11,9 +13,12 @@ if (configurations.email.enabled) {
 }
 
 import { sync } from './database';
-import { listen } from './server';
+import courseController from './features/courses/course-controller';
 
 (async (): Promise<void> => {
     await sync();
-    await listen();
+
+    logger.info('Performing missing grade sync');
+    await courseController.syncMissingGrades();
+    logger.info('done');
 })();

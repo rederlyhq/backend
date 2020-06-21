@@ -23,7 +23,7 @@ const {
 } = configurations.server.limiter;
 
 const app = express();
-app.use(morgan("combined", { stream: { write: (message): void => { logger.info(message) } } }));
+app.use(morgan("dev", { stream: { write: (message): void => { logger.info(message) } } }));
 
 const limiter = rateLimit({
     windowMs: windowLength,
@@ -46,17 +46,17 @@ app.use(basePath, router);
 // next is a required parameter, without having it requests result in a response of object
 // TODO: err is Boom | Error | any, the any is errors that we have to define
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-    logger.warn(err.message);
-    if (err.output) {
-        return res.status(err.output.statusCode).json(err.output.payload);
+app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
+    if (obj.output) {
+        return res.status(obj.output.statusCode).json(obj.output.payload);
     }
-    else if (err.statusCode) {
-        return res.status(err.statusCode).json(err);
-    } else if (err.status) {
-        return res.status(err.status).json(err);
+    else if (obj.statusCode) {
+        return res.status(obj.statusCode).json(obj);
+    } else if (obj.status) {
+        return res.status(obj.status).json(obj);
     } else {
-        res.status(500).json(err);
+        logger.error(obj.stack);
+        res.status(500).json(obj);
     }
 });
 

@@ -1,3 +1,4 @@
+import * as _ from "lodash";
 import Bluebird = require('bluebird');
 import Course from '../../database/models/course';
 import StudentEnrollment from '../../database/models/student-enrollment';
@@ -9,6 +10,12 @@ import CourseWWTopicQuestion from '../../database/models/course-ww-topic-questio
 import rendererHelper from '../../utilities/renderer-helper';
 import StudentWorkbook from '../../database/models/student-workbook';
 import StudentGrade from '../../database/models/student-grade';
+import User from '../../database/models/user';
+import logger from '../../utilities/logger';
+import sequelize = require("sequelize");
+// When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const Sequelize = require('sequelize');
 
 interface EnrollByCodeOptions {
     code: string;
@@ -33,7 +40,16 @@ interface UpdateTopicOptions {
     };
     updates: {
         startDate: Date;
-        endDate: Date;    
+        endDate: Date;
+    };
+}
+
+interface GetGradesOptions {
+    where: {
+        courseId?: number;
+        unitId?: number;
+        topicId?: number;
+        questionId?: number;
     };
 }
 
@@ -52,7 +68,7 @@ class CourseController {
                     include: [{
                         model: CourseWWTopicQuestion,
                         as: 'questions',
-                    }]    
+                    }]
                 }]
             }]
         })
@@ -122,7 +138,7 @@ class CourseController {
             }
         });
 
-        if(studentGrade === null) {
+        if (studentGrade === null) {
             studentGrade = await StudentGrade.create({
                 userId: question.userId,
                 courseWWTopicQuestionId: question.questionId,
@@ -157,7 +173,7 @@ class CourseController {
 
         studentGrade.bestScore = bestScore;
         studentGrade.numAttempts++;
-        if(studentGrade.numAttempts === 1) {
+        if (studentGrade.numAttempts === 1) {
             studentGrade.firstAttempts = options.score;
         }
         studentGrade.latestAttempts = options.score;
@@ -211,6 +227,137 @@ class CourseController {
             }
             throw e;
         }
+    }
+
+    async findMissingGrades(): Promise<any[]> {
+        const result = await User.findAll({
+            include: [{
+                model: StudentEnrollment,
+                as: 'courseEnrollments',
+                include: [{
+                    model: Course,
+                    as: 'course',
+                    include: [{
+                        model: CourseUnitContent,
+                        as: 'units',
+                        include: [{
+                            model: CourseTopicContent,
+                            as: 'topics',
+                            include: [{
+                                model: CourseWWTopicQuestion,
+                                as: 'questions',
+                                include: [{
+                                    model: StudentGrade,
+                                    as: 'grades',
+                                    required: false
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            }],
+            where: {
+                '$courseEnrollments.course.units.topics.questions.grades.id$': {
+                    [Sequelize.Op.eq]: null
+                }
+            }
+        });
+
+        const results: any[] = [];
+        result.forEach((student: any) => {
+            student.courseEnrollments.forEach((studentEnrollment: any) => {
+                studentEnrollment.course.units.forEach((unit: any) => {
+                    unit.topics.forEach((topic: any) => {
+                        topic.questions.forEach((question: any) => {
+                            results.push({
+                                student,
+                                question,
+                            });
+                        });
+                    });
+                });
+            })
+        })
+        return results;
+    }
+
+    async syncMissingGrades(): Promise<void> {
+        const missingGrades = await this.findMissingGrades();
+        logger.info(`Found ${missingGrades.length} missing grades`)
+        await missingGrades.asyncForEach(async (missingGrade: any) => {
+            await StudentGrade.create({
+                userId: missingGrade.student.id,
+                courseWWTopicQuestionId: missingGrade.question.id,
+                randomSeed: Math.floor(Math.random() * 999999),
+                bestScore: 0,
+                numAttempts: 0,
+                firstAttempts: 0,
+                latestAttempts: 0,
+            });
+        });
+    }
+
+    async getGrades(options: GetGradesOptions): Promise<StudentGrade[]> {
+        const {
+            courseId,
+            questionId,
+            topicId,
+            unitId
+        } = options.where;
+
+        const setFilterCount = [
+            courseId,
+            questionId,
+            topicId,
+            unitId
+        ].reduce((accumulator, val) => accumulator + (!_.isNil(val) && 1 || 0), 0);
+
+        if (setFilterCount !== 1) {
+            throw new Error(`One filter must be set but found ${setFilterCount}`);
+        }
+
+        const where = _({
+            '$question.topic.unit.course.id$': courseId,
+            '$question.topic.unit.id$': unitId,
+            '$question.topic.id$': topicId,
+            '$question.id$': questionId,
+        }).omitBy(_.isUndefined).value();
+
+        return StudentGrade.findAll({
+            include: [{
+                model: User,
+                as: 'user',
+                attributes: ['id', 'firstName', 'lastName']
+            }, {
+                model: CourseWWTopicQuestion,
+                as: 'question',
+                attributes: [],
+                include: [{
+                    model: CourseTopicContent,
+                    as: 'topic',
+                    attributes: [],
+                    include: [{
+                        model: CourseUnitContent,
+                        as: 'unit',
+                        attributes: [],
+                        include: [{
+                            model: Course,
+                            as: 'course',
+                            attributes: [],
+                        }],
+                    }],
+                }],
+            }],
+            attributes: [
+                'user.id', 
+                [sequelize.fn('avg', sequelize.col('best_score')), 'average'],
+                [sequelize.literal('COUNT(CASE WHEN num_attempts = 0 THEN num_attempts END)'), 'pendingProblemCount'],
+                [sequelize.literal('COUNT(CASE WHEN num_attempts > 0 THEN num_attempts END)'), 'inProgressProblemCount'],
+                [sequelize.literal('COUNT(CASE WHEN best_score >= 1 THEN num_attempts END)'), 'masteredProblemCount'],
+            ],
+            where,
+            group: ['user.id', 'user.first_name', 'user.last_name', ]
+        });
     }
 }
 

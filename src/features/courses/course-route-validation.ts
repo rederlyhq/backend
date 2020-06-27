@@ -59,6 +59,18 @@ export const updateCourseTopicValidation: ValidationObject = {
     query: {},
 }
 
+export const updateUnitTopicValidation: ValidationObject = {
+    params: {
+        id: Joi.number().required()
+    },
+    body: {
+        name: Joi.string().optional(),
+        active: Joi.boolean().optional(),
+        // courseId: Joi.number().optional(),
+      },
+    query: {},
+}
+
 export const createCourseTopicQuestionValidation = {
     body: {
         problemNumber: Joi.number().required(),

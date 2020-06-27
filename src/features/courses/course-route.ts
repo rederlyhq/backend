@@ -5,7 +5,7 @@ import validate from '../../middleware/joi-validator'
 import { authenticationMiddleware } from "../../middleware/auth";
 import httpResponse from "../../utilities/http-response";
 import * as asyncHandler from 'express-async-handler'
-import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGrades } from "./course-route-validation";
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGrades, updateUnitTopicValidation } from "./course-route-validation";
 import Session from "../../database/models/session";
 import Boom = require("boom");
 import NotFoundError from "../../exceptions/not-found-error";
@@ -112,6 +112,26 @@ router.put('/topic/:id',
             });
             // TODO handle not found case
             next(httpResponse.Ok('Updated topic successfully', updates));
+        } catch (e) {
+            next(e);
+        }
+    }));
+
+router.put('/unit/:id',
+    authenticationMiddleware,
+    validate(updateUnitTopicValidation),
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const updates = await courseController.updateUnit({
+                where: {
+                    id: parseInt(req.params.id)
+                },
+                updates: {
+                    ...req.body
+                }
+            });
+            // TODO handle not found case
+            next(httpResponse.Ok('Updated unit successfully', updates));
         } catch (e) {
             next(e);
         }

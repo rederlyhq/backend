@@ -41,6 +41,20 @@ interface UpdateTopicOptions {
     updates: {
         startDate: Date;
         endDate: Date;
+        deadDate: Date;
+        name: string;
+        active: boolean;
+        partialExtend: boolean;
+    };
+}
+
+interface UpdateUnitOptions {
+    where: {
+        id: number;
+    };
+    updates: {
+        name: string;
+        active: boolean;
     };
 }
 
@@ -113,6 +127,14 @@ class CourseController {
 
     async updateTopic(options: UpdateTopicOptions): Promise<number> {
         const updates = await CourseTopicContent.update(options.updates, {
+            where: options.where
+        });
+        // updates count
+        return updates[0];
+    }
+
+    async updateUnit(options: UpdateUnitOptions): Promise<number> {
+        const updates = await CourseUnitContent.update(options.updates, {
             where: options.where
         });
         // updates count

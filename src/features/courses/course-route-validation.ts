@@ -44,9 +44,18 @@ export const updateCourseTopicValidation: ValidationObject = {
         id: Joi.number().required()
     },
     body: {
-        startDate: Joi.date().required(),
-        endDate: Joi.date().required(),
-    },
+        startDate: Joi.date().optional(),
+        endDate: Joi.date().optional(),
+        deadDate: Joi.date().optional(),
+        name: Joi.string().optional(),
+        active: Joi.boolean().optional(),
+        partialExtend: Joi.boolean().optional(),
+        // TODO do we support moving topics or changing their type?
+        // Omitting foreign key support
+        // curriculumTopicContentId: Joi.number().optional(),
+        // courseUnitContentId: Joi.number().optional(),
+        // topicTypeId: Joi.number().optional(),
+      },
     query: {},
 }
 

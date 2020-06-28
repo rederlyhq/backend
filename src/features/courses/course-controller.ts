@@ -67,6 +67,12 @@ interface GetGradesOptions {
     };
 }
 
+interface GetStatisticsOnUnitsOptions {
+    where: {
+        courseId?: number;
+    };
+}
+
 class CourseController {
     getCourseById(id: number): Promise<Course> {
         return Course.findOne({
@@ -424,6 +430,46 @@ class CourseController {
             where,
             group
         });
+    }
+
+    getStatisticsOnUnits(options: GetStatisticsOnUnitsOptions): Promise<CourseUnitContent[]> {
+        const {
+            courseId
+        } = options.where;
+
+        const where = _({
+            courseId,
+        }).omitBy(_.isNil).value();
+
+        return CourseUnitContent.findAll({
+            where,
+            attributes: [
+                'id',
+                'name',
+                // TODO see if alias can be used instead
+                [sequelize.fn('avg', sequelize.col('topics.questions.grades.num_attempts')), 'averageAttemptedCount'],
+                [sequelize.fn('avg', sequelize.col('topics.questions.grades.best_score')), 'averageScore'],
+                [sequelize.fn('count', sequelize.col('topics.questions.grades.id')), 'totalGrades'],
+                [sequelize.literal('count(CASE WHEN "topics->questions->grades".best_score >= 1 THEN "topics->questions->grades".id END)'), 'completedCount'],
+                [sequelize.literal('CASE WHEN COUNT("topics->questions->grades".id) > 0 THEN count(CASE WHEN "topics->questions->grades".best_score >= 1 THEN "topics->questions->grades".id END)::FLOAT / count("topics->questions->grades".id) ELSE NULL END'), 'completionPercent'],
+            ],
+            include: [{
+                model: CourseTopicContent,
+                as: 'topics',
+                attributes: [],
+                include: [{
+                    model: CourseWWTopicQuestion,
+                    as: 'questions',
+                    attributes: [],
+                    include: [{
+                        model: StudentGrade,
+                        as: 'grades',
+                        attributes: []
+                    }]
+                }]
+            }],
+            group: ['CourseUnitContent.id', 'CourseUnitContent.name' ]
+        })
     }
 }
 

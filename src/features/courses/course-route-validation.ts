@@ -133,3 +133,11 @@ export const getGrades = {
     },
     body: {},
 }
+
+export const getStatisticsOnUnits = {
+    params: {},
+    query: {
+        courseId: Joi.number().optional(),
+    },
+    body: {},
+}

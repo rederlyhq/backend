@@ -5,7 +5,7 @@ import validate from '../../middleware/joi-validator'
 import { authenticationMiddleware } from "../../middleware/auth";
 import httpResponse from "../../utilities/http-response";
 import * as asyncHandler from 'express-async-handler'
-import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGrades, updateCourseUnitValidation } from "./course-route-validation";
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGrades, updateCourseUnitValidation, getStatisticsOnUnits } from "./course-route-validation";
 import Session from "../../database/models/session";
 import Boom = require("boom");
 import NotFoundError from "../../exceptions/not-found-error";
@@ -16,6 +16,22 @@ import * as qs from 'qs';
 import configurations from "../../configurations";
 
 const fileUpload = multer();
+
+router.get('/statistics/unit',
+    authenticationMiddleware,
+    validate(getStatisticsOnUnits),
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const stats = await courseController.getStatisticsOnUnits({
+                where: {
+                    courseId: (req.query as any).courseId
+                }
+            });
+            next(httpResponse.Ok('Fetched successfully', stats));
+        } catch (e) {
+            next(e)
+        }
+    }));
 
 router.post('/def',
     authenticationMiddleware,

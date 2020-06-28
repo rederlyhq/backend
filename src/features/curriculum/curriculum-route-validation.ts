@@ -29,6 +29,14 @@ export const createCurriculumTopicValidation = {
     }
 }
 
+export const updateCurriculumUnitValidation = {
+    body: {
+        name: Joi.string().optional(),
+        active: Joi.boolean().optional(),
+        // curriculumId: Joi.number().optional(),
+        contentOrder: Joi.number().optional(),
+    }
+}
 export const createCurriculumTopicQuestionValidation = {
     body: {
         problemNumber: Joi.number().required(),

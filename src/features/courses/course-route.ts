@@ -40,7 +40,8 @@ router.get('/statistics/topics',
         try {
             const stats = await courseController.getStatisticsOnTopics({
                 where: {
-                    courseUnitContentId: (req.query as any).courseUnitContentId
+                    courseUnitContentId: (req.query as any).courseUnitContentId,
+                    courseId: (req.query as any).courseId
                 }
             });
             next(httpResponse.Ok('Fetched successfully', stats));
@@ -56,7 +57,8 @@ router.get('/statistics/questions',
         try {
             const stats = await courseController.getStatisticsOnQuestions({
                 where: {
-                    courseTopicContentId: (req.query as any).courseTopicContentId
+                    courseTopicContentId: (req.query as any).courseTopicContentId,
+                    courseId: (req.query as any).courseId
                 }
             });
             next(httpResponse.Ok('Fetched successfully', stats));

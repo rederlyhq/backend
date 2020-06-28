@@ -36,7 +36,8 @@ export const createCourseTopicValidation = {
         startDate: Joi.date().required(),
         endDate: Joi.date().required(),
         deadDate: Joi.date().required(),
-        partialExtend: Joi.boolean().required()
+        partialExtend: Joi.boolean().required(),
+        contentOrder: Joi.number().required(),
     }
 }
 

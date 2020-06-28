@@ -134,10 +134,26 @@ export const getGrades = {
     body: {},
 }
 
-export const getStatisticsOnUnits = {
+export const getStatisticsOnUnitsValidation = {
     params: {},
     query: {
         courseId: Joi.number().optional(),
+    },
+    body: {},
+}
+
+export const getStatisticsOnTopicsValidation = {
+    params: {},
+    query: {
+        courseUnitContentId: Joi.number().optional(),
+    },
+    body: {},
+}
+
+export const getStatisticsOnQuestionsValidation = {
+    params: {},
+    query: {
+        courseTopicContentId: Joi.number().optional(),
     },
     body: {},
 }

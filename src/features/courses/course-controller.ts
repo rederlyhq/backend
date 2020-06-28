@@ -73,6 +73,12 @@ interface GetStatisticsOnUnitsOptions {
     };
 }
 
+interface GetStatisticsOnTopicsOptions {
+    where: {
+        courseUnitContentId?: number;
+    };
+}
+
 class CourseController {
     getCourseById(id: number): Promise<Course> {
         return Course.findOne({
@@ -469,6 +475,41 @@ class CourseController {
                 }]
             }],
             group: ['CourseUnitContent.id', 'CourseUnitContent.name' ]
+        })
+    }
+
+    getStatisticsOnTopics(options: GetStatisticsOnTopicsOptions): Promise<CourseTopicContent[]> {
+        const {
+            courseUnitContentId
+        } = options.where;
+
+        const where = _({
+            courseUnitContentId,
+        }).omitBy(_.isNil).value();
+
+        return CourseTopicContent.findAll({
+            where,
+            attributes: [
+                'id',
+                'name',
+                // TODO see if alias can be used instead
+                [sequelize.fn('avg', sequelize.col('questions.grades.num_attempts')), 'averageAttemptedCount'],
+                [sequelize.fn('avg', sequelize.col('questions.grades.best_score')), 'averageScore'],
+                [sequelize.fn('count', sequelize.col('questions.grades.id')), 'totalGrades'],
+                [sequelize.literal('count(CASE WHEN "questions->grades".best_score >= 1 THEN "questions->grades".id END)'), 'completedCount'],
+                [sequelize.literal('CASE WHEN COUNT("questions->grades".id) > 0 THEN count(CASE WHEN "questions->grades".best_score >= 1 THEN "questions->grades".id END)::FLOAT / count("questions->grades".id) ELSE NULL END'), 'completionPercent'],
+            ],
+            include: [{
+                model: CourseWWTopicQuestion,
+                as: 'questions',
+                attributes: [],
+                include: [{
+                    model: StudentGrade,
+                    as: 'grades',
+                    attributes: []
+                }]
+            }],
+            group: ['CourseTopicContent.id', 'CourseTopicContent.name' ]
         })
     }
 }

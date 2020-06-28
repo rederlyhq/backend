@@ -41,6 +41,20 @@ interface UpdateTopicOptions {
     updates: {
         startDate: Date;
         endDate: Date;
+        deadDate: Date;
+        name: string;
+        active: boolean;
+        partialExtend: boolean;
+    };
+}
+
+interface UpdateUnitOptions {
+    where: {
+        id: number;
+    };
+    updates: {
+        name: string;
+        active: boolean;
     };
 }
 
@@ -50,6 +64,26 @@ interface GetGradesOptions {
         unitId?: number;
         topicId?: number;
         questionId?: number;
+    };
+}
+
+interface GetStatisticsOnUnitsOptions {
+    where: {
+        courseId?: number;
+    };
+}
+
+interface GetStatisticsOnTopicsOptions {
+    where: {
+        courseUnitContentId?: number;
+        courseId?: number;
+    };
+}
+
+interface GetStatisticsOnQuestionsOptions {
+    where: {
+        courseTopicContentId?: number;
+        courseId?: number;
     };
 }
 
@@ -70,7 +104,12 @@ class CourseController {
                         as: 'questions',
                     }]
                 }]
-            }]
+            }],
+            order: [
+                ['units', 'contentOrder', 'ASC'],
+                ['units', 'topics', 'contentOrder', 'ASC'],
+                ['units', 'topics', 'questions', 'problemNumber', 'ASC'],
+            ]
         })
     }
 
@@ -113,6 +152,14 @@ class CourseController {
 
     async updateTopic(options: UpdateTopicOptions): Promise<number> {
         const updates = await CourseTopicContent.update(options.updates, {
+            where: options.where
+        });
+        // updates count
+        return updates[0];
+    }
+
+    async updateUnit(options: UpdateUnitOptions): Promise<number> {
+        const updates = await CourseUnitContent.update(options.updates, {
             where: options.where
         });
         // updates count
@@ -397,6 +444,141 @@ class CourseController {
             where,
             group
         });
+    }
+
+    getStatisticsOnUnits(options: GetStatisticsOnUnitsOptions): Promise<CourseUnitContent[]> {
+        const {
+            courseId
+        } = options.where;
+
+        const where = _({
+            courseId,
+        }).omitBy(_.isNil).value();
+
+        return CourseUnitContent.findAll({
+            where,
+            attributes: [
+                'id',
+                'name',
+                // TODO see if alias can be used instead
+                [sequelize.fn('avg', sequelize.col('topics.questions.grades.num_attempts')), 'averageAttemptedCount'],
+                [sequelize.fn('avg', sequelize.col('topics.questions.grades.best_score')), 'averageScore'],
+                [sequelize.fn('count', sequelize.col('topics.questions.grades.id')), 'totalGrades'],
+                [sequelize.literal('count(CASE WHEN "topics->questions->grades".best_score >= 1 THEN "topics->questions->grades".id END)'), 'completedCount'],
+                [sequelize.literal('CASE WHEN COUNT("topics->questions->grades".id) > 0 THEN count(CASE WHEN "topics->questions->grades".best_score >= 1 THEN "topics->questions->grades".id END)::FLOAT / count("topics->questions->grades".id) ELSE NULL END'), 'completionPercent'],
+            ],
+            include: [{
+                model: CourseTopicContent,
+                as: 'topics',
+                attributes: [],
+                include: [{
+                    model: CourseWWTopicQuestion,
+                    as: 'questions',
+                    attributes: [],
+                    include: [{
+                        model: StudentGrade,
+                        as: 'grades',
+                        attributes: []
+                    }]
+                }]
+            }],
+            group: ['CourseUnitContent.id', 'CourseUnitContent.name' ]
+        })
+    }
+
+    getStatisticsOnTopics(options: GetStatisticsOnTopicsOptions): Promise<CourseTopicContent[]> {
+        const {
+            courseUnitContentId,
+            courseId
+        } = options.where;
+
+        const where = _({
+            courseUnitContentId,
+            '$unit.course_id$': courseId
+        }).omitBy(_.isNil).value();
+
+        const include: sequelize.IncludeOptions[] = [{
+            model: CourseWWTopicQuestion,
+            as: 'questions',
+            attributes: [],
+            include: [{
+                model: StudentGrade,
+                as: 'grades',
+                attributes: []
+            }]
+        }]
+
+        if(!_.isNil(courseId)) {
+            include.push({
+                model: CourseUnitContent,
+                as: 'unit',
+                attributes: []
+            })
+        }
+
+
+        return CourseTopicContent.findAll({
+            where,
+            attributes: [
+                'id',
+                'name',
+                // TODO see if alias can be used instead
+                [sequelize.fn('avg', sequelize.col('questions.grades.num_attempts')), 'averageAttemptedCount'],
+                [sequelize.fn('avg', sequelize.col('questions.grades.best_score')), 'averageScore'],
+                [sequelize.fn('count', sequelize.col('questions.grades.id')), 'totalGrades'],
+                [sequelize.literal('count(CASE WHEN "questions->grades".best_score >= 1 THEN "questions->grades".id END)'), 'completedCount'],
+                [sequelize.literal('CASE WHEN COUNT("questions->grades".id) > 0 THEN count(CASE WHEN "questions->grades".best_score >= 1 THEN "questions->grades".id END)::FLOAT / count("questions->grades".id) ELSE NULL END'), 'completionPercent'],
+            ],
+            include,
+            group: ['CourseTopicContent.id', 'CourseTopicContent.name' ]
+        })
+    }
+
+    getStatisticsOnQuestions(options: GetStatisticsOnQuestionsOptions): Promise<CourseWWTopicQuestion[]> {
+        const {
+            courseTopicContentId,
+            courseId
+        } = options.where;
+        
+        const where = _({
+            courseTopicContentId,
+            '$topic.unit.course_id$': courseId
+        }).omitBy(_.isNil).value();
+
+        const include: sequelize.IncludeOptions[] = [{
+            model: StudentGrade,
+            as: 'grades',
+            attributes: []
+        }]
+
+        if(!_.isNil(courseId)) {
+            include.push({
+                model: CourseTopicContent,
+                as: 'topic',
+                attributes: [],
+                include: [{
+                    model: CourseUnitContent,
+                    as: 'unit',
+                    attributes: []
+                }]
+            })
+        }
+
+        return CourseWWTopicQuestion.findAll({
+            where,
+            attributes: [
+                'id',
+                [sequelize.literal('\'Problem \' || "CourseWWTopicQuestion".problem_number'), 'name'],
+                // TODO see if alias can be used instead
+                [sequelize.fn('avg', sequelize.col('grades.num_attempts')), 'averageAttemptedCount'],
+                [sequelize.fn('avg', sequelize.col('grades.best_score')), 'averageScore'],
+                [sequelize.fn('count', sequelize.col('grades.id')), 'totalGrades'],
+                [sequelize.literal('count(CASE WHEN "grades".best_score >= 1 THEN "grades".id END)'), 'completedCount'],
+                [sequelize.literal('CASE WHEN COUNT("grades".id) > 0 THEN count(CASE WHEN "grades".best_score >= 1 THEN "grades".id END)::FLOAT / count("grades".id) ELSE NULL END'), 'completionPercent'],
+            ],
+            include,
+            group: ['CourseWWTopicQuestion.id' ]
+        })
     }
 }
 

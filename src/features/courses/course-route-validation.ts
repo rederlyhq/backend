@@ -22,6 +22,7 @@ export const createCourseUnitValidation = {
         name: Joi.string().required(),
         active: Joi.boolean().optional().default(true),
         courseId: Joi.number().required(),
+        contentOrder: Joi.number().required(),
     }
 }
 

@@ -69,6 +69,7 @@ export const updateUnitTopicValidation: ValidationObject = {
     body: {
         name: Joi.string().optional(),
         active: Joi.boolean().optional(),
+        contentOrder: Joi.number().optional(),
         // courseId: Joi.number().optional(),
       },
     query: {},

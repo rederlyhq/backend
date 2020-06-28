@@ -83,6 +83,7 @@ interface GetStatisticsOnTopicsOptions {
 interface GetStatisticsOnQuestionsOptions {
     where: {
         courseTopicContentId?: number;
+        courseId?: number;
     };
 }
 
@@ -535,12 +536,33 @@ class CourseController {
 
     getStatisticsOnQuestions(options: GetStatisticsOnQuestionsOptions): Promise<CourseWWTopicQuestion[]> {
         const {
-            courseTopicContentId
+            courseTopicContentId,
+            courseId
         } = options.where;
-
+        
         const where = _({
             courseTopicContentId,
+            '$topic.unit.course_id$': courseId
         }).omitBy(_.isNil).value();
+
+        const include: sequelize.IncludeOptions[] = [{
+            model: StudentGrade,
+            as: 'grades',
+            attributes: []
+        }]
+
+        if(!_.isNil(courseId)) {
+            include.push({
+                model: CourseTopicContent,
+                as: 'topic',
+                attributes: [],
+                include: [{
+                    model: CourseUnitContent,
+                    as: 'unit',
+                    attributes: []
+                }]
+            })
+        }
 
         return CourseWWTopicQuestion.findAll({
             where,
@@ -554,11 +576,7 @@ class CourseController {
                 [sequelize.literal('count(CASE WHEN "grades".best_score >= 1 THEN "grades".id END)'), 'completedCount'],
                 [sequelize.literal('CASE WHEN COUNT("grades".id) > 0 THEN count(CASE WHEN "grades".best_score >= 1 THEN "grades".id END)::FLOAT / count("grades".id) ELSE NULL END'), 'completionPercent'],
             ],
-            include: [{
-                model: StudentGrade,
-                as: 'grades',
-                attributes: []
-            }],
+            include,
             group: ['CourseWWTopicQuestion.id' ]
         })
     }

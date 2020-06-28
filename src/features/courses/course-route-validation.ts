@@ -155,6 +155,7 @@ export const getStatisticsOnQuestionsValidation = {
     params: {},
     query: {
         courseTopicContentId: Joi.number().optional(),
+        courseId: Joi.number().optional(),
     },
     body: {},
 }

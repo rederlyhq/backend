@@ -22,6 +22,7 @@ export const createCourseUnitValidation = {
         name: Joi.string().required(),
         active: Joi.boolean().optional().default(true),
         courseId: Joi.number().required(),
+        contentOrder: Joi.number().required(),
     }
 }
 
@@ -35,7 +36,8 @@ export const createCourseTopicValidation = {
         startDate: Joi.date().required(),
         endDate: Joi.date().required(),
         deadDate: Joi.date().required(),
-        partialExtend: Joi.boolean().required()
+        partialExtend: Joi.boolean().required(),
+        contentOrder: Joi.number().required(),
     }
 }
 
@@ -44,9 +46,32 @@ export const updateCourseTopicValidation: ValidationObject = {
         id: Joi.number().required()
     },
     body: {
-        startDate: Joi.date().required(),
-        endDate: Joi.date().required(),
+        startDate: Joi.date().optional(),
+        endDate: Joi.date().optional(),
+        deadDate: Joi.date().optional(),
+        name: Joi.string().optional(),
+        active: Joi.boolean().optional(),
+        partialExtend: Joi.boolean().optional(),
+        contentOrder: Joi.number().optional(),
+        // TODO do we support moving topics or changing their type?
+        // Omitting foreign key support
+        // curriculumTopicContentId: Joi.number().optional(),
+        // courseUnitContentId: Joi.number().optional(),
+        // topicTypeId: Joi.number().optional(),
+      },
+    query: {},
+}
+
+export const updateCourseUnitValidation: ValidationObject = {
+    params: {
+        id: Joi.number().required()
     },
+    body: {
+        name: Joi.string().optional(),
+        active: Joi.boolean().optional(),
+        contentOrder: Joi.number().optional(),
+        // courseId: Joi.number().optional(),
+      },
     query: {},
 }
 
@@ -105,6 +130,32 @@ export const getGrades = {
         unitId: Joi.number().optional(),
         topicId: Joi.number().optional(),
         questionId: Joi.number().optional(),
+    },
+    body: {},
+}
+
+export const getStatisticsOnUnitsValidation = {
+    params: {},
+    query: {
+        courseId: Joi.number().optional(),
+    },
+    body: {},
+}
+
+export const getStatisticsOnTopicsValidation = {
+    params: {},
+    query: {
+        courseUnitContentId: Joi.number().optional(),
+        courseId: Joi.number().optional(),
+    },
+    body: {},
+}
+
+export const getStatisticsOnQuestionsValidation = {
+    params: {},
+    query: {
+        courseTopicContentId: Joi.number().optional(),
+        courseId: Joi.number().optional(),
     },
     body: {},
 }

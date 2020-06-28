@@ -5,6 +5,30 @@ import CurriculumUnitContent from '../../database/models/curriculum-unit-content
 import CurriculumTopicContent from '../../database/models/curriculum-topic-content';
 import CurriculumWWTopicQuestion from '../../database/models/curriculum-ww-topic-question';
 
+interface UpdateTopicOptions {
+    where: {
+        id: number;
+    };
+    updates: {
+        startDate: Date;
+        endDate: Date;
+        deadDate: Date;
+        name: string;
+        active: boolean;
+        partialExtend: boolean;
+    };
+}
+
+interface UpdateUnitOptions {
+    where: {
+        id: number;
+    };
+    updates: {
+        name: string;
+        active: boolean;
+    };
+}
+
 class CurriculumController {
     getCurriculumById(id: number): Bluebird<Curriculum> {
         return Curriculum.findOne({
@@ -22,7 +46,12 @@ class CurriculumController {
                         as: 'questions'
                     }]
                 }]
-            }]
+            }],
+            order: [
+                ['units', 'contentOrder', 'ASC'],
+                ['units', 'topics', 'contentOrder', 'ASC'],
+                ['units', 'topics', 'questions', 'problemNumber', 'ASC'],
+            ]
         })
     }
 
@@ -48,6 +77,22 @@ class CurriculumController {
 
     createQuestion(question: CurriculumWWTopicQuestion): Promise<CurriculumWWTopicQuestion> {
         return CurriculumWWTopicQuestion.create(question);
+    }
+
+    async updateTopic(options: UpdateTopicOptions): Promise<number> {
+        const updates = await CurriculumTopicContent.update(options.updates, {
+            where: options.where
+        });
+        // updates count
+        return updates[0];
+    }
+
+    async updateUnit(options: UpdateUnitOptions): Promise<number> {
+        const updates = await CurriculumUnitContent.update(options.updates, {
+            where: options.where
+        });
+        // updates count
+        return updates[0];
     }
 }
 

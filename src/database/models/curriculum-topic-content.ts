@@ -6,6 +6,7 @@ export default class CurriculumTopicContent extends Model {
     public curriculumUnitContentId!: number;
     public name!: string;
     public active!: boolean;
+    public contentOrder!: number;
 
     public getCurriculumUnitContent!: BelongsToGetAssociationMixin<CurriculumUnitContent>;
 
@@ -50,6 +51,11 @@ CurriculumTopicContent.init({
     },
     active: {
         type: DataTypes.BOOLEAN,
+        allowNull: false,
+    },
+    contentOrder: {
+        field: 'content_order',
+        type: DataTypes.INTEGER,
         allowNull: false,
     },
 }, {

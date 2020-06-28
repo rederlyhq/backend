@@ -4,7 +4,7 @@ import validate from '../../middleware/joi-validator'
 import { authenticationMiddleware } from "../../middleware/auth";
 import httpResponse from "../../utilities/http-response";
 import * as asyncHandler from 'express-async-handler'
-import { getCurriculumValidation, createCurriculumValidation, createCurriculumUnitValidation, createCurriculumTopicValidation, createCurriculumTopicQuestionValidation } from "./curriculum-route-validation";
+import { getCurriculumValidation, createCurriculumValidation, createCurriculumUnitValidation, createCurriculumTopicValidation, createCurriculumTopicQuestionValidation, updateCurriculumUnitValidation, updateCurriculumTopicValidation } from "./curriculum-route-validation";
 import curriculumController from "./curriculum-controller";
 import Session from "../../database/models/session";
 import UniversityCurriculumPermission from "../../database/models/university-curriculum-permission";
@@ -32,7 +32,7 @@ router.post('/',
                     universityId: university.id,
                 } as UniversityCurriculumPermission);
                 // TODO figure out type
-            } catch(e) {
+            } catch (e) {
                 logger.error(e);
             }
             next(httpResponse.Created('Curriculum created successfully', newCurriculum));
@@ -71,6 +71,45 @@ router.post('/topic',
         }
     }));
 
+router.put('/unit/:id',
+    authenticationMiddleware,
+    validate(updateCurriculumUnitValidation),
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const updates = await curriculumController.updateUnit({
+                where: {
+                    id: parseInt(req.params.id)
+                },
+                updates: {
+                    ...req.body
+                }
+            });
+            // TODO handle not found case
+            next(httpResponse.Ok('Updated unit successfully', updates));
+        } catch (e) {
+            next(e);
+        }
+    }));
+
+router.put('/topic/:id',
+    authenticationMiddleware,
+    validate(updateCurriculumTopicValidation),
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const updates = await curriculumController.updateTopic({
+                where: {
+                    id: parseInt(req.params.id)
+                },
+                updates: {
+                    ...req.body
+                }
+            });
+            // TODO handle not found case
+            next(httpResponse.Ok('Updated topic successfully', updates));
+        } catch (e) {
+            next(e);
+        }
+    }));
 router.post('/question',
     authenticationMiddleware,
     validate(createCurriculumTopicQuestionValidation),

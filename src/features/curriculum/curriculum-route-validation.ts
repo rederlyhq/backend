@@ -16,6 +16,7 @@ export const createCurriculumUnitValidation = {
         name: Joi.string().required(),
         active: Joi.boolean().optional().default(true),
         curriculumId: Joi.number().required(),
+        contentOrder: Joi.number().required(),
     }
 }
 
@@ -24,6 +25,25 @@ export const createCurriculumTopicValidation = {
         name: Joi.string().required(),
         active: Joi.boolean().optional().default(true),
         curriculumUnitContentId: Joi.number().required(),
+        contentOrder: Joi.number().required(),
+    }
+}
+
+export const updateCurriculumUnitValidation = {
+    body: {
+        name: Joi.string().optional(),
+        active: Joi.boolean().optional(),
+        // curriculumId: Joi.number().optional(),
+        contentOrder: Joi.number().optional(),
+    }
+}
+
+export const updateCurriculumTopicValidation = {
+    body: {
+        name: Joi.string().optional(),
+        active: Joi.boolean().optional(),
+        // curriculumUnitContentId: Joi.number().optional(),
+        contentOrder: Joi.number().optional(),
     }
 }
 

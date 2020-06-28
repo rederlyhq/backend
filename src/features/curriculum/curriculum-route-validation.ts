@@ -16,6 +16,7 @@ export const createCurriculumUnitValidation = {
         name: Joi.string().required(),
         active: Joi.boolean().optional().default(true),
         curriculumId: Joi.number().required(),
+        contentOrder: Joi.number().required(),
     }
 }
 

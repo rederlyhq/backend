@@ -146,6 +146,7 @@ export const getStatisticsOnTopicsValidation = {
     params: {},
     query: {
         courseUnitContentId: Joi.number().optional(),
+        courseId: Joi.number().optional(),
     },
     body: {},
 }

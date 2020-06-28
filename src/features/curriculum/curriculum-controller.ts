@@ -46,7 +46,12 @@ class CurriculumController {
                         as: 'questions'
                     }]
                 }]
-            }]
+            }],
+            order: [
+                ['units', 'contentOrder', 'ASC'],
+                ['units', 'topics', 'contentOrder', 'ASC'],
+                ['units', 'topics', 'questions', 'problemNumber', 'ASC'],
+            ]
         })
     }
 

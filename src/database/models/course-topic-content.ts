@@ -8,6 +8,7 @@ export default class CourseTopicContent extends Model {
     public topicTypeId!: number;
     public name!: string;
     public active!: boolean;
+    public contentOrder!: number;
 
     public startDate!: Date;
     public endDate!: Date;
@@ -74,6 +75,11 @@ CourseTopicContent.init({
     },
     topicTypeId: {
         field: 'topic_type_id',
+        type: DataTypes.INTEGER,
+        allowNull: false,
+    },
+    contentOrder: {
+        field: 'content_order',
         type: DataTypes.INTEGER,
         allowNull: false,
     },

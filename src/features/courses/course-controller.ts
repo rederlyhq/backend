@@ -79,6 +79,12 @@ interface GetStatisticsOnTopicsOptions {
     };
 }
 
+interface GetStatisticsOnQuestionsOptions {
+    where: {
+        courseTopicContentId?: number;
+    };
+}
+
 class CourseController {
     getCourseById(id: number): Promise<Course> {
         return Course.findOne({
@@ -510,6 +516,36 @@ class CourseController {
                 }]
             }],
             group: ['CourseTopicContent.id', 'CourseTopicContent.name' ]
+        })
+    }
+
+    getStatisticsOnQuestions(options: GetStatisticsOnQuestionsOptions): Promise<CourseWWTopicQuestion[]> {
+        const {
+            courseTopicContentId
+        } = options.where;
+
+        const where = _({
+            courseTopicContentId,
+        }).omitBy(_.isNil).value();
+
+        return CourseWWTopicQuestion.findAll({
+            where,
+            attributes: [
+                'id',
+                [sequelize.literal('\'Problem \' || "CourseWWTopicQuestion".problem_number'), 'name'],
+                // TODO see if alias can be used instead
+                [sequelize.fn('avg', sequelize.col('grades.num_attempts')), 'averageAttemptedCount'],
+                [sequelize.fn('avg', sequelize.col('grades.best_score')), 'averageScore'],
+                [sequelize.fn('count', sequelize.col('grades.id')), 'totalGrades'],
+                [sequelize.literal('count(CASE WHEN "grades".best_score >= 1 THEN "grades".id END)'), 'completedCount'],
+                [sequelize.literal('CASE WHEN COUNT("grades".id) > 0 THEN count(CASE WHEN "grades".best_score >= 1 THEN "grades".id END)::FLOAT / count("grades".id) ELSE NULL END'), 'completionPercent'],
+            ],
+            include: [{
+                model: StudentGrade,
+                as: 'grades',
+                attributes: []
+            }],
+            group: ['CourseWWTopicQuestion.id' ]
         })
     }
 }

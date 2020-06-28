@@ -76,6 +76,7 @@ interface GetStatisticsOnUnitsOptions {
 interface GetStatisticsOnTopicsOptions {
     where: {
         courseUnitContentId?: number;
+        courseId?: number;
     };
 }
 
@@ -486,12 +487,34 @@ class CourseController {
 
     getStatisticsOnTopics(options: GetStatisticsOnTopicsOptions): Promise<CourseTopicContent[]> {
         const {
-            courseUnitContentId
+            courseUnitContentId,
+            courseId
         } = options.where;
 
         const where = _({
             courseUnitContentId,
+            '$unit.course_id$': courseId
         }).omitBy(_.isNil).value();
+
+        const include: sequelize.IncludeOptions[] = [{
+            model: CourseWWTopicQuestion,
+            as: 'questions',
+            attributes: [],
+            include: [{
+                model: StudentGrade,
+                as: 'grades',
+                attributes: []
+            }]
+        }]
+
+        if(!_.isNil(courseId)) {
+            include.push({
+                model: CourseUnitContent,
+                as: 'unit',
+                attributes: []
+            })
+        }
+
 
         return CourseTopicContent.findAll({
             where,
@@ -505,16 +528,7 @@ class CourseController {
                 [sequelize.literal('count(CASE WHEN "questions->grades".best_score >= 1 THEN "questions->grades".id END)'), 'completedCount'],
                 [sequelize.literal('CASE WHEN COUNT("questions->grades".id) > 0 THEN count(CASE WHEN "questions->grades".best_score >= 1 THEN "questions->grades".id END)::FLOAT / count("questions->grades".id) ELSE NULL END'), 'completionPercent'],
             ],
-            include: [{
-                model: CourseWWTopicQuestion,
-                as: 'questions',
-                attributes: [],
-                include: [{
-                    model: StudentGrade,
-                    as: 'grades',
-                    attributes: []
-                }]
-            }],
+            include,
             group: ['CourseTopicContent.id', 'CourseTopicContent.name' ]
         })
     }

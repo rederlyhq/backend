@@ -62,7 +62,7 @@ export const updateCourseTopicValidation: ValidationObject = {
     query: {},
 }
 
-export const updateUnitTopicValidation: ValidationObject = {
+export const updateCourseUnitValidation: ValidationObject = {
     params: {
         id: Joi.number().required()
     },

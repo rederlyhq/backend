@@ -37,6 +37,16 @@ export const updateCurriculumUnitValidation = {
         contentOrder: Joi.number().optional(),
     }
 }
+
+export const updateCurriculumTopicValidation = {
+    body: {
+        name: Joi.string().optional(),
+        active: Joi.boolean().optional(),
+        // curriculumUnitContentId: Joi.number().optional(),
+        contentOrder: Joi.number().optional(),
+    }
+}
+
 export const createCurriculumTopicQuestionValidation = {
     body: {
         problemNumber: Joi.number().required(),

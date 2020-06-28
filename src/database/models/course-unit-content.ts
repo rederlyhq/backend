@@ -6,6 +6,7 @@ export default class CourseUnitContent extends Model {
     public courseId!: number;
     public name!: string;
     public active!: boolean;
+    public contentOrder!: number;
 
     public getCourse!: BelongsToGetAssociationMixin<Course>;
 
@@ -50,6 +51,11 @@ CourseUnitContent.init({
     },
     active: {
         type: DataTypes.BOOLEAN,
+        allowNull: false,
+    },
+    contentOrder: {
+        field: 'content_order',
+        type: DataTypes.INTEGER,
         allowNull: false,
     },
 }, {

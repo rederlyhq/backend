@@ -84,7 +84,11 @@ class CourseController {
                         as: 'questions',
                     }]
                 }]
-            }]
+            }],
+            order: [
+                ['units', 'contentOrder', 'ASC'],
+                ['units', 'topics', 'contentOrder', 'ASC']
+            ]
         })
     }
 

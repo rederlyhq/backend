@@ -59,6 +59,7 @@ export default class CourseTopicContent extends Model {
 
 CourseTopicContent.init({
     id: {
+        field: 'course_topic_content_id',
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
@@ -84,31 +85,33 @@ CourseTopicContent.init({
         allowNull: false,
     },
     name: {
+        field: 'course_topic_content_name',
         type: DataTypes.TEXT,
         allowNull: false,
     },
     active: {
+        field: 'course_topic_content_active',
         type: DataTypes.BOOLEAN,
         allowNull: false,
     },
 
     startDate: {
-        field: 'enroll_date',
+        field: 'course_topic_content_enroll_date',
         type: DataTypes.DATE,
         allowNull: false,
     },
     endDate: {
-        field: 'end_date',
+        field: 'course_topic_content_end_date',
         type: DataTypes.DATE,
         allowNull: false,
     },
     deadDate: {
-        field: 'dead_date',
+        field: 'course_topic_content_dead_date',
         type: DataTypes.DATE,
         allowNull: false,
     },
     partialExtend: {
-        field: 'partial_extend',
+        field: 'course_topic_content_partial_extend',
         type: DataTypes.BOOLEAN,
         allowNull: false,
     },

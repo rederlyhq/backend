@@ -12,12 +12,13 @@ export default class Permission extends Model {
 
 Permission.init({
     id: {
+        field: 'permission_id',
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
     },
     roleName: {
-        field: 'role_name',
+        field: 'permission_role_name',
         type: DataTypes.TEXT,
         allowNull: false
     },

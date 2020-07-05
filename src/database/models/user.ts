@@ -61,6 +61,7 @@ export default class User extends Model {
 
 User.init({
   id: {
+    field: 'user_id',
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
@@ -86,20 +87,23 @@ User.init({
     allowNull: false,
   },
   email: {
+    field: 'user_email',
     type: DataTypes.TEXT,
     allowNull: false,
     unique: true
   },
   password: {
+    field: 'user_password',
     type: DataTypes.TEXT,
     allowNull: false,
   },
   verifyToken: {
-    field: 'verify_token',
+    field: 'user_verify_token',
     type: DataTypes.TEXT,
     allowNull: true,
   },
   verified: {
+    field: 'user_verified',
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: false

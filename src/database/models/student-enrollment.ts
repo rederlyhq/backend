@@ -38,6 +38,7 @@ export default class StudentEnrollment extends Model {
 
 StudentEnrollment.init({
     id: {
+        field: 'student_enrollment_id',
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
@@ -53,12 +54,12 @@ StudentEnrollment.init({
         allowNull: false,
     },
     enrollDate: {
-        field: 'enroll_date',
+        field: 'student_enrollment_enroll_date',
         type: DataTypes.DATE,
         allowNull: false,
     },
     dropDate: {
-        field: 'drop_date',
+        field: 'student_enrollment_drop_date',
         type: DataTypes.DATE,
         allowNull: false,
     },

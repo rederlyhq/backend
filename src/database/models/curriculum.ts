@@ -26,27 +26,33 @@ export default class Curriculum extends Model {
 
 Curriculum.init({
     id: {
+        field: 'curriculum_id',
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
     },
     name: {
+        field: 'curriculum_name',
         type: DataTypes.TEXT,
         allowNull: false
     },
     subject: {
+        field: 'curriculum_subject',
         type: DataTypes.TEXT,
         allowNull: false
     },
     comment: {
+        field: 'curriculum_comment',
         type: DataTypes.TEXT,
         allowNull: false
     },
     active: {
+        field: 'curriculum_active',
         type: DataTypes.BOOLEAN,
         allowNull: false
     },
     public: {
+        field: 'curriculum_public',
         type: DataTypes.BOOLEAN,
         allowNull: false
     },

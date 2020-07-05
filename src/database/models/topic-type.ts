@@ -12,12 +12,13 @@ export default class TopicType extends Model {
 
 TopicType.init({
     id: {
+        field: 'topic_type_id',
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
     },
     name: {
-        field: 'name',
+        field: 'topic_type_name',
         type: DataTypes.TEXT,
         allowNull: false
     }

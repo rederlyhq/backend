@@ -14,6 +14,7 @@ export default class University extends Model {
 
 University.init({
   id: {
+    field: 'university_id',
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
@@ -24,12 +25,12 @@ University.init({
     allowNull: false,
   },
   profEmailDomain: {
-    field: 'prof_email_domain',
+    field: 'university_prof_email_domain',
     type: DataTypes.TEXT,
     allowNull: false,
   },
   studentEmailDomain: {
-    field: 'student_email_domain',
+    field: 'university_student_email_domain',
     type: DataTypes.TEXT,
     allowNull: false,
   },

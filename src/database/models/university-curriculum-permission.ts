@@ -21,6 +21,7 @@ export default class UniversityCurriculumPermission extends Model {
 
 UniversityCurriculumPermission.init({
     id: {
+        field: 'university_curriculum_permission_id',
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,

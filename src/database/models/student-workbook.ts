@@ -31,6 +31,7 @@ export default class StudentWorkbook extends Model {
 
 StudentWorkbook.init({
     id: {
+        field: 'student_workbook_id',
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
@@ -46,24 +47,27 @@ StudentWorkbook.init({
         allowNull: true,
     },
     courseWWTopicQuestionId: {
-        field: 'course_ww_topic_question_id',
+        field: 'student_workbook_course_ww_topic_question_id',
         type: DataTypes.INTEGER,
         allowNull: true,
     },
     randomSeed: {
-        field: 'random_seed',
+        field: 'student_workbook_random_seed',
         type: DataTypes.INTEGER,
         allowNull: true,
     },
     submitted: {
+        field: 'student_workbook_random_submitted',
         type: DataTypes.JSONB,
         allowNull: true,
     },
     result: {
+        field: 'student_workbook_random_result',
         type: DataTypes.FLOAT,
         allowNull: true,
     },
     time: {
+        field: 'student_workbook_random_time',
         type: DataTypes.DATE,
         allowNull: true,
     },

@@ -47,7 +47,7 @@ StudentWorkbook.init({
         allowNull: true,
     },
     courseWWTopicQuestionId: {
-        field: 'student_workbook_course_ww_topic_question_id',
+        field: 'course_topic_question_id',
         type: DataTypes.INTEGER,
         allowNull: true,
     },
@@ -57,17 +57,17 @@ StudentWorkbook.init({
         allowNull: true,
     },
     submitted: {
-        field: 'student_workbook_random_submitted',
+        field: 'student_workbook_submitted',
         type: DataTypes.JSONB,
         allowNull: true,
     },
     result: {
-        field: 'student_workbook_random_result',
+        field: 'student_workbook_result',
         type: DataTypes.FLOAT,
         allowNull: true,
     },
     time: {
-        field: 'student_workbook_random_time',
+        field: 'student_workbook_time',
         type: DataTypes.DATE,
         allowNull: true,
     },

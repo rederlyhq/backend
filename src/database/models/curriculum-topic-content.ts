@@ -57,7 +57,7 @@ CurriculumTopicContent.init({
         allowNull: false,
     },
     contentOrder: {
-        field: 'content_order',
+        field: 'curriculum_topic_content_order',
         type: DataTypes.INTEGER,
         allowNull: false,
     },

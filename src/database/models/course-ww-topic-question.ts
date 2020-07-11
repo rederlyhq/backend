@@ -35,7 +35,7 @@ export default class CourseWWTopicQuestion extends Model {
 
 CourseWWTopicQuestion.init({
     id: {
-        field: 'course_ww_topic_question_id',
+        field: 'course_topic_question_id',
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
@@ -46,32 +46,32 @@ CourseWWTopicQuestion.init({
         allowNull: false,
     },
     problemNumber: {
-        field: 'course_ww_topic_question_problem_number',
+        field: 'course_topic_question_problem_number',
         type: DataTypes.INTEGER,
         allowNull: false,
     },
     webworkQuestionPath: {
-        field: 'course_ww_topic_question_webwork_question_ww_path',
+        field: 'course_topic_question_webwork_question_ww_path',
         type: DataTypes.TEXT,
         allowNull: false,
     },
     weight: {
-        field: 'course_ww_topic_question_weight',
+        field: 'course_topic_question_weight',
         type: DataTypes.INTEGER,
         allowNull: false,
     },
     maxAttempts: {
-        field: 'course_ww_topic_question_max_attempts',
+        field: 'course_topic_question_max_attempts',
         type: DataTypes.INTEGER,
         allowNull: false,
     },
     hidden: {
-        field: 'course_ww_topic_question_hidden',
+        field: 'course_topic_question_hidden',
         type: DataTypes.BOOLEAN,
         allowNull: false,
     },
     active: {
-        field: 'course_ww_topic_question_active',
+        field: 'course_topic_question_active',
         type: DataTypes.BOOLEAN,
         allowNull: false,
     },

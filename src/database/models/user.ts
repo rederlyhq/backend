@@ -77,12 +77,12 @@ User.init({
     allowNull: false,
   },
   firstName: {
-    field: 'first_name',
+    field: 'user_first_name',
     type: DataTypes.TEXT,
     allowNull: false,
   },
   lastName: {
-    field: 'last_name',
+    field: 'user_last_name',
     type: DataTypes.TEXT,
     allowNull: false,
   },

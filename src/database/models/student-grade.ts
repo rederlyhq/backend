@@ -67,7 +67,7 @@ StudentGrade.init({
     allowNull: true,
   },
   courseWWTopicQuestionId: {
-    field: 'student_grade_course_ww_topic_question_id',
+    field: 'course_topic_question_id',
     type: DataTypes.INTEGER,
     allowNull: true,
   },
@@ -87,12 +87,12 @@ StudentGrade.init({
     allowNull: true,
   },
   firstAttempts: {
-    field: 'student_grade_first_attempts',
+    field: 'student_grade_first_attempt',
     type: DataTypes.FLOAT,
     allowNull: true,
   },
   latestAttempts: {
-    field: 'student_grade_latest_attempts',
+    field: 'student_grade_latest_attempt',
     type: DataTypes.FLOAT,
     allowNull: true,
   },

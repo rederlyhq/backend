@@ -80,7 +80,7 @@ CourseTopicContent.init({
         allowNull: false,
     },
     contentOrder: {
-        field: 'content_order',
+        field: 'course_topic_content_order',
         type: DataTypes.INTEGER,
         allowNull: false,
     },
@@ -96,7 +96,7 @@ CourseTopicContent.init({
     },
 
     startDate: {
-        field: 'course_topic_content_enroll_date',
+        field: 'course_topic_content_start_date',
         type: DataTypes.DATE,
         allowNull: false,
     },

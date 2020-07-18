@@ -8,6 +8,7 @@ const router = express.Router();
 
 router.use('/users', require('./features/users/user-route'));
 router.use('/courses', require('./features/courses/course-route'));
+router.use('/health', require('./features/health/health-route'));
 router.use('/curriculum', require('./features/curriculum/curriculum-route'));
 
 router.use('/webwork2_files', proxy(configurations.renderer.url, {

@@ -303,7 +303,7 @@ class CourseController {
                 }]
             }],
             where: {
-                '$courseEnrollments.course.units.topics.questions.grades.id$': {
+                [`$courseEnrollments.course.units.topics.questions.grades.${StudentGrade.rawAttributes.id.field}$`]: {
                     [Sequelize.Op.eq]: null
                 }
             }

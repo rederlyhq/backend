@@ -459,7 +459,6 @@ class CourseController {
             attributes: [
                 'id',
                 'name',
-                // TODO see if alias can be used instead
                 [sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
                 [sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.bestScore.field}`)), 'averageScore'],
                 [sequelize.fn('count', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
@@ -493,7 +492,7 @@ class CourseController {
 
         const where = _({
             courseUnitContentId,
-            '$unit.course_id$': courseId
+            [`$unit.${CourseUnitContent.rawAttributes.courseId.field}$`]: courseId
         }).omitBy(_.isNil).value();
 
         const include: sequelize.IncludeOptions[] = [{
@@ -521,7 +520,6 @@ class CourseController {
             attributes: [
                 'id',
                 'name',
-                // TODO see if alias can be used instead
                 [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
                 [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.bestScore.field}`)), 'averageScore'],
                 [sequelize.fn('count', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
@@ -568,7 +566,6 @@ class CourseController {
             attributes: [
                 'id',
                 [sequelize.literal(`'Problem ' || "${CourseWWTopicQuestion.name}".${CourseWWTopicQuestion.rawAttributes.problemNumber.field}`), 'name'],
-                // TODO see if alias can be used instead
                 [sequelize.fn('avg', sequelize.col(`grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
                 [sequelize.fn('avg', sequelize.col(`grades.${StudentGrade.rawAttributes.bestScore.field}`)), 'averageScore'],
                 [sequelize.fn('count', sequelize.col(`grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],

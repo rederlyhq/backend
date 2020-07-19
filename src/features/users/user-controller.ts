@@ -22,6 +22,7 @@ import CourseWWTopicQuestion from "../../database/models/course-ww-topic-questio
 import CourseTopicContent from "../../database/models/course-topic-content";
 import CourseUnitContent from "../../database/models/course-unit-content";
 import IncludeGradeOptions from "./include-grade-options";
+import WrappedError from "../../exceptions/wrapped-error";
 
 interface RegisterUserOptions {
     userObject: User;
@@ -134,7 +135,7 @@ class UserController {
                             as: 'course'
                         }]
                     })
-                    where['$courseEnrollments.course.id$'] = listOptions.filters.courseId;
+                    where['$courseEnrollments.course.course_id$'] = listOptions.filters.courseId;
                 }
             }
         }
@@ -322,11 +323,12 @@ class UserController {
             newUser = await this.createUser(userObject);
         } catch (e) {
             if (e instanceof UniqueConstraintError) {
-                if (Object.keys(e.fields).includes('email')) {
-                    throw new AlreadyExistsError(`The email ${e.fields.email} already exists`);
+                // TODO is there anyway to get the field name from the sequelize model?
+                if (Object.keys(e.fields).includes('user_email')) {
+                    throw new AlreadyExistsError(`The email ${e.fields.user_email} already exists`);
                 }
             }
-            throw e;
+            throw new WrappedError("Unknown error occurred", e);
         }
 
         let emailSent = false;

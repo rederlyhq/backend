@@ -426,7 +426,7 @@ class CourseController {
                 [sequelize.literal(masteredProblemCountCalculationString), 'masteredProblemCount'],
                 [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
             ];
-            group = [`user.${User.rawAttributes.id.field}`, `user.${User.rawAttributes.firstName.field}`, `user.${User.rawAttributes.lastName.field}`, ];
+            group = [`${User.name}.${User.rawAttributes.id.field}`, `${User.name}.${User.rawAttributes.firstName.field}`, `${User.name}.${User.rawAttributes.lastName.field}`, ];
         }
 
         return StudentGrade.findAll({
@@ -482,7 +482,7 @@ class CourseController {
                     }]
                 }]
             }],
-            group: [`CourseUnitContent.${CourseUnitContent.rawAttributes.id.field}`, `CourseUnitContent.${CourseUnitContent.rawAttributes.id.field}` ]
+            group: [`${CourseUnitContent.name}.${CourseUnitContent.rawAttributes.id.field}`, `${CourseUnitContent.name}.${CourseUnitContent.rawAttributes.id.field}` ]
         })
     }
 
@@ -530,7 +530,7 @@ class CourseController {
                 [sequelize.literal(`CASE WHEN COUNT("questions->grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN count(CASE WHEN "questions->grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "questions->grades".${StudentGrade.rawAttributes.id.field} END)::FLOAT / count("questions->grades".${StudentGrade.rawAttributes.id.field}) ELSE NULL END`), 'completionPercent'],
             ],
             include,
-            group: [`CourseTopicContent.${CourseTopicContent.rawAttributes.id.field}`, `CourseTopicContent.${CourseTopicContent.rawAttributes.name.field}` ]
+            group: [`${CourseTopicContent.name}.${CourseTopicContent.rawAttributes.id.field}`, `${CourseTopicContent.name}.${CourseTopicContent.rawAttributes.name.field}` ]
         })
     }
 

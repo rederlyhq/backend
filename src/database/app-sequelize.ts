@@ -17,12 +17,13 @@ const appSequelize = new Sequelize(name, user, password, {
     logging,
     define: {
         timestamps: true,
+        underscored: true
     },
     pool: {
         max: 5,
         min: 0,
         idle: 10000
-    }
+    },
 });
 
 export default appSequelize;

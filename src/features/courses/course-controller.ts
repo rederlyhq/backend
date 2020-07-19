@@ -128,8 +128,7 @@ class CourseController {
                 attributes: [],
                 as: 'enrolledStudents',
             });
-            // TODO it doesn't like userId here and requires user_id, but it let's use use the sequelize field elseware
-            where['$enrolledStudents.user_id$'] = options.filter.enrolledUserId;
+            where[`$enrolledStudents.${StudentEnrollment.rawAttributes.userId.field}$`] = options.filter.enrolledUserId;
         }
 
         return Course.findAll({

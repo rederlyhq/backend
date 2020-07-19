@@ -461,11 +461,11 @@ class CourseController {
                 'id',
                 'name',
                 // TODO see if alias can be used instead
-                [sequelize.fn('avg', sequelize.col('topics.questions.grades.num_attempts')), 'averageAttemptedCount'],
-                [sequelize.fn('avg', sequelize.col('topics.questions.grades.best_score')), 'averageScore'],
-                [sequelize.fn('count', sequelize.col('topics.questions.grades.id')), 'totalGrades'],
-                [sequelize.literal('count(CASE WHEN "topics->questions->grades".best_score >= 1 THEN "topics->questions->grades".id END)'), 'completedCount'],
-                [sequelize.literal('CASE WHEN COUNT("topics->questions->grades".id) > 0 THEN count(CASE WHEN "topics->questions->grades".best_score >= 1 THEN "topics->questions->grades".id END)::FLOAT / count("topics->questions->grades".id) ELSE NULL END'), 'completionPercent'],
+                [sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
+                [sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.bestScore.field}`)), 'averageScore'],
+                [sequelize.fn('count', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
+                [sequelize.literal(`count(CASE WHEN "topics->questions->grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "topics->questions->grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
+                [sequelize.literal(`CASE WHEN COUNT("topics->questions->grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN count(CASE WHEN "topics->questions->grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "topics->questions->grades".${StudentGrade.rawAttributes.id.field} END)::FLOAT / count("topics->questions->grades".${StudentGrade.rawAttributes.id.field}) ELSE NULL END`), 'completionPercent'],
             ],
             include: [{
                 model: CourseTopicContent,
@@ -482,7 +482,7 @@ class CourseController {
                     }]
                 }]
             }],
-            group: ['CourseUnitContent.id', 'CourseUnitContent.name' ]
+            group: [`CourseUnitContent.${CourseUnitContent.rawAttributes.id.field}`, `CourseUnitContent.${CourseUnitContent.rawAttributes.id.field}` ]
         })
     }
 

@@ -523,14 +523,14 @@ class CourseController {
                 'id',
                 'name',
                 // TODO see if alias can be used instead
-                [sequelize.fn('avg', sequelize.col('questions.grades.num_attempts')), 'averageAttemptedCount'],
-                [sequelize.fn('avg', sequelize.col('questions.grades.best_score')), 'averageScore'],
-                [sequelize.fn('count', sequelize.col('questions.grades.id')), 'totalGrades'],
-                [sequelize.literal('count(CASE WHEN "questions->grades".best_score >= 1 THEN "questions->grades".id END)'), 'completedCount'],
-                [sequelize.literal('CASE WHEN COUNT("questions->grades".id) > 0 THEN count(CASE WHEN "questions->grades".best_score >= 1 THEN "questions->grades".id END)::FLOAT / count("questions->grades".id) ELSE NULL END'), 'completionPercent'],
+                [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
+                [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.bestScore.field}`)), 'averageScore'],
+                [sequelize.fn('count', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
+                [sequelize.literal(`count(CASE WHEN "questions->grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "questions->grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
+                [sequelize.literal(`CASE WHEN COUNT("questions->grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN count(CASE WHEN "questions->grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "questions->grades".${StudentGrade.rawAttributes.id.field} END)::FLOAT / count("questions->grades".${StudentGrade.rawAttributes.id.field}) ELSE NULL END`), 'completionPercent'],
             ],
             include,
-            group: ['CourseTopicContent.id', 'CourseTopicContent.name' ]
+            group: [`CourseTopicContent.${CourseTopicContent.rawAttributes.id.field}`, `CourseTopicContent.${CourseTopicContent.rawAttributes.name.field}` ]
         })
     }
 

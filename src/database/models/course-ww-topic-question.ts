@@ -1,3 +1,5 @@
+// TODO rename file
+
 import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize'
 
@@ -10,6 +12,7 @@ export default class CourseWWTopicQuestion extends Model {
     public maxAttempts!: number;
     public hidden!: boolean;
     public active!: boolean;
+    public optional!: boolean;
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -75,8 +78,13 @@ CourseWWTopicQuestion.init({
         type: DataTypes.BOOLEAN,
         allowNull: false,
     },
+    optional: {
+        field: 'course_topic_question_optional',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+    },
 }, {
-    tableName: 'course_ww_topic_question',
+    tableName: 'course_topic_question',
     sequelize: appSequelize, // this bit is important
 });
 

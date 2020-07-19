@@ -1,3 +1,4 @@
+// TODO rename
 import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize'
 import CurriculumTopicContent from './curriculum-topic-content';
@@ -40,7 +41,7 @@ CurriculumWWTopicQuestion.init({
     allowNull: false,
   },
 }, {
-  tableName: 'curriculum_ww_topic_question',
+  tableName: 'curriculum_topic_question',
   sequelize: appSequelize, // this bit is important
 });
 

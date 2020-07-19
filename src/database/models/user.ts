@@ -107,7 +107,7 @@ User.init({
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: false
-  }
+  },
 }, {
   tableName: 'users',
   sequelize: appSequelize, // this bit is important

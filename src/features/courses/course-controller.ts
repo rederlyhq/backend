@@ -364,15 +364,15 @@ class CourseController {
         }
 
         const where = _({
-            '$question.topic.unit.course.id$': courseId,
-            '$question.topic.unit.id$': unitId,
-            '$question.topic.id$': topicId,
-            '$question.id$': questionId,
+            [`$question.topic.unit.course.${Course.rawAttributes.id.field}$`]: courseId,
+            [`$question.topic.unit.${CourseUnitContent.rawAttributes.id.field}$`]: unitId,
+            [`$question.topic.${CourseTopicContent.rawAttributes.id.field}$`]: topicId,
+            [`$question.${CourseWWTopicQuestion.rawAttributes.id.field}$`]: questionId,
         }).omitBy(_.isUndefined).value();
 
-        const totalProblemCountCalculationString = 'COUNT(question.id)';
-        const pendingProblemCountCalculationString = 'COUNT(CASE WHEN num_attempts = 0 THEN num_attempts END)';
-        const masteredProblemCountCalculationString = 'COUNT(CASE WHEN best_score >= 1 THEN num_attempts END)';
+        const totalProblemCountCalculationString = `COUNT(question.${CourseWWTopicQuestion.rawAttributes.id.field})`;
+        const pendingProblemCountCalculationString = `COUNT(CASE WHEN ${StudentGrade.rawAttributes.numAttempts.field} = 0 THEN ${StudentGrade.rawAttributes.numAttempts.field} END)`;
+        const masteredProblemCountCalculationString = `COUNT(CASE WHEN ${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN ${StudentGrade.rawAttributes.bestScore.field} END)`;
         const inProgressProblemCountCalculationString = `${totalProblemCountCalculationString} - ${pendingProblemCountCalculationString} - ${masteredProblemCountCalculationString}`;
 
         // Include cannot be null or undefined, coerce to empty array
@@ -421,12 +421,12 @@ class CourseController {
             group = null;
         } else {
             attributes = [
-                [sequelize.fn('avg', sequelize.col('best_score')), 'average'],
+                [sequelize.fn('avg', sequelize.col(`${StudentGrade.rawAttributes.bestScore.field}`)), 'average'],
                 [sequelize.literal(pendingProblemCountCalculationString), 'pendingProblemCount'],
                 [sequelize.literal(masteredProblemCountCalculationString), 'masteredProblemCount'],
                 [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
             ];
-            group = ['user.id', 'user.first_name', 'user.last_name', ];
+            group = [`user.${User.rawAttributes.id.field}`, `user.${User.rawAttributes.firstName.field}`, `user.${User.rawAttributes.lastName.field}`, ];
         }
 
         return StudentGrade.findAll({

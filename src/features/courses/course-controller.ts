@@ -542,7 +542,7 @@ class CourseController {
         
         const where = _({
             courseTopicContentId,
-            '$topic.unit.course_id$': courseId
+            [`$topic.unit.${CourseUnitContent.rawAttributes.courseId.field}$`]: courseId
         }).omitBy(_.isNil).value();
 
         const include: sequelize.IncludeOptions[] = [{
@@ -568,16 +568,16 @@ class CourseController {
             where,
             attributes: [
                 'id',
-                [sequelize.literal('\'Problem \' || "CourseWWTopicQuestion".problem_number'), 'name'],
+                [sequelize.literal(`'Problem ' || "${CourseWWTopicQuestion.name}".${CourseWWTopicQuestion.rawAttributes.problemNumber.field}`), 'name'],
                 // TODO see if alias can be used instead
-                [sequelize.fn('avg', sequelize.col('grades.num_attempts')), 'averageAttemptedCount'],
-                [sequelize.fn('avg', sequelize.col('grades.best_score')), 'averageScore'],
-                [sequelize.fn('count', sequelize.col('grades.id')), 'totalGrades'],
-                [sequelize.literal('count(CASE WHEN "grades".best_score >= 1 THEN "grades".id END)'), 'completedCount'],
-                [sequelize.literal('CASE WHEN COUNT("grades".id) > 0 THEN count(CASE WHEN "grades".best_score >= 1 THEN "grades".id END)::FLOAT / count("grades".id) ELSE NULL END'), 'completionPercent'],
+                [sequelize.fn('avg', sequelize.col(`grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
+                [sequelize.fn('avg', sequelize.col(`grades.${StudentGrade.rawAttributes.bestScore.field}`)), 'averageScore'],
+                [sequelize.fn('count', sequelize.col(`grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
+                [sequelize.literal(`count(CASE WHEN "grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
+                [sequelize.literal(`CASE WHEN COUNT("grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN count(CASE WHEN "grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "grades".${StudentGrade.rawAttributes.id.field} END)::FLOAT / count("grades".${StudentGrade.rawAttributes.id.field}) ELSE NULL END`), 'completionPercent'],
             ],
             include,
-            group: ['CourseWWTopicQuestion.id' ]
+            group: [`${CourseWWTopicQuestion.name}.${CourseWWTopicQuestion.rawAttributes.id.field}`]
         })
     }
 }

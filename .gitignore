@@ -2,3 +2,4 @@ node_modules
 ts-built
 .env
 logs
+*.DS_Store

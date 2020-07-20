@@ -1,6 +1,5 @@
 # backend
 
-
 ## Configurations
 * Configurations are read from an environement variables in: src\configurations.ts
 * These environment can be set by the system or by a .env file located at the root of this project (gitignored), .env expects keyvalue pairs with no space (i.e. `SERVER_PORT=8080`)

@@ -105,6 +105,15 @@ export const getCourseValidation = {
     }
 }
 
+export const getTopicsValidation = {
+    params: {},
+    query: {
+        courseId: Joi.number().optional(),
+        isOpen: Joi.bool().optional()
+    },
+    body: {},
+}
+
 export const enrollInCourseValidation = {
     params: {},
     query: {},

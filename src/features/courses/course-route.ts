@@ -5,7 +5,7 @@ import validate from '../../middleware/joi-validator'
 import { authenticationMiddleware } from "../../middleware/auth";
 import httpResponse from "../../utilities/http-response";
 import * as asyncHandler from 'express-async-handler'
-import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGrades, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation } from "./course-route-validation";
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGrades, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation } from "./course-route-validation";
 import Session from "../../database/models/session";
 import Boom = require("boom");
 import NotFoundError from "../../exceptions/not-found-error";
@@ -280,6 +280,21 @@ router.get('/',
                 }
             });
             next(httpResponse.Ok('Fetched successfully', courses));
+        } catch (e) {
+            next(e)
+        }
+    }));
+
+router.get('/topics',
+    authenticationMiddleware,
+    validate(getTopicsValidation),
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const result = await courseController.getTopics({
+                courseId: (req.query as any).courseId as number,
+                isOpen: (req.query as any).isOpen as boolean
+            })
+            next(httpResponse.Ok('Fetched successfully', result))
         } catch (e) {
             next(e)
         }

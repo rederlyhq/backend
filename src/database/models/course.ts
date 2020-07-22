@@ -43,6 +43,7 @@ export default class Course extends Model {
 
 Course.init({
     id: {
+        field: 'course_id',
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
@@ -53,7 +54,7 @@ Course.init({
         allowNull: false
     },
     instructorId: {
-        field: 'instructor_id',
+        field: 'user_id',
         type: DataTypes.INTEGER,
         allowNull: false
     },
@@ -63,28 +64,32 @@ Course.init({
         allowNull: false
     },
     name: {
+        field: 'course_name',
         type: DataTypes.TEXT,
         allowNull: false
     },
     code: {
+        field: 'course_code',
         type: DataTypes.TEXT,
         allowNull: false
     },
     start: {
+        field: 'course_start',
         type: DataTypes.DATE,
         allowNull: false
     },
     end: {
+        field: 'course_end',
         type: DataTypes.DATE,
         allowNull: false
     },
     sectionCode: {
-        field: 'section_code',
+        field: 'course_section_code',
         type: DataTypes.TEXT,
         allowNull: false
     },
     semesterCode: {
-        field: 'semester_code',
+        field: 'course_semester_code',
         type: DataTypes.TEXT,
         allowNull: false
     },

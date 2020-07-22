@@ -18,6 +18,7 @@ export default class Session extends Model {
 
 Session.init({
     id: {
+        field: 'session_id',
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
@@ -28,15 +29,17 @@ Session.init({
         allowNull: false
     },
     uuid: {
+        field: 'session_uuid',
         type: DataTypes.TEXT,
         allowNull: false
     },
     expiresAt: {
-        field: 'expires_at',
+        field: 'session_expires_at',
         type: DataTypes.DATE,
         allowNull: false
     },
     active: {
+        field: 'session_expires_active',
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false

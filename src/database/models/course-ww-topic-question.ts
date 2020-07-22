@@ -1,4 +1,6 @@
-import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
+// TODO rename file
+
+import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize'
 
 export default class CourseWWTopicQuestion extends Model {
@@ -10,6 +12,7 @@ export default class CourseWWTopicQuestion extends Model {
     public maxAttempts!: number;
     public hidden!: boolean;
     public active!: boolean;
+    public optional!: boolean;
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -35,6 +38,7 @@ export default class CourseWWTopicQuestion extends Model {
 
 CourseWWTopicQuestion.init({
     id: {
+        field: 'course_topic_question_id',
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
@@ -45,34 +49,42 @@ CourseWWTopicQuestion.init({
         allowNull: false,
     },
     problemNumber: {
-        field: 'problem_number',
+        field: 'course_topic_question_problem_number',
         type: DataTypes.INTEGER,
         allowNull: false,
     },
     webworkQuestionPath: {
-        field: 'webwork_question_ww_path',
+        field: 'course_topic_question_webwork_question_ww_path',
         type: DataTypes.TEXT,
         allowNull: false,
     },
     weight: {
+        field: 'course_topic_question_weight',
         type: DataTypes.INTEGER,
         allowNull: false,
     },
     maxAttempts: {
-        field: 'max_attempts',
+        field: 'course_topic_question_max_attempts',
         type: DataTypes.INTEGER,
         allowNull: false,
     },
     hidden: {
+        field: 'course_topic_question_hidden',
         type: DataTypes.BOOLEAN,
         allowNull: false,
     },
     active: {
+        field: 'course_topic_question_active',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+    },
+    optional: {
+        field: 'course_topic_question_optional',
         type: DataTypes.BOOLEAN,
         allowNull: false,
     },
 }, {
-    tableName: 'course_ww_topic_question',
+    tableName: 'course_topic_question',
     sequelize: appSequelize, // this bit is important
 });
 

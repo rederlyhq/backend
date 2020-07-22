@@ -1,5 +1,12 @@
 # backend
-#
+
+## Getting started:
+1. Make sure below configurations are made in environment variables or .env file
+2. Make sure the database specified (`DB_NAME`) exists and is accessible by the given user (and the user has the correct password)
+3. Run `npm install` (first time and any time modules might have updated)
+4. Run `npm start` (this will generate the database and then run the server)
+5. If not already there run query for any required initial data
+
 ## Configurations
 * Configurations are read from an environement variables in: src\configurations.ts
 * These environment can be set by the system or by a .env file located at the root of this project (gitignored), .env expects keyvalue pairs with no space (i.e. `SERVER_PORT=8080`)

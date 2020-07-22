@@ -22,6 +22,7 @@ import CourseWWTopicQuestion from "../../database/models/course-ww-topic-questio
 import CourseTopicContent from "../../database/models/course-topic-content";
 import CourseUnitContent from "../../database/models/course-unit-content";
 import IncludeGradeOptions from "./include-grade-options";
+import WrappedError from "../../exceptions/wrapped-error";
 
 interface RegisterUserOptions {
     userObject: User;
@@ -134,7 +135,7 @@ class UserController {
                             as: 'course'
                         }]
                     })
-                    where['$courseEnrollments.course.id$'] = listOptions.filters.courseId;
+                    where[`$courseEnrollments.course.${StudentEnrollment.rawAttributes.courseId.field}$`] = listOptions.filters.courseId;
                 }
             }
         }
@@ -148,7 +149,6 @@ class UserController {
                 'firstName',
                 'lastName',
                 'email',
-                'university_id',
             ]
         });
     }
@@ -322,11 +322,11 @@ class UserController {
             newUser = await this.createUser(userObject);
         } catch (e) {
             if (e instanceof UniqueConstraintError) {
-                if (Object.keys(e.fields).includes('email')) {
-                    throw new AlreadyExistsError(`The email ${e.fields.email} already exists`);
+                if (Object.keys(e.fields).includes(User.rawAttributes.email.field)) {
+                    throw new AlreadyExistsError(`The email ${e.fields[User.rawAttributes.email.field]} already exists`);
                 }
             }
-            throw e;
+            throw new WrappedError("Unknown error occurred", e);
         }
 
         let emailSent = false;

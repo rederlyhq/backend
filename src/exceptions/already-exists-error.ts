@@ -1,7 +1,9 @@
-export default class AlreadyExistsError extends Error {
+import WrappedError from "./wrapped-error";
+
+export default class AlreadyExistsError extends WrappedError {
     public name: string;
-    constructor(message: string) {
-        super(message);
+    constructor(message: string, cause?: Error) {
+        super(message, cause);
         this.name = "AlreadyExistsError";
     }
 }

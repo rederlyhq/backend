@@ -17,7 +17,7 @@
 | Environment variable | Description | Default value |
 | --- | --- | --- |
 | SERVER_PORT | The port the server listens for requests on | 3000 |
-| SERVER_BASE_PATH | The prefix for all path (i.e. `/rederly/api` | |
+| SERVER_BASE_PATH | The prefix for all path (i.e. `/rederly/api` | /backend-api |
 
 ##### Limiter
 | Environment variable | Description | Default value |

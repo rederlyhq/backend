@@ -64,6 +64,24 @@ CurriculumTopicContent.init({
 }, {
     tableName: 'curriculum_topic_content',
     sequelize: appSequelize, // this bit is important
+    indexes: [
+        {
+            fields: [
+                'curriculum_unit_content_id',
+                'curriculum_topic_content_name',
+            ],
+            unique: true,
+            name: 'curriculum_topic_content--unit_id-name',
+        },
+        {
+            fields: [
+                'curriculum_unit_content_id',
+                'curriculum_topic_content_order',
+            ],
+            unique: true,
+            name: 'curriculum_topic_content--unit_id-order',
+        }
+    ]
 });
 
 import CurriculumUnitContent from './curriculum-unit-content';

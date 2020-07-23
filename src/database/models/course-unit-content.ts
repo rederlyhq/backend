@@ -7,6 +7,7 @@ export default class CourseUnitContent extends Model {
     public name!: string;
     public active!: boolean;
     public contentOrder!: number;
+    public curriculumUnitId!: number;
 
     public getCourse!: BelongsToGetAssociationMixin<Course>;
 
@@ -23,6 +24,12 @@ export default class CourseUnitContent extends Model {
             foreignKey: 'courseId',
             targetKey: 'id',
             as: 'course'
+        });
+
+        CourseUnitContent.belongsTo(CurriculumUnitContent, {
+            foreignKey: 'curriculumUnitId',
+            targetKey: 'id',
+            as: 'curriculumUnit'
         });
 
         CourseUnitContent.hasMany(CourseTopicContent, {
@@ -57,14 +64,38 @@ CourseUnitContent.init({
         allowNull: false,
     },
     contentOrder: {
-        field: 'course_content_order',
+        field: 'course_unit_content_order',
         type: DataTypes.INTEGER,
         allowNull: false,
     },
+    curriculumUnitId: {
+        field: 'curriculum_unit_content_id',
+        type: DataTypes.INTEGER,
+        allowNull: true
+    }
 }, {
     tableName: 'course_unit_content',
     sequelize: appSequelize, // this bit is important
+    indexes: [
+        {
+            fields: [
+                'course_id',
+                'course_unit_content_name',
+            ],
+            unique: true,
+            name: 'course_unit_content-name--course_id',
+        },
+        {
+            fields: [
+                'course_id',
+                'course_unit_content_order',
+            ],
+            unique: true,
+            name: 'course_unit_content--course_id-order'
+        },
+    ]
 });
 
 import Course from './course';import CourseTopicContent from './course-topic-content';
+import CurriculumUnitContent from './curriculum-unit-content';
 

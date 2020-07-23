@@ -38,7 +38,17 @@ UniversityCurriculumPermission.init({
     },
 }, {
     tableName: 'university_curriculum_permission',
-    sequelize: appSequelize, // this bit is important
+    sequelize: appSequelize, // this bit is important,
+    indexes: [
+        {
+            fields: [
+                'curriculum_id',
+                'university_id',
+            ],
+            unique: true,
+            name:'university_curriculum_permission--curriculum_id-university_id'
+        },
+    ]
 });
 
 UniversityCurriculumPermission.belongsTo(Curriculum, {

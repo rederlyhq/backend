@@ -64,6 +64,24 @@ CurriculumUnitContent.init({
 }, {
     tableName: 'curriculum_unit_content',
     sequelize: appSequelize, // this bit is important
+    indexes: [
+        {
+            fields: [
+                'curriculum_id',
+                'curriculum_unit_content_name',
+            ],
+            unique: true,
+            name:'curriculum_unit_content--name-curriculum_id'
+        },
+        {
+            fields: [
+                'curriculum_id',
+                'curriculum_unit_content_order',
+            ],
+            unique: true,
+            name:'curriculum_unit_content--order-curriculum_id'
+        },
+    ]
 });
 
 import Curriculum from './curriculum';

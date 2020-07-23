@@ -23,16 +23,19 @@ University.init({
     field: 'university_name',
     type: DataTypes.TEXT,
     allowNull: false,
+    unique: true
   },
   profEmailDomain: {
     field: 'university_prof_email_domain',
     type: DataTypes.TEXT,
     allowNull: false,
+    unique: true
   },
   studentEmailDomain: {
     field: 'university_student_email_domain',
     type: DataTypes.TEXT,
     allowNull: false,
+    unique: true
   },
 }, {
   tableName: 'university',

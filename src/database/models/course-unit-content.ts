@@ -57,7 +57,7 @@ CourseUnitContent.init({
         allowNull: false,
     },
     contentOrder: {
-        field: 'course_content_order',
+        field: 'course_unit_content_order',
         type: DataTypes.INTEGER,
         allowNull: false,
     },

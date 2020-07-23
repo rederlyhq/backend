@@ -5,7 +5,7 @@ export const createCourseValidation: ValidationObject = {
     params: {},
     query: {},
     body: {
-        curriculumId: Joi.number().required(),
+        curriculumId: Joi.number().optional(),
         name: Joi.string().required(),
         code: Joi.string().required(),
         start: Joi.date().required(),

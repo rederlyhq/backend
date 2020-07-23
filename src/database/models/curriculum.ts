@@ -34,7 +34,8 @@ Curriculum.init({
     name: {
         field: 'curriculum_name',
         type: DataTypes.TEXT,
-        allowNull: false
+        allowNull: false,
+        unique: true
     },
     subject: {
         field: 'curriculum_subject',

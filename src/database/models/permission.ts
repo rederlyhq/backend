@@ -22,7 +22,8 @@ Permission.init({
     roleName: {
         field: 'permission_role_name',
         type: DataTypes.TEXT,
-        allowNull: false
+        allowNull: false,
+        unique: true
     },
     permissionDescription: {
         field: 'permission_description',
@@ -30,6 +31,7 @@ Permission.init({
         allowNull: false,
         defaultValue: ''
     },
+    // TODO role name should be permission name, this is an artifact of the additional table after implementation
     permissionName: {
         field: 'permission_name',
         type: DataTypes.TEXT,

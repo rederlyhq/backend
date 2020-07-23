@@ -10,6 +10,7 @@ export default class StudentGrade extends Model {
   public numAttempts!: number;
   public firstAttempts!: number;
   public latestAttempts!: number;
+  public overallBestScore!: number;
 
   public getUser!: BelongsToGetAssociationMixin<User>;
   public getCourseWWTopicQuestion!: BelongsToGetAssociationMixin<CourseWWTopicQuestion>;
@@ -78,6 +79,11 @@ StudentGrade.init({
   },
   bestScore: {
     field: 'student_grade_best_score',
+    type: DataTypes.FLOAT,
+    allowNull: true,
+  },
+  overallBestScore: {
+    field: 'student_grade_overall_best_score',
     type: DataTypes.FLOAT,
     allowNull: true,
   },

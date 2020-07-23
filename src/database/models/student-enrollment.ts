@@ -66,6 +66,16 @@ StudentEnrollment.init({
 }, {
     tableName: 'student_enrollment',
     sequelize: appSequelize, // this bit is important
+    indexes: [
+        {
+            fields: [
+                'user_id',
+                'course_id',
+            ],
+            unique: true,
+            name: 'student_enrollment--user_id-course_id'
+        },
+    ]
 });
 
 import Course from './course';

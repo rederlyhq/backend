@@ -101,6 +101,7 @@ User.init({
     field: 'user_verify_token',
     type: DataTypes.TEXT,
     allowNull: true,
+    unique: true
   },
   verified: {
     field: 'user_verified',

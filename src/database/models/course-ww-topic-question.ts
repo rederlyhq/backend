@@ -13,6 +13,7 @@ export default class CourseWWTopicQuestion extends Model {
     public hidden!: boolean;
     public active!: boolean;
     public optional!: boolean;
+    public curriculumQuestionId!: number;
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -25,6 +26,12 @@ export default class CourseWWTopicQuestion extends Model {
             foreignKey: 'courseTopicContentId',
             targetKey: 'id',
             as: 'topic'
+        });
+
+        CourseWWTopicQuestion.belongsTo(CurriculumWWTopicQuestion, {
+            foreignKey: 'curriculumQuestionId',
+            targetKey: 'id',
+            as: 'curriculumQuestion'
         });
 
         CourseWWTopicQuestion.hasMany(StudentGrade, {
@@ -83,11 +90,27 @@ CourseWWTopicQuestion.init({
         type: DataTypes.BOOLEAN,
         allowNull: false,
     },
+    curriculumQuestionId: {
+        field: 'curriculum_topic_question_id',
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    }
 }, {
     tableName: 'course_topic_question',
     sequelize: appSequelize, // this bit is important
+    indexes: [
+        {
+            fields: [
+                'course_topic_content_id',
+                'course_topic_question_problem_number',
+            ],
+            unique: true,
+            name:'course_topic_question--problem_number-topic_id'
+        },
+    ]
 });
 
 import CurriculumTopicContent from './curriculum-topic-content';
 import CourseTopicContent from './course-topic-content';
-import StudentGrade from './student-grade';
+import StudentGrade from './student-grade';import CurriculumWWTopicQuestion from './curriculum-ww-topic-question';
+

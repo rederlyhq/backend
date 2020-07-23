@@ -43,6 +43,16 @@ CurriculumWWTopicQuestion.init({
 }, {
   tableName: 'curriculum_topic_question',
   sequelize: appSequelize, // this bit is important
+  indexes: [
+    {
+      fields: [
+        'curriculum_topic_question_problem_number',
+        'curriculum_topic_content_id',
+      ],
+      unique: true,
+      name:'curriculum_topic_question--problem_number-topic_id'
+    },
+  ]
 });
 
 CurriculumWWTopicQuestion.belongsTo(CurriculumTopicContent, {

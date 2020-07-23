@@ -118,9 +118,28 @@ CourseTopicContent.init({
 }, {
     tableName: 'course_topic_content',
     sequelize: appSequelize, // this bit is important
+    indexes: [
+        {
+            fields: [
+                'course_unit_content_id',
+                'course_topic_content_name',
+            ],
+            unique: true,
+            name: 'course_topic_content--unit_id-name',
+        },
+        {
+            fields: [
+                'course_unit_content_id',
+                'course_topic_content_order',
+            ],
+            unique: true,
+            name: 'course_topic_content--unit_id-order',
+        },
+    ]
 });
 
 import CurriculumTopicContent from './curriculum-topic-content';
-import TopicType from './topic-type';import CourseUnitContent from './course-unit-content';
+import TopicType from './topic-type';
+import CourseUnitContent from './course-unit-content';
 import CourseWWTopicQuestion from './course-ww-topic-question';
 

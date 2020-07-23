@@ -51,7 +51,7 @@ Course.init({
     curriculumId: {
         field: 'curriculum_id',
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: true
     },
     instructorId: {
         field: 'user_id',
@@ -66,12 +66,14 @@ Course.init({
     name: {
         field: 'course_name',
         type: DataTypes.TEXT,
-        allowNull: false
+        allowNull: false,
+        unique: true
     },
     code: {
         field: 'course_code',
         type: DataTypes.TEXT,
-        allowNull: false
+        allowNull: false,
+        unique: true
     },
     start: {
         field: 'course_start',
@@ -86,12 +88,14 @@ Course.init({
     sectionCode: {
         field: 'course_section_code',
         type: DataTypes.TEXT,
-        allowNull: false
+        allowNull: false,
+        unique: true
     },
     semesterCode: {
         field: 'course_semester_code',
         type: DataTypes.TEXT,
-        allowNull: false
+        allowNull: false,
+        unique: true
     },
 }, {
     tableName: 'course',

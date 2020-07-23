@@ -113,6 +113,34 @@ class CourseController {
         })
     }
 
+    getTopics({courseId, isOpen}: {courseId: number; isOpen: boolean}) {
+        let where: any = {}
+        const include = [];
+        if(!_.isNil(courseId)) {
+            include.push({
+                model: CourseUnitContent,
+                as: 'unit',
+                attributes: []
+            })
+            where[`$unit.${CourseUnitContent.rawAttributes.courseId.field}$`] = courseId
+        }
+
+        if(isOpen) {
+            const date = new Date()
+            where.startDate = {
+                [Sequelize.Op.lte]: date
+            }
+
+            where.deadDate = {
+                [Sequelize.Op.gte]: date
+            }
+        }
+        return CourseTopicContent.findAll({
+            where,
+            include
+        })
+    }
+
     getCourses(options: CourseListOptions): Bluebird<Course[]> {
         // Where is a dynamic sequelize object
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

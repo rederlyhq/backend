@@ -334,7 +334,7 @@ class UserController {
             await emailHelper.sendEmail({
                 content: `Hello,
 
-                Please verify your account by clicking this url: ${baseUrl}/verify/${newUser.verifyToken}
+                Please verify your account by clicking this url: ${baseUrl}/backend-api/users/verify/${newUser.verifyToken}
                 `,
                 email: newUser.email,
                 subject: 'Please verify account'

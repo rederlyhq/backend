@@ -235,7 +235,7 @@ router.post('/question/:id',
         proxyReqPathResolver: (req) => {
             return `/rendered?${qs.stringify({
                 format: 'json',
-                template: 'simple',
+                template: 'single',
                 formURL: req.originalUrl,
             })}`;
         },

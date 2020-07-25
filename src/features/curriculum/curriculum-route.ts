@@ -22,7 +22,8 @@ router.post('/',
             const university = await user.getUniversity();
 
             const newCurriculum = await curriculumController.createCurriculum({
-                ...req.body
+                ...req.body,
+                universityId: university.id
             });
 
             try {

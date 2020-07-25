@@ -67,7 +67,6 @@ Course.init({
         field: 'course_name',
         type: DataTypes.TEXT,
         allowNull: false,
-        unique: true
     },
     code: {
         field: 'course_code',
@@ -89,13 +88,11 @@ Course.init({
         field: 'course_section_code',
         type: DataTypes.TEXT,
         allowNull: false,
-        unique: true
     },
     semesterCode: {
         field: 'course_semester_code',
         type: DataTypes.TEXT,
         allowNull: false,
-        unique: true
     },
 }, {
     tableName: 'course',

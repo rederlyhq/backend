@@ -20,6 +20,12 @@ export default class Curriculum extends Model {
             sourceKey: 'id',
             as: 'units'
         });
+
+        Curriculum.belongsTo(University, {
+            foreignKey: 'universityId',
+            targetKey: 'id',
+            as: 'university'
+        });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }
@@ -31,11 +37,21 @@ Curriculum.init({
         autoIncrement: true,
         primaryKey: true,
     },
+    universityId: {
+        field: 'university_id',
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
     name: {
         field: 'curriculum_name',
         type: DataTypes.TEXT,
         allowNull: false,
-        unique: true
+    },
+    textbooks: {
+        field: 'curriculum_textbooks',
+        type: DataTypes.TEXT,
+        allowNull: false,
+        defaultValue: ''
     },
     subject: {
         field: 'curriculum_subject',
@@ -60,6 +76,16 @@ Curriculum.init({
 }, {
     tableName: 'curriculum',
     sequelize: appSequelize, // this bit is important
+    indexes: [
+        {
+            unique: true,
+            fields: [
+                'university_id',
+                'curriculum_name'
+            ]
+        }
+    ]
 });
 
 import CurriculumUnitContent from './curriculum-unit-content';
+import University from './university';

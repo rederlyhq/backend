@@ -4,6 +4,9 @@ import UniversityCurriculumPermission from '../../database/models/university-cur
 import CurriculumUnitContent from '../../database/models/curriculum-unit-content';
 import CurriculumTopicContent from '../../database/models/curriculum-topic-content';
 import CurriculumWWTopicQuestion from '../../database/models/curriculum-ww-topic-question';
+import { UniqueConstraintError } from 'sequelize';
+import AlreadyExistsError from '../../exceptions/already-exists-error';
+import WrappedError from '../../exceptions/wrapped-error';
 
 interface UpdateTopicOptions {
     where: {
@@ -59,8 +62,20 @@ class CurriculumController {
         return Curriculum.findAll();
     }
 
-    createCurriculum(courseObject: Curriculum): Promise<Curriculum> {
-        return Curriculum.create(courseObject);
+    async createCurriculum(curriculumObject: Curriculum): Promise<Curriculum> {
+        try {
+            return await Curriculum.create(curriculumObject);
+        } catch(e) {
+            if (e instanceof UniqueConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if (violatedConstraint === Curriculum.constraints.uniqueNamePerUniversity) {
+                    throw new AlreadyExistsError('A curriculum with this name already exists for this university');
+                }
+            }
+            throw new WrappedError("Unknown error occurred", e);
+        }
     }
 
     createUniversityCurriculumPermission(universityCurriculumPermission: UniversityCurriculumPermission): Promise<UniversityCurriculumPermission> {

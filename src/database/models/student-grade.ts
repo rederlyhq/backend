@@ -65,42 +65,42 @@ StudentGrade.init({
   userId: {
     field: 'user_id',
     type: DataTypes.INTEGER,
-    allowNull: true,
+    allowNull: false,
   },
   courseWWTopicQuestionId: {
     field: 'course_topic_question_id',
     type: DataTypes.INTEGER,
-    allowNull: true,
+    allowNull: false,
   },
   randomSeed: {
     field: 'student_grade_random_seed',
     type: DataTypes.INTEGER,
-    allowNull: true,
+    allowNull: false,
   },
   bestScore: {
     field: 'student_grade_best_score',
     type: DataTypes.FLOAT,
-    allowNull: true,
+    allowNull: false,
   },
   overallBestScore: {
     field: 'student_grade_overall_best_score',
     type: DataTypes.FLOAT,
-    allowNull: true,
+    allowNull: false,
   },
   numAttempts: {
     field: 'student_grade_num_attempts',
     type: DataTypes.INTEGER,
-    allowNull: true,
+    allowNull: false,
   },
   firstAttempts: {
     field: 'student_grade_first_attempt',
     type: DataTypes.FLOAT,
-    allowNull: true,
+    allowNull: false,
   },
   latestAttempts: {
     field: 'student_grade_latest_attempt',
     type: DataTypes.FLOAT,
-    allowNull: true,
+    allowNull: false,
   },
 }, {
   tableName: 'student_grade',

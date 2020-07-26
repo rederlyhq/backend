@@ -39,37 +39,37 @@ StudentWorkbook.init({
     studentGradeId: {
         field: 'student_grade_id',
         type: DataTypes.INTEGER,
-        allowNull: true,
+        allowNull: false,
     },
     userId: {
         field: 'user_id',
         type: DataTypes.INTEGER,
-        allowNull: true,
+        allowNull: false,
     },
     courseWWTopicQuestionId: {
         field: 'course_topic_question_id',
         type: DataTypes.INTEGER,
-        allowNull: true,
+        allowNull: false,
     },
     randomSeed: {
         field: 'student_workbook_random_seed',
         type: DataTypes.INTEGER,
-        allowNull: true,
+        allowNull: false,
     },
     submitted: {
         field: 'student_workbook_submitted',
         type: DataTypes.JSONB,
-        allowNull: true,
+        allowNull: false,
     },
     result: {
         field: 'student_workbook_result',
         type: DataTypes.FLOAT,
-        allowNull: true,
+        allowNull: false,
     },
     time: {
         field: 'student_workbook_time',
         type: DataTypes.DATE,
-        allowNull: true,
+        allowNull: false,
     },
 }, {
     tableName: 'student_workbook',

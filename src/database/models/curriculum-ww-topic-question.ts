@@ -16,6 +16,10 @@ export default class CurriculumWWTopicQuestion extends Model {
   // timestamps!
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+
+  static constraints = {
+    uniqueOrderPerTopic: 'curriculum_topic_question--problem_number-topic_id'
+  }
 }
 
 CurriculumWWTopicQuestion.init({
@@ -50,7 +54,7 @@ CurriculumWWTopicQuestion.init({
         'curriculum_topic_content_id',
       ],
       unique: true,
-      name:'curriculum_topic_question--problem_number-topic_id'
+      name: CurriculumWWTopicQuestion.constraints.uniqueOrderPerTopic
     },
   ]
 });

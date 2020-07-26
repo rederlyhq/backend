@@ -118,8 +118,20 @@ class CurriculumController {
         }
     }
 
-    createQuestion(question: CurriculumWWTopicQuestion): Promise<CurriculumWWTopicQuestion> {
-        return CurriculumWWTopicQuestion.create(question);
+    async createQuestion(question: CurriculumWWTopicQuestion): Promise<CurriculumWWTopicQuestion> {
+        try {
+            return await CurriculumWWTopicQuestion.create(question);
+        } catch(e) {
+            if (e instanceof UniqueConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if (violatedConstraint === CurriculumWWTopicQuestion.constraints.uniqueOrderPerTopic) {
+                    throw new AlreadyExistsError('A question already exists at this order for this topic');
+                }
+            }
+            throw new WrappedError("Unknown error occurred", e);
+        }
     }
 
     async updateTopic(options: UpdateTopicOptions): Promise<number> {

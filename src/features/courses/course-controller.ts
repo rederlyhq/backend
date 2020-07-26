@@ -13,6 +13,9 @@ import StudentGrade from '../../database/models/student-grade';
 import User from '../../database/models/user';
 import logger from '../../utilities/logger';
 import sequelize = require("sequelize");
+import { UniqueConstraintError } from "sequelize";
+import WrappedError from "../../exceptions/wrapped-error";
+import AlreadyExistsError from "../../exceptions/already-exists-error";
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -113,10 +116,10 @@ class CourseController {
         })
     }
 
-    getTopics({courseId, isOpen}: {courseId: number; isOpen: boolean}) {
+    getTopics({ courseId, isOpen }: { courseId: number; isOpen: boolean }) {
         let where: any = {}
         const include = [];
-        if(!_.isNil(courseId)) {
+        if (!_.isNil(courseId)) {
             include.push({
                 model: CourseUnitContent,
                 as: 'unit',
@@ -125,7 +128,7 @@ class CourseController {
             where[`$unit.${CourseUnitContent.rawAttributes.courseId.field}$`] = courseId
         }
 
-        if(isOpen) {
+        if (isOpen) {
             const date = new Date()
             where.startDate = {
                 [Sequelize.Op.lte]: date
@@ -165,36 +168,116 @@ class CourseController {
         });
     }
 
-    createCourse(courseObject: Course): Bluebird<Course> {
-        return Course.create(courseObject);
+    async createCourse(courseObject: Course): Promise<Course> {
+        try {
+            return await Course.create(courseObject);
+        } catch (e) {
+            if (e instanceof UniqueConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if (violatedConstraint === Course.constraints.uniqueCourseCode) {
+                    throw new AlreadyExistsError('A course already exists with this course code')
+                }
+            }
+            throw new WrappedError("Unknown error occurred", e);
+        }
     }
 
-    createUnit(courseUnitContent: CourseUnitContent): Promise<CourseUnitContent> {
-        return CourseUnitContent.create(courseUnitContent);
+    async createUnit(courseUnitContent: CourseUnitContent): Promise<CourseUnitContent> {
+        try {
+            return await CourseUnitContent.create(courseUnitContent);
+        } catch (e) {
+            if (e instanceof UniqueConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if (violatedConstraint === CourseUnitContent.constraints.uniqueNamePerCourse) {
+                    throw new AlreadyExistsError('A unit with that name already exists within this course');
+                } else if (violatedConstraint === CourseUnitContent.constraints.unqiueOrderPerCourse) {
+                    throw new AlreadyExistsError('A unit already exists with this order');
+                }
+            }
+            throw new WrappedError("Unknown error occurred", e);
+        }
     }
 
-    createTopic(courseTopicContent: CourseTopicContent): Promise<CourseTopicContent> {
-        return CourseTopicContent.create(courseTopicContent);
+    async createTopic(courseTopicContent: CourseTopicContent): Promise<CourseTopicContent> {
+        try {
+            return await CourseTopicContent.create(courseTopicContent);
+        } catch (e) {
+            if (e instanceof UniqueConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if (violatedConstraint === CourseTopicContent.constraints.uniqueNamePerUnit) {
+                    throw new AlreadyExistsError('A topic with that name already exists within this unit');
+                } else if (violatedConstraint === CourseTopicContent.constraints.uniqueOrderPerUnit) {
+                    throw new AlreadyExistsError('A topic already exists with this unit order');
+                }
+            }
+            throw new WrappedError("Unknown error occurred", e);
+        }
     }
 
     async updateTopic(options: UpdateTopicOptions): Promise<number> {
-        const updates = await CourseTopicContent.update(options.updates, {
-            where: options.where
-        });
-        // updates count
-        return updates[0];
+        try {
+            const updates = await CourseTopicContent.update(options.updates, {
+                where: options.where
+            });
+            // updates count
+            return updates[0];
+        } catch (e) {
+            if (e instanceof UniqueConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if (violatedConstraint === CourseTopicContent.constraints.uniqueNamePerUnit) {
+                    throw new AlreadyExistsError('A topic with that name already exists within this unit');
+                } else if (violatedConstraint === CourseTopicContent.constraints.uniqueOrderPerUnit) {
+                    throw new AlreadyExistsError('A topic already exists with this unit order');
+                }
+            }
+            throw new WrappedError("Unknown error occurred", e);
+        }
     }
 
     async updateUnit(options: UpdateUnitOptions): Promise<number> {
-        const updates = await CourseUnitContent.update(options.updates, {
-            where: options.where
-        });
-        // updates count
-        return updates[0];
+        try {
+            const updates = await CourseUnitContent.update(options.updates, {
+                where: options.where
+            });
+            // updates count
+            return updates[0];
+        } catch (e) {
+            if (e instanceof UniqueConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if (violatedConstraint === CourseUnitContent.constraints.uniqueNamePerCourse) {
+                    throw new AlreadyExistsError('A unit with that name already exists within this course');
+                } else if (violatedConstraint === CourseUnitContent.constraints.unqiueOrderPerCourse) {
+                    throw new AlreadyExistsError('A unit already exists with this order');
+                }
+            }
+            throw new WrappedError("Unknown error occurred", e);
+        }
     }
 
-    createQuestion(question: CourseWWTopicQuestion): Promise<CourseWWTopicQuestion> {
-        return CourseWWTopicQuestion.create(question);
+    async createQuestion(question: CourseWWTopicQuestion): Promise<CourseWWTopicQuestion> {
+        try {
+            return await CourseWWTopicQuestion.create(question);
+        } catch (e) {
+            if (e instanceof UniqueConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if (violatedConstraint === CourseWWTopicQuestion.constraints.uniqueOrderPerTopic) {
+                    throw new AlreadyExistsError('A question with this topic order already exists');
+                }
+            }
+            throw new WrappedError("Unknown error occurred", e);
+        }
     }
 
     async getQuestion(question: any): Promise<any> {
@@ -278,29 +361,29 @@ class CourseController {
         } catch (e) {
             if (e instanceof ForeignKeyConstraintError) {
                 throw new NotFoundError('User or course was not found');
+            } else if (e instanceof UniqueConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if (violatedConstraint === StudentEnrollment.constraints.uniqueUserPerCourse) {
+                    throw new AlreadyExistsError('This user is already enrolled in this course')
+                }
             }
-            throw e;
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 
     async enrollByCode(enrollment: EnrollByCodeOptions): Promise<StudentEnrollment> {
-        try {
-            const course = await this.getCourseByCode(enrollment.code);
-            if (course === null) {
-                throw new NotFoundError('Could not find course with the given code');
-            }
-            return this.enroll({
-                courseId: course.id,
-                userId: enrollment.userId,
-                enrollDate: new Date(),
-                dropDate: new Date()
-            } as StudentEnrollment);
-        } catch (e) {
-            if (e instanceof ForeignKeyConstraintError) {
-                throw new NotFoundError('User or course was not found');
-            }
-            throw e;
+        const course = await this.getCourseByCode(enrollment.code);
+        if (course === null) {
+            throw new NotFoundError('Could not find course with the given code');
         }
+        return this.enroll({
+            courseId: course.id,
+            userId: enrollment.userId,
+            enrollDate: new Date(),
+            dropDate: new Date()
+        } as StudentEnrollment);
     }
 
     async findMissingGrades(): Promise<any[]> {
@@ -426,7 +509,7 @@ class CourseController {
         }
 
         let questionInclude;
-        if(includeOthers || _.isNil(topicId) === false) {
+        if (includeOthers || _.isNil(topicId) === false) {
             includeOthers = true;
             questionInclude = [{
                 model: CourseTopicContent,
@@ -441,7 +524,7 @@ class CourseController {
         let group: sequelize.GroupOption;
         if (_.isNil(questionId) === false) {
             attributes = [
-                'id', 
+                'id',
                 'bestScore',
                 'numAttempts'
             ]
@@ -453,7 +536,8 @@ class CourseController {
                 [sequelize.literal(masteredProblemCountCalculationString), 'masteredProblemCount'],
                 [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
             ];
-            group = [`${User.name}.${User.rawAttributes.id.field}`, `${User.name}.${User.rawAttributes.firstName.field}`, `${User.name}.${User.rawAttributes.lastName.field}`, ];
+            // TODO This group needs to match the alias below, I'd like to find a better way to do this
+            group = [`user.${User.rawAttributes.id.field}`, `user.${User.rawAttributes.firstName.field}`, `user.${User.rawAttributes.lastName.field}`];
         }
 
         return StudentGrade.findAll({
@@ -508,7 +592,7 @@ class CourseController {
                     }]
                 }]
             }],
-            group: [`${CourseUnitContent.name}.${CourseUnitContent.rawAttributes.id.field}`, `${CourseUnitContent.name}.${CourseUnitContent.rawAttributes.id.field}` ]
+            group: [`${CourseUnitContent.name}.${CourseUnitContent.rawAttributes.id.field}`, `${CourseUnitContent.name}.${CourseUnitContent.rawAttributes.id.field}`]
         })
     }
 
@@ -534,7 +618,7 @@ class CourseController {
             }]
         }]
 
-        if(!_.isNil(courseId)) {
+        if (!_.isNil(courseId)) {
             include.push({
                 model: CourseUnitContent,
                 as: 'unit',
@@ -555,7 +639,7 @@ class CourseController {
                 [sequelize.literal(`CASE WHEN COUNT("questions->grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN count(CASE WHEN "questions->grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "questions->grades".${StudentGrade.rawAttributes.id.field} END)::FLOAT / count("questions->grades".${StudentGrade.rawAttributes.id.field}) ELSE NULL END`), 'completionPercent'],
             ],
             include,
-            group: [`${CourseTopicContent.name}.${CourseTopicContent.rawAttributes.id.field}`, `${CourseTopicContent.name}.${CourseTopicContent.rawAttributes.name.field}` ]
+            group: [`${CourseTopicContent.name}.${CourseTopicContent.rawAttributes.id.field}`, `${CourseTopicContent.name}.${CourseTopicContent.rawAttributes.name.field}`]
         })
     }
 
@@ -564,7 +648,7 @@ class CourseController {
             courseTopicContentId,
             courseId
         } = options.where;
-        
+
         const where = _({
             courseTopicContentId,
             [`$topic.unit.${CourseUnitContent.rawAttributes.courseId.field}$`]: courseId
@@ -576,7 +660,7 @@ class CourseController {
             attributes: []
         }]
 
-        if(!_.isNil(courseId)) {
+        if (!_.isNil(courseId)) {
             include.push({
                 model: CourseTopicContent,
                 as: 'topic',

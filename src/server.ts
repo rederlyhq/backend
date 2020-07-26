@@ -13,6 +13,7 @@ import morgan = require('morgan');
 import passport = require('passport');
 import rateLimit = require("express-rate-limit");
 import Boom = require('boom');
+import AlreadyExistsError from './exceptions/already-exists-error';
 
 
 const { port, basePath } = configurations.server;
@@ -41,6 +42,14 @@ app.use(passport.initialize());
 
 app.use(basePath, router);
 
+
+app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
+    if (obj instanceof AlreadyExistsError) {
+        next(Boom.badRequest(obj.message))
+    } else {
+        next(obj);
+    }
+});
 
 //General Exception Handler
 // next is a required parameter, without having it requests result in a response of object

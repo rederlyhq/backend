@@ -18,6 +18,9 @@ export default class StudentEnrollment extends Model {
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 
+    static constraints = {
+        uniqueUserPerCourse: 'student_enrollment--user_id-course_id'
+    }
     static createAssociations(): void {
         // This is a hack to add the associations later to avoid cyclic dependencies
         /* eslint-disable @typescript-eslint/no-use-before-define */
@@ -73,7 +76,7 @@ StudentEnrollment.init({
                 'course_id',
             ],
             unique: true,
-            name: 'student_enrollment--user_id-course_id'
+            name: StudentEnrollment.constraints.uniqueUserPerCourse
         },
     ]
 });

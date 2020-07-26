@@ -1,4 +1,5 @@
 import * as _ from "lodash";
+import { URL } from 'url';
 import emailHelper from '../../utilities/email-helper';
 import logger from '../../utilities/logger';
 import { v4 as uuidv4 } from 'uuid';
@@ -330,11 +331,12 @@ class UserController {
         }
 
         let emailSent = false;
+        const verifyURL = new URL(`/verify/${newUser.verifyToken}`, baseUrl)
         try {
             await emailHelper.sendEmail({
                 content: `Hello,
 
-                Please verify your account by clicking this url: ${baseUrl}/verify/${newUser.verifyToken}
+                Please verify your account by clicking this url: ${verifyURL}
                 `,
                 email: newUser.email,
                 subject: 'Please verify account'

@@ -12,6 +12,10 @@ export default class Curriculum extends Model {
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 
+    static constraints = {
+        uniqueNamePerUniversity: 'curriculum--university_id-name'
+    }
+
     static createAssociations(): void {
         // This is a hack to add the associations later to avoid cyclic dependencies
         /* eslint-disable @typescript-eslint/no-use-before-define */
@@ -79,6 +83,7 @@ Curriculum.init({
     indexes: [
         {
             unique: true,
+            name: Curriculum.constraints.uniqueNamePerUniversity,
             fields: [
                 'university_id',
                 'curriculum_name'

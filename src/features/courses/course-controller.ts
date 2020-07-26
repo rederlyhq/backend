@@ -536,7 +536,8 @@ class CourseController {
                 [sequelize.literal(masteredProblemCountCalculationString), 'masteredProblemCount'],
                 [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
             ];
-            group = [`${User.name}.${User.rawAttributes.id.field}`, `${User.name}.${User.rawAttributes.firstName.field}`, `${User.name}.${User.rawAttributes.lastName.field}`, ];
+            // TODO This group needs to match the alias below, I'd like to find a better way to do this
+            group = [`user.${User.rawAttributes.id.field}`, `user.${User.rawAttributes.firstName.field}`, `user.${User.rawAttributes.lastName.field}`];
         }
 
         return StudentGrade.findAll({

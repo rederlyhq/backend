@@ -116,10 +116,10 @@ class CourseController {
         })
     }
 
-    getTopics({courseId, isOpen}: {courseId: number; isOpen: boolean}) {
+    getTopics({ courseId, isOpen }: { courseId: number; isOpen: boolean }) {
         let where: any = {}
         const include = [];
-        if(!_.isNil(courseId)) {
+        if (!_.isNil(courseId)) {
             include.push({
                 model: CourseUnitContent,
                 as: 'unit',
@@ -128,7 +128,7 @@ class CourseController {
             where[`$unit.${CourseUnitContent.rawAttributes.courseId.field}$`] = courseId
         }
 
-        if(isOpen) {
+        if (isOpen) {
             const date = new Date()
             where.startDate = {
                 [Sequelize.Op.lte]: date
@@ -226,7 +226,7 @@ class CourseController {
                 where: options.where
             });
             // updates count
-            return updates[0];                
+            return updates[0];
         } catch (e) {
             if (e instanceof UniqueConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
@@ -509,7 +509,7 @@ class CourseController {
         }
 
         let questionInclude;
-        if(includeOthers || _.isNil(topicId) === false) {
+        if (includeOthers || _.isNil(topicId) === false) {
             includeOthers = true;
             questionInclude = [{
                 model: CourseTopicContent,
@@ -524,7 +524,7 @@ class CourseController {
         let group: sequelize.GroupOption;
         if (_.isNil(questionId) === false) {
             attributes = [
-                'id', 
+                'id',
                 'bestScore',
                 'numAttempts'
             ]
@@ -592,7 +592,7 @@ class CourseController {
                     }]
                 }]
             }],
-            group: [`${CourseUnitContent.name}.${CourseUnitContent.rawAttributes.id.field}`, `${CourseUnitContent.name}.${CourseUnitContent.rawAttributes.id.field}` ]
+            group: [`${CourseUnitContent.name}.${CourseUnitContent.rawAttributes.id.field}`, `${CourseUnitContent.name}.${CourseUnitContent.rawAttributes.id.field}`]
         })
     }
 
@@ -618,7 +618,7 @@ class CourseController {
             }]
         }]
 
-        if(!_.isNil(courseId)) {
+        if (!_.isNil(courseId)) {
             include.push({
                 model: CourseUnitContent,
                 as: 'unit',
@@ -639,7 +639,7 @@ class CourseController {
                 [sequelize.literal(`CASE WHEN COUNT("questions->grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN count(CASE WHEN "questions->grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "questions->grades".${StudentGrade.rawAttributes.id.field} END)::FLOAT / count("questions->grades".${StudentGrade.rawAttributes.id.field}) ELSE NULL END`), 'completionPercent'],
             ],
             include,
-            group: [`${CourseTopicContent.name}.${CourseTopicContent.rawAttributes.id.field}`, `${CourseTopicContent.name}.${CourseTopicContent.rawAttributes.name.field}` ]
+            group: [`${CourseTopicContent.name}.${CourseTopicContent.rawAttributes.id.field}`, `${CourseTopicContent.name}.${CourseTopicContent.rawAttributes.name.field}`]
         })
     }
 
@@ -648,7 +648,7 @@ class CourseController {
             courseTopicContentId,
             courseId
         } = options.where;
-        
+
         const where = _({
             courseTopicContentId,
             [`$topic.unit.${CourseUnitContent.rawAttributes.courseId.field}$`]: courseId
@@ -660,7 +660,7 @@ class CourseController {
             attributes: []
         }]
 
-        if(!_.isNil(courseId)) {
+        if (!_.isNil(courseId)) {
             include.push({
                 model: CourseTopicContent,
                 as: 'topic',

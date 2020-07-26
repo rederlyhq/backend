@@ -179,6 +179,13 @@ class CourseController {
                 if (violatedConstraint === Course.constraints.uniqueCourseCode) {
                     throw new AlreadyExistsError('A course already exists with this course code')
                 }
+            } else if (e instanceof ForeignKeyConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if (violatedConstraint === Course.constraints.foreignKeyCurriculum) {
+                    throw new NotFoundError('Could not create the course since the given curriculum does not exist');
+                }
             }
             throw new WrappedError("Unknown error occurred", e);
         }

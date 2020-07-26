@@ -3,7 +3,9 @@ import appSequelize from '../app-sequelize';
 
 export default class Course extends Model {
     static constraints = {
-        uniqueCourseCode: 'course_course_code_key'
+        uniqueCourseCode: 'course_course_code_key',
+
+        foreignKeyCurriculum: 'course_curriculum_id_fkey'
     }
     static createAssociations(): void {
         // This is a hack to add the associations later to avoid cyclic dependencies

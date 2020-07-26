@@ -65,8 +65,18 @@ app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
     } else if (obj.status) {
         return res.status(obj.status).json(obj);
     } else {
-        logger.error(obj.stack);
-        res.status(500).json(obj);
+        const rederlyReference = `rederly-reference-${new Date().getTime()}-${Math.floor(Math.random()*1000000)}`
+        logger.error(`${rederlyReference} - ${obj.stack}`);
+        let data: any = {
+            statusCode: 500,
+            status: 'Interal Server Error',
+            rederlyReference
+        };
+        if(process.env.NODE_ENV !== 'production') {
+            data.error = obj;
+        }
+
+        return res.status(data.statusCode).json(data);
     }
 });
 

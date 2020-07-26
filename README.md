@@ -13,6 +13,12 @@
 * You can not include or leave these values blank to get default values
 
 ### Available configurations
+
+#### Environment
+| Environment variable | Description | Default value |
+| --- | --- | --- |
+| NODE_ENV | This is a standard environment variable which will make libraries behave differently (i.e. express). If set to `production` our application will be less verbose about error responses |  |
+
 #### Server
 | Environment variable | Description | Default value |
 | --- | --- | --- |

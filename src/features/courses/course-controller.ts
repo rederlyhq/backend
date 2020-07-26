@@ -293,8 +293,15 @@ class CourseController {
         } catch (e) {
             if (e instanceof ForeignKeyConstraintError) {
                 throw new NotFoundError('User or course was not found');
+            } else if (e instanceof UniqueConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if (violatedConstraint === StudentEnrollment.constraints.uniqueUserPerCourse) {
+                    throw new AlreadyExistsError('This user is already enrolled in this course')
+                }
             }
-            throw e;
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 

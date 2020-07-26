@@ -14,6 +14,7 @@ import passport = require('passport');
 import rateLimit = require("express-rate-limit");
 import Boom = require('boom');
 import AlreadyExistsError from './exceptions/already-exists-error';
+import NotFoundError from './exceptions/not-found-error';
 
 
 const { port, basePath } = configurations.server;
@@ -44,7 +45,7 @@ app.use(basePath, router);
 
 
 app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
-    if (obj instanceof AlreadyExistsError) {
+    if (obj instanceof AlreadyExistsError || obj instanceof NotFoundError) {
         next(Boom.badRequest(obj.message))
     } else {
         next(obj);

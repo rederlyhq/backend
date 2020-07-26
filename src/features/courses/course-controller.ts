@@ -306,23 +306,16 @@ class CourseController {
     }
 
     async enrollByCode(enrollment: EnrollByCodeOptions): Promise<StudentEnrollment> {
-        try {
-            const course = await this.getCourseByCode(enrollment.code);
-            if (course === null) {
-                throw new NotFoundError('Could not find course with the given code');
-            }
-            return this.enroll({
-                courseId: course.id,
-                userId: enrollment.userId,
-                enrollDate: new Date(),
-                dropDate: new Date()
-            } as StudentEnrollment);
-        } catch (e) {
-            if (e instanceof ForeignKeyConstraintError) {
-                throw new NotFoundError('User or course was not found');
-            }
-            throw e;
+        const course = await this.getCourseByCode(enrollment.code);
+        if (course === null) {
+            throw new NotFoundError('Could not find course with the given code');
         }
+        return this.enroll({
+            courseId: course.id,
+            userId: enrollment.userId,
+            enrollDate: new Date(),
+            dropDate: new Date()
+        } as StudentEnrollment);
     }
 
     async findMissingGrades(): Promise<any[]> {

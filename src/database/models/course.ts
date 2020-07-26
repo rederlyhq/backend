@@ -2,6 +2,9 @@ import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
 export default class Course extends Model {
+    static constraints = {
+        uniqueCourseCode: 'course_course_code_key'
+    }
     static createAssociations(): void {
         // This is a hack to add the associations later to avoid cyclic dependencies
         /* eslint-disable @typescript-eslint/no-use-before-define */

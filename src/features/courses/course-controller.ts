@@ -13,6 +13,9 @@ import StudentGrade from '../../database/models/student-grade';
 import User from '../../database/models/user';
 import logger from '../../utilities/logger';
 import sequelize = require("sequelize");
+import { UniqueConstraintError } from "sequelize";
+import WrappedError from "../../exceptions/wrapped-error";
+import AlreadyExistsError from "../../exceptions/already-exists-error";
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -165,8 +168,20 @@ class CourseController {
         });
     }
 
-    createCourse(courseObject: Course): Bluebird<Course> {
-        return Course.create(courseObject);
+    async createCourse(courseObject: Course): Promise<Course> {
+        try {
+            return await Course.create(courseObject);
+        } catch (e) {
+            if (e instanceof UniqueConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if (violatedConstraint === Course.constraints.uniqueCourseCode) {
+                    throw new AlreadyExistsError('A course already exists with this course code')
+                }
+            }
+            throw new WrappedError("Unknown error occurred", e);
+        }
     }
 
     createUnit(courseUnitContent: CourseUnitContent): Promise<CourseUnitContent> {

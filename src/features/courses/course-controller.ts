@@ -292,6 +292,13 @@ class CourseController {
                 if (violatedConstraint === CourseWWTopicQuestion.constraints.uniqueOrderPerTopic) {
                     throw new AlreadyExistsError('A question with this topic order already exists');
                 }
+            } else if (e instanceof ForeignKeyConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if (violatedConstraint === CourseWWTopicQuestion.constraints.foreignKeyTopic) {
+                    throw new NotFoundError('Could not create the question because the given topic does not exist');
+                }
             }
             throw new WrappedError("Unknown error occurred", e);
         }

@@ -20,7 +20,9 @@ export default class CourseWWTopicQuestion extends Model {
     public readonly updatedAt!: Date;
 
     static constraints = {
-        uniqueOrderPerTopic: 'course_topic_question--problem_number-topic_id'
+        uniqueOrderPerTopic: 'course_topic_question--problem_number-topic_id',
+        
+        foreignKeyTopic: 'course_topic_question_course_topic_content_id_fkey'
     }
     
     static createAssociations(): void {

@@ -7,6 +7,7 @@ export const createCurriculumValidation = {
         comment: Joi.string().required(),
         active: Joi.boolean().optional().default(true),
         public: Joi.boolean().optional().default(true),
+        textbooks: Joi.string().required()
         // university is assumed
     }
 }

@@ -29,7 +29,10 @@ export default class CourseTopicContent extends Model {
 
     static constraints = {
         uniqueOrderPerUnit: 'course_topic_content--unit_id-order',
-        uniqueNamePerUnit: 'course_topic_content--unit_id-name'
+        uniqueNamePerUnit: 'course_topic_content--unit_id-name',
+
+        foreignKeyTopicType: 'course_topic_content_topic_type_id_fkey',
+        foreignKeyUnit: 'course_topic_content_course_unit_content_id_fkey'
     }
     
     static createAssociations(): void {

@@ -222,6 +222,16 @@ class CourseController {
                 } else if (violatedConstraint === CourseTopicContent.constraints.uniqueOrderPerUnit) {
                     throw new AlreadyExistsError('A topic already exists with this unit order');
                 }
+            } else if (e instanceof ForeignKeyConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if (violatedConstraint === CourseTopicContent.constraints.foreignKeyUnit) {
+                    throw new NotFoundError('Given unit id')
+                } else if (violatedConstraint === CourseTopicContent.constraints.foreignKeyTopicType) {
+                    throw new NotFoundError('Invalid topic type provided')
+                }
+
             }
             throw new WrappedError("Unknown error occurred", e);
         }

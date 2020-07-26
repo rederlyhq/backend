@@ -14,6 +14,12 @@ export default class Course extends Model {
             as: 'instructor'
         });
 
+        Course.belongsTo(Curriculum, {
+            foreignKey: 'curriculumId',
+            targetKey: 'id',
+            as: 'curriculum'
+        })
+
         Course.hasMany(StudentEnrollment, {
             foreignKey: 'courseId',
             sourceKey: 'id',
@@ -105,4 +111,5 @@ Course.init({
 import User from './user';
 import StudentEnrollment from './student-enrollment';
 import CourseUnitContent from './course-unit-content';
+import Curriculum from './curriculum';
 

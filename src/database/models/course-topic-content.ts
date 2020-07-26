@@ -27,6 +27,11 @@ export default class CourseTopicContent extends Model {
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 
+    static constraints = {
+        uniqueOrderPerUnit: 'course_topic_content--unit_id-order',
+        uniqueNamePerUnit: 'course_topic_content--unit_id-name'
+    }
+    
     static createAssociations(): void {
         // This is a hack to add the associations later to avoid cyclic dependencies
         /* eslint-disable @typescript-eslint/no-use-before-define */
@@ -125,7 +130,7 @@ CourseTopicContent.init({
                 'course_topic_content_name',
             ],
             unique: true,
-            name: 'course_topic_content--unit_id-name',
+            name: CourseTopicContent.constraints.uniqueNamePerUnit,
         },
         {
             fields: [
@@ -133,7 +138,7 @@ CourseTopicContent.init({
                 'course_topic_content_order',
             ],
             unique: true,
-            name: 'course_topic_content--unit_id-order',
+            name: CourseTopicContent.constraints.uniqueOrderPerUnit,
         },
     ]
 });

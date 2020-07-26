@@ -202,8 +202,22 @@ class CourseController {
         }
     }
 
-    createTopic(courseTopicContent: CourseTopicContent): Promise<CourseTopicContent> {
-        return CourseTopicContent.create(courseTopicContent);
+    async createTopic(courseTopicContent: CourseTopicContent): Promise<CourseTopicContent> {
+        try {
+            return await CourseTopicContent.create(courseTopicContent);
+        } catch (e) {
+            if (e instanceof UniqueConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if (violatedConstraint === CourseTopicContent.constraints.uniqueNamePerUnit) {
+                    throw new AlreadyExistsError('A topic with that name already exists within this unit');
+                } else if (violatedConstraint === CourseTopicContent.constraints.uniqueOrderPerUnit) {
+                    throw new AlreadyExistsError('A topic already exists with this unit order');
+                }
+            }
+            throw new WrappedError("Unknown error occurred", e);
+        }
     }
 
     async updateTopic(options: UpdateTopicOptions): Promise<number> {

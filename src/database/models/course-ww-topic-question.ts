@@ -19,6 +19,10 @@ export default class CourseWWTopicQuestion extends Model {
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 
+    static constraints = {
+        uniqueOrderPerTopic: 'course_topic_question--problem_number-topic_id'
+    }
+    
     static createAssociations(): void {
         // This is a hack to add the associations later to avoid cyclic dependencies
         /* eslint-disable @typescript-eslint/no-use-before-define */
@@ -105,7 +109,7 @@ CourseWWTopicQuestion.init({
                 'course_topic_question_problem_number',
             ],
             unique: true,
-            name:'course_topic_question--problem_number-topic_id'
+            name: CourseWWTopicQuestion.constraints.uniqueOrderPerTopic
         },
     ]
 });

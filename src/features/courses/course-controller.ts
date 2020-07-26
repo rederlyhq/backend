@@ -236,8 +236,20 @@ class CourseController {
         return updates[0];
     }
 
-    createQuestion(question: CourseWWTopicQuestion): Promise<CourseWWTopicQuestion> {
-        return CourseWWTopicQuestion.create(question);
+    async createQuestion(question: CourseWWTopicQuestion): Promise<CourseWWTopicQuestion> {
+        try {
+            return await CourseWWTopicQuestion.create(question);
+        } catch (e) {
+            if (e instanceof UniqueConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if (violatedConstraint === CourseWWTopicQuestion.constraints.uniqueOrderPerTopic) {
+                    throw new AlreadyExistsError('A question with this topic order already exists');
+                }
+            }
+            throw new WrappedError("Unknown error occurred", e);
+        }
     }
 
     async getQuestion(question: any): Promise<any> {

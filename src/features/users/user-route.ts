@@ -43,10 +43,10 @@ router.post('/register',
     validate(registerValidation),
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
         try {
-            // TODO type check for req.headers['x-forwarded-referer'] being an array
-            const baseUrl: string = req.headers.referer || (req.headers['x-forwarded-referer'] as string)
+            // Typing is incorrect here, even if I specify the header twice it comes back as a string (comma delimeted)
+            const baseUrl: string = req.headers.origin as string
             if(_.isNil(baseUrl)) {
-                next(Boom.badRequest('`referer` required in headers'))
+                next(Boom.badRequest('The `origin` header is required!'))
                 return
             }
             const newUser = await userController.registerUser({

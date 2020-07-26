@@ -1,3 +1,4 @@
+import * as _ from 'lodash';
 import { Request, Response, NextFunction } from "express";
 import userController from "./user-controller";
 const router = require('express').Router();
@@ -11,6 +12,7 @@ import * as asyncHandler from 'express-async-handler'
 import NoAssociatedUniversityError from "../../exceptions/no-associated-university-error";
 import AlreadyExistsError from "../../exceptions/already-exists-error";
 import Session from "../../database/models/session";
+import WrappedError from '../../exceptions/wrapped-error';
 
 router.post('/login',
     validate(loginValidation),
@@ -41,7 +43,11 @@ router.post('/register',
     validate(registerValidation),
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            const baseUrl = req.headers.referer
+            if(_.isNil(baseUrl)) {
+                next(Boom.badRequest('`referer` required in headers'))
+                return
+            }
             const newUser = await userController.registerUser({
                 userObject: req.body,
                 baseUrl
@@ -53,7 +59,7 @@ router.post('/register',
             } else if (e instanceof AlreadyExistsError) {
                 next(Boom.badRequest(e.message));
             } else {
-                throw e;
+                throw new WrappedError('An unknown error occurred', e);
             }
         }
     }));

@@ -7,6 +7,8 @@ import CurriculumWWTopicQuestion from '../../database/models/curriculum-ww-topic
 import { UniqueConstraintError } from 'sequelize';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import WrappedError from '../../exceptions/wrapped-error';
+import { ForeignKeyConstraintError } from 'sequelize';
+import NotFoundError from '../../exceptions/not-found-error';
 
 interface UpdateTopicOptions {
     where: {
@@ -94,6 +96,13 @@ class CurriculumController {
                     throw new AlreadyExistsError('A unit with this name already exists for this curriculum');
                 } else if (violatedConstraint === CurriculumUnitContent.constraints.uniqueOrderPerCurriculum) {
                     throw new AlreadyExistsError('A unit with this order already exists for this curriculum');
+                }
+            } else if (e instanceof ForeignKeyConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if (violatedConstraint === CurriculumUnitContent.constraints.foreignKeyCurriculum) {
+                    throw new NotFoundError('Could not create the unit because the given curriculum does not exist');
                 }
             }
             throw new WrappedError("Unknown error occurred", e);

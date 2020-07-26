@@ -18,7 +18,9 @@ export default class CurriculumUnitContent extends Model {
 
     static  constraints = {
         uniqueOrderPerCurriculum: 'curriculum_unit_content--order-curriculum_id',
-        uniqueNamePerCurriculum: 'curriculum_unit_content--name-curriculum_id'
+        uniqueNamePerCurriculum: 'curriculum_unit_content--name-curriculum_id',
+
+        foreignKeyCurriculum: 'curriculum_unit_content_curriculum_id_fkey'
     };
 
     static createAssociations(): void {

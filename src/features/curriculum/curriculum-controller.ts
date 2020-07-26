@@ -135,11 +135,25 @@ class CurriculumController {
     }
 
     async updateTopic(options: UpdateTopicOptions): Promise<number> {
-        const updates = await CurriculumTopicContent.update(options.updates, {
-            where: options.where
-        });
-        // updates count
-        return updates[0];
+        try {
+            const updates = await CurriculumTopicContent.update(options.updates, {
+                where: options.where
+            });
+            // updates count
+            return updates[0];    
+        } catch(e) {
+            if (e instanceof UniqueConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if (violatedConstraint === CurriculumTopicContent.constraints.uniqueNamePerUnit) {
+                    throw new AlreadyExistsError('A topic with this name already exists for this unit');
+                } else if (violatedConstraint === CurriculumTopicContent.constraints.uniqueOrderPerUnit) {
+                    throw new AlreadyExistsError('A topic with this order already exists for this unit');
+                }
+            }
+            throw new WrappedError("Unknown error occurred", e);
+        }
     }
 
     async updateUnit(options: UpdateUnitOptions): Promise<number> {

@@ -79,6 +79,11 @@ Course.init({
         type: DataTypes.TEXT,
         allowNull: false,
     },
+    textbooks: {
+        field: 'course_textbooks',
+        type: DataTypes.TEXT,
+        allowNull: false
+    },
     code: {
         field: 'course_code',
         type: DataTypes.TEXT,

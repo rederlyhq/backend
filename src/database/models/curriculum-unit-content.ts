@@ -16,6 +16,11 @@ export default class CurriculumUnitContent extends Model {
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 
+    static  constraints = {
+        uniqueOrderPerCurriculum: 'curriculum_unit_content--order-curriculum_id',
+        uniqueNamePerCurriculum: 'curriculum_unit_content--name-curriculum_id'
+    };
+
     static createAssociations(): void {
         // This is a hack to add the associations later to avoid cyclic dependencies
         /* eslint-disable @typescript-eslint/no-use-before-define */
@@ -71,7 +76,7 @@ CurriculumUnitContent.init({
                 'curriculum_unit_content_name',
             ],
             unique: true,
-            name:'curriculum_unit_content--name-curriculum_id'
+            name: CurriculumUnitContent.constraints.uniqueNamePerCurriculum
         },
         {
             fields: [
@@ -79,7 +84,7 @@ CurriculumUnitContent.init({
                 'curriculum_unit_content_order',
             ],
             unique: true,
-            name:'curriculum_unit_content--order-curriculum_id'
+            name: CurriculumUnitContent.constraints.uniqueOrderPerCurriculum
         },
     ]
 });

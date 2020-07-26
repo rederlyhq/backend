@@ -100,8 +100,22 @@ class CurriculumController {
         }
     }
 
-    createTopic(topic: CurriculumTopicContent): Promise<CurriculumTopicContent> {
-        return CurriculumTopicContent.create(topic);
+    async createTopic(topic: CurriculumTopicContent): Promise<CurriculumTopicContent> {
+        try {
+            return await CurriculumTopicContent.create(topic);
+        } catch(e) {
+            if (e instanceof UniqueConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if (violatedConstraint === CurriculumTopicContent.constraints.uniqueNamePerUnit) {
+                    throw new AlreadyExistsError('A topic with this name already exists for this unit');
+                } else if (violatedConstraint === CurriculumTopicContent.constraints.uniqueOrderPerUnit) {
+                    throw new AlreadyExistsError('A topic with this order already exists for this unit');
+                }
+            }
+            throw new WrappedError("Unknown error occurred", e);
+        }
     }
 
     createQuestion(question: CurriculumWWTopicQuestion): Promise<CurriculumWWTopicQuestion> {

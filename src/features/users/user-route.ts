@@ -43,7 +43,8 @@ router.post('/register',
     validate(registerValidation),
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const baseUrl = req.headers.referer
+            // TODO type check for req.headers['x-forwarded-referer'] being an array
+            const baseUrl: string = req.headers.referer || (req.headers['x-forwarded-referer'] as string)
             if(_.isNil(baseUrl)) {
                 next(Boom.badRequest('`referer` required in headers'))
                 return

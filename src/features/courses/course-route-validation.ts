@@ -169,3 +169,12 @@ export const getStatisticsOnQuestionsValidation = {
     },
     body: {},
 }
+
+export const getProblems = {
+    params: {},
+    query: {
+        courseTopicContentId: Joi.number().optional(),
+        userId: Joi.number().optional(),
+    },
+    body: {},
+}

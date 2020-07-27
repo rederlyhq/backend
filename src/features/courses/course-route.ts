@@ -147,6 +147,17 @@ router.get('/grades',
         }
     }));
 
+router.get('/questions',
+    authenticationMiddleware,
+    // validate(getUser),
+    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        const result = await courseController.getQuestions({
+            userId: (req.query as any).userId as number,
+            courseTopicContentId: (req.query as any).courseTopicContentId as number
+        });
+        next(httpResponse.Ok(null, result));
+    }));
+
 router.put('/topic/:id',
     authenticationMiddleware,
     validate(updateCourseTopicValidation),

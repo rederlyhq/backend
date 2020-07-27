@@ -3,7 +3,9 @@ import appSequelize from '../app-sequelize';
 
 export default class Course extends Model {
     static constraints = {
-        uniqueCourseCode: 'course_course_code_key'
+        uniqueCourseCode: 'course_course_code_key',
+
+        foreignKeyCurriculum: 'course_curriculum_id_fkey'
     }
     static createAssociations(): void {
         // This is a hack to add the associations later to avoid cyclic dependencies
@@ -13,6 +15,12 @@ export default class Course extends Model {
             targetKey: 'id',
             as: 'instructor'
         });
+
+        Course.belongsTo(Curriculum, {
+            foreignKey: 'curriculumId',
+            targetKey: 'id',
+            as: 'curriculum'
+        })
 
         Course.hasMany(StudentEnrollment, {
             foreignKey: 'courseId',
@@ -71,6 +79,11 @@ Course.init({
         type: DataTypes.TEXT,
         allowNull: false,
     },
+    textbooks: {
+        field: 'course_textbooks',
+        type: DataTypes.TEXT,
+        allowNull: false
+    },
     code: {
         field: 'course_code',
         type: DataTypes.TEXT,
@@ -105,4 +118,5 @@ Course.init({
 import User from './user';
 import StudentEnrollment from './student-enrollment';
 import CourseUnitContent from './course-unit-content';
+import Curriculum from './curriculum';
 

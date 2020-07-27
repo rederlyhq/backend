@@ -19,7 +19,9 @@ export default class CourseUnitContent extends Model {
 
     static constraints = {
         uniqueNamePerCourse: 'course_unit_content--name-course_id',
-        unqiueOrderPerCourse: 'course_unit_content--course_id-order'
+        unqiueOrderPerCourse: 'course_unit_content--course_id-order',
+
+        foreignKeyCourse: 'course_unit_content_course_id_fkey'
     };
 
     static createAssociations(): void {

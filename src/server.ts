@@ -14,6 +14,7 @@ import passport = require('passport');
 import rateLimit = require("express-rate-limit");
 import Boom = require('boom');
 import AlreadyExistsError from './exceptions/already-exists-error';
+import NotFoundError from './exceptions/not-found-error';
 
 
 const { port, basePath } = configurations.server;
@@ -44,7 +45,7 @@ app.use(basePath, router);
 
 
 app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
-    if (obj instanceof AlreadyExistsError) {
+    if (obj instanceof AlreadyExistsError || obj instanceof NotFoundError) {
         next(Boom.badRequest(obj.message))
     } else {
         next(obj);
@@ -64,8 +65,18 @@ app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
     } else if (obj.status) {
         return res.status(obj.status).json(obj);
     } else {
-        logger.error(obj.stack);
-        res.status(500).json(obj);
+        const rederlyReference = `rederly-reference-${new Date().getTime()}-${Math.floor(Math.random()*1000000)}`
+        logger.error(`${rederlyReference} - ${obj.stack}`);
+        let data: any = {
+            statusCode: 500,
+            status: 'Interal Server Error',
+            rederlyReference
+        };
+        if(process.env.NODE_ENV !== 'production') {
+            data.error = obj;
+        }
+
+        return res.status(data.statusCode).json(data);
     }
 });
 

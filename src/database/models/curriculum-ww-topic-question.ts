@@ -18,7 +18,9 @@ export default class CurriculumWWTopicQuestion extends Model {
   public readonly updatedAt!: Date;
 
   static constraints = {
-    uniqueOrderPerTopic: 'curriculum_topic_question--problem_number-topic_id'
+    uniqueOrderPerTopic: 'curriculum_topic_question--problem_number-topic_id',
+
+    foreignKeyTopic: 'curriculum_topic_question_curriculum_topic_content_id_fkey'
   }
 }
 

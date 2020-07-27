@@ -179,6 +179,13 @@ class CourseController {
                 if (violatedConstraint === Course.constraints.uniqueCourseCode) {
                     throw new AlreadyExistsError('A course already exists with this course code')
                 }
+            } else if (e instanceof ForeignKeyConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if (violatedConstraint === Course.constraints.foreignKeyCurriculum) {
+                    throw new NotFoundError('Could not create the course since the given curriculum does not exist');
+                }
             }
             throw new WrappedError("Unknown error occurred", e);
         }
@@ -196,6 +203,13 @@ class CourseController {
                     throw new AlreadyExistsError('A unit with that name already exists within this course');
                 } else if (violatedConstraint === CourseUnitContent.constraints.unqiueOrderPerCourse) {
                     throw new AlreadyExistsError('A unit already exists with this order');
+                }
+            } else if (e instanceof ForeignKeyConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if(violatedConstraint === CourseUnitContent.constraints.foreignKeyCourse) {
+                    throw new NotFoundError('The given course was not found to create the unit')
                 }
             }
             throw new WrappedError("Unknown error occurred", e);
@@ -215,6 +229,16 @@ class CourseController {
                 } else if (violatedConstraint === CourseTopicContent.constraints.uniqueOrderPerUnit) {
                     throw new AlreadyExistsError('A topic already exists with this unit order');
                 }
+            } else if (e instanceof ForeignKeyConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if (violatedConstraint === CourseTopicContent.constraints.foreignKeyUnit) {
+                    throw new NotFoundError('Given unit id')
+                } else if (violatedConstraint === CourseTopicContent.constraints.foreignKeyTopicType) {
+                    throw new NotFoundError('Invalid topic type provided')
+                }
+
             }
             throw new WrappedError("Unknown error occurred", e);
         }
@@ -274,6 +298,13 @@ class CourseController {
                 const violatedConstraint = (e.original as any).constraint
                 if (violatedConstraint === CourseWWTopicQuestion.constraints.uniqueOrderPerTopic) {
                     throw new AlreadyExistsError('A question with this topic order already exists');
+                }
+            } else if (e instanceof ForeignKeyConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if (violatedConstraint === CourseWWTopicQuestion.constraints.foreignKeyTopic) {
+                    throw new NotFoundError('Could not create the question because the given topic does not exist');
                 }
             }
             throw new WrappedError("Unknown error occurred", e);

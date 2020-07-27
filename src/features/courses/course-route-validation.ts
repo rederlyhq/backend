@@ -11,7 +11,8 @@ export const createCourseValidation: ValidationObject = {
         start: Joi.date().required(),
         end: Joi.date().required(),
         sectionCode: Joi.string().required(),
-        semesterCode: Joi.string().required()
+        semesterCode: Joi.string().required(),
+        textbooks: Joi.string().required()
         // universityId is assumed
         // userId is assumed
     }

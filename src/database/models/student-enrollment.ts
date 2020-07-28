@@ -60,11 +60,12 @@ StudentEnrollment.init({
         field: 'student_enrollment_enroll_date',
         type: DataTypes.DATE,
         allowNull: false,
+        defaultValue: DataTypes.NOW
     },
     dropDate: {
         field: 'student_enrollment_drop_date',
         type: DataTypes.DATE,
-        allowNull: false,
+        allowNull: true,
     },
 }, {
     tableName: 'student_enrollment',

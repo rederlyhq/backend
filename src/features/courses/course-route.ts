@@ -327,12 +327,9 @@ router.post('/enroll',
     authenticationMiddleware,
     validate(enrollInCourseValidation),
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-        // TODO block multiple enrollment
         try {
             const enrollment = await courseController.enroll({
                 ...req.body,
-                enrollDate: new Date(), // TODO make model default this or use created at
-                dropDate: new Date() // TODO allow this to be null then remove this
             })
             next(httpResponse.Ok('Enrolled', enrollment));
         } catch (e) {
@@ -351,7 +348,6 @@ router.post('/enroll/:code',
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const session = (req as any).session as Session;
 
-        // TODO block multiple enrollment
         try {
             const enrollment = await courseController.enrollByCode({
                 code: req.params.code,

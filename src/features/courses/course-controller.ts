@@ -770,7 +770,10 @@ class CourseController {
 
             const findOptions: sequelize.FindOptions = {
                 include,
-                where
+                where,
+                order: [
+                    ['problemNumber', 'ASC'],
+                ]
             }
             return await CourseWWTopicQuestion.findAll(findOptions)
         } catch (e) {

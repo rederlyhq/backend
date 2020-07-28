@@ -268,10 +268,9 @@ router.post('/question/:id',
         },
         userResDecorator: async (proxyRes: Response<any>, proxyResData: any, userReq: any, userRes: Response<any>) => {
             let data = proxyResData.toString('utf8');
-            console.log(data);
             data = JSON.parse(data);
 
-            await courseController.submitAnswer({
+            const result = await courseController.submitAnswer({
                 userId: userReq.session.userId,
                 questionId: userReq.params.id,
                 score: data.problem_result.score,
@@ -281,7 +280,8 @@ router.post('/question/:id',
             // There is no way to get next callback, however anything thrown will get sent to next
             // Using the below line will responde with a 201 the way we do in our routes
             throw httpResponse.Ok('Answer submitted for question', {
-                rendererData: data
+                rendererData: data,
+                ...result
             });
 
             // If testing renderer integration from the browser without the front end simply return the rendered html

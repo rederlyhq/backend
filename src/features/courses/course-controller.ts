@@ -882,6 +882,19 @@ class CourseController {
         return results.length
     }
 
+    async createGradesForQuestion({ questionId }: { questionId: number }) {
+        const results = await this.getUsersThatRequireGradeForQuestion({
+            questionId
+        })
+        await results.asyncForEach(async (result) => {
+            await this.createNewStudentGrade({
+                courseTopicQuestionId: questionId,
+                userId: result.userId
+            })
+        })
+        return results.length
+    }
+
     async createNewStudentGrade({
         userId,
         courseTopicQuestionId

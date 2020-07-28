@@ -755,6 +755,28 @@ class CourseController {
             throw new WrappedError('Error fetching problems', e);
         }
     }
+    async createNewStudentGrade({
+        userId,
+        courseTopicQuestionId
+    }: {
+        userId: number,
+        courseTopicQuestionId: number
+    }) {
+        try {
+            return await StudentGrade.create({
+                userId: userId,
+                courseWWTopicQuestionId: courseTopicQuestionId,
+                randomSeed: Math.floor(Math.random() * 999999),
+                bestScore: 0,
+                overallBestScore: 0,
+                numAttempts: 0,
+                firstAttempts: 0,
+                latestAttempts: 0,
+            });
+        } catch (e) {
+            throw new WrappedError('Could not create new student grade', e);
+        }
+    }
 }
 
 export const courseController = new CourseController();

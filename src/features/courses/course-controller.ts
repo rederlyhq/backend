@@ -822,15 +822,17 @@ class CourseController {
                     model: StudentGrade,
                     as: 'grades',
                     required: false,
-                    attributes: []
+                    attributes: [],
+                    where: {
+                        id: {
+                            [Sequelize.Op.eq]: null
+                        }
+                    }
                 }],
                 attributes: [
                     'id'
                 ],
                 where: {
-                    ['$grades.student_grade_id$']: {
-                        [Sequelize.Op.eq]: null
-                    },
                     ['$topic.unit.course.enrolledStudents.user_id$']: userId
                 }
             })

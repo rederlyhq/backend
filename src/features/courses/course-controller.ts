@@ -812,6 +812,62 @@ class CourseController {
             throw new WrappedError('Could not getQuestionsThatRequireGradesForUser', e)
         }
     }
+
+    /*
+    * Get all users that don't have a grade on a question
+    * Useful when adding a question to a course that already has enrollments
+    */
+    async getUsersThatRequireGradeForQuestion({ questionId } : { questionId: number }) {
+        try {
+            return await StudentEnrollment.findAll({
+                include: [{
+                    model: Course,
+                    as: 'course',
+                    required: true,
+                    attributes: [],
+                    include: [{
+                        model: CourseUnitContent,
+                        as: 'units',
+                        required: true,
+                        attributes: [],
+                        include: [{
+                            model: CourseTopicContent,
+                            as: 'topics',
+                            required: true,
+                            attributes: [],
+                            include: [{
+                                model: CourseWWTopicQuestion,
+                                required: true,
+                                as: 'questions',
+                                attributes: [],
+                                // This where is ok here because we just don't want results to propogate past this point
+                                where: {
+                                    id: questionId
+                                },
+                                include: [{
+                                    model: StudentGrade,
+                                    as: 'grades',
+                                    required: false,
+                                    attributes: []
+                                }]
+                            }]
+                        }]
+                    }]
+                }],
+                attributes: [
+                    'userId'
+                ],
+                where: {
+                    ['$course.units.topics.questions.grades.student_grade_id$']: {
+                        [Sequelize.Op.eq]: null
+                    }
+                }
+            })
+        } catch (e) {
+            throw new WrappedError('Could not getUsersThatRequireGradeForQuestion', e);
+        }
+    }
+    
     async createNewStudentGrade({
         userId,
         courseTopicQuestionId

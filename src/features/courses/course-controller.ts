@@ -16,6 +16,7 @@ import sequelize = require("sequelize");
 import { UniqueConstraintError } from "sequelize";
 import WrappedError from "../../exceptions/wrapped-error";
 import AlreadyExistsError from "../../exceptions/already-exists-error";
+import appSequelize from "../../database/app-sequelize";
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -387,9 +388,34 @@ class CourseController {
         })
     }
 
-    async enroll(enrollment: StudentEnrollment): Promise<StudentEnrollment> {
+    async createStudentEnrollment(enrollment: StudentEnrollment): Promise<StudentEnrollment> {
         try {
             return await StudentEnrollment.create(enrollment);
+        } catch (e) {
+            if (e instanceof ForeignKeyConstraintError) {
+                throw new NotFoundError('User or course was not found');
+            } else if (e instanceof UniqueConstraintError) {
+                // The sequelize type as original as error but the error comes back with this additional field
+                // To workaround the typescript error we must declare any
+                const violatedConstraint = (e.original as any).constraint
+                if (violatedConstraint === StudentEnrollment.constraints.uniqueUserPerCourse) {
+                    throw new AlreadyExistsError('This user is already enrolled in this course')
+                }
+            }
+            throw new WrappedError('Unknown error occurred', e);
+        }
+    }
+
+    async enroll(enrollment: StudentEnrollment): Promise<StudentEnrollment> {
+        try {
+            return await appSequelize.transaction(async () => {
+                const result = await StudentEnrollment.create(enrollment);
+                await this.createGradesForUserEnrollment({
+                    courseId: enrollment.courseId,
+                    userId: enrollment.userId
+                });
+                return result;    
+            })
         } catch (e) {
             if (e instanceof ForeignKeyConstraintError) {
                 throw new NotFoundError('User or course was not found');

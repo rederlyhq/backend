@@ -312,6 +312,16 @@ class CourseController {
         }
     }
 
+    async addQuestion(question: CourseWWTopicQuestion): Promise<CourseWWTopicQuestion> {
+        return await appSequelize.transaction(async () => {
+            const result = await this.createQuestion(question);
+            await this.createGradesForQuestion({
+                questionId: result.id
+            });
+            return result;
+        })
+    }
+
     async getQuestion(question: any): Promise<any> {
         const courseQuestion = await CourseWWTopicQuestion.findOne({
             where: {

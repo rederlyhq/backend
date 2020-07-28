@@ -203,7 +203,7 @@ router.post('/question',
     validate(createCourseTopicQuestionValidation),
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const newQuestion = await courseController.createQuestion({
+            const newQuestion = await courseController.addQuestion({
                 ...req.body
             });
             // TODO handle not found case

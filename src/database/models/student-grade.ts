@@ -105,6 +105,14 @@ StudentGrade.init({
 }, {
   tableName: 'student_grade',
   sequelize: appSequelize, // this bit is important
+  indexes: [{
+    name: 'student_grade--course_topic_question_id-user_id',
+    unique: true,
+    fields: [
+      'course_topic_question_id',
+      'user_id'
+    ]
+  }]
 });
 
 import CourseWWTopicQuestion from './course-ww-topic-question';

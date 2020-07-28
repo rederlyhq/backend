@@ -97,6 +97,15 @@ export const getQuestionValidation: ValidationObject = {
     body: {}
 }
 
+export const getQuestionsValidation: ValidationObject = {
+    params: {},
+    query: {
+        userId: Joi.alternatives().try(Joi.string().valid('me').optional(), Joi.number().optional()).optional(),
+        courseTopicContentId: Joi.number().optional()
+    },
+    body: {}
+}
+
 
 export const getCourseValidation = {
     params: {

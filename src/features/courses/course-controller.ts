@@ -16,6 +16,7 @@ import sequelize = require("sequelize");
 import { UniqueConstraintError } from "sequelize";
 import WrappedError from "../../exceptions/wrapped-error";
 import AlreadyExistsError from "../../exceptions/already-exists-error";
+import appSequelize from "../../database/app-sequelize";
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -311,6 +312,16 @@ class CourseController {
         }
     }
 
+    async addQuestion(question: CourseWWTopicQuestion): Promise<CourseWWTopicQuestion> {
+        return await appSequelize.transaction(async () => {
+            const result = await this.createQuestion(question);
+            await this.createGradesForQuestion({
+                questionId: result.id
+            });
+            return result;
+        })
+    }
+
     async getQuestion(question: any): Promise<any> {
         const courseQuestion = await CourseWWTopicQuestion.findOne({
             where: {
@@ -387,7 +398,7 @@ class CourseController {
         })
     }
 
-    async enroll(enrollment: StudentEnrollment): Promise<StudentEnrollment> {
+    async createStudentEnrollment(enrollment: StudentEnrollment): Promise<StudentEnrollment> {
         try {
             return await StudentEnrollment.create(enrollment);
         } catch (e) {
@@ -403,6 +414,17 @@ class CourseController {
             }
             throw new WrappedError('Unknown error occurred', e);
         }
+    }
+
+    async enroll(enrollment: StudentEnrollment): Promise<StudentEnrollment> {
+        return await appSequelize.transaction(async () => {
+            const result = this.createStudentEnrollment(enrollment);
+            await this.createGradesForUserEnrollment({
+                courseId: enrollment.courseId,
+                userId: enrollment.userId
+            });
+            return result;    
+        })
     }
 
     async enrollByCode(enrollment: EnrollByCodeOptions): Promise<StudentEnrollment> {
@@ -753,6 +775,170 @@ class CourseController {
             return await CourseWWTopicQuestion.findAll(findOptions)
         } catch (e) {
             throw new WrappedError('Error fetching problems', e);
+        }
+    }
+
+    /**
+     * Get's a list of questions that are missing a grade
+     * We can then go and create a course
+     */
+    async getQuestionsThatRequireGradesForUser({ courseId, userId}: {courseId: number; userId: number}) {
+        try {
+            return await CourseWWTopicQuestion.findAll({
+                include: [{
+                    model: CourseTopicContent,
+                    as: 'topic',
+                    required: true,
+                    attributes: [],
+                    include: [{
+                        model: CourseUnitContent,
+                        as: 'unit',
+                        required: true,
+                        attributes: [],
+                        // This where is fine here
+                        // We just don't want further results to propogate
+                        // Also we don't need course in the join, we need to add a relationship to go through course
+                        where: {
+                            courseId
+                        },
+                        include: [{
+                            model: Course,
+                            as: 'course',
+                            required: true,
+                            attributes: [],
+                            include: [{
+                                model: StudentEnrollment,
+                                as: 'enrolledStudents',
+                                required: true,
+                                attributes: [],
+                            }]
+                        }]
+                    }]
+                }, {
+                    model: StudentGrade,
+                    as: 'grades',
+                    required: false,
+                    attributes: [],
+                    where: {
+                        id: {
+                            [Sequelize.Op.eq]: null
+                        }
+                    }
+                }],
+                attributes: [
+                    'id'
+                ],
+                where: {
+                    ['$topic.unit.course.enrolledStudents.user_id$']: userId
+                }
+            })
+        } catch (e) {
+            throw new WrappedError('Could not getQuestionsThatRequireGradesForUser', e)
+        }
+    }
+
+    /*
+    * Get all users that don't have a grade on a question
+    * Useful when adding a question to a course that already has enrollments
+    */
+    async getUsersThatRequireGradeForQuestion({ questionId } : { questionId: number }) {
+        try {
+            return await StudentEnrollment.findAll({
+                include: [{
+                    model: Course,
+                    as: 'course',
+                    required: true,
+                    attributes: [],
+                    include: [{
+                        model: CourseUnitContent,
+                        as: 'units',
+                        required: true,
+                        attributes: [],
+                        include: [{
+                            model: CourseTopicContent,
+                            as: 'topics',
+                            required: true,
+                            attributes: [],
+                            include: [{
+                                model: CourseWWTopicQuestion,
+                                required: true,
+                                as: 'questions',
+                                attributes: [],
+                                // This where is ok here because we just don't want results to propogate past this point
+                                where: {
+                                    id: questionId
+                                },
+                                include: [{
+                                    model: StudentGrade,
+                                    as: 'grades',
+                                    required: false,
+                                    attributes: []
+                                }]
+                            }]
+                        }]
+                    }]
+                }],
+                attributes: [
+                    'userId'
+                ],
+                where: {
+                    ['$course.units.topics.questions.grades.student_grade_id$']: {
+                        [Sequelize.Op.eq]: null
+                    }
+                }
+            })
+        } catch (e) {
+            throw new WrappedError('Could not getUsersThatRequireGradeForQuestion', e);
+        }
+    }
+    
+    async createGradesForUserEnrollment({ courseId, userId}: {courseId: number; userId: number}) {
+        const results = await this.getQuestionsThatRequireGradesForUser({
+            courseId,
+            userId
+        })
+        await results.asyncForEach(async (result) => {
+            await this.createNewStudentGrade({
+                courseTopicQuestionId: result.id,
+                userId: userId
+            })
+        })
+        return results.length
+    }
+
+    async createGradesForQuestion({ questionId }: { questionId: number }) {
+        const results = await this.getUsersThatRequireGradeForQuestion({
+            questionId
+        })
+        await results.asyncForEach(async (result) => {
+            await this.createNewStudentGrade({
+                courseTopicQuestionId: questionId,
+                userId: result.userId
+            })
+        })
+        return results.length
+    }
+
+    async createNewStudentGrade({
+        userId,
+        courseTopicQuestionId
+    }: {
+        userId: number,
+        courseTopicQuestionId: number
+    }) {
+        try {
+            return await StudentGrade.create({
+                userId: userId,
+                courseWWTopicQuestionId: courseTopicQuestionId,
+                randomSeed: Math.floor(Math.random() * 999999),
+                bestScore: 0,
+                overallBestScore: 0,
+                numAttempts: 0,
+                firstAttempts: 0,
+                latestAttempts: 0,
+            });
+        } catch (e) {
+            throw new WrappedError('Could not create new student grade', e);
         }
     }
 }

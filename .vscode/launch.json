@@ -21,6 +21,22 @@
       "internalConsoleOptions": "neverOpen"
     },
     {
+      "name": "Play",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run-script",
+        "play:debug:watch"
+      ],
+      "port": 5859,
+      // "outputCapture": "std"
+      "restart": true,
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
       "name": "Attach to backend server",
       "type": "node",
       "request": "attach",

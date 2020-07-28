@@ -755,6 +755,63 @@ class CourseController {
             throw new WrappedError('Error fetching problems', e);
         }
     }
+
+    /**
+     * Get's a list of questions that are missing a grade
+     * We can then go and create a course
+     */
+    async getQuestionsThatRequireGradesForUser({ courseId, userId}: {courseId: number; userId: number}) {
+        try {
+            return await CourseWWTopicQuestion.findAll({
+                include: [{
+                    model: CourseTopicContent,
+                    as: 'topic',
+                    required: true,
+                    attributes: [],
+                    include: [{
+                        model: CourseUnitContent,
+                        as: 'unit',
+                        required: true,
+                        attributes: [],
+                        // This where is fine here
+                        // We just don't want further results to propogate
+                        // Also we don't need course in the join, we need to add a relationship to go through course
+                        where: {
+                            courseId
+                        },
+                        include: [{
+                            model: Course,
+                            as: 'course',
+                            required: true,
+                            attributes: [],
+                            include: [{
+                                model: StudentEnrollment,
+                                as: 'enrolledStudents',
+                                required: true,
+                                attributes: [],
+                            }]
+                        }]
+                    }]
+                }, {
+                    model: StudentGrade,
+                    as: 'grades',
+                    required: false,
+                    attributes: []
+                }],
+                attributes: [
+                    'id'
+                ],
+                where: {
+                    ['$grades.student_grade_id$']: {
+                        [Sequelize.Op.eq]: null
+                    },
+                    ['$topic.unit.course.enrolledStudents.user_id$']: userId
+                }
+            })
+        } catch (e) {
+            throw new WrappedError('Could not getQuestionsThatRequireGradesForUser', e)
+        }
+    }
     async createNewStudentGrade({
         userId,
         courseTopicQuestionId

@@ -721,6 +721,40 @@ class CourseController {
             group: [`${CourseWWTopicQuestion.name}.${CourseWWTopicQuestion.rawAttributes.id.field}`]
         })
     }
+
+    async getQuestions({
+        courseTopicContentId,
+        userId
+    }: {
+        courseTopicContentId: number,
+        userId: number
+    }) {
+        try {
+            const include: sequelize.IncludeOptions[] = []
+            if(_.isNil(userId) === false) {
+                include.push({
+                    model: StudentGrade,
+                    as: 'grades',
+                    required: false,
+                    where: {
+                        userId
+                    }
+                })
+            }
+
+            const where: sequelize.WhereOptions = _({
+                courseTopicContentId
+            }).omitBy(_.isUndefined).value()
+
+            const findOptions: sequelize.FindOptions = {
+                include,
+                where
+            }
+            return await CourseWWTopicQuestion.findAll(findOptions)
+        } catch (e) {
+            throw new WrappedError('Error fetching problems', e);
+        }
+    }
 }
 
 export const courseController = new CourseController();

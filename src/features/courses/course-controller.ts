@@ -369,9 +369,10 @@ class CourseController {
             }
         });
 
-        const bestScore = Math.max(studentGrade.bestScore, options.score);
+        const bestScore = Math.max(studentGrade.overallBestScore, options.score);
 
         studentGrade.bestScore = bestScore;
+        studentGrade.overallBestScore = bestScore;
         studentGrade.numAttempts++;
         if (studentGrade.numAttempts === 1) {
             studentGrade.firstAttempts = options.score;
@@ -379,7 +380,7 @@ class CourseController {
         studentGrade.latestAttempts = options.score;
         await studentGrade.save();
 
-        return StudentWorkbook.create({
+        const studentWorkbook = await StudentWorkbook.create({
             studentGradeId: studentGrade.id,
             userId: options.userId,
             courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
@@ -388,6 +389,11 @@ class CourseController {
             result: options.score,
             time: new Date()
         })
+
+        return {
+            studentGrade,
+            studentWorkbook
+        }
     }
 
     getCourseByCode(code: string): Promise<Course> {

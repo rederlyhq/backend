@@ -424,7 +424,7 @@ class CourseController {
 
     async enroll(enrollment: StudentEnrollment): Promise<StudentEnrollment> {
         return await appSequelize.transaction(async () => {
-            const result = this.createStudentEnrollment(enrollment);
+            const result = await this.createStudentEnrollment(enrollment);
             await this.createGradesForUserEnrollment({
                 courseId: enrollment.courseId,
                 userId: enrollment.userId

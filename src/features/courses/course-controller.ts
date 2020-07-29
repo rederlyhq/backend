@@ -337,22 +337,11 @@ class CourseController {
             }
         });
 
-        if (studentGrade === null) {
-            studentGrade = await StudentGrade.create({
-                userId: question.userId,
-                courseWWTopicQuestionId: question.questionId,
-                randomSeed: Math.floor(Math.random() * 999999),
-                bestScore: 0,
-                overallBestScore: 0,
-                numAttempts: 0,
-                firstAttempts: 0,
-                latestAttempts: 0,
-            });
-        }
+        const randomSeed = _.isNil(studentGrade) ? 666 : studentGrade.randomSeed;
 
         const rendererData = await rendererHelper.getProblem({
             sourceFilePath: courseQuestion.webworkQuestionPath,
-            problemSeed: studentGrade.randomSeed,
+            problemSeed: randomSeed,
             formURL: question.formURL,
         });
         return {
@@ -368,6 +357,13 @@ class CourseController {
                 courseWWTopicQuestionId: options.questionId
             }
         });
+
+        if(_.isNil(studentGrade)) {
+            return {
+                studentGrade: null,
+                studentWorkbook: null
+            }
+        }
 
         const bestScore = Math.max(studentGrade.overallBestScore, options.score);
 
@@ -502,16 +498,10 @@ class CourseController {
         const missingGrades = await this.findMissingGrades();
         logger.info(`Found ${missingGrades.length} missing grades`)
         await missingGrades.asyncForEach(async (missingGrade: any) => {
-            await StudentGrade.create({
+            await this.createNewStudentGrade({
                 userId: missingGrade.student.id,
-                courseWWTopicQuestionId: missingGrade.question.id,
-                randomSeed: Math.floor(Math.random() * 999999),
-                bestScore: 0,
-                overallBestScore: 0,
-                numAttempts: 0,
-                firstAttempts: 0,
-                latestAttempts: 0,
-            });
+                courseTopicQuestionId: missingGrade.question.id
+            })
         });
     }
 
@@ -928,6 +918,10 @@ class CourseController {
         return results.length
     }
 
+    generateRandomSeed() {
+        return Math.floor(Math.random() * 999999)
+    }
+
     async createNewStudentGrade({
         userId,
         courseTopicQuestionId
@@ -939,7 +933,7 @@ class CourseController {
             return await StudentGrade.create({
                 userId: userId,
                 courseWWTopicQuestionId: courseTopicQuestionId,
-                randomSeed: Math.floor(Math.random() * 999999),
+                randomSeed: this.generateRandomSeed(),
                 bestScore: 0,
                 overallBestScore: 0,
                 numAttempts: 0,

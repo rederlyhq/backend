@@ -498,7 +498,7 @@ class CourseController {
         const missingGrades = await this.findMissingGrades();
         logger.info(`Found ${missingGrades.length} missing grades`)
         await missingGrades.asyncForEach(async (missingGrade: any) => {
-            this.createNewStudentGrade({
+            await this.createNewStudentGrade({
                 userId: missingGrade.student.id,
                 courseTopicQuestionId: missingGrade.question.id
             })

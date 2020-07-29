@@ -14,6 +14,7 @@ import WebWorkDef from "../../utilities/web-work-def-parser";
 import * as proxy from 'express-http-proxy';
 import * as qs from 'qs';
 import configurations from "../../configurations";
+import WrappedError from "../../exceptions/wrapped-error";
 
 const fileUpload = multer();
 
@@ -268,7 +269,11 @@ router.post('/question/:id',
         },
         userResDecorator: async (proxyRes: Response<any>, proxyResData: any, userReq: any, userRes: Response<any>) => {
             let data = proxyResData.toString('utf8');
-            data = JSON.parse(data);
+            try {
+                data = JSON.parse(data);
+            } catch (e) {
+                throw new WrappedError('Error parsing data response from renderer', e);
+            }
 
             const result = await courseController.submitAnswer({
                 userId: userReq.session.userId,

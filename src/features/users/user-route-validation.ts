@@ -1,8 +1,7 @@
-import * as Joi from 'joi';
-import { ValidationObject } from '../../generic-interfaces/validation-object';
+import * as Joi from '@hapi/joi';
 import IncludeGradeOptions from './include-grade-options';
 
-export const registerValidation: ValidationObject = {
+export const registerValidation = {
     params: {},
     query: {},
     body: {
@@ -13,7 +12,7 @@ export const registerValidation: ValidationObject = {
     },
 }
 
-export const loginValidation: ValidationObject = {
+export const loginValidation = {
     params: {},
     query: {},
     body: {
@@ -22,7 +21,7 @@ export const loginValidation: ValidationObject = {
     },
 }
 
-export const verifyValidation: ValidationObject = {
+export const verifyValidation = {
     params: {},
     query: {
         verifyToken: Joi.string().required()
@@ -30,7 +29,7 @@ export const verifyValidation: ValidationObject = {
     body: {}
 }
 
-export const listUsers: ValidationObject = {
+export const listUsersValidation = {
     params: {},
     query: {
         userIds: Joi.alternatives().try(Joi.array().items(Joi.number()), Joi.number()).optional(),
@@ -40,7 +39,7 @@ export const listUsers: ValidationObject = {
     body: {},
 }
 
-export const getUser: ValidationObject = {
+export const getUserValidation = {
     params: {
         id: Joi.number().required()
     },
@@ -51,7 +50,7 @@ export const getUser: ValidationObject = {
     body: {},
 }
 
-export const emailUsers: ValidationObject = {
+export const emailUsersValidation = {
     params: {},
     query: {},
     body: {

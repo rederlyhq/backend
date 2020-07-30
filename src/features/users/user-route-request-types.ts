@@ -29,19 +29,19 @@ export namespace VerifyRequest {
 };
 
 export namespace ListUsersRequest {
-    export type params = Joi.extractType<typeof validations.listUsers.params>;
-    export type query = Joi.extractType<typeof validations.listUsers.query>;
-    export type body = Joi.extractType<typeof validations.listUsers.body>;
+    export type params = Joi.extractType<typeof validations.listUsersValidation.params>;
+    export type query = Joi.extractType<typeof validations.listUsersValidation.query>;
+    export type body = Joi.extractType<typeof validations.listUsersValidation.body>;
 };
 
 export namespace GetUserRequest {
-    export type params = Joi.extractType<typeof validations.getUser.params>;
-    export type query = Joi.extractType<typeof validations.getUser.query>;
-    export type body = Joi.extractType<typeof validations.getUser.body>;
+    export type params = Joi.extractType<typeof validations.getUserValidation.params>;
+    export type query = Joi.extractType<typeof validations.getUserValidation.query>;
+    export type body = Joi.extractType<typeof validations.getUserValidation.body>;
 };
 
 export namespace EmailUsersRequest {
-    export type params = Joi.extractType<typeof validations.emailUsers.params>;
-    export type query = Joi.extractType<typeof validations.emailUsers.query>;
-    export type body = Joi.extractType<typeof validations.emailUsers.body>;
+    export type params = Joi.extractType<typeof validations.emailUsersValidation.params>;
+    export type query = Joi.extractType<typeof validations.emailUsersValidation.query>;
+    export type body = Joi.extractType<typeof validations.emailUsersValidation.body>;
 };

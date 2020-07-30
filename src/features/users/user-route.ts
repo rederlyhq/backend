@@ -3,7 +3,8 @@ import { Request, Response, NextFunction } from "express";
 import userController from "./user-controller";
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator'
-import { registerValidation, loginValidation, verifyValidation, listUsers, emailUsers, getUser } from "./user-route-validation";
+import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation } from "./user-route-validation";
+import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest } from './user-route-request-types';
 import Boom = require("boom");
 import passport = require("passport");
 import { authenticationMiddleware } from "../../middleware/auth";
@@ -13,11 +14,12 @@ import NoAssociatedUniversityError from "../../exceptions/no-associated-universi
 import AlreadyExistsError from "../../exceptions/already-exists-error";
 import Session from "../../database/models/session";
 import WrappedError from '../../exceptions/wrapped-error';
+import IncludeGradeOptions from './include-grade-options';
 
 router.post('/login',
     validate(loginValidation),
     passport.authenticate('local'),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: Request<LoginRequest.params, any, LoginRequest.body, LoginRequest.query>, res: Response, next: NextFunction) => {
         // TODO fix Request object for session
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const newSession = (req as any).session.passport.user as Session;
@@ -41,7 +43,7 @@ router.post('/login',
 
 router.post('/register',
     validate(registerValidation),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: Request<RegisterRequest.params, any, RegisterRequest.body, RegisterRequest.query>, res: Response, next: NextFunction) => {
         try {
             // Typing is incorrect here, even if I specify the header twice it comes back as a string (comma delimeted)
             const baseUrl: string = req.headers.origin as string
@@ -50,7 +52,7 @@ router.post('/register',
                 return
             }
             const newUser = await userController.registerUser({
-                userObject: req.body,
+                userObject: req.body as any,
                 baseUrl
             });
             next(httpResponse.Created('User registered successfully', newUser));
@@ -65,10 +67,11 @@ router.post('/register',
         }
     }));
 
+
 router.get('/verify',
     validate(verifyValidation),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-        const verified = await userController.verifyUser(req.query.verifyToken as string);
+    asyncHandler(async (req: Request<VerifyRequest.params, any, VerifyRequest.body, VerifyRequest.query>, res: Response, next: NextFunction) => {
+        const verified = await userController.verifyUser(req.query.verifyToken);
         if (verified) {
             next(httpResponse.Ok("Verified"));
         } else {
@@ -89,8 +92,8 @@ router.post('/logout',
 
 router.get('/',
     authenticationMiddleware,
-    validate(listUsers),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    validate(listUsersValidation),
+    asyncHandler(async (req: Request<ListUsersRequest.params, any, ListUsersRequest.body, ListUsersRequest.query>, res: Response, next: NextFunction) => {
         const users = await userController.list({
             filters: {
                 // TODO set types in Request
@@ -107,22 +110,21 @@ router.get('/',
 
 router.get('/:id',
     authenticationMiddleware,
-    validate(getUser),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    validate(getUserValidation),
+    asyncHandler(async (req: Request<any, any, GetUserRequest.body, GetUserRequest.query>, _res: Response, next: NextFunction) => {
+        const params = req.params as GetUserRequest.params
         const users = await userController.getUser({
-            id: parseInt(req.params.id),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            courseId: (req.query as any).courseId,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            includeGrades: (req.query as any).includeGrades
+            id: params.id,
+            courseId: req.query.courseId,
+            includeGrades: req.query.includeGrades as IncludeGradeOptions
         });
         next(httpResponse.Ok(null, users));
     }));
 
 router.post('/email',
     authenticationMiddleware,
-    validate(emailUsers),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    validate(emailUsersValidation),
+    asyncHandler(async (req: Request<EmailUsersRequest.params, any, EmailUsersRequest.body, EmailUsersRequest.query>, res: Response, next: NextFunction) => {
         const result = await userController.email({
             listUsersFilter: {
                 userIds: req.body.userIds

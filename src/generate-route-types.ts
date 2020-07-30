@@ -73,20 +73,29 @@ const writeFile = (filePath: string, fileContent: string) => {
         const validationFileName = path.basename(validationFilePath);
         const validationObject = require(validationFilePath);
         let requestTypeFileContent = '';
-        requestTypeFileContent += `
+        requestTypeFileContent +=
+`
+/**
+ * THIS FILE IS AUTO GENERATED
+ * DO NOT MODIFY!!!
+ * TO UPDATE THIS FILE CHANGE THE SCHEMES IN THE \`-route-validation.ts\` FILES
+ * THEN RUN \`npm run generate-route-types\`
+ */
+
 import * as Joi from '@hapi/joi';
 import 'joi-extract-type'
 import * as validations from './${path.parse(validationFileName).name}'
-        `;
+`;
 
         Object.keys(validationObject).forEach((key:string) => {
-            requestTypeFileContent += `
+            requestTypeFileContent +=
+`
 namespace ${_.upperFirst(key).replace(/Validation$/, '')}Request {
     export type params = Joi.extractType<typeof validations.${key}.params>;
     export type query = Joi.extractType<typeof validations.${key}.query>;
     export type body = Joi.extractType<typeof validations.${key}.body>;
 };
-            `;
+`;
         });
 
         const requestTypeFilePath = validationFilePath.replace(/-validation.ts$/, '-request-types.ts');

@@ -4,6 +4,7 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
+
     {
       "name": "Backend",
       "type": "node",
@@ -31,6 +32,22 @@
         "play:debug:watch"
       ],
       "port": 5859,
+      // "outputCapture": "std"
+      "restart": true,
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "Generate route types - dev",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run-script",
+        "generate-route-types:debug:watch"
+      ],
+      "port": 5860,
       // "outputCapture": "std"
       "restart": true,
       "console": "integratedTerminal",

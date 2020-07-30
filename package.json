@@ -58,6 +58,7 @@
     "@typescript-eslint/eslint-plugin": "^2.30.0",
     "@typescript-eslint/parser": "^2.30.0",
     "eslint": "^6.8.0",
+    "joi-extract-type": "^15.0.8",
     "nodemon": "^2.0.4",
     "sequelize-cli": "^5.5.1",
     "ts-node": "^8.8.2",
@@ -65,17 +66,26 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+
     "start": "ts-node src/index.ts",
     "start:watch": "nodemon -x npm start",
     "start:debug": "node --inspect=5858 -r ts-node/register ./src/index.ts",
     "start:debug:watch": "nodemon -x npm run start:debug",
+
     "cli": "ts-node ./src/cli.ts",
     "cli:debug": "node --inspect=5859 -r ts-node/register ./src/cli.ts",
     "cli:debug:watch": "nodemon -x npm run cli:debug",
+
     "play": "ts-node src/playground.ts",
     "play:debug": "node --inspect=5860 -r ts-node/register ./src/playground.ts",
     "play:debug:watch": "nodemon -x npm run play:debug",
+
+    "generate-route-types": "ts-node src/generate-route-types.ts",
+    "generate-route-types:debug": "node --inspect=5860 -r ts-node/register ./src/generate-route-types.ts",
+    "generate-route-types:debug:watch": "nodemon -x npm run generate-route-types:debug",
+
     "build": "tsc",
+    "build:run": "npm run build && node ts-built/index.js",
     "sequelize": "sequelize",
     "lint": "eslint src/ --ext .ts"
   },

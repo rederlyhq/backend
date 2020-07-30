@@ -90,7 +90,7 @@ import * as validations from './${path.parse(validationFileName).name}'
         Object.keys(validationObject).forEach((key:string) => {
             requestTypeFileContent +=
 `
-namespace ${_.upperFirst(key).replace(/Validation$/, '')}Request {
+export namespace ${_.upperFirst(key).replace(/Validation$/, '')}Request {
     export type params = Joi.extractType<typeof validations.${key}.params>;
     export type query = Joi.extractType<typeof validations.${key}.query>;
     export type body = Joi.extractType<typeof validations.${key}.body>;

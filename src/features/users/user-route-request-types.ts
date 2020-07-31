@@ -28,6 +28,12 @@ export namespace VerifyRequest {
     export type body = Joi.extractType<typeof validations.verifyValidation.body>;
 };
 
+export namespace LogoutRequest {
+    export type params = Joi.extractType<typeof validations.logoutValidation.params>;
+    export type query = Joi.extractType<typeof validations.logoutValidation.query>;
+    export type body = Joi.extractType<typeof validations.logoutValidation.body>;
+};
+
 export namespace ListUsersRequest {
     export type params = Joi.extractType<typeof validations.listUsersValidation.params>;
     export type query = Joi.extractType<typeof validations.listUsersValidation.query>;

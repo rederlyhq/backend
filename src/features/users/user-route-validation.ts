@@ -29,6 +29,12 @@ export const verifyValidation = {
     body: {}
 }
 
+export const logoutValidation = {
+    params: {},
+    query: {},
+    body: {}
+}
+
 export const listUsersValidation = {
     params: {},
     query: {

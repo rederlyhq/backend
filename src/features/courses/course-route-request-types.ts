@@ -85,9 +85,9 @@ export namespace ListCoursesRequest {
 };
 
 export namespace GetGradesRequest {
-    export type params = Joi.extractType<typeof validations.getGrades.params>;
-    export type query = Joi.extractType<typeof validations.getGrades.query>;
-    export type body = Joi.extractType<typeof validations.getGrades.body>;
+    export type params = Joi.extractType<typeof validations.getGradesValidation.params>;
+    export type query = Joi.extractType<typeof validations.getGradesValidation.query>;
+    export type body = Joi.extractType<typeof validations.getGradesValidation.body>;
 };
 
 export namespace GetStatisticsOnUnitsRequest {
@@ -109,7 +109,7 @@ export namespace GetStatisticsOnQuestionsRequest {
 };
 
 export namespace GetProblemsRequest {
-    export type params = Joi.extractType<typeof validations.getProblems.params>;
-    export type query = Joi.extractType<typeof validations.getProblems.query>;
-    export type body = Joi.extractType<typeof validations.getProblems.body>;
+    export type params = Joi.extractType<typeof validations.getProblemsValidation.params>;
+    export type query = Joi.extractType<typeof validations.getProblemsValidation.query>;
+    export type body = Joi.extractType<typeof validations.getProblemsValidation.body>;
 };

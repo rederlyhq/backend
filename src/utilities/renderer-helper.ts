@@ -13,7 +13,7 @@ interface GetProblemParameters {
 }
 
 class RendererHelper {
-    async getProblem(getProblemParameters: GetProblemParameters): Promise<any> {
+    async getProblem(getProblemParameters: GetProblemParameters): Promise<unknown> {
         const resp = await rendererAxios.get('/rendered', {
             params: {
                 sourceFilePath: getProblemParameters.sourceFilePath,

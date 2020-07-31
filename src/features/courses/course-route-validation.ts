@@ -1,7 +1,6 @@
-import * as Joi from 'joi';
-import { ValidationObject } from '../../generic-interfaces/validation-object';
+import * as Joi from '@hapi/joi';
 
-export const createCourseValidation: ValidationObject = {
+export const createCourseValidation = {
     params: {},
     query: {},
     body: {
@@ -19,15 +18,18 @@ export const createCourseValidation: ValidationObject = {
 }
 
 export const createCourseUnitValidation = {
+    params: {},
     body: {
         name: Joi.string().required(),
         active: Joi.boolean().optional().default(true),
         courseId: Joi.number().required(),
         contentOrder: Joi.number().required(),
-    }
+    },
+    query: {}
 }
 
 export const createCourseTopicValidation = {
+    params: {},
     body: {
         courseUnitContentId: Joi.number().required(),
         curriculumTopicContentId: Joi.number().optional(),
@@ -39,10 +41,11 @@ export const createCourseTopicValidation = {
         deadDate: Joi.date().required(),
         partialExtend: Joi.boolean().required(),
         contentOrder: Joi.number().required(),
-    }
+    },
+    query: {}
 }
 
-export const updateCourseTopicValidation: ValidationObject = {
+export const updateCourseTopicValidation = {
     params: {
         id: Joi.number().required()
     },
@@ -63,7 +66,7 @@ export const updateCourseTopicValidation: ValidationObject = {
     query: {},
 }
 
-export const updateCourseUnitValidation: ValidationObject = {
+export const updateCourseUnitValidation = {
     params: {
         id: Joi.number().required()
     },
@@ -77,6 +80,7 @@ export const updateCourseUnitValidation: ValidationObject = {
 }
 
 export const createCourseTopicQuestionValidation = {
+    params: {},
     body: {
         problemNumber: Joi.number().required(),
         webworkQuestionPath: Joi.string().required(),
@@ -86,10 +90,11 @@ export const createCourseTopicQuestionValidation = {
         hidden: Joi.boolean().required(),
         optional: Joi.boolean().required(),
         active: Joi.boolean().optional().default(true)
-    }
+    },
+    query: {}
 }
 
-export const getQuestionValidation: ValidationObject = {
+export const getQuestionValidation = {
     params: {
         id: Joi.number().required()
     },
@@ -97,7 +102,7 @@ export const getQuestionValidation: ValidationObject = {
     body: {}
 }
 
-export const getQuestionsValidation: ValidationObject = {
+export const getQuestionsValidation = {
     params: {},
     query: {
         userId: Joi.alternatives().try(Joi.string().valid('me').optional(), Joi.number().optional()).optional(),
@@ -112,7 +117,9 @@ export const getCourseValidation = {
         id: Joi.number().required(),
         query: {},
         body: {},
-    }
+    },
+    body: {},
+    query: {}
 }
 
 export const getTopicsValidation = {
@@ -142,7 +149,7 @@ export const listCoursesValidation = {
     body: {},
 }
 
-export const getGrades = {
+export const getGradesValidation = {
     params: {},
     query: {
         courseId: Joi.number().optional(),
@@ -179,7 +186,7 @@ export const getStatisticsOnQuestionsValidation = {
     body: {},
 }
 
-export const getProblems = {
+export const getProblemsValidation = {
     params: {},
     query: {
         courseTopicContentId: Joi.number().optional(),

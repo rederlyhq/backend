@@ -41,5 +41,14 @@ export default {
     },
     renderer: {
         url: _.defaultTo(process.env.RENDERER_URL, 'http://localhost:3000'),
+    },
+    jira: {
+        email: _.defaultTo(process.env.JIRA_EMAIL, ''),
+        apiKey: _.defaultTo(process.env.JIRA_API_KEY, ''),
+        host: _.defaultTo(process.env.JIRA_HOST, 'rederly.atlassian.net'),
+        protocol: _.defaultTo(process.env.JIRA_PROTOCOL, 'https'),
+        strictSSL: _.defaultTo(fromBooleanField(process.env.JIRA_STRICT_SSL), true),
+        apiVersion: _.defaultTo(process.env.JIRA_API_VERSION, '2'),
+        projectKey: _.defaultTo(process.env.JIRA_PROJECT_KEY, 'RS'),
     }
 }

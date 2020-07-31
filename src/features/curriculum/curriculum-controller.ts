@@ -15,12 +15,12 @@ interface UpdateTopicOptions {
         id: number;
     };
     updates: {
-        startDate: Date;
-        endDate: Date;
-        deadDate: Date;
-        name: string;
-        active: boolean;
-        partialExtend: boolean;
+        startDate?: Date;
+        endDate?: Date;
+        deadDate?: Date;
+        name?: string;
+        active?: boolean;
+        partialExtend?: boolean;
     };
 }
 
@@ -29,8 +29,8 @@ interface UpdateUnitOptions {
         id: number;
     };
     updates: {
-        name: string;
-        active: boolean;
+        name?: string;
+        active?: boolean;
     };
 }
 
@@ -64,7 +64,7 @@ class CurriculumController {
         return Curriculum.findAll();
     }
 
-    async createCurriculum(curriculumObject: Curriculum): Promise<Curriculum> {
+    async createCurriculum(curriculumObject: Partial<Curriculum>): Promise<Curriculum> {
         try {
             return await Curriculum.create(curriculumObject);
         } catch(e) {
@@ -80,11 +80,11 @@ class CurriculumController {
         }
     }
 
-    createUniversityCurriculumPermission(universityCurriculumPermission: UniversityCurriculumPermission): Promise<UniversityCurriculumPermission> {
+    createUniversityCurriculumPermission(universityCurriculumPermission: Partial<UniversityCurriculumPermission>): Promise<UniversityCurriculumPermission> {
         return UniversityCurriculumPermission.create(universityCurriculumPermission);
     }
 
-    async createUnit(unit: CurriculumUnitContent): Promise<CurriculumUnitContent> {
+    async createUnit(unit: Partial<CurriculumUnitContent>): Promise<CurriculumUnitContent> {
         try {
             return await CurriculumUnitContent.create(unit);
         } catch(e) {
@@ -109,7 +109,7 @@ class CurriculumController {
         }
     }
 
-    async createTopic(topic: CurriculumTopicContent): Promise<CurriculumTopicContent> {
+    async createTopic(topic: Partial<CurriculumTopicContent>): Promise<CurriculumTopicContent> {
         try {
             return await CurriculumTopicContent.create(topic);
         } catch(e) {
@@ -134,7 +134,7 @@ class CurriculumController {
         }
     }
 
-    async createQuestion(question: CurriculumWWTopicQuestion): Promise<CurriculumWWTopicQuestion> {
+    async createQuestion(question: Partial<CurriculumWWTopicQuestion>): Promise<CurriculumWWTopicQuestion> {
         try {
             return await CurriculumWWTopicQuestion.create(question);
         } catch(e) {

@@ -1,4 +1,6 @@
 
+/* eslint-disable @typescript-eslint/no-namespace */
+
 /**
  * THIS FILE IS AUTO GENERATED
  * DO NOT MODIFY!!!
@@ -50,4 +52,10 @@ export namespace GetCurriculumRequest {
     export type params = Joi.extractType<typeof validations.getCurriculumValidation.params>;
     export type query = Joi.extractType<typeof validations.getCurriculumValidation.query>;
     export type body = Joi.extractType<typeof validations.getCurriculumValidation.body>;
+};
+
+export namespace ListCurriculumRequest {
+    export type params = Joi.extractType<typeof validations.listCurriculumValidation.params>;
+    export type query = Joi.extractType<typeof validations.listCurriculumValidation.query>;
+    export type body = Joi.extractType<typeof validations.listCurriculumValidation.body>;
 };

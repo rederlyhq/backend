@@ -126,7 +126,7 @@ export const getTopicsValidation = {
     params: {},
     query: {
         courseId: Joi.number().optional(),
-        isOpen: Joi.bool().optional()
+        isOpen: Joi.boolean().optional()
     },
     body: {},
 }
@@ -140,11 +140,19 @@ export const enrollInCourseValidation = {
     }
 }
 
+export const enrollInCourseByCodeValidation = {
+    params: {
+        code: Joi.string().required()
+    },
+    query: {},
+    body: {}
+}
+
 export const listCoursesValidation = {
     params: {},
     query: {
-        instructorId: Joi.string().optional(),
-        enrolledUserId: Joi.string().optional(),
+        instructorId: Joi.number().optional(),
+        enrolledUserId: Joi.number().optional(),
     },
     body: {},
 }

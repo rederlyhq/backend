@@ -28,8 +28,8 @@ interface EnrollByCodeOptions {
 
 interface CourseListOptions {
     filter: {
-        instructorId: number;
-        enrolledUserId: number;
+        instructorId?: number;
+        enrolledUserId?: number;
     };
 }
 
@@ -43,12 +43,12 @@ interface UpdateTopicOptions {
         id: number;
     };
     updates: {
-        startDate: Date;
-        endDate: Date;
-        deadDate: Date;
-        name: string;
-        active: boolean;
-        partialExtend: boolean;
+        startDate?: Date;
+        endDate?: Date;
+        deadDate?: Date;
+        name?: string;
+        active?: boolean;
+        partialExtend?: boolean;
     };
 }
 
@@ -57,8 +57,8 @@ interface UpdateUnitOptions {
         id: number;
     };
     updates: {
-        name: string;
-        active: boolean;
+        name?: string;
+        active?: boolean;
     };
 }
 
@@ -117,7 +117,7 @@ class CourseController {
         })
     }
 
-    getTopics({ courseId, isOpen }: { courseId: number; isOpen: boolean }) {
+    getTopics({ courseId, isOpen }: { courseId?: number; isOpen?: boolean }) {
         let where: any = {}
         const include = [];
         if (!_.isNil(courseId)) {
@@ -169,7 +169,7 @@ class CourseController {
         });
     }
 
-    async createCourse(courseObject: Course): Promise<Course> {
+    async createCourse(courseObject: Partial<Course>): Promise<Course> {
         try {
             return await Course.create(courseObject);
         } catch (e) {
@@ -192,7 +192,7 @@ class CourseController {
         }
     }
 
-    async createUnit(courseUnitContent: CourseUnitContent): Promise<CourseUnitContent> {
+    async createUnit(courseUnitContent: Partial<CourseUnitContent>): Promise<CourseUnitContent> {
         try {
             return await CourseUnitContent.create(courseUnitContent);
         } catch (e) {
@@ -289,7 +289,7 @@ class CourseController {
         }
     }
 
-    async createQuestion(question: CourseWWTopicQuestion): Promise<CourseWWTopicQuestion> {
+    async createQuestion(question: Partial<CourseWWTopicQuestion>): Promise<CourseWWTopicQuestion> {
         try {
             return await CourseWWTopicQuestion.create(question);
         } catch (e) {
@@ -312,7 +312,7 @@ class CourseController {
         }
     }
 
-    async addQuestion(question: CourseWWTopicQuestion): Promise<CourseWWTopicQuestion> {
+    async addQuestion(question: Partial<CourseWWTopicQuestion>): Promise<CourseWWTopicQuestion> {
         return await appSequelize.transaction(async () => {
             const result = await this.createQuestion(question);
             await this.createGradesForQuestion({
@@ -400,7 +400,7 @@ class CourseController {
         })
     }
 
-    async createStudentEnrollment(enrollment: StudentEnrollment): Promise<StudentEnrollment> {
+    async createStudentEnrollment(enrollment: Partial<StudentEnrollment>): Promise<StudentEnrollment> {
         try {
             return await StudentEnrollment.create(enrollment);
         } catch (e) {
@@ -418,7 +418,7 @@ class CourseController {
         }
     }
 
-    async enroll(enrollment: StudentEnrollment): Promise<StudentEnrollment> {
+    async enroll(enrollment: Partial<StudentEnrollment>): Promise<StudentEnrollment> {
         return await appSequelize.transaction(async () => {
             const result = await this.createStudentEnrollment(enrollment);
             await this.createGradesForUserEnrollment({

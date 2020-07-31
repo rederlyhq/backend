@@ -24,36 +24,7 @@ import CourseTopicContent from "../../database/models/course-topic-content";
 import CourseUnitContent from "../../database/models/course-unit-content";
 import IncludeGradeOptions from "./include-grade-options";
 import WrappedError from "../../exceptions/wrapped-error";
-
-interface RegisterUserOptions {
-    userObject: User;
-    baseUrl: string;
-}
-
-interface RegisterUserResponse {
-    id: number;
-    roleId: number;
-    emailSent: boolean;
-}
-
-interface ListUserFilter {
-    userIds?: number[] | number;
-    courseId?: number;
-    includeGrades?: IncludeGradeOptions;
-}
-
-interface EmailOptions {
-    listUsersFilter: ListUserFilter;
-    content: string;
-    subject: string;
-}
-
-interface GetUserOptions {
-    id: number;
-    includeGrades?: IncludeGradeOptions;
-    courseId?: number;
-    includeSensitive?: boolean;
-}
+import { EmailOptions, GetUserOptions, ListUserFilter, RegisterUserOptions, RegisterUserResponse } from './user-types';
 
 const {
     sessionLife
@@ -238,7 +209,7 @@ class UserController {
         })
     }
 
-    createUser(userObject: User): Bluebird<User> {
+    createUser(userObject: Partial<User>): Bluebird<User> {
         return User.create(userObject);
     }
 

@@ -17,7 +17,7 @@ import { UniqueConstraintError } from "sequelize";
 import WrappedError from "../../exceptions/wrapped-error";
 import AlreadyExistsError from "../../exceptions/already-exists-error";
 import appSequelize from "../../database/app-sequelize";
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions } from "./course-types";
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions } from "./course-types";
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -108,6 +108,7 @@ class CourseController {
             if (e instanceof UniqueConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const violatedConstraint = (e.original as any).constraint
                 if (violatedConstraint === Course.constraints.uniqueCourseCode) {
                     throw new AlreadyExistsError('A course already exists with this course code')
@@ -115,6 +116,7 @@ class CourseController {
             } else if (e instanceof ForeignKeyConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const violatedConstraint = (e.original as any).constraint
                 if (violatedConstraint === Course.constraints.foreignKeyCurriculum) {
                     throw new NotFoundError('Could not create the course since the given curriculum does not exist');
@@ -131,6 +133,7 @@ class CourseController {
             if (e instanceof UniqueConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const violatedConstraint = (e.original as any).constraint
                 if (violatedConstraint === CourseUnitContent.constraints.uniqueNamePerCourse) {
                     throw new AlreadyExistsError('A unit with that name already exists within this course');
@@ -140,6 +143,7 @@ class CourseController {
             } else if (e instanceof ForeignKeyConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const violatedConstraint = (e.original as any).constraint
                 if(violatedConstraint === CourseUnitContent.constraints.foreignKeyCourse) {
                     throw new NotFoundError('The given course was not found to create the unit')
@@ -156,6 +160,7 @@ class CourseController {
             if (e instanceof UniqueConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const violatedConstraint = (e.original as any).constraint
                 if (violatedConstraint === CourseTopicContent.constraints.uniqueNamePerUnit) {
                     throw new AlreadyExistsError('A topic with that name already exists within this unit');
@@ -165,6 +170,7 @@ class CourseController {
             } else if (e instanceof ForeignKeyConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const violatedConstraint = (e.original as any).constraint
                 if (violatedConstraint === CourseTopicContent.constraints.foreignKeyUnit) {
                     throw new NotFoundError('Given unit id')
@@ -188,6 +194,7 @@ class CourseController {
             if (e instanceof UniqueConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const violatedConstraint = (e.original as any).constraint
                 if (violatedConstraint === CourseTopicContent.constraints.uniqueNamePerUnit) {
                     throw new AlreadyExistsError('A topic with that name already exists within this unit');
@@ -210,6 +217,7 @@ class CourseController {
             if (e instanceof UniqueConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const violatedConstraint = (e.original as any).constraint
                 if (violatedConstraint === CourseUnitContent.constraints.uniqueNamePerCourse) {
                     throw new AlreadyExistsError('A unit with that name already exists within this course');
@@ -228,6 +236,7 @@ class CourseController {
             if (e instanceof UniqueConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const violatedConstraint = (e.original as any).constraint
                 if (violatedConstraint === CourseWWTopicQuestion.constraints.uniqueOrderPerTopic) {
                     throw new AlreadyExistsError('A question with this topic order already exists');
@@ -235,6 +244,7 @@ class CourseController {
             } else if (e instanceof ForeignKeyConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const violatedConstraint = (e.original as any).constraint
                 if (violatedConstraint === CourseWWTopicQuestion.constraints.foreignKeyTopic) {
                     throw new NotFoundError('Could not create the question because the given topic does not exist');
@@ -254,18 +264,17 @@ class CourseController {
         })
     }
 
-    async getQuestion(question: any): Promise<any> {
+    async getQuestion(options: GetQuestionOptions): Promise<GetQuestionResult> {
         const courseQuestion = await CourseWWTopicQuestion.findOne({
             where: {
-                id: question.questionId
+                id: options.questionId
             }
         });
 
-        let studentGrade: StudentGrade;
-        studentGrade = await StudentGrade.findOne({
+        const studentGrade: StudentGrade = await StudentGrade.findOne({
             where: {
-                userId: question.userId,
-                courseWWTopicQuestionId: question.questionId
+                userId: options.userId,
+                courseWWTopicQuestionId: options.questionId
             }
         });
 
@@ -274,7 +283,7 @@ class CourseController {
         const rendererData = await rendererHelper.getProblem({
             sourceFilePath: courseQuestion.webworkQuestionPath,
             problemSeed: randomSeed,
-            formURL: question.formURL,
+            formURL: options.formURL,
         });
         return {
             // courseQuestion,
@@ -282,7 +291,7 @@ class CourseController {
         }
     }
 
-    async submitAnswer(options: any): Promise<any> {
+    async submitAnswer(options: SubmitAnswerOptions): Promise<SubmitAnswerResult> {
         const studentGrade = await StudentGrade.findOne({
             where: {
                 userId: options.userId,
@@ -341,6 +350,7 @@ class CourseController {
             } else if (e instanceof UniqueConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const violatedConstraint = (e.original as any).constraint
                 if (violatedConstraint === StudentEnrollment.constraints.uniqueUserPerCourse) {
                     throw new AlreadyExistsError('This user is already enrolled in this course')
@@ -374,7 +384,7 @@ class CourseController {
         } as StudentEnrollment);
     }
 
-    async findMissingGrades(): Promise<any[]> {
+    async findMissingGrades(): Promise<FindMissingGradesResult[]> {
         const result = await User.findAll({
             include: [{
                 model: StudentEnrollment,
@@ -408,12 +418,12 @@ class CourseController {
             }
         });
 
-        const results: any[] = [];
-        result.forEach((student: any) => {
-            student.courseEnrollments.forEach((studentEnrollment: any) => {
-                studentEnrollment.course.units.forEach((unit: any) => {
-                    unit.topics.forEach((topic: any) => {
-                        topic.questions.forEach((question: any) => {
+        const results: FindMissingGradesResult[] = [];
+        result.forEach((student: User & { courseEnrollments: StudentEnrollment[] }) => {
+            student.courseEnrollments.forEach((studentEnrollment: StudentEnrollment & { course: { units: CourseUnitContent[] }}) => {
+                studentEnrollment.course.units.forEach((unit: CourseUnitContent & { topics: CourseTopicContent[]}) => {
+                    unit.topics.forEach((topic: CourseTopicContent & { questions: CourseWWTopicQuestion[] }) => {
+                        topic.questions.forEach((question: CourseWWTopicQuestion) => {
                             results.push({
                                 student,
                                 question,
@@ -429,7 +439,7 @@ class CourseController {
     async syncMissingGrades(): Promise<void> {
         const missingGrades = await this.findMissingGrades();
         logger.info(`Found ${missingGrades.length} missing grades`)
-        await missingGrades.asyncForEach(async (missingGrade: any) => {
+        await missingGrades.asyncForEach(async (missingGrade: FindMissingGradesResult) => {
             await this.createNewStudentGrade({
                 userId: missingGrade.student.id,
                 courseTopicQuestionId: missingGrade.question.id
@@ -672,13 +682,12 @@ class CourseController {
         })
     }
 
-    async getQuestions({
-        courseTopicContentId,
-        userId
-    }: {
-        courseTopicContentId: number,
-        userId: number
-    }) {
+    async getQuestions(options: GetQuestionsOptions): Promise<CourseWWTopicQuestion[]> {
+        const {
+            courseTopicContentId,
+            userId
+        } = options;
+
         try {
             const include: sequelize.IncludeOptions[] = []
             if(_.isNil(userId) === false) {
@@ -713,7 +722,8 @@ class CourseController {
      * Get's a list of questions that are missing a grade
      * We can then go and create a course
      */
-    async getQuestionsThatRequireGradesForUser({ courseId, userId}: {courseId: number; userId: number}) {
+    async getQuestionsThatRequireGradesForUser(options: GetQuestionsThatRequireGradesForUserOptions): Promise<CourseWWTopicQuestion[]> {
+        const { courseId, userId} = options;
         try {
             return await CourseWWTopicQuestion.findAll({
                 include: [{
@@ -772,7 +782,8 @@ class CourseController {
     * Get all users that don't have a grade on a question
     * Useful when adding a question to a course that already has enrollments
     */
-    async getUsersThatRequireGradeForQuestion({ questionId } : { questionId: number }) {
+    async getUsersThatRequireGradeForQuestion(options: GetUsersThatRequireGradeForQuestionOptions): Promise<StudentEnrollment[]> {
+        const { questionId } = options;
         try {
             return await StudentEnrollment.findAll({
                 include: [{
@@ -823,7 +834,8 @@ class CourseController {
         }
     }
     
-    async createGradesForUserEnrollment({ courseId, userId}: {courseId: number; userId: number}) {
+    async createGradesForUserEnrollment(options: CreateGradesForUserEnrollmentOptions): Promise<number> {
+        const { courseId, userId} = options;
         const results = await this.getQuestionsThatRequireGradesForUser({
             courseId,
             userId
@@ -837,7 +849,8 @@ class CourseController {
         return results.length
     }
 
-    async createGradesForQuestion({ questionId }: { questionId: number }) {
+    async createGradesForQuestion(options: CreateGradesForQuestionOptions): Promise<number> {
+        const { questionId } = options;
         const results = await this.getUsersThatRequireGradeForQuestion({
             questionId
         })
@@ -850,17 +863,15 @@ class CourseController {
         return results.length
     }
 
-    generateRandomSeed() {
+    generateRandomSeed(): number {
         return Math.floor(Math.random() * 999999)
     }
 
-    async createNewStudentGrade({
-        userId,
-        courseTopicQuestionId
-    }: {
-        userId: number,
-        courseTopicQuestionId: number
-    }) {
+    async createNewStudentGrade(options: CreateNewStudentGradeOptions): Promise<StudentGrade> {
+        const {
+            userId,
+            courseTopicQuestionId
+        } = options;
         try {
             return await StudentGrade.create({
                 userId: userId,

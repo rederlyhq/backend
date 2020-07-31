@@ -281,7 +281,7 @@ router.post('/question/:id',
 
             const result = await courseController.submitAnswer({
                 userId: userReq.session.userId,
-                questionId: userReq.params.id,
+                questionId: (userReq.params as any).id as number,
                 score: data.problem_result.score,
                 submitted: data,
             });

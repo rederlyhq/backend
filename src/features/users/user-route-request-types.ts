@@ -1,4 +1,6 @@
 
+/* eslint-disable @typescript-eslint/no-namespace */
+
 /**
  * THIS FILE IS AUTO GENERATED
  * DO NOT MODIFY!!!

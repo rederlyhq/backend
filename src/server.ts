@@ -42,7 +42,7 @@ const limiter = rateLimit({
 app.use(limiter);
 
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.use(passport.initialize());
@@ -75,7 +75,7 @@ app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
     } else if (obj.status) {
         return res.status(obj.status).json(obj);
     } else {
-        const rederlyReference = `rederly-reference-${new Date().getTime()}-${Math.floor(Math.random()*1000000)}`
+        const rederlyReference = `rederly-reference-${new Date().getTime()}-${Math.floor(Math.random() * 1000000)}`
         logger.error(`${rederlyReference} - ${obj.stack}`);
         const data: ErrorResponse = {
             statusCode: 500,
@@ -83,7 +83,7 @@ app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
             rederlyReference
         };
 
-        if(process.env.NODE_ENV !== 'production') {
+        if (process.env.NODE_ENV !== 'production') {
             data.error = obj;
         }
 

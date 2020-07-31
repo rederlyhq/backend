@@ -45,7 +45,7 @@ router.post('/register',
         try {
             // Typing is incorrect here, even if I specify the header twice it comes back as a string (comma delimeted)
             const baseUrl: string = req.headers.origin as string
-            if(_.isNil(baseUrl)) {
+            if (_.isNil(baseUrl)) {
                 next(Boom.badRequest('The `origin` header is required!'))
                 return
             }

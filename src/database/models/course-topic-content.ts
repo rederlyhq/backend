@@ -34,7 +34,7 @@ export default class CourseTopicContent extends Model {
         foreignKeyTopicType: 'course_topic_content_topic_type_id_fkey',
         foreignKeyUnit: 'course_topic_content_course_unit_content_id_fkey'
     }
-    
+
     static createAssociations(): void {
         // This is a hack to add the associations later to avoid cyclic dependencies
         /* eslint-disable @typescript-eslint/no-use-before-define */
@@ -43,7 +43,7 @@ export default class CourseTopicContent extends Model {
             targetKey: 'id',
             as: 'curriculumTopicContent'
         });
-        
+
         CourseTopicContent.belongsTo(CourseUnitContent, {
             foreignKey: 'courseUnitContentId',
             targetKey: 'id',

@@ -49,11 +49,11 @@ class UserController {
 
                 const sequelizeInclude = [];
                 const sequelizeGradeInclude: Includeable = {};
-                if(listOptions.filters.includeGrades === IncludeGradeOptions.JUST_GRADE || listOptions.filters.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
+                if (listOptions.filters.includeGrades === IncludeGradeOptions.JUST_GRADE || listOptions.filters.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
                     sequelizeGradeInclude.model = StudentGrade;
                     sequelizeGradeInclude.as = 'grades';
                     sequelizeGradeInclude.include = [];
-                    if(!_.isNil(listOptions.filters.courseId)) {
+                    if (!_.isNil(listOptions.filters.courseId)) {
                         sequelizeGradeInclude.include.push({
                             model: CourseWWTopicQuestion,
                             as: 'question',
@@ -78,11 +78,11 @@ class UserController {
                             where: {} // If you don't include where the course where won't propogate down
                         });
                     }
-        
+
                     sequelizeInclude.push(sequelizeGradeInclude);
                 }
-        
-                if(listOptions.filters.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
+
+                if (listOptions.filters.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
                     sequelizeGradeInclude.include.push({
                         model: StudentWorkbook,
                         as: 'workbooks'
@@ -154,11 +154,11 @@ class UserController {
 
         const sequelizeInclude = [];
         const sequelizeGradeInclude: Includeable = {};
-        if(options.includeGrades === IncludeGradeOptions.JUST_GRADE || options.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
+        if (options.includeGrades === IncludeGradeOptions.JUST_GRADE || options.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
             sequelizeGradeInclude.model = StudentGrade;
             sequelizeGradeInclude.as = 'grades';
             sequelizeGradeInclude.include = [];
-            if(!_.isNil(options.courseId)) {
+            if (!_.isNil(options.courseId)) {
                 sequelizeGradeInclude.include.push({
                     model: CourseWWTopicQuestion,
                     as: 'question',
@@ -187,7 +187,7 @@ class UserController {
             sequelizeInclude.push(sequelizeGradeInclude);
         }
 
-        if(options.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
+        if (options.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
             sequelizeGradeInclude.include.push({
                 model: StudentWorkbook,
                 as: 'workbooks'

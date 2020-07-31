@@ -79,9 +79,9 @@ export interface GetTopicsOptions {
 }
 
 export interface GetQuestionOptions {
-       userId: number;
-       questionId: number;
-       formURL: string;
+    userId: number;
+    questionId: number;
+    formURL: string;
 };
 
 export interface GetQuestionResult {

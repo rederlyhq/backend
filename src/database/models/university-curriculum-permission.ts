@@ -46,7 +46,7 @@ UniversityCurriculumPermission.init({
                 'university_id',
             ],
             unique: true,
-            name:'university_curriculum_permission--curriculum_id-university_id'
+            name: 'university_curriculum_permission--curriculum_id-university_id'
         },
     ]
 });

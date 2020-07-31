@@ -145,7 +145,7 @@ class CourseController {
                 // To workaround the typescript error we must declare any
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const violatedConstraint = (e.original as any).constraint
-                if(violatedConstraint === CourseUnitContent.constraints.foreignKeyCourse) {
+                if (violatedConstraint === CourseUnitContent.constraints.foreignKeyCourse) {
                     throw new NotFoundError('The given course was not found to create the unit')
                 }
             }
@@ -299,7 +299,7 @@ class CourseController {
             }
         });
 
-        if(_.isNil(studentGrade)) {
+        if (_.isNil(studentGrade)) {
             return {
                 studentGrade: null,
                 studentWorkbook: null
@@ -367,7 +367,7 @@ class CourseController {
                 courseId: enrollment.courseId,
                 userId: enrollment.userId
             });
-            return result;    
+            return result;
         })
     }
 
@@ -420,8 +420,8 @@ class CourseController {
 
         const results: FindMissingGradesResult[] = [];
         result.forEach((student: User & { courseEnrollments: StudentEnrollment[] }) => {
-            student.courseEnrollments.forEach((studentEnrollment: StudentEnrollment & { course: { units: CourseUnitContent[] }}) => {
-                studentEnrollment.course.units.forEach((unit: CourseUnitContent & { topics: CourseTopicContent[]}) => {
+            student.courseEnrollments.forEach((studentEnrollment: StudentEnrollment & { course: { units: CourseUnitContent[] } }) => {
+                studentEnrollment.course.units.forEach((unit: CourseUnitContent & { topics: CourseTopicContent[] }) => {
                     unit.topics.forEach((topic: CourseTopicContent & { questions: CourseWWTopicQuestion[] }) => {
                         topic.questions.forEach((question: CourseWWTopicQuestion) => {
                             results.push({
@@ -690,7 +690,7 @@ class CourseController {
 
         try {
             const include: sequelize.IncludeOptions[] = []
-            if(_.isNil(userId) === false) {
+            if (_.isNil(userId) === false) {
                 include.push({
                     model: StudentGrade,
                     as: 'grades',
@@ -723,7 +723,7 @@ class CourseController {
      * We can then go and create a course
      */
     async getQuestionsThatRequireGradesForUser(options: GetQuestionsThatRequireGradesForUserOptions): Promise<CourseWWTopicQuestion[]> {
-        const { courseId, userId} = options;
+        const { courseId, userId } = options;
         try {
             return await CourseWWTopicQuestion.findAll({
                 include: [{
@@ -833,9 +833,9 @@ class CourseController {
             throw new WrappedError('Could not getUsersThatRequireGradeForQuestion', e);
         }
     }
-    
+
     async createGradesForUserEnrollment(options: CreateGradesForUserEnrollmentOptions): Promise<number> {
-        const { courseId, userId} = options;
+        const { courseId, userId } = options;
         const results = await this.getQuestionsThatRequireGradesForUser({
             courseId,
             userId

@@ -62,7 +62,7 @@ export const updateCourseTopicValidation = {
         // curriculumTopicContentId: Joi.number().optional(),
         // courseUnitContentId: Joi.number().optional(),
         // topicTypeId: Joi.number().optional(),
-      },
+    },
     query: {},
 }
 
@@ -75,7 +75,7 @@ export const updateCourseUnitValidation = {
         active: Joi.boolean().optional(),
         contentOrder: Joi.number().optional(),
         // courseId: Joi.number().optional(),
-      },
+    },
     query: {},
 }
 

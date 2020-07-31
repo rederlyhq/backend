@@ -9,7 +9,7 @@ import AlreadyExistsError from '../../exceptions/already-exists-error';
 import WrappedError from '../../exceptions/wrapped-error';
 import { ForeignKeyConstraintError } from 'sequelize';
 import NotFoundError from '../../exceptions/not-found-error';
-import { UpdateTopicOptions, UpdateUnitOptions} from './curriculum-types';
+import { UpdateTopicOptions, UpdateUnitOptions } from './curriculum-types';
 
 class CurriculumController {
     getCurriculumById(id: number): Bluebird<Curriculum> {
@@ -44,7 +44,7 @@ class CurriculumController {
     async createCurriculum(curriculumObject: Partial<Curriculum>): Promise<Curriculum> {
         try {
             return await Curriculum.create(curriculumObject);
-        } catch(e) {
+        } catch (e) {
             if (e instanceof UniqueConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
@@ -65,7 +65,7 @@ class CurriculumController {
     async createUnit(unit: Partial<CurriculumUnitContent>): Promise<CurriculumUnitContent> {
         try {
             return await CurriculumUnitContent.create(unit);
-        } catch(e) {
+        } catch (e) {
             if (e instanceof UniqueConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
@@ -92,7 +92,7 @@ class CurriculumController {
     async createTopic(topic: Partial<CurriculumTopicContent>): Promise<CurriculumTopicContent> {
         try {
             return await CurriculumTopicContent.create(topic);
-        } catch(e) {
+        } catch (e) {
             if (e instanceof UniqueConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
@@ -119,7 +119,7 @@ class CurriculumController {
     async createQuestion(question: Partial<CurriculumWWTopicQuestion>): Promise<CurriculumWWTopicQuestion> {
         try {
             return await CurriculumWWTopicQuestion.create(question);
-        } catch(e) {
+        } catch (e) {
             if (e instanceof UniqueConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
@@ -147,8 +147,8 @@ class CurriculumController {
                 where: options.where
             });
             // updates count
-            return updates[0];    
-        } catch(e) {
+            return updates[0];
+        } catch (e) {
             if (e instanceof UniqueConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
@@ -171,7 +171,7 @@ class CurriculumController {
             });
             // updates count
             return updates[0];
-        } catch(e) {
+        } catch (e) {
             if (e instanceof UniqueConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any

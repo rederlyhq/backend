@@ -77,7 +77,7 @@ const writeFile = (filePath: string, fileContent: string): Promise<void> => {
         const validationObject = require(validationFilePath);
         let requestTypeFileContent = '';
         requestTypeFileContent +=
-`
+            `
 /* eslint-disable @typescript-eslint/no-namespace */
 
 /**
@@ -94,7 +94,7 @@ import * as validations from './${path.parse(validationFileName).name}'
 
         Object.keys(validationObject).forEach((key: string) => {
             requestTypeFileContent +=
-`
+                `
 export namespace ${_.upperFirst(key).replace(/Validation$/, '')}Request {
     export type params = Joi.extractType<typeof validations.${key}.params>;
     export type query = Joi.extractType<typeof validations.${key}.query>;

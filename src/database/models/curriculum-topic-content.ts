@@ -22,7 +22,7 @@ export default class CurriculumTopicContent extends Model {
 
         foreignKeyUnit: 'curriculum_topic_content_curriculum_unit_content_id_fkey'
     }
-    
+
     static createAssociations(): void {
         // This is a hack to add the associations later to avoid cyclic dependencies
         /* eslint-disable @typescript-eslint/no-use-before-define */
@@ -31,14 +31,14 @@ export default class CurriculumTopicContent extends Model {
             targetKey: 'id',
             as: 'curriculumUnitContent'
         });
-    
+
         CurriculumTopicContent.hasMany(CurriculumWWTopicQuestion, {
-          foreignKey: 'curriculumTopicContentId',
-          sourceKey: 'id',
-          as: 'questions'
+            foreignKey: 'curriculumTopicContentId',
+            sourceKey: 'id',
+            as: 'questions'
         });
         /* eslint-enable @typescript-eslint/no-use-before-define */
-      }
+    }
 }
 
 CurriculumTopicContent.init({

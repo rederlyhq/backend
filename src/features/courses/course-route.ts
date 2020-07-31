@@ -153,7 +153,7 @@ router.get('/questions',
     asyncHandler(async (req: RederlyExpressRequest<GetQuestionsRequest.params, unknown, GetQuestionsRequest.body, GetQuestionsRequest.query>, res: Response, next: NextFunction) => {
         const userIdInput = req.query.userId
         let userId: number;
-        if(typeof userIdInput === 'string') {
+        if (typeof userIdInput === 'string') {
             if (userIdInput === 'me') {
                 const session = req.session;
                 userId = session.userId
@@ -282,7 +282,7 @@ router.post('/question/:id',
             const params = userReq.params as unknown as {
                 id: number;
             };
-            
+
             const result = await courseController.submitAnswer({
                 userId: userReq.session.userId,
                 questionId: params.id as number,

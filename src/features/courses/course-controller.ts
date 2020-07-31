@@ -17,79 +17,10 @@ import { UniqueConstraintError } from "sequelize";
 import WrappedError from "../../exceptions/wrapped-error";
 import AlreadyExistsError from "../../exceptions/already-exists-error";
 import appSequelize from "../../database/app-sequelize";
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions } from "./course-types";
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
-
-interface EnrollByCodeOptions {
-    code: string;
-    userId: number;
-}
-
-interface CourseListOptions {
-    filter: {
-        instructorId?: number;
-        enrolledUserId?: number;
-    };
-}
-
-interface GetQuestionOptions {
-    userId: number;
-    questionId: number;
-}
-
-interface UpdateTopicOptions {
-    where: {
-        id: number;
-    };
-    updates: {
-        startDate?: Date;
-        endDate?: Date;
-        deadDate?: Date;
-        name?: string;
-        active?: boolean;
-        partialExtend?: boolean;
-    };
-}
-
-interface UpdateUnitOptions {
-    where: {
-        id: number;
-    };
-    updates: {
-        name?: string;
-        active?: boolean;
-    };
-}
-
-interface GetGradesOptions {
-    where: {
-        courseId?: number;
-        unitId?: number;
-        topicId?: number;
-        questionId?: number;
-    };
-}
-
-interface GetStatisticsOnUnitsOptions {
-    where: {
-        courseId?: number;
-    };
-}
-
-interface GetStatisticsOnTopicsOptions {
-    where: {
-        courseUnitContentId?: number;
-        courseId?: number;
-    };
-}
-
-interface GetStatisticsOnQuestionsOptions {
-    where: {
-        courseTopicContentId?: number;
-        courseId?: number;
-    };
-}
 
 class CourseController {
     getCourseById(id: number): Promise<Course> {
@@ -117,8 +48,9 @@ class CourseController {
         })
     }
 
-    getTopics({ courseId, isOpen }: { courseId?: number; isOpen?: boolean }) {
-        let where: any = {}
+    getTopics(options: GetTopicsOptions): Promise<CourseTopicContent[]> {
+        const { courseId, isOpen } = options;
+        const where: sequelize.WhereOptions = {}
         const include = [];
         if (!_.isNil(courseId)) {
             include.push({

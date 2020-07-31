@@ -11,7 +11,7 @@ import Session from '../../database/models/session';
 import moment = require('moment');
 import configurations from '../../configurations';
 import NoAssociatedUniversityError from '../../exceptions/no-associated-university-error';
-import { UniqueConstraintError, Op } from 'sequelize';
+import { UniqueConstraintError, WhereOptions, Includeable } from 'sequelize';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import Role from '../permissions/roles';
 import { ListOptions } from '../../generic-interfaces/list-options';
@@ -41,16 +41,14 @@ class UserController {
 
     list(listOptions?: ListOptions<ListUserFilter>): Promise<User[]> {
         // Dynamic sequelize where object
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const where: any = {};
+        const where: WhereOptions = {};
         // Dynamic sequelize where object
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const include: any = [];
+        const include: Includeable[] = [];
         if (listOptions) {
             if (listOptions.filters) {
 
                 const sequelizeInclude = [];
-                const sequelizeGradeInclude: any = {};
+                const sequelizeGradeInclude: Includeable = {};
                 if(listOptions.filters.includeGrades === IncludeGradeOptions.JUST_GRADE || listOptions.filters.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
                     sequelizeGradeInclude.model = StudentGrade;
                     sequelizeGradeInclude.as = 'grades';
@@ -60,26 +58,25 @@ class UserController {
                             model: CourseWWTopicQuestion,
                             as: 'question',
                             attributes: [], // Don't care about the data, just the where
-                            include: {
+                            include: [{
                                 model: CourseTopicContent,
                                 as: 'topic',
-                                include: {
+                                include: [{
                                     model: CourseUnitContent,
                                     as: 'unit',
-                                    include: {
+                                    include: [{
                                         model: Course,
                                         as: 'course',
                                         where: {
                                             id: listOptions.filters.courseId
                                         }
-                                    },
+                                    }],
                                     where: {} // If you don't include where the course where won't propogate down
-                                },
+                                }],
                                 where: {} // If you don't include where the course where won't propogate down
-                            },
+                            }],
                             where: {} // If you don't include where the course where won't propogate down
                         });
-        
                     }
         
                     sequelizeInclude.push(sequelizeGradeInclude);
@@ -156,7 +153,7 @@ class UserController {
         }
 
         const sequelizeInclude = [];
-        const sequelizeGradeInclude: any = {};
+        const sequelizeGradeInclude: Includeable = {};
         if(options.includeGrades === IncludeGradeOptions.JUST_GRADE || options.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
             sequelizeGradeInclude.model = StudentGrade;
             sequelizeGradeInclude.as = 'grades';
@@ -166,26 +163,25 @@ class UserController {
                     model: CourseWWTopicQuestion,
                     as: 'question',
                     attributes: [], // Don't care about the data, just the where
-                    include: {
+                    include: [{
                         model: CourseTopicContent,
                         as: 'topic',
-                        include: {
+                        include: [{
                             model: CourseUnitContent,
                             as: 'unit',
-                            include: {
+                            include: [{
                                 model: Course,
                                 as: 'course',
                                 where: {
                                     id: options.courseId
                                 }
-                            },
+                            }],
                             where: {} // If you don't include where the course where won't propogate down
-                        },
+                        }],
                         where: {} // If you don't include where the course where won't propogate down
-                    },
+                    }],
                     where: {} // If you don't include where the course where won't propogate down
                 });
-
             }
 
             sequelizeInclude.push(sequelizeGradeInclude);

@@ -13,7 +13,18 @@ router.post('/',
     authenticationMiddleware,
     validate(feedbackValidation),
     asyncHandler(async (req: RederlyExpressRequest<FeedbackRequest.params, unknown, FeedbackRequest.body, FeedbackRequest.query>, res: Response, next: NextFunction) => {
-        const result = await supportController.createIssue(req.body);
+        const user = await req.session.getUser();
+        const result = await supportController.createIssue({
+            description: `
+            User name: ${user.firstName} ${user.lastName}
+            User id: ${user.id}
+            User email: ${user.email}
+            
+            Description:
+            ${req.body.description}
+            `,
+            summary: `SUPPORT: ${req.body.summary}`
+        });
         next(httpResponse.Ok('Support ticket created successfully', result));
     }));
 

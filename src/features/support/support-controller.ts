@@ -1,5 +1,5 @@
 import JiraApi = require('jira-client');
-import { RederlyJiraTicketOptions, IssueType, REDERLY_SUPPORT_PROJECT_KEY } from './support-types';
+import { RederlyJiraTicketOptions, IssueType } from './support-types';
 
 import configurations from '../../configurations'
 class SupportController {

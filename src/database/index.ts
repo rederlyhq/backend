@@ -47,6 +47,9 @@ const models = [
     StudentGrade,
     StudentWorkbook,
 ]
+
+// TODO fix this
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 models.forEach((model: any) => {
     if(typeof model.createAssociations === 'function') {
         model.createAssociations();

@@ -116,7 +116,6 @@ CourseWWTopicQuestion.init({
     ]
 });
 
-import CurriculumTopicContent from './curriculum-topic-content';
 import CourseTopicContent from './course-topic-content';
 import StudentGrade from './student-grade';import CurriculumWWTopicQuestion from './curriculum-ww-topic-question';
 

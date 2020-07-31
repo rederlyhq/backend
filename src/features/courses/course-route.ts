@@ -279,9 +279,13 @@ router.post('/question/:id',
                 throw new WrappedError('Error parsing data response from renderer', e);
             }
 
+            const params = userReq.params as unknown as {
+                id: number;
+            };
+            
             const result = await courseController.submitAnswer({
                 userId: userReq.session.userId,
-                questionId: (userReq.params as any).id as number,
+                questionId: params.id as number,
                 score: data.problem_result.score,
                 submitted: data,
             });

@@ -27,7 +27,7 @@ export default class WrappedError extends Error {
         });
     }
 
-    toJSON() {
+    toJSON(): Partial<WrappedError> {
         return _.omit(this, '_stack')
     }
 }

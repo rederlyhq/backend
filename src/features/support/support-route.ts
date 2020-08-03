@@ -14,11 +14,13 @@ router.post('/',
     validate(feedbackValidation),
     asyncHandler(async (req: RederlyExpressRequest<FeedbackRequest.params, unknown, FeedbackRequest.body, FeedbackRequest.query>, res: Response, next: NextFunction) => {
         const user = await req.session.getUser();
+        const role = await user.getRole();
         const result = await supportController.createIssue({
             description: `
             User name: ${user.firstName} ${user.lastName}
             User id: ${user.id}
             User email: ${user.email}
+            User role: ${role.roleName}
             
             Description:
             ${req.body.description}

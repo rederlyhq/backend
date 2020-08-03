@@ -1,8 +1,8 @@
 interface Array<T> {
-    asyncForEach: (callbackfn: (value: T, index: number, array: T[]) => Promise<void>) => void;
+    asyncForEach: (callbackfn: (value: T, index: number, array: T[]) => Promise<void>) => Promise<void>[];
 }
 
-Array.prototype.asyncForEach = function<T>(callbackfn: (value: T, index: number, array: T[]) => Promise<void>): Promise<void>[] {
+Array.prototype.asyncForEach = function <T>(callbackfn: (value: T, index: number, array: T[]) => Promise<void>): Promise<void>[] {
     const promises: Promise<void>[] = []
     this.forEach((value: T, index: number, array: T[]) => {
         const promise = callbackfn(value, index, array);

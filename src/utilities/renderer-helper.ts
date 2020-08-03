@@ -13,17 +13,17 @@ interface GetProblemParameters {
 }
 
 class RendererHelper {
-    async getProblem(getProblemParameters: GetProblemParameters): Promise<any> {
+    async getProblem(getProblemParameters: GetProblemParameters): Promise<unknown> {
         const resp = await rendererAxios.get('/rendered', {
             params: {
                 sourceFilePath: getProblemParameters.sourceFilePath,
                 problemSeed: getProblemParameters.problemSeed,
                 formURL: getProblemParameters.formURL,
-                template:'single',
-                format:'json',
+                template: 'single',
+                format: 'json',
             },
         });
-        
+
         return resp.data;
     }
 }

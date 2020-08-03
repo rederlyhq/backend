@@ -16,7 +16,7 @@ export default class CurriculumUnitContent extends Model {
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 
-    static  constraints = {
+    static constraints = {
         uniqueOrderPerCurriculum: 'curriculum_unit_content--order-curriculum_id',
         uniqueNamePerCurriculum: 'curriculum_unit_content--name-curriculum_id',
 
@@ -31,14 +31,14 @@ export default class CurriculumUnitContent extends Model {
             targetKey: 'id',
             as: 'curriculum'
         });
-    
+
         CurriculumUnitContent.hasMany(CurriculumTopicContent, {
-          foreignKey: 'curriculumUnitContentId',
-          sourceKey: 'id',
-          as: 'topics'
+            foreignKey: 'curriculumUnitContentId',
+            sourceKey: 'id',
+            as: 'topics'
         });
         /* eslint-enable @typescript-eslint/no-use-before-define */
-      }
+    }
 }
 
 CurriculumUnitContent.init({

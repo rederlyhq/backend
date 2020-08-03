@@ -21,10 +21,10 @@ export default class CourseWWTopicQuestion extends Model {
 
     static constraints = {
         uniqueOrderPerTopic: 'course_topic_question--problem_number-topic_id',
-        
+
         foreignKeyTopic: 'course_topic_question_course_topic_content_id_fkey'
     }
-    
+
     static createAssociations(): void {
         // This is a hack to add the associations later to avoid cyclic dependencies
         /* eslint-disable @typescript-eslint/no-use-before-define */
@@ -116,7 +116,6 @@ CourseWWTopicQuestion.init({
     ]
 });
 
-import CurriculumTopicContent from './curriculum-topic-content';
 import CourseTopicContent from './course-topic-content';
-import StudentGrade from './student-grade';import CurriculumWWTopicQuestion from './curriculum-ww-topic-question';
+import StudentGrade from './student-grade'; import CurriculumWWTopicQuestion from './curriculum-ww-topic-question';
 

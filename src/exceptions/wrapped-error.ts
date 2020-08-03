@@ -13,21 +13,21 @@ export default class WrappedError extends Error {
         this._stack = this.stack
         // this.stack = "${this.stack}\nCaused by:\n${cause.stack}")
         Object.defineProperty(this, 'stack', {
-            get: function() {
-                if(_.isNil(this.cause)) {
+            get: function () {
+                if (_.isNil(this.cause)) {
                     return this._stack
                 } else {
                     return `${this._stack}\nCaused by:\n${this.cause.stack}`;
                 }
                 // return 'extended ' + this._stack;
             },
-            set: function(value) {
+            set: function (value) {
                 this._stack = value;
             }
         });
     }
 
-    toJSON() {
+    toJSON(): Partial<WrappedError> {
         return _.omit(this, '_stack')
     }
 }

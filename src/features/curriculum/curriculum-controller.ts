@@ -9,30 +9,7 @@ import AlreadyExistsError from '../../exceptions/already-exists-error';
 import WrappedError from '../../exceptions/wrapped-error';
 import { ForeignKeyConstraintError } from 'sequelize';
 import NotFoundError from '../../exceptions/not-found-error';
-
-interface UpdateTopicOptions {
-    where: {
-        id: number;
-    };
-    updates: {
-        startDate: Date;
-        endDate: Date;
-        deadDate: Date;
-        name: string;
-        active: boolean;
-        partialExtend: boolean;
-    };
-}
-
-interface UpdateUnitOptions {
-    where: {
-        id: number;
-    };
-    updates: {
-        name: string;
-        active: boolean;
-    };
-}
+import { UpdateTopicOptions, UpdateUnitOptions } from './curriculum-types';
 
 class CurriculumController {
     getCurriculumById(id: number): Bluebird<Curriculum> {
@@ -64,13 +41,14 @@ class CurriculumController {
         return Curriculum.findAll();
     }
 
-    async createCurriculum(curriculumObject: Curriculum): Promise<Curriculum> {
+    async createCurriculum(curriculumObject: Partial<Curriculum>): Promise<Curriculum> {
         try {
             return await Curriculum.create(curriculumObject);
-        } catch(e) {
+        } catch (e) {
             if (e instanceof UniqueConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const violatedConstraint = (e.original as any).constraint
                 if (violatedConstraint === Curriculum.constraints.uniqueNamePerUniversity) {
                     throw new AlreadyExistsError('A curriculum with this name already exists for this university');
@@ -80,17 +58,18 @@ class CurriculumController {
         }
     }
 
-    createUniversityCurriculumPermission(universityCurriculumPermission: UniversityCurriculumPermission): Promise<UniversityCurriculumPermission> {
+    createUniversityCurriculumPermission(universityCurriculumPermission: Partial<UniversityCurriculumPermission>): Promise<UniversityCurriculumPermission> {
         return UniversityCurriculumPermission.create(universityCurriculumPermission);
     }
 
-    async createUnit(unit: CurriculumUnitContent): Promise<CurriculumUnitContent> {
+    async createUnit(unit: Partial<CurriculumUnitContent>): Promise<CurriculumUnitContent> {
         try {
             return await CurriculumUnitContent.create(unit);
-        } catch(e) {
+        } catch (e) {
             if (e instanceof UniqueConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const violatedConstraint = (e.original as any).constraint
                 if (violatedConstraint === CurriculumUnitContent.constraints.uniqueNamePerCurriculum) {
                     throw new AlreadyExistsError('A unit with this name already exists for this curriculum');
@@ -100,6 +79,7 @@ class CurriculumController {
             } else if (e instanceof ForeignKeyConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const violatedConstraint = (e.original as any).constraint
                 if (violatedConstraint === CurriculumUnitContent.constraints.foreignKeyCurriculum) {
                     throw new NotFoundError('Could not create the unit because the given curriculum does not exist');
@@ -109,13 +89,14 @@ class CurriculumController {
         }
     }
 
-    async createTopic(topic: CurriculumTopicContent): Promise<CurriculumTopicContent> {
+    async createTopic(topic: Partial<CurriculumTopicContent>): Promise<CurriculumTopicContent> {
         try {
             return await CurriculumTopicContent.create(topic);
-        } catch(e) {
+        } catch (e) {
             if (e instanceof UniqueConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const violatedConstraint = (e.original as any).constraint
                 if (violatedConstraint === CurriculumTopicContent.constraints.uniqueNamePerUnit) {
                     throw new AlreadyExistsError('A topic with this name already exists for this unit');
@@ -125,6 +106,7 @@ class CurriculumController {
             } else if (e instanceof ForeignKeyConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const violatedConstraint = (e.original as any).constraint
                 if (violatedConstraint === CurriculumTopicContent.constraints.foreignKeyUnit) {
                     throw new NotFoundError('Could not create the topic because the given unit does not exist');
@@ -134,13 +116,14 @@ class CurriculumController {
         }
     }
 
-    async createQuestion(question: CurriculumWWTopicQuestion): Promise<CurriculumWWTopicQuestion> {
+    async createQuestion(question: Partial<CurriculumWWTopicQuestion>): Promise<CurriculumWWTopicQuestion> {
         try {
             return await CurriculumWWTopicQuestion.create(question);
-        } catch(e) {
+        } catch (e) {
             if (e instanceof UniqueConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const violatedConstraint = (e.original as any).constraint
                 if (violatedConstraint === CurriculumWWTopicQuestion.constraints.uniqueOrderPerTopic) {
                     throw new AlreadyExistsError('A question already exists at this order for this topic');
@@ -148,6 +131,7 @@ class CurriculumController {
             } else if (e instanceof ForeignKeyConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const violatedConstraint = (e.original as any).constraint
                 if (violatedConstraint === CurriculumWWTopicQuestion.constraints.foreignKeyTopic) {
                     throw new AlreadyExistsError('Could not create the question because the given topic does not exist');
@@ -163,11 +147,12 @@ class CurriculumController {
                 where: options.where
             });
             // updates count
-            return updates[0];    
-        } catch(e) {
+            return updates[0];
+        } catch (e) {
             if (e instanceof UniqueConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const violatedConstraint = (e.original as any).constraint
                 if (violatedConstraint === CurriculumTopicContent.constraints.uniqueNamePerUnit) {
                     throw new AlreadyExistsError('A topic with this name already exists for this unit');
@@ -186,10 +171,11 @@ class CurriculumController {
             });
             // updates count
             return updates[0];
-        } catch(e) {
+        } catch (e) {
             if (e instanceof UniqueConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const violatedConstraint = (e.original as any).constraint
                 if (violatedConstraint === CurriculumUnitContent.constraints.uniqueNamePerCurriculum) {
                     throw new AlreadyExistsError('A unit with this name already exists for this curriculum');

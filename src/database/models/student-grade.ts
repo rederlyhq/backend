@@ -38,7 +38,7 @@ export default class StudentGrade extends Model {
       targetKey: 'id',
       as: 'user'
     });
-    
+
     StudentGrade.belongsTo(CourseWWTopicQuestion, {
       foreignKey: 'courseWWTopicQuestionId',
       targetKey: 'id',
@@ -116,5 +116,5 @@ StudentGrade.init({
 });
 
 import CourseWWTopicQuestion from './course-ww-topic-question';
-import User from './user';import StudentWorkbook from './student-workbook';
-
+import User from './user';
+import StudentWorkbook from './student-workbook';

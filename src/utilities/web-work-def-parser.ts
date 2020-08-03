@@ -53,9 +53,6 @@ const webWorkDefProblemKeyMaps: Array<WebWorkDefKeyValueMap> = [
 ]
 
 export class Problem {
-    constructor() {
-
-    }
 }
 
 export default class WebWorkDef {

@@ -16,6 +16,12 @@ import Boom = require('boom');
 import AlreadyExistsError from './exceptions/already-exists-error';
 import NotFoundError from './exceptions/not-found-error';
 
+interface ErrorResponse {
+    statusCode: number;
+    status: string;
+    rederlyReference: string;
+    error?: unknown;
+}
 
 const { port, basePath } = configurations.server;
 
@@ -36,7 +42,7 @@ const limiter = rateLimit({
 app.use(limiter);
 
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.use(passport.initialize());
@@ -44,6 +50,10 @@ app.use(passport.initialize());
 app.use(basePath, router);
 
 
+// General Exception Handler
+// next is a required parameter, without having it requests result in a response of object
+// TODO: err is Boom | Error | any, the any is errors that we have to define
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
 app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
     if (obj instanceof AlreadyExistsError || obj instanceof NotFoundError) {
         next(Boom.badRequest(obj.message))
@@ -52,7 +62,7 @@ app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
     }
 });
 
-//General Exception Handler
+// General Exception Handler
 // next is a required parameter, without having it requests result in a response of object
 // TODO: err is Boom | Error | any, the any is errors that we have to define
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
@@ -65,14 +75,15 @@ app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
     } else if (obj.status) {
         return res.status(obj.status).json(obj);
     } else {
-        const rederlyReference = `rederly-reference-${new Date().getTime()}-${Math.floor(Math.random()*1000000)}`
+        const rederlyReference = `rederly-reference-${new Date().getTime()}-${Math.floor(Math.random() * 1000000)}`
         logger.error(`${rederlyReference} - ${obj.stack}`);
-        let data: any = {
+        const data: ErrorResponse = {
             statusCode: 500,
             status: 'Interal Server Error',
             rederlyReference
         };
-        if(process.env.NODE_ENV !== 'production') {
+
+        if (process.env.NODE_ENV !== 'production') {
             data.error = obj;
         }
 

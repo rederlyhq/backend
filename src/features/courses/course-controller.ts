@@ -78,10 +78,8 @@ class CourseController {
     }
 
     getCourses(options: CourseListOptions): Bluebird<Course[]> {
-        // Where is a dynamic sequelize object
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const where: any = {};
-        const include = [];
+        const where: sequelize.WhereOptions = {};
+        const include: sequelize.IncludeOptions[] = [];
         if (options.filter.instructorId !== null && options.filter.instructorId !== undefined) {
             where.instructorId = options.filter.instructorId;
         }

@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import * as _ from 'lodash';
 import { URL } from 'url';
 import emailHelper from '../../utilities/email-helper';
 import logger from '../../utilities/logger';
@@ -19,11 +19,11 @@ import StudentEnrollment from '../../database/models/student-enrollment';
 import Course from '../../database/models/course';
 import StudentGrade from '../../database/models/student-grade';
 import StudentWorkbook from '../../database/models/student-workbook';
-import CourseWWTopicQuestion from "../../database/models/course-ww-topic-question";
-import CourseTopicContent from "../../database/models/course-topic-content";
-import CourseUnitContent from "../../database/models/course-unit-content";
-import IncludeGradeOptions from "./include-grade-options";
-import WrappedError from "../../exceptions/wrapped-error";
+import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
+import CourseTopicContent from '../../database/models/course-topic-content';
+import CourseUnitContent from '../../database/models/course-unit-content';
+import IncludeGradeOptions from './include-grade-options';
+import WrappedError from '../../exceptions/wrapped-error';
 import { EmailOptions, GetUserOptions, ListUserFilter, RegisterUserOptions, RegisterUserResponse } from './user-types';
 
 const {
@@ -294,7 +294,7 @@ class UserController {
                     throw new AlreadyExistsError(`The email ${e.fields[User.rawAttributes.email.field]} already exists`);
                 }
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
 
         let emailSent = false;

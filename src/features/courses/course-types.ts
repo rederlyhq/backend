@@ -1,7 +1,7 @@
-import StudentGrade from "../../database/models/student-grade";
-import StudentWorkbook from "../../database/models/student-workbook";
-import User from "../../database/models/user";
-import CourseWWTopicQuestion from "../../database/models/course-ww-topic-question";
+import StudentGrade from '../../database/models/student-grade';
+import StudentWorkbook from '../../database/models/student-workbook';
+import User from '../../database/models/user';
+import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 
 export interface EnrollByCodeOptions {
     code: string;

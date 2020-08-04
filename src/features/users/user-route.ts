@@ -1,17 +1,17 @@
 import * as _ from 'lodash';
-import { Response, NextFunction } from "express";
-import userController from "./user-controller";
+import { Response, NextFunction } from 'express';
+import userController from './user-controller';
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator';
-import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation } from "./user-route-validation";
+import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation } from './user-route-validation';
 import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest } from './user-route-request-types';
-import Boom = require("boom");
-import passport = require("passport");
-import { authenticationMiddleware } from "../../middleware/auth";
-import httpResponse from "../../utilities/http-response";
+import Boom = require('boom');
+import passport = require('passport');
+import { authenticationMiddleware } from '../../middleware/auth';
+import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
-import NoAssociatedUniversityError from "../../exceptions/no-associated-university-error";
-import AlreadyExistsError from "../../exceptions/already-exists-error";
+import NoAssociatedUniversityError from '../../exceptions/no-associated-university-error';
+import AlreadyExistsError from '../../exceptions/already-exists-error';
 import WrappedError from '../../exceptions/wrapped-error';
 import IncludeGradeOptions from './include-grade-options';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
@@ -71,9 +71,9 @@ router.get('/verify',
     asyncHandler(async (req: RederlyExpressRequest<VerifyRequest.params, unknown, VerifyRequest.body, VerifyRequest.query>, res: Response, next: NextFunction) => {
         const verified = await userController.verifyUser(req.query.verifyToken);
         if (verified) {
-            next(httpResponse.Ok("Verified"));
+            next(httpResponse.Ok('Verified'));
         } else {
-            next(Boom.badRequest("Invalid verification token"));
+            next(Boom.badRequest('Invalid verification token'));
         }
     }));
 
@@ -83,7 +83,7 @@ router.post('/logout',
     asyncHandler(async (req: RederlyExpressRequest<LogoutRequest.params, unknown, LogoutRequest.body, LogoutRequest.query>, res: Response, next: NextFunction) => {
         await userController.logout(req.session.dataValues.uuid);
         res.clearCookie('sessionToken');
-        next(httpResponse.Ok("Logged out"));
+        next(httpResponse.Ok('Logged out'));
     }));
 
 router.get('/',

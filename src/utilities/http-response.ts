@@ -26,11 +26,11 @@ const createObject = (status: string, statusCode: number, message?: string, data
 export default {
     // Data is any object that you want to pass to the user
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Ok: (message?: string, data?: any): HttpResponse => createObject("Ok", 200, message, data),
+    Ok: (message?: string, data?: any): HttpResponse => createObject('Ok', 200, message, data),
     // Data is any object that you want to pass to the user
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Created: (message?: string, data?: any): HttpResponse => createObject("Created", 201, message, data),
+    Created: (message?: string, data?: any): HttpResponse => createObject('Created', 201, message, data),
     // Data is any object that you want to pass to the user
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Accepted: (message?: string, data?: any): HttpResponse => createObject("Accepted", 202, message, data),
+    Accepted: (message?: string, data?: any): HttpResponse => createObject('Accepted', 202, message, data),
 };

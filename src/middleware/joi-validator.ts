@@ -1,7 +1,7 @@
-import * as Joi from "joi";
-import Boom = require("boom");
-import Extend = require("extend");
-import { NextFunction, Response } from "express";
+import * as Joi from 'joi';
+import Boom = require('boom');
+import Extend = require('extend');
+import { NextFunction, Response } from 'express';
 
 export default function validate(schema: Joi.SchemaLike, options: Joi.ValidationOptions = {}): (req: Request, res: Response, next: NextFunction) => void {
     options.abortEarly = false;

@@ -21,6 +21,9 @@ module.exports = {
                 'max': 99
             }
         ],
-        'semi': 1
+        'semi': 1,
+        'quotes': [
+            1, 'single', 'avoid-escape'
+        ]
     },
 };

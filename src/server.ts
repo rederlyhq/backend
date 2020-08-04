@@ -7,11 +7,11 @@ import cookieParser = require('cookie-parser');
 const router = require('./routes');
 
 import express = require('express');
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from 'express';
 
 import morgan = require('morgan');
 import passport = require('passport');
-import rateLimit = require("express-rate-limit");
+import rateLimit = require('express-rate-limit');
 import Boom = require('boom');
 import AlreadyExistsError from './exceptions/already-exists-error';
 import NotFoundError from './exceptions/not-found-error';
@@ -31,7 +31,7 @@ const {
 } = configurations.server.limiter;
 
 const app = express();
-app.use(morgan("dev", {
+app.use(morgan('dev', {
     stream: {
         write: (message): void => {
             logger.info(message);

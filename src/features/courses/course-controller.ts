@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import * as _ from 'lodash';
 import Bluebird = require('bluebird');
 import Course from '../../database/models/course';
 import StudentEnrollment from '../../database/models/student-enrollment';
@@ -12,12 +12,12 @@ import StudentWorkbook from '../../database/models/student-workbook';
 import StudentGrade from '../../database/models/student-grade';
 import User from '../../database/models/user';
 import logger from '../../utilities/logger';
-import sequelize = require("sequelize");
-import { UniqueConstraintError } from "sequelize";
-import WrappedError from "../../exceptions/wrapped-error";
-import AlreadyExistsError from "../../exceptions/already-exists-error";
-import appSequelize from "../../database/app-sequelize";
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions } from "./course-types";
+import sequelize = require('sequelize');
+import { UniqueConstraintError } from 'sequelize';
+import WrappedError from '../../exceptions/wrapped-error';
+import AlreadyExistsError from '../../exceptions/already-exists-error';
+import appSequelize from '../../database/app-sequelize';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions } from './course-types';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -120,7 +120,7 @@ class CourseController {
                     throw new NotFoundError('Could not create the course since the given curriculum does not exist');
                 }
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 
@@ -147,7 +147,7 @@ class CourseController {
                     throw new NotFoundError('The given course was not found to create the unit');
                 }
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 
@@ -177,7 +177,7 @@ class CourseController {
                 }
 
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 
@@ -200,7 +200,7 @@ class CourseController {
                     throw new AlreadyExistsError('A topic already exists with this unit order');
                 }
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 
@@ -223,7 +223,7 @@ class CourseController {
                     throw new AlreadyExistsError('A unit already exists with this order');
                 }
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 
@@ -248,7 +248,7 @@ class CourseController {
                     throw new NotFoundError('Could not create the question because the given topic does not exist');
                 }
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 

@@ -54,7 +54,7 @@ class CurriculumController {
                     throw new AlreadyExistsError('A curriculum with this name already exists for this university');
                 }
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 
@@ -85,7 +85,7 @@ class CurriculumController {
                     throw new NotFoundError('Could not create the unit because the given curriculum does not exist');
                 }
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 
@@ -112,7 +112,7 @@ class CurriculumController {
                     throw new NotFoundError('Could not create the topic because the given unit does not exist');
                 }
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 
@@ -137,7 +137,7 @@ class CurriculumController {
                     throw new AlreadyExistsError('Could not create the question because the given topic does not exist');
                 }
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 
@@ -160,7 +160,7 @@ class CurriculumController {
                     throw new AlreadyExistsError('A topic with this order already exists for this unit');
                 }
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 
@@ -183,7 +183,7 @@ class CurriculumController {
                     throw new AlreadyExistsError('A unit with this order already exists for this curriculum');
                 }
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 }

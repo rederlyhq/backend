@@ -1,21 +1,21 @@
-import { Request, Response, NextFunction } from "express";
-import courseController from "./course-controller";
+import { Request, Response, NextFunction } from 'express';
+import courseController from './course-controller';
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator';
-import { authenticationMiddleware } from "../../middleware/auth";
-import httpResponse from "../../utilities/http-response";
+import { authenticationMiddleware } from '../../middleware/auth';
+import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
-import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation } from "./course-route-validation";
-import NotFoundError from "../../exceptions/not-found-error";
-import multer = require("multer");
-import WebWorkDef from "../../utilities/web-work-def-parser";
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation } from './course-route-validation';
+import NotFoundError from '../../exceptions/not-found-error';
+import multer = require('multer');
+import WebWorkDef from '../../utilities/web-work-def-parser';
 import * as proxy from 'express-http-proxy';
 import * as qs from 'qs';
-import configurations from "../../configurations";
-import WrappedError from "../../exceptions/wrapped-error";
-import { RederlyExpressRequest } from "../../extensions/rederly-express-request";
+import configurations from '../../configurations';
+import WrappedError from '../../exceptions/wrapped-error';
+import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
 import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest } from './course-route-request-types';
-import Boom = require("boom");
+import Boom = require('boom');
 
 const fileUpload = multer();
 

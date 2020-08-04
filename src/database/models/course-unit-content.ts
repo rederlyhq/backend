@@ -106,4 +106,3 @@ CourseUnitContent.init({
 import Course from './course';
 import CourseTopicContent from './course-topic-content';
 import CurriculumUnitContent from './curriculum-unit-content';
-

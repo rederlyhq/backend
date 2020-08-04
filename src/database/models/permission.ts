@@ -42,4 +42,3 @@ Permission.init({
     tableName: 'permission',
     sequelize: appSequelize, // this bit is important
 });
-

@@ -119,4 +119,3 @@ import University from './university';
 import Permission from './permission';
 import StudentEnrollment from './student-enrollment';
 import StudentGrade from './student-grade';
-

@@ -15,7 +15,9 @@ module.exports = {
         'no-multiple-empty-lines': [
             'error', {
                 'maxBOF': 0,
-                'maxEOF': 1,
+                // This is weird, it might be because of the previous rule 'eol-last'
+                // maxEOF: 1 looks for two spaces at the end
+                'maxEOF': 0,
                 'max': 99
             }
         ]

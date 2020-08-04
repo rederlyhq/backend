@@ -119,4 +119,3 @@ import User from './user';
 import StudentEnrollment from './student-enrollment';
 import CourseUnitContent from './course-unit-content';
 import Curriculum from './curriculum';
-

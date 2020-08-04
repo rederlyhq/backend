@@ -77,8 +77,7 @@ const writeFile = (filePath: string, fileContent: string): Promise<void> => {
         const validationObject = require(validationFilePath);
         let requestTypeFileContent = '';
         requestTypeFileContent +=
-            `
-/* eslint-disable @typescript-eslint/no-namespace */
+            `/* eslint-disable @typescript-eslint/no-namespace */
 
 /**
  * THIS FILE IS AUTO GENERATED

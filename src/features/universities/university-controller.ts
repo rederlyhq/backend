@@ -21,7 +21,7 @@ class UniversityController {
                     studentEmailDomain: emailDomain
                 },
             )
-        })
+        });
     }
 }
 

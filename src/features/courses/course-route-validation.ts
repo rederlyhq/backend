@@ -15,7 +15,7 @@ export const createCourseValidation = {
         // universityId is assumed
         // userId is assumed
     }
-}
+};
 
 export const createCourseUnitValidation = {
     params: {},
@@ -26,7 +26,7 @@ export const createCourseUnitValidation = {
         contentOrder: Joi.number().required(),
     },
     query: {}
-}
+};
 
 export const createCourseTopicValidation = {
     params: {},
@@ -43,7 +43,7 @@ export const createCourseTopicValidation = {
         contentOrder: Joi.number().required(),
     },
     query: {}
-}
+};
 
 export const updateCourseTopicValidation = {
     params: {
@@ -64,7 +64,7 @@ export const updateCourseTopicValidation = {
         // topicTypeId: Joi.number().optional(),
     },
     query: {},
-}
+};
 
 export const updateCourseUnitValidation = {
     params: {
@@ -77,7 +77,7 @@ export const updateCourseUnitValidation = {
         // courseId: Joi.number().optional(),
     },
     query: {},
-}
+};
 
 export const createCourseTopicQuestionValidation = {
     params: {},
@@ -92,7 +92,7 @@ export const createCourseTopicQuestionValidation = {
         active: Joi.boolean().optional().default(true)
     },
     query: {}
-}
+};
 
 export const getQuestionValidation = {
     params: {
@@ -100,7 +100,7 @@ export const getQuestionValidation = {
     },
     query: {},
     body: {}
-}
+};
 
 export const getQuestionsValidation = {
     params: {},
@@ -109,7 +109,7 @@ export const getQuestionsValidation = {
         courseTopicContentId: Joi.number().optional()
     },
     body: {}
-}
+};
 
 
 export const getCourseValidation = {
@@ -120,7 +120,7 @@ export const getCourseValidation = {
     },
     body: {},
     query: {}
-}
+};
 
 export const getTopicsValidation = {
     params: {},
@@ -129,7 +129,7 @@ export const getTopicsValidation = {
         isOpen: Joi.boolean().optional()
     },
     body: {},
-}
+};
 
 export const enrollInCourseValidation = {
     params: {},
@@ -138,7 +138,7 @@ export const enrollInCourseValidation = {
         courseId: Joi.number().required(),
         userId: Joi.number().required()
     }
-}
+};
 
 export const enrollInCourseByCodeValidation = {
     params: {
@@ -146,7 +146,7 @@ export const enrollInCourseByCodeValidation = {
     },
     query: {},
     body: {}
-}
+};
 
 export const listCoursesValidation = {
     params: {},
@@ -155,7 +155,7 @@ export const listCoursesValidation = {
         enrolledUserId: Joi.number().optional(),
     },
     body: {},
-}
+};
 
 export const getGradesValidation = {
     params: {},
@@ -166,7 +166,7 @@ export const getGradesValidation = {
         questionId: Joi.number().optional(),
     },
     body: {},
-}
+};
 
 export const getStatisticsOnUnitsValidation = {
     params: {},
@@ -174,7 +174,7 @@ export const getStatisticsOnUnitsValidation = {
         courseId: Joi.number().optional(),
     },
     body: {},
-}
+};
 
 export const getStatisticsOnTopicsValidation = {
     params: {},
@@ -183,7 +183,7 @@ export const getStatisticsOnTopicsValidation = {
         courseId: Joi.number().optional(),
     },
     body: {},
-}
+};
 
 export const getStatisticsOnQuestionsValidation = {
     params: {},
@@ -192,7 +192,7 @@ export const getStatisticsOnQuestionsValidation = {
         courseId: Joi.number().optional(),
     },
     body: {},
-}
+};
 
 export const getProblemsValidation = {
     params: {},
@@ -201,4 +201,4 @@ export const getProblemsValidation = {
         userId: Joi.number().optional(),
     },
     body: {},
-}
+};

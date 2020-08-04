@@ -13,7 +13,7 @@ export function hashPassword(password: string): Promise<string> {
             } else {
                 throw new Error('No result obtained from bcrypt');
             }
-        })
+        });
 }
 
 export function comparePassword(password: string, hash: string): Promise<boolean> {

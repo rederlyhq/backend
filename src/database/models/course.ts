@@ -20,7 +20,7 @@ export default class Course extends Model {
             foreignKey: 'curriculumId',
             targetKey: 'id',
             as: 'curriculum'
-        })
+        });
 
         Course.hasMany(StudentEnrollment, {
             foreignKey: 'courseId',

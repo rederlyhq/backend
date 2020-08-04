@@ -1,6 +1,6 @@
 // TODO rename
 import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
-import appSequelize from '../app-sequelize'
+import appSequelize from '../app-sequelize';
 import CurriculumTopicContent from './curriculum-topic-content';
 
 export default class CurriculumWWTopicQuestion extends Model {

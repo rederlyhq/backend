@@ -11,13 +11,13 @@ const getPathStat = (filePath: string): Promise<fs.Stats> => {
                 return;
             }
             resolve(stats);
-        })
+        });
     });
-}
+};
 
 const isDirectory = async (filePath: string): Promise<boolean> => {
     return (await getPathStat(filePath)).isDirectory();
-}
+};
 const listFilesInDirectory = (filePath: string): Promise<string[]> => {
     return new Promise((resolve, reject) => {
         fs.readdir(filePath, (err: Error, files: string[]) => {
@@ -27,8 +27,8 @@ const listFilesInDirectory = (filePath: string): Promise<string[]> => {
             };
             resolve(files);
         });
-    })
-}
+    });
+};
 
 const recursiveListFilesInDirectory = async (filePath: string, result: string[], filter: (filePath: string) => boolean): Promise<string[]> => {
     const isDir = await isDirectory(filePath);
@@ -46,7 +46,7 @@ const recursiveListFilesInDirectory = async (filePath: string, result: string[],
         }
     }
     return result;
-}
+};
 
 const writeFile = (filePath: string, fileContent: string): Promise<void> => {
     return new Promise((resolve, reject) => {
@@ -60,9 +60,9 @@ const writeFile = (filePath: string, fileContent: string): Promise<void> => {
                 return;
             }
             resolve();
-        })
-    })
-}
+        });
+    });
+};
 
 
 (async (): Promise<void> => {
@@ -104,5 +104,5 @@ export namespace ${_.upperFirst(key).replace(/Validation$/, '')}Request {
 
         const requestTypeFilePath = validationFilePath.replace(/-validation.ts$/, '-request-types.ts');
         await writeFile(requestTypeFilePath, requestTypeFileContent);
-    })
-})()
+    });
+})();

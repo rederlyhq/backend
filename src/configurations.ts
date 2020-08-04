@@ -1,8 +1,8 @@
-import * as _ from 'lodash'
+import * as _ from 'lodash';
 
 const fromBooleanField = (value: string): boolean => {
-    return value ? value.toLowerCase() === 'true' : null
-}
+    return value ? value.toLowerCase() === 'true' : null;
+};
 
 const fromIntValue = (value: string, defaultValue: number): number => {
     const result = parseInt(value);
@@ -10,7 +10,7 @@ const fromIntValue = (value: string, defaultValue: number): number => {
         return defaultValue;
     }
     return result;
-}
+};
 
 export default {
     server: {
@@ -42,4 +42,4 @@ export default {
     renderer: {
         url: _.defaultTo(process.env.RENDERER_URL, 'http://localhost:3000'),
     }
-}
+};

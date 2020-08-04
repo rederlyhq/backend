@@ -10,7 +10,7 @@ export const registerValidation = {
         email: Joi.string().email().required(),
         password: Joi.string().required(),
     },
-}
+};
 
 export const loginValidation = {
     params: {},
@@ -19,7 +19,7 @@ export const loginValidation = {
         email: Joi.string().email().required(),
         password: Joi.string().required(),
     },
-}
+};
 
 export const verifyValidation = {
     params: {},
@@ -27,13 +27,13 @@ export const verifyValidation = {
         verifyToken: Joi.string().required()
     },
     body: {}
-}
+};
 
 export const logoutValidation = {
     params: {},
     query: {},
     body: {}
-}
+};
 
 export const listUsersValidation = {
     params: {},
@@ -43,7 +43,7 @@ export const listUsersValidation = {
         includeGrades: Joi.string().valid(Object.keys(IncludeGradeOptions)).optional(),
     },
     body: {},
-}
+};
 
 export const getUserValidation = {
     params: {
@@ -54,7 +54,7 @@ export const getUserValidation = {
         includeGrades: Joi.string().valid(Object.keys(IncludeGradeOptions)).optional(),
     },
     body: {},
-}
+};
 
 export const emailUsersValidation = {
     params: {},
@@ -64,4 +64,4 @@ export const emailUsersValidation = {
         subject: Joi.string().required(),
         content: Joi.string().required(),
     },
-}
+};

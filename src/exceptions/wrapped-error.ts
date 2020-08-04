@@ -9,13 +9,13 @@ export default class WrappedError extends Error {
         super(message);
         this.name = this.constructor.name;
         this.msg = message;
-        this.cause = cause
-        this._stack = this.stack
+        this.cause = cause;
+        this._stack = this.stack;
         // this.stack = "${this.stack}\nCaused by:\n${cause.stack}")
         Object.defineProperty(this, 'stack', {
             get: function () {
                 if (_.isNil(this.cause)) {
-                    return this._stack
+                    return this._stack;
                 } else {
                     return `${this._stack}\nCaused by:\n${this.cause.stack}`;
                 }
@@ -28,6 +28,6 @@ export default class WrappedError extends Error {
     }
 
     toJSON(): Partial<WrappedError> {
-        return _.omit(this, '_stack')
+        return _.omit(this, '_stack');
     }
 }

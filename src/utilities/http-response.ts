@@ -13,7 +13,7 @@ const createObject = (status: string, statusCode: number, message?: string, data
     const resp: HttpResponse = {
         statusCode,
         status
-    }
+    };
     if (message !== undefined) {
         resp.message = message;
     }
@@ -21,7 +21,7 @@ const createObject = (status: string, statusCode: number, message?: string, data
         resp.data = data;
     }
     return resp;
-}
+};
 
 export default {
     // Data is any object that you want to pass to the user

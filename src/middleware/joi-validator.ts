@@ -1,4 +1,4 @@
-import * as Joi from "joi"
+import * as Joi from "joi";
 import Boom = require("boom");
 import Extend = require("extend");
 import { NextFunction, Response } from "express";
@@ -37,7 +37,7 @@ export default function validate(schema: Joi.SchemaLike, options: Joi.Validation
             Extend(req, validated);
 
             return next();
-        }
+        };
 
         return Joi.validate(toValidate, schema, options, onValidationComplete);
     };

@@ -2,14 +2,14 @@ import * as _ from 'lodash';
 import { Response, NextFunction } from "express";
 import userController from "./user-controller";
 const router = require('express').Router();
-import validate from '../../middleware/joi-validator'
+import validate from '../../middleware/joi-validator';
 import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation } from "./user-route-validation";
 import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest } from './user-route-request-types';
 import Boom = require("boom");
 import passport = require("passport");
 import { authenticationMiddleware } from "../../middleware/auth";
 import httpResponse from "../../utilities/http-response";
-import * as asyncHandler from 'express-async-handler'
+import * as asyncHandler from 'express-async-handler';
 import NoAssociatedUniversityError from "../../exceptions/no-associated-university-error";
 import AlreadyExistsError from "../../exceptions/already-exists-error";
 import WrappedError from '../../exceptions/wrapped-error';
@@ -44,10 +44,10 @@ router.post('/register',
     asyncHandler(async (req: RederlyExpressRequest<RegisterRequest.params, unknown, RegisterRequest.body, RegisterRequest.query>, res: Response, next: NextFunction) => {
         try {
             // Typing is incorrect here, even if I specify the header twice it comes back as a string (comma delimeted)
-            const baseUrl: string = req.headers.origin as string
+            const baseUrl: string = req.headers.origin as string;
             if (_.isNil(baseUrl)) {
-                next(Boom.badRequest('The `origin` header is required!'))
-                return
+                next(Boom.badRequest('The `origin` header is required!'));
+                return;
             }
             const newUser = await userController.registerUser({
                 userObject: req.body,
@@ -106,7 +106,7 @@ router.get('/:id',
     // Parameters complained when the type was provided
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetUserRequest.body, GetUserRequest.query>, _res: Response, next: NextFunction) => {
-        const params = req.params as GetUserRequest.params
+        const params = req.params as GetUserRequest.params;
         const users = await userController.getUser({
             id: params.id,
             courseId: req.query.courseId,

@@ -1,5 +1,5 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
-import appSequelize from '../app-sequelize'
+import appSequelize from '../app-sequelize';
 import CourseWWTopicQuestion from './course-ww-topic-question';
 import User from './user';
 import StudentGrade from './student-grade';

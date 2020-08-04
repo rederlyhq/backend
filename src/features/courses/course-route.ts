@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import courseController from "./course-controller";
 const router = require('express').Router();
-import validate from '../../middleware/joi-validator'
+import validate from '../../middleware/joi-validator';
 import { authenticationMiddleware } from "../../middleware/auth";
 import httpResponse from "../../utilities/http-response";
-import * as asyncHandler from 'express-async-handler'
+import * as asyncHandler from 'express-async-handler';
 import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation } from "./course-route-validation";
 import NotFoundError from "../../exceptions/not-found-error";
 import multer = require("multer");
@@ -31,7 +31,7 @@ router.get('/statistics/units',
             });
             next(httpResponse.Ok('Fetched successfully', stats));
         } catch (e) {
-            next(e)
+            next(e);
         }
     }));
 
@@ -48,7 +48,7 @@ router.get('/statistics/topics',
             });
             next(httpResponse.Ok('Fetched successfully', stats));
         } catch (e) {
-            next(e)
+            next(e);
         }
     }));
 
@@ -65,7 +65,7 @@ router.get('/statistics/questions',
             });
             next(httpResponse.Ok('Fetched successfully', stats));
         } catch (e) {
-            next(e)
+            next(e);
         }
     }));
 
@@ -74,7 +74,7 @@ router.post('/def',
     // validate(createCourseValidation),
     fileUpload.single('def-file'),
     asyncHandler(async (req: Request, res: Response) => {
-        const parsedDefFile = new WebWorkDef(req.file.buffer.toString())
+        const parsedDefFile = new WebWorkDef(req.file.buffer.toString());
         res.json(parsedDefFile);
     }));
 
@@ -94,7 +94,7 @@ router.post('/',
             });
             next(httpResponse.Created('Course successfully', newCourse));
         } catch (e) {
-            next(e)
+            next(e);
         }
     }));
 
@@ -143,7 +143,7 @@ router.get('/grades',
             });
             next(httpResponse.Ok('Fetched successfully', grades));
         } catch (e) {
-            next(e)
+            next(e);
         }
     }));
 
@@ -151,18 +151,18 @@ router.get('/questions',
     authenticationMiddleware,
     validate(getQuestionsValidation),
     asyncHandler(async (req: RederlyExpressRequest<GetQuestionsRequest.params, unknown, GetQuestionsRequest.body, GetQuestionsRequest.query>, res: Response, next: NextFunction) => {
-        const userIdInput = req.query.userId
+        const userIdInput = req.query.userId;
         let userId: number;
         if (typeof userIdInput === 'string') {
             if (userIdInput === 'me') {
                 const session = req.session;
-                userId = session.userId
+                userId = session.userId;
             } else {
                 next(Boom.badRequest('userIdInput as a string must be the value `me`'));
                 return;
             }
         } else if (typeof userIdInput === 'number') {
-            userId = userIdInput
+            userId = userIdInput;
         }
 
         const result = await courseController.getQuestions({
@@ -319,7 +319,7 @@ router.get('/',
             });
             next(httpResponse.Ok('Fetched successfully', courses));
         } catch (e) {
-            next(e)
+            next(e);
         }
     }));
 
@@ -332,9 +332,9 @@ router.get('/topics',
                 courseId: req.query.courseId,
                 isOpen: req.query.isOpen
             });
-            next(httpResponse.Ok('Fetched successfully', result))
+            next(httpResponse.Ok('Fetched successfully', result));
         } catch (e) {
-            next(e)
+            next(e);
         }
     }));
 
@@ -349,7 +349,7 @@ router.get('/:id',
             const course = await courseController.getCourseById(params.id);
             next(httpResponse.Ok('Fetched successfully', course));
         } catch (e) {
-            next(e)
+            next(e);
         }
     }));
 
@@ -360,7 +360,7 @@ router.post('/enroll',
         try {
             const enrollment = await courseController.enroll({
                 ...req.body,
-            })
+            });
             next(httpResponse.Ok('Enrolled', enrollment));
         } catch (e) {
             if (e instanceof NotFoundError) {

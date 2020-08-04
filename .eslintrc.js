@@ -20,6 +20,7 @@ module.exports = {
                 'maxEOF': 0,
                 'max': 99
             }
-        ]
+        ],
+        'semi': 1
     },
 };

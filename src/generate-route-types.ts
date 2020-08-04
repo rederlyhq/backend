@@ -87,8 +87,8 @@ const writeFile = (filePath: string, fileContent: string): Promise<void> => {
  */
 
 import * as Joi from '@hapi/joi';
-import 'joi-extract-type'
-import * as validations from './${path.parse(validationFileName).name}'
+import 'joi-extract-type';
+import * as validations from './${path.parse(validationFileName).name}';
 `;
 
         Object.keys(validationObject).forEach((key: string) => {

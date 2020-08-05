@@ -1,16 +1,16 @@
-import { Response, NextFunction } from "express";
+import { Response, NextFunction } from 'express';
 const router = require('express').Router();
-import validate from '../../middleware/joi-validator'
-import { authenticationMiddleware } from "../../middleware/auth";
-import httpResponse from "../../utilities/http-response";
-import * as asyncHandler from 'express-async-handler'
-import { getCurriculumValidation, createCurriculumValidation, createCurriculumUnitValidation, createCurriculumTopicValidation, createCurriculumTopicQuestionValidation, updateCurriculumUnitValidation, updateCurriculumTopicValidation, listCurriculumValidation } from "./curriculum-route-validation";
-import curriculumController from "./curriculum-controller";
-import logger from "../../utilities/logger";
-import { RederlyExpressRequest } from "../../extensions/rederly-express-request";
-import { CreateCurriculumRequest, CreateCurriculumTopicRequest, UpdateCurriculumUnitRequest, UpdateCurriculumTopicRequest, CreateCurriculumTopicQuestionRequest, GetCurriculumRequest, ListCurriculumRequest } from "./curriculum-route-request-types";
-import appSequelize from "../../database/app-sequelize";
-import Curriculum from "../../database/models/curriculum";
+import validate from '../../middleware/joi-validator';
+import { authenticationMiddleware } from '../../middleware/auth';
+import httpResponse from '../../utilities/http-response';
+import * as asyncHandler from 'express-async-handler';
+import { getCurriculumValidation, createCurriculumValidation, createCurriculumUnitValidation, createCurriculumTopicValidation, createCurriculumTopicQuestionValidation, updateCurriculumUnitValidation, updateCurriculumTopicValidation, listCurriculumValidation } from './curriculum-route-validation';
+import curriculumController from './curriculum-controller';
+import logger from '../../utilities/logger';
+import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
+import { CreateCurriculumRequest, CreateCurriculumTopicRequest, UpdateCurriculumUnitRequest, UpdateCurriculumTopicRequest, CreateCurriculumTopicQuestionRequest, GetCurriculumRequest, ListCurriculumRequest } from './curriculum-route-request-types';
+import appSequelize from '../../database/app-sequelize';
+import Curriculum from '../../database/models/curriculum';
 
 router.post('/',
     authenticationMiddleware,
@@ -36,10 +36,10 @@ router.post('/',
                 } catch (e) {
                     logger.error(e);
                 }
-            })
+            });
             next(httpResponse.Created('Curriculum created successfully', newCurriculum));
         } catch (e) {
-            next(e)
+            next(e);
         }
     }));
 
@@ -142,7 +142,7 @@ router.get('/',
             const curriculums = await curriculumController.getCurriculums();
             next(httpResponse.Ok('Fetched successfully', curriculums));
         } catch (e) {
-            next(e)
+            next(e);
         }
     }));
 
@@ -158,7 +158,7 @@ router.get('/:id',
             const curriculum = await curriculumController.getCurriculumById(params.id);
             next(httpResponse.Ok('Fetched successfully', curriculum));
         } catch (e) {
-            next(e)
+            next(e);
         }
     }));
 

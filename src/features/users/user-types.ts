@@ -1,5 +1,5 @@
-import IncludeGradeOptions from "./include-grade-options";
-import User from "../../database/models/user";
+import IncludeGradeOptions from './include-grade-options';
+import User from '../../database/models/user';
 
 export interface RegisterUserOptions {
     userObject: Partial<User>;

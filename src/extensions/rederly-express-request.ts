@@ -1,6 +1,6 @@
-import { Request } from "express";
-import * as core from "express-serve-static-core";
-import Session from "../database/models/session";
+import { Request } from 'express';
+import * as core from 'express-serve-static-core';
+import Session from '../database/models/session';
 
 // This is the default typing in express which we are extending
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

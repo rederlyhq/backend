@@ -1,4 +1,3 @@
-
 /* eslint-disable @typescript-eslint/no-namespace */
 
 /**
@@ -9,8 +8,8 @@
  */
 
 import * as Joi from '@hapi/joi';
-import 'joi-extract-type'
-import * as validations from './user-route-validation'
+import 'joi-extract-type';
+import * as validations from './user-route-validation';
 
 export namespace RegisterRequest {
     export type params = Joi.extractType<typeof validations.registerValidation.params>;

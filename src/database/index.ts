@@ -24,7 +24,7 @@ export const sync = async (): Promise<void> => {
         await appSequelize.authenticate();
         await appSequelize.sync();
     } catch (e) {
-        logger.error('Could not init sequelize', e)
+        logger.error('Could not init sequelize', e);
     }
 };
 
@@ -46,7 +46,7 @@ const models = [
     CourseWWTopicQuestion,
     StudentGrade,
     StudentWorkbook,
-]
+];
 
 // TODO fix this
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -54,11 +54,11 @@ models.forEach((model: any) => {
     if (typeof model.createAssociations === 'function') {
         model.createAssociations();
     }
-})
+});
 
 const database = {
     ...models,
     appSequelize
-}
+};
 
 export default database;

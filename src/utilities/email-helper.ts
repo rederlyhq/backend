@@ -39,7 +39,7 @@ class EmailHelper {
                 // eslint-disable-next-line @typescript-eslint/camelcase
                 api_key: this.key, // TODO figure out why api key doesn't work
             }
-        }
+        };
 
         this.client = nodemailer.createTransport(sgTransport(clientOptions));
 

@@ -1,4 +1,3 @@
-
 /* eslint-disable @typescript-eslint/no-namespace */
 
 /**
@@ -9,8 +8,8 @@
  */
 
 import * as Joi from '@hapi/joi';
-import 'joi-extract-type'
-import * as validations from './curriculum-route-validation'
+import 'joi-extract-type';
+import * as validations from './curriculum-route-validation';
 
 export namespace CreateCurriculumRequest {
     export type params = Joi.extractType<typeof validations.createCurriculumValidation.params>;

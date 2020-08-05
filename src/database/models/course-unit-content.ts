@@ -1,5 +1,5 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
-import appSequelize from '../app-sequelize'
+import appSequelize from '../app-sequelize';
 
 export default class CourseUnitContent extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
@@ -103,6 +103,6 @@ CourseUnitContent.init({
     ]
 });
 
-import Course from './course'; import CourseTopicContent from './course-topic-content';
+import Course from './course';
+import CourseTopicContent from './course-topic-content';
 import CurriculumUnitContent from './curriculum-unit-content';
-

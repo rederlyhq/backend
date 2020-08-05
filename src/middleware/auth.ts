@@ -1,10 +1,10 @@
-import Boom = require("boom");
-import userController from "../features/users/user-controller";
-import logger from "../utilities/logger";
-import moment = require("moment");
-import passport = require("passport");
-import Session from "../database/models/session";
-import { Request, Response, NextFunction } from "express";
+import Boom = require('boom');
+import userController from '../features/users/user-controller';
+import logger from '../utilities/logger';
+import moment = require('moment');
+import passport = require('passport');
+import Session from '../database/models/session';
+import { Request, Response, NextFunction } from 'express';
 const LocalStrategy = require('passport-local').Strategy;
 
 export const validateSession = async (uuid: string): Promise<Session> => {
@@ -70,15 +70,15 @@ passport.deserializeUser(async (id: number, done: (err: Boom<null>, user?: unkno
 });
 
 
-passport.use(new LocalStrategy({ usernameField: "email" }, async (email: string, password: string, done: (err: Boom<null>, user?: unknown) => void) => {
+passport.use(new LocalStrategy({ usernameField: 'email' }, async (email: string, password: string, done: (err: Boom<null>, user?: unknown) => void) => {
     // TODO track ip?
     try {
         const session: Session = await userController.login(email, password);
         if (session) {
-            done(null, session)
+            done(null, session);
         } else {
             // This could be invalid credentials, not verified, or user not found
-            done(Boom.unauthorized('Invalid login'))
+            done(Boom.unauthorized('Invalid login'));
         }
     } catch (e) {
         logger.error(e);

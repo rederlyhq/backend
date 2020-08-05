@@ -1,7 +1,7 @@
 // TODO rename file
 
 import { Model, DataTypes } from 'sequelize';
-import appSequelize from '../app-sequelize'
+import appSequelize from '../app-sequelize';
 
 export default class CourseWWTopicQuestion extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
@@ -44,7 +44,7 @@ export default class CourseWWTopicQuestion extends Model {
             foreignKey: 'courseWWTopicQuestionId',
             sourceKey: 'id',
             as: 'grades'
-        })
+        });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }
@@ -117,5 +117,5 @@ CourseWWTopicQuestion.init({
 });
 
 import CourseTopicContent from './course-topic-content';
-import StudentGrade from './student-grade'; import CurriculumWWTopicQuestion from './curriculum-ww-topic-question';
-
+import StudentGrade from './student-grade';
+import CurriculumWWTopicQuestion from './curriculum-ww-topic-question';

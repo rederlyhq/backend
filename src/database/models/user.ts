@@ -1,5 +1,5 @@
 import { Model, DataTypes, HasOneGetAssociationMixin, BelongsToGetAssociationMixin } from 'sequelize';
-import appSequelize from '../app-sequelize'
+import appSequelize from '../app-sequelize';
 
 export default class User extends Model {
   public id!: number; // Note that the `null assertion` `!` is required in strict mode.
@@ -119,4 +119,3 @@ import University from './university';
 import Permission from './permission';
 import StudentEnrollment from './student-enrollment';
 import StudentGrade from './student-grade';
-

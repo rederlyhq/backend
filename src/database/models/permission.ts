@@ -1,5 +1,5 @@
 import { Model, DataTypes } from 'sequelize';
-import appSequelize from '../app-sequelize'
+import appSequelize from '../app-sequelize';
 
 export default class Permission extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
@@ -42,4 +42,3 @@ Permission.init({
     tableName: 'permission',
     sequelize: appSequelize, // this bit is important
 });
-

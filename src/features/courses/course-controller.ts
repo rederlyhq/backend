@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import * as _ from 'lodash';
 import Bluebird = require('bluebird');
 import Course from '../../database/models/course';
 import StudentEnrollment from '../../database/models/student-enrollment';
@@ -12,12 +12,12 @@ import StudentWorkbook from '../../database/models/student-workbook';
 import StudentGrade from '../../database/models/student-grade';
 import User from '../../database/models/user';
 import logger from '../../utilities/logger';
-import sequelize = require("sequelize");
-import { UniqueConstraintError } from "sequelize";
-import WrappedError from "../../exceptions/wrapped-error";
-import AlreadyExistsError from "../../exceptions/already-exists-error";
-import appSequelize from "../../database/app-sequelize";
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions } from "./course-types";
+import sequelize = require('sequelize');
+import { UniqueConstraintError } from 'sequelize';
+import WrappedError from '../../exceptions/wrapped-error';
+import AlreadyExistsError from '../../exceptions/already-exists-error';
+import appSequelize from '../../database/app-sequelize';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions } from './course-types';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -45,43 +45,41 @@ class CourseController {
                 ['units', 'topics', 'contentOrder', 'ASC'],
                 ['units', 'topics', 'questions', 'problemNumber', 'ASC'],
             ]
-        })
+        });
     }
 
     getTopics(options: GetTopicsOptions): Promise<CourseTopicContent[]> {
         const { courseId, isOpen } = options;
-        const where: sequelize.WhereOptions = {}
+        const where: sequelize.WhereOptions = {};
         const include = [];
         if (!_.isNil(courseId)) {
             include.push({
                 model: CourseUnitContent,
                 as: 'unit',
                 attributes: []
-            })
-            where[`$unit.${CourseUnitContent.rawAttributes.courseId.field}$`] = courseId
+            });
+            where[`$unit.${CourseUnitContent.rawAttributes.courseId.field}$`] = courseId;
         }
 
         if (isOpen) {
-            const date = new Date()
+            const date = new Date();
             where.startDate = {
                 [Sequelize.Op.lte]: date
-            }
+            };
 
             where.deadDate = {
                 [Sequelize.Op.gte]: date
-            }
+            };
         }
         return CourseTopicContent.findAll({
             where,
             include
-        })
+        });
     }
 
     getCourses(options: CourseListOptions): Bluebird<Course[]> {
-        // Where is a dynamic sequelize object
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const where: any = {};
-        const include = [];
+        const where: sequelize.WhereOptions = {};
+        const include: sequelize.IncludeOptions[] = [];
         if (options.filter.instructorId !== null && options.filter.instructorId !== undefined) {
             where.instructorId = options.filter.instructorId;
         }
@@ -109,20 +107,20 @@ class CourseController {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint
+                const violatedConstraint = (e.original as any).constraint;
                 if (violatedConstraint === Course.constraints.uniqueCourseCode) {
-                    throw new AlreadyExistsError('A course already exists with this course code')
+                    throw new AlreadyExistsError('A course already exists with this course code');
                 }
             } else if (e instanceof ForeignKeyConstraintError) {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint
+                const violatedConstraint = (e.original as any).constraint;
                 if (violatedConstraint === Course.constraints.foreignKeyCurriculum) {
                     throw new NotFoundError('Could not create the course since the given curriculum does not exist');
                 }
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 
@@ -134,7 +132,7 @@ class CourseController {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint
+                const violatedConstraint = (e.original as any).constraint;
                 if (violatedConstraint === CourseUnitContent.constraints.uniqueNamePerCourse) {
                     throw new AlreadyExistsError('A unit with that name already exists within this course');
                 } else if (violatedConstraint === CourseUnitContent.constraints.unqiueOrderPerCourse) {
@@ -144,12 +142,12 @@ class CourseController {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint
+                const violatedConstraint = (e.original as any).constraint;
                 if (violatedConstraint === CourseUnitContent.constraints.foreignKeyCourse) {
-                    throw new NotFoundError('The given course was not found to create the unit')
+                    throw new NotFoundError('The given course was not found to create the unit');
                 }
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 
@@ -161,7 +159,7 @@ class CourseController {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint
+                const violatedConstraint = (e.original as any).constraint;
                 if (violatedConstraint === CourseTopicContent.constraints.uniqueNamePerUnit) {
                     throw new AlreadyExistsError('A topic with that name already exists within this unit');
                 } else if (violatedConstraint === CourseTopicContent.constraints.uniqueOrderPerUnit) {
@@ -171,15 +169,15 @@ class CourseController {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint
+                const violatedConstraint = (e.original as any).constraint;
                 if (violatedConstraint === CourseTopicContent.constraints.foreignKeyUnit) {
-                    throw new NotFoundError('Given unit id')
+                    throw new NotFoundError('Given unit id');
                 } else if (violatedConstraint === CourseTopicContent.constraints.foreignKeyTopicType) {
-                    throw new NotFoundError('Invalid topic type provided')
+                    throw new NotFoundError('Invalid topic type provided');
                 }
 
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 
@@ -195,14 +193,14 @@ class CourseController {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint
+                const violatedConstraint = (e.original as any).constraint;
                 if (violatedConstraint === CourseTopicContent.constraints.uniqueNamePerUnit) {
                     throw new AlreadyExistsError('A topic with that name already exists within this unit');
                 } else if (violatedConstraint === CourseTopicContent.constraints.uniqueOrderPerUnit) {
                     throw new AlreadyExistsError('A topic already exists with this unit order');
                 }
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 
@@ -218,14 +216,14 @@ class CourseController {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint
+                const violatedConstraint = (e.original as any).constraint;
                 if (violatedConstraint === CourseUnitContent.constraints.uniqueNamePerCourse) {
                     throw new AlreadyExistsError('A unit with that name already exists within this course');
                 } else if (violatedConstraint === CourseUnitContent.constraints.unqiueOrderPerCourse) {
                     throw new AlreadyExistsError('A unit already exists with this order');
                 }
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 
@@ -237,7 +235,7 @@ class CourseController {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint
+                const violatedConstraint = (e.original as any).constraint;
                 if (violatedConstraint === CourseWWTopicQuestion.constraints.uniqueOrderPerTopic) {
                     throw new AlreadyExistsError('A question with this topic order already exists');
                 }
@@ -245,12 +243,12 @@ class CourseController {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint
+                const violatedConstraint = (e.original as any).constraint;
                 if (violatedConstraint === CourseWWTopicQuestion.constraints.foreignKeyTopic) {
                     throw new NotFoundError('Could not create the question because the given topic does not exist');
                 }
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 
@@ -261,7 +259,7 @@ class CourseController {
                 questionId: result.id
             });
             return result;
-        })
+        });
     }
 
     async getQuestion(options: GetQuestionOptions): Promise<GetQuestionResult> {
@@ -288,7 +286,7 @@ class CourseController {
         return {
             // courseQuestion,
             rendererData
-        }
+        };
     }
 
     async submitAnswer(options: SubmitAnswerOptions): Promise<SubmitAnswerResult> {
@@ -303,7 +301,7 @@ class CourseController {
             return {
                 studentGrade: null,
                 studentWorkbook: null
-            }
+            };
         }
 
         const bestScore = Math.max(studentGrade.overallBestScore, options.score);
@@ -325,12 +323,12 @@ class CourseController {
             submitted: options.submitted,
             result: options.score,
             time: new Date()
-        })
+        });
 
         return {
             studentGrade,
             studentWorkbook
-        }
+        };
     }
 
     getCourseByCode(code: string): Promise<Course> {
@@ -338,7 +336,7 @@ class CourseController {
             where: {
                 code
             }
-        })
+        });
     }
 
     async createStudentEnrollment(enrollment: Partial<StudentEnrollment>): Promise<StudentEnrollment> {
@@ -351,9 +349,9 @@ class CourseController {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint
+                const violatedConstraint = (e.original as any).constraint;
                 if (violatedConstraint === StudentEnrollment.constraints.uniqueUserPerCourse) {
-                    throw new AlreadyExistsError('This user is already enrolled in this course')
+                    throw new AlreadyExistsError('This user is already enrolled in this course');
                 }
             }
             throw new WrappedError('Unknown error occurred', e);
@@ -368,7 +366,7 @@ class CourseController {
                 userId: enrollment.userId
             });
             return result;
-        })
+        });
     }
 
     async enrollByCode(enrollment: EnrollByCodeOptions): Promise<StudentEnrollment> {
@@ -431,19 +429,19 @@ class CourseController {
                         });
                     });
                 });
-            })
-        })
+            });
+        });
         return results;
     }
 
     async syncMissingGrades(): Promise<void> {
         const missingGrades = await this.findMissingGrades();
-        logger.info(`Found ${missingGrades.length} missing grades`)
+        logger.info(`Found ${missingGrades.length} missing grades`);
         await missingGrades.asyncForEach(async (missingGrade: FindMissingGradesResult) => {
             await this.createNewStudentGrade({
                 userId: missingGrade.student.id,
                 courseTopicQuestionId: missingGrade.question.id
-            })
+            });
         });
     }
 
@@ -487,7 +485,7 @@ class CourseController {
                 model: Course,
                 as: 'course',
                 attributes: [],
-            }]
+            }];
         }
 
         let topicInclude;
@@ -498,7 +496,7 @@ class CourseController {
                 as: 'unit',
                 attributes: [],
                 include: unitInclude || [],
-            }]
+            }];
         }
 
         let questionInclude;
@@ -520,7 +518,7 @@ class CourseController {
                 'id',
                 'bestScore',
                 'numAttempts'
-            ]
+            ];
             group = null;
         } else {
             attributes = [
@@ -586,7 +584,7 @@ class CourseController {
                 }]
             }],
             group: [`${CourseUnitContent.name}.${CourseUnitContent.rawAttributes.id.field}`, `${CourseUnitContent.name}.${CourseUnitContent.rawAttributes.id.field}`]
-        })
+        });
     }
 
     getStatisticsOnTopics(options: GetStatisticsOnTopicsOptions): Promise<CourseTopicContent[]> {
@@ -609,14 +607,14 @@ class CourseController {
                 as: 'grades',
                 attributes: []
             }]
-        }]
+        }];
 
         if (!_.isNil(courseId)) {
             include.push({
                 model: CourseUnitContent,
                 as: 'unit',
                 attributes: []
-            })
+            });
         }
 
 
@@ -633,7 +631,7 @@ class CourseController {
             ],
             include,
             group: [`${CourseTopicContent.name}.${CourseTopicContent.rawAttributes.id.field}`, `${CourseTopicContent.name}.${CourseTopicContent.rawAttributes.name.field}`]
-        })
+        });
     }
 
     getStatisticsOnQuestions(options: GetStatisticsOnQuestionsOptions): Promise<CourseWWTopicQuestion[]> {
@@ -651,7 +649,7 @@ class CourseController {
             model: StudentGrade,
             as: 'grades',
             attributes: []
-        }]
+        }];
 
         if (!_.isNil(courseId)) {
             include.push({
@@ -663,7 +661,7 @@ class CourseController {
                     as: 'unit',
                     attributes: []
                 }]
-            })
+            });
         }
 
         return CourseWWTopicQuestion.findAll({
@@ -679,7 +677,7 @@ class CourseController {
             ],
             include,
             group: [`${CourseWWTopicQuestion.name}.${CourseWWTopicQuestion.rawAttributes.id.field}`]
-        })
+        });
     }
 
     async getQuestions(options: GetQuestionsOptions): Promise<CourseWWTopicQuestion[]> {
@@ -689,7 +687,7 @@ class CourseController {
         } = options;
 
         try {
-            const include: sequelize.IncludeOptions[] = []
+            const include: sequelize.IncludeOptions[] = [];
             if (_.isNil(userId) === false) {
                 include.push({
                     model: StudentGrade,
@@ -698,12 +696,12 @@ class CourseController {
                     where: {
                         userId
                     }
-                })
+                });
             }
 
             const where: sequelize.WhereOptions = _({
                 courseTopicContentId
-            }).omitBy(_.isUndefined).value()
+            }).omitBy(_.isUndefined).value();
 
             const findOptions: sequelize.FindOptions = {
                 include,
@@ -711,8 +709,8 @@ class CourseController {
                 order: [
                     ['problemNumber', 'ASC'],
                 ]
-            }
-            return await CourseWWTopicQuestion.findAll(findOptions)
+            };
+            return await CourseWWTopicQuestion.findAll(findOptions);
         } catch (e) {
             throw new WrappedError('Error fetching problems', e);
         }
@@ -772,9 +770,9 @@ class CourseController {
                 where: {
                     ['$topic.unit.course.enrolledStudents.user_id$']: userId
                 }
-            })
+            });
         } catch (e) {
-            throw new WrappedError('Could not getQuestionsThatRequireGradesForUser', e)
+            throw new WrappedError('Could not getQuestionsThatRequireGradesForUser', e);
         }
     }
 
@@ -828,7 +826,7 @@ class CourseController {
                         [Sequelize.Op.eq]: null
                     }
                 }
-            })
+            });
         } catch (e) {
             throw new WrappedError('Could not getUsersThatRequireGradeForQuestion', e);
         }
@@ -839,32 +837,32 @@ class CourseController {
         const results = await this.getQuestionsThatRequireGradesForUser({
             courseId,
             userId
-        })
+        });
         await results.asyncForEach(async (result) => {
             await this.createNewStudentGrade({
                 courseTopicQuestionId: result.id,
                 userId: userId
-            })
-        })
-        return results.length
+            });
+        });
+        return results.length;
     }
 
     async createGradesForQuestion(options: CreateGradesForQuestionOptions): Promise<number> {
         const { questionId } = options;
         const results = await this.getUsersThatRequireGradeForQuestion({
             questionId
-        })
+        });
         await results.asyncForEach(async (result) => {
             await this.createNewStudentGrade({
                 courseTopicQuestionId: questionId,
                 userId: result.userId
-            })
-        })
-        return results.length
+            });
+        });
+        return results.length;
     }
 
     generateRandomSeed(): number {
-        return Math.floor(Math.random() * 999999)
+        return Math.floor(Math.random() * 999999);
     }
 
     async createNewStudentGrade(options: CreateNewStudentGradeOptions): Promise<StudentGrade> {

@@ -50,7 +50,7 @@ const webWorkDefProblemKeyMaps: Array<WebWorkDefKeyValueMap> = [
     new WebWorkDefKeyValueMap('prPeriod'),
     new WebWorkDefKeyValueMap('counts_parent_grade'),
     new WebWorkDefKeyValueMap('att_to_open_children'),
-]
+];
 
 export class Problem {
 }

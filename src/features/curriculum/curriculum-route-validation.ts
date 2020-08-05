@@ -12,7 +12,7 @@ export const createCurriculumValidation = {
         // university is assumed
     },
     query: {}
-}
+};
 
 export const createCurriculumUnitValidation = {
     params: {},
@@ -23,7 +23,7 @@ export const createCurriculumUnitValidation = {
         contentOrder: Joi.number().required(),
     },
     query: {}
-}
+};
 
 export const createCurriculumTopicValidation = {
     params: {},
@@ -34,7 +34,7 @@ export const createCurriculumTopicValidation = {
         contentOrder: Joi.number().required(),
     },
     query: {}
-}
+};
 
 export const updateCurriculumUnitValidation = {
     params: {
@@ -47,7 +47,7 @@ export const updateCurriculumUnitValidation = {
         contentOrder: Joi.number().optional(),
     },
     query: {}
-}
+};
 
 export const updateCurriculumTopicValidation = {
     params: {
@@ -60,7 +60,7 @@ export const updateCurriculumTopicValidation = {
         contentOrder: Joi.number().optional(),
     },
     query: {}
-}
+};
 
 export const createCurriculumTopicQuestionValidation = {
     params: {},
@@ -70,7 +70,7 @@ export const createCurriculumTopicQuestionValidation = {
         curriculumTopicContentId: Joi.number().required(),
     },
     query: {}
-}
+};
 
 export const getCurriculumValidation = {
     params: {
@@ -78,10 +78,10 @@ export const getCurriculumValidation = {
     },
     body: {},
     query: {}
-}
+};
 
 export const listCurriculumValidation = {
     params: {},
     body: {},
     query: {}
-}
+};

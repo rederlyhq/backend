@@ -34,7 +34,7 @@ class CurriculumController {
                 ['units', 'topics', 'contentOrder', 'ASC'],
                 ['units', 'topics', 'questions', 'problemNumber', 'ASC'],
             ]
-        })
+        });
     }
 
     getCurriculums(): Bluebird<Curriculum[]> {
@@ -49,12 +49,12 @@ class CurriculumController {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint
+                const violatedConstraint = (e.original as any).constraint;
                 if (violatedConstraint === Curriculum.constraints.uniqueNamePerUniversity) {
                     throw new AlreadyExistsError('A curriculum with this name already exists for this university');
                 }
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 
@@ -70,7 +70,7 @@ class CurriculumController {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint
+                const violatedConstraint = (e.original as any).constraint;
                 if (violatedConstraint === CurriculumUnitContent.constraints.uniqueNamePerCurriculum) {
                     throw new AlreadyExistsError('A unit with this name already exists for this curriculum');
                 } else if (violatedConstraint === CurriculumUnitContent.constraints.uniqueOrderPerCurriculum) {
@@ -80,12 +80,12 @@ class CurriculumController {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint
+                const violatedConstraint = (e.original as any).constraint;
                 if (violatedConstraint === CurriculumUnitContent.constraints.foreignKeyCurriculum) {
                     throw new NotFoundError('Could not create the unit because the given curriculum does not exist');
                 }
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 
@@ -97,7 +97,7 @@ class CurriculumController {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint
+                const violatedConstraint = (e.original as any).constraint;
                 if (violatedConstraint === CurriculumTopicContent.constraints.uniqueNamePerUnit) {
                     throw new AlreadyExistsError('A topic with this name already exists for this unit');
                 } else if (violatedConstraint === CurriculumTopicContent.constraints.uniqueOrderPerUnit) {
@@ -107,12 +107,12 @@ class CurriculumController {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint
+                const violatedConstraint = (e.original as any).constraint;
                 if (violatedConstraint === CurriculumTopicContent.constraints.foreignKeyUnit) {
                     throw new NotFoundError('Could not create the topic because the given unit does not exist');
                 }
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 
@@ -124,7 +124,7 @@ class CurriculumController {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint
+                const violatedConstraint = (e.original as any).constraint;
                 if (violatedConstraint === CurriculumWWTopicQuestion.constraints.uniqueOrderPerTopic) {
                     throw new AlreadyExistsError('A question already exists at this order for this topic');
                 }
@@ -132,12 +132,12 @@ class CurriculumController {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint
+                const violatedConstraint = (e.original as any).constraint;
                 if (violatedConstraint === CurriculumWWTopicQuestion.constraints.foreignKeyTopic) {
                     throw new AlreadyExistsError('Could not create the question because the given topic does not exist');
                 }
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 
@@ -153,14 +153,14 @@ class CurriculumController {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint
+                const violatedConstraint = (e.original as any).constraint;
                 if (violatedConstraint === CurriculumTopicContent.constraints.uniqueNamePerUnit) {
                     throw new AlreadyExistsError('A topic with this name already exists for this unit');
                 } else if (violatedConstraint === CurriculumTopicContent.constraints.uniqueOrderPerUnit) {
                     throw new AlreadyExistsError('A topic with this order already exists for this unit');
                 }
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 
@@ -176,14 +176,14 @@ class CurriculumController {
                 // The sequelize type as original as error but the error comes back with this additional field
                 // To workaround the typescript error we must declare any
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint
+                const violatedConstraint = (e.original as any).constraint;
                 if (violatedConstraint === CurriculumUnitContent.constraints.uniqueNamePerCurriculum) {
                     throw new AlreadyExistsError('A unit with this name already exists for this curriculum');
                 } else if (violatedConstraint === CurriculumUnitContent.constraints.uniqueOrderPerCurriculum) {
                     throw new AlreadyExistsError('A unit with this order already exists for this curriculum');
                 }
             }
-            throw new WrappedError("Unknown error occurred", e);
+            throw new WrappedError('Unknown error occurred', e);
         }
     }
 }

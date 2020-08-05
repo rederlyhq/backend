@@ -7,11 +7,11 @@ import cookieParser = require('cookie-parser');
 const router = require('./routes');
 
 import express = require('express');
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from 'express';
 
 import morgan = require('morgan');
 import passport = require('passport');
-import rateLimit = require("express-rate-limit");
+import rateLimit = require('express-rate-limit');
 import Boom = require('boom');
 import AlreadyExistsError from './exceptions/already-exists-error';
 import NotFoundError from './exceptions/not-found-error';
@@ -31,7 +31,13 @@ const {
 } = configurations.server.limiter;
 
 const app = express();
-app.use(morgan("dev", { stream: { write: (message): void => { logger.info(message) } } }));
+app.use(morgan('dev', {
+    stream: {
+        write: (message): void => {
+            logger.info(message);
+        }
+    }
+}));
 
 const limiter = rateLimit({
     windowMs: windowLength,
@@ -56,7 +62,7 @@ app.use(basePath, router);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
 app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
     if (obj instanceof AlreadyExistsError || obj instanceof NotFoundError) {
-        next(Boom.badRequest(obj.message))
+        next(Boom.badRequest(obj.message));
     } else {
         next(obj);
     }
@@ -75,7 +81,7 @@ app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
     } else if (obj.status) {
         return res.status(obj.status).json(obj);
     } else {
-        const rederlyReference = `rederly-reference-${new Date().getTime()}-${Math.floor(Math.random() * 1000000)}`
+        const rederlyReference = `rederly-reference-${new Date().getTime()}-${Math.floor(Math.random() * 1000000)}`;
         logger.error(`${rederlyReference} - ${obj.stack}`);
         const data: ErrorResponse = {
             statusCode: 500,
@@ -98,4 +104,4 @@ export const listen = (): Promise<null> => {
             resolve();
         });
     });
-}
+};

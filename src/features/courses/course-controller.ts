@@ -17,6 +17,7 @@ import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import appSequelize from '../../database/app-sequelize';
 import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions } from './course-types';
+import { Constants } from '../../constants';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -100,7 +101,7 @@ class CourseController {
 
     private checkCourseError(e: Error): void {
         if (e instanceof BaseError === false) {
-            throw new WrappedError('An unknown application error occurred', e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
         const databaseError = e as BaseError;
         switch (databaseError.originalAsSequelizeError?.constraint) {
@@ -109,7 +110,7 @@ class CourseController {
             case Course.constraints.uniqueCourseCode:
                 throw new AlreadyExistsError('A course already exists with this course code');
             default:
-                throw new WrappedError('An unknown database error occurred', e);
+                throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
         }
     }
 
@@ -118,13 +119,13 @@ class CourseController {
             return await Course.create(courseObject);
         } catch (e) {
             this.checkCourseError(e);
-            throw new WrappedError('An unknown application error occurred', e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
     }
 
     private checkCourseUnitError(e: Error): void {
         if (e instanceof BaseError === false) {
-            throw new WrappedError('An unknown application error occurred', e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
         const databaseError = e as BaseError;
         switch (databaseError.originalAsSequelizeError?.constraint) {
@@ -136,7 +137,7 @@ class CourseController {
             case CourseUnitContent.constraints.foreignKeyCourse:
                 throw new NotFoundError('The given course was not found to create the unit');
             default:
-                throw new WrappedError('An unknown database error occurred', e);
+                throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
         }
     }
 
@@ -145,13 +146,13 @@ class CourseController {
             return await CourseUnitContent.create(courseUnitContent);
         } catch (e) {
             this.checkCourseUnitError(e);
-            throw new WrappedError('An unknown application error occurred', e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
     }
 
     private checkCourseTopicError(e: Error): void {
         if (e instanceof BaseError === false) {
-            throw new WrappedError('An unknown application error occurred', e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
         const databaseError = e as BaseError;
         switch (databaseError.originalAsSequelizeError?.constraint) {
@@ -164,7 +165,7 @@ class CourseController {
             case CourseTopicContent.constraints.foreignKeyTopicType:
                 throw new NotFoundError('Invalid topic type provided');
             default:
-                throw new WrappedError('An unknown database error occurred', e);
+                throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
         }
     }
 
@@ -173,7 +174,7 @@ class CourseController {
             return await CourseTopicContent.create(courseTopicContent);
         } catch (e) {
             this.checkCourseTopicError(e);
-            throw new WrappedError('An unknown application error occurred', e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
     }
 
@@ -186,7 +187,7 @@ class CourseController {
             return updates[0];
         } catch (e) {
             this.checkCourseTopicError(e);
-            throw new WrappedError('An unknown application error occurred', e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
     }
 
@@ -199,13 +200,13 @@ class CourseController {
             return updates[0];
         } catch (e) {
             this.checkCourseUnitError(e);
-            throw new WrappedError('An unknown application error occurred', e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
     }
 
     private checkQuestionError(e: Error): void {
         if (e instanceof BaseError === false) {
-            throw new WrappedError('An unknown application error occurred', e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
         const databaseError = e as BaseError;
         switch (databaseError.originalAsSequelizeError?.constraint) {
@@ -214,7 +215,7 @@ class CourseController {
             case CourseWWTopicQuestion.constraints.foreignKeyTopic:
                 throw new NotFoundError('Could not create the question because the given topic does not exist');
             default:
-                throw new WrappedError('An unknown database error occurred', e);
+                throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
         }
     }
 
@@ -223,7 +224,7 @@ class CourseController {
             return await CourseWWTopicQuestion.create(question);
         } catch (e) {
             this.checkQuestionError(e);
-            throw new WrappedError('An unknown application error occurred', e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
     }
 
@@ -320,7 +321,7 @@ class CourseController {
 
     private checkStudentEnrollmentError(e: Error): void {
         if (e instanceof BaseError === false) {
-            throw new WrappedError('An unknown application error occurred', e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
 
         if (e instanceof ForeignKeyConstraintError) {
@@ -332,7 +333,7 @@ class CourseController {
             case StudentEnrollment.constraints.uniqueUserPerCourse:
                 throw new AlreadyExistsError('This user is already enrolled in this course');
             default:
-                throw new WrappedError('An unknown database error occurred', e);
+                throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
         }
     }
 
@@ -341,7 +342,7 @@ class CourseController {
             return await StudentEnrollment.create(enrollment);
         } catch (e) {
             this.checkStudentEnrollmentError(e);
-            throw new WrappedError('An unknown application error occurred', e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
     }
 

@@ -57,11 +57,11 @@ export class Problem {
 
 export default class WebWorkDef {
     public problems: Array<Problem> = [];
-    public assignmentType: string;
+    public assignmentType?: string;
 
     constructor(content: string) {
         const lines = content.split('\n');
-        let currentProblem: Problem = null;
+        let currentProblem: Problem | null = null;
         lineLoop: for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
             const line = lines[lineNumber].trim();
 

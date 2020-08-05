@@ -31,7 +31,7 @@ const {
 } = configurations.auth;
 
 class UserController {
-    getUserByEmail(email: string): Bluebird<User> {
+    getUserByEmail(email: string): Promise<User> {
         return User.findOne({
             where: {
                 email
@@ -83,6 +83,9 @@ class UserController {
                 }
 
                 if (listOptions.filters.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
+                    if (_.isNil(sequelizeGradeInclude.include)) {
+                        throw new Error('Grade join for list users has an undefined include');
+                    }
                     sequelizeGradeInclude.include.push({
                         model: StudentWorkbook,
                         as: 'workbooks'
@@ -122,7 +125,7 @@ class UserController {
         });
     }
 
-    async email(emailOptions?: EmailOptions): Promise<number[]> {
+    async email(emailOptions: EmailOptions): Promise<number[]> {
         const users = await this.list({
             filters: emailOptions.listUsersFilter
         });
@@ -188,6 +191,10 @@ class UserController {
         }
 
         if (options.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
+            if (_.isNil(sequelizeGradeInclude.include)) {
+                throw new Error('Grade join for get user has an undefined include');
+            }
+
             sequelizeGradeInclude.include.push({
                 model: StudentWorkbook,
                 as: 'workbooks'
@@ -209,7 +216,7 @@ class UserController {
         return User.create(userObject);
     }
 
-    getSession(uuid: string): Bluebird<Session> {
+    getSession(uuid: string): Promise<Session> {
         return Session.findOne({
             where: {
                 uuid,
@@ -228,7 +235,7 @@ class UserController {
         });
     }
 
-    async login(email: string, password: string): Promise<Session> {
+    async login(email: string, password: string): Promise<Session | null> {
         const user: User = await this.getUserByEmail(email);
         if (user == null)
             return null;
@@ -290,6 +297,9 @@ class UserController {
             newUser = await this.createUser(userObject);
         } catch (e) {
             if (e instanceof UniqueConstraintError) {
+                if(_.isNil(User.rawAttributes.email.field)) {
+                    throw new Error('Raw attributes does not have a field name in register users error handling');
+                }
                 if (Object.keys(e.fields).includes(User.rawAttributes.email.field)) {
                     throw new AlreadyExistsError(`The email ${e.fields[User.rawAttributes.email.field]} already exists`);
                 }

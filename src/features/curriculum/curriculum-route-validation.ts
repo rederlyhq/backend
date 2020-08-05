@@ -51,7 +51,7 @@ export const updateCurriculumUnitValidation = {
 
 export const updateCurriculumTopicValidation = {
     params: {
-        id: Joi.number()
+        id: Joi.number().required()
     },
     body: {
         name: Joi.string().optional(),

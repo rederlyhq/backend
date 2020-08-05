@@ -118,6 +118,7 @@ class CourseController {
             return await Course.create(courseObject);
         } catch (e) {
             this.checkCourseError(e);
+            throw new WrappedError('An unknown application error occurred', e);
         }
     }
 
@@ -144,6 +145,7 @@ class CourseController {
             return await CourseUnitContent.create(courseUnitContent);
         } catch (e) {
             this.checkCourseUnitError(e);
+            throw new WrappedError('An unknown application error occurred', e);
         }
     }
 
@@ -171,6 +173,7 @@ class CourseController {
             return await CourseTopicContent.create(courseTopicContent);
         } catch (e) {
             this.checkCourseTopicError(e);
+            throw new WrappedError('An unknown application error occurred', e);
         }
     }
 
@@ -183,6 +186,7 @@ class CourseController {
             return updates[0];
         } catch (e) {
             this.checkCourseTopicError(e);
+            throw new WrappedError('An unknown application error occurred', e);
         }
     }
 
@@ -195,6 +199,7 @@ class CourseController {
             return updates[0];
         } catch (e) {
             this.checkCourseUnitError(e);
+            throw new WrappedError('An unknown application error occurred', e);
         }
     }
 
@@ -218,6 +223,7 @@ class CourseController {
             return await CourseWWTopicQuestion.create(question);
         } catch (e) {
             this.checkQuestionError(e);
+            throw new WrappedError('An unknown application error occurred', e);
         }
     }
 
@@ -238,7 +244,11 @@ class CourseController {
             }
         });
 
-        const studentGrade: StudentGrade = await StudentGrade.findOne({
+        if(_.isNil(courseQuestion)) {
+            throw new NotFoundError('Could not find the question in the database');
+        }
+
+        const studentGrade: StudentGrade | null = await StudentGrade.findOne({
             where: {
                 userId: options.userId,
                 courseWWTopicQuestionId: options.questionId
@@ -331,10 +341,11 @@ class CourseController {
             return await StudentEnrollment.create(enrollment);
         } catch (e) {
             this.checkStudentEnrollmentError(e);
+            throw new WrappedError('An unknown application error occurred', e);
         }
     }
 
-    async enroll(enrollment: Partial<StudentEnrollment>): Promise<StudentEnrollment> {
+    async enroll(enrollment: CreateGradesForUserEnrollmentOptions): Promise<StudentEnrollment> {
         return await appSequelize.transaction(async () => {
             const result = await this.createStudentEnrollment(enrollment);
             await this.createGradesForUserEnrollment({
@@ -393,11 +404,11 @@ class CourseController {
         });
 
         const results: FindMissingGradesResult[] = [];
-        result.forEach((student: User & { courseEnrollments: StudentEnrollment[] }) => {
-            student.courseEnrollments.forEach((studentEnrollment: StudentEnrollment & { course: { units: CourseUnitContent[] } }) => {
-                studentEnrollment.course.units.forEach((unit: CourseUnitContent & { topics: CourseTopicContent[] }) => {
-                    unit.topics.forEach((topic: CourseTopicContent & { questions: CourseWWTopicQuestion[] }) => {
-                        topic.questions.forEach((question: CourseWWTopicQuestion) => {
+        result.forEach((student: User) => {
+            student.courseEnrollments?.forEach((studentEnrollment: StudentEnrollment) => {
+                studentEnrollment.course?.units?.forEach((unit: CourseUnitContent) => {
+                    unit.topics?.forEach((topic: CourseTopicContent) => {
+                        topic.questions?.forEach((question: CourseWWTopicQuestion) => {
                             results.push({
                                 student,
                                 question,
@@ -434,18 +445,19 @@ class CourseController {
             questionId,
             topicId,
             unitId
-        ].reduce((accumulator, val) => accumulator + (!_.isNil(val) && 1 || 0), 0);
+        ].reduce((accumulator, val) => (accumulator || 0) + (!_.isNil(val) && 1 || 0), 0);
 
         if (setFilterCount !== 1) {
             throw new Error(`One filter must be set but found ${setFilterCount}`);
         }
 
-        const where = _({
+        // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
+        const where: sequelize.WhereOptions = _({
             [`$question.topic.unit.course.${Course.rawAttributes.id.field}$`]: courseId,
             [`$question.topic.unit.${CourseUnitContent.rawAttributes.id.field}$`]: unitId,
             [`$question.topic.${CourseTopicContent.rawAttributes.id.field}$`]: topicId,
             [`$question.${CourseWWTopicQuestion.rawAttributes.id.field}$`]: questionId,
-        }).omitBy(_.isUndefined).value();
+        }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
 
         const totalProblemCountCalculationString = `COUNT(question.${CourseWWTopicQuestion.rawAttributes.id.field})`;
         const pendingProblemCountCalculationString = `COUNT(CASE WHEN ${StudentGrade.rawAttributes.numAttempts.field} = 0 THEN ${StudentGrade.rawAttributes.numAttempts.field} END)`;
@@ -488,14 +500,15 @@ class CourseController {
 
         let attributes: sequelize.FindAttributeOptions;
         // Group cannot be empty array, use null if there is no group clause
-        let group: sequelize.GroupOption;
+        let group: string[] | undefined = undefined;
         if (_.isNil(questionId) === false) {
             attributes = [
                 'id',
                 'bestScore',
                 'numAttempts'
             ];
-            group = null;
+            // This should already be the case but let's guarentee it
+            group = undefined;
         } else {
             attributes = [
                 [sequelize.fn('avg', sequelize.col(`${StudentGrade.rawAttributes.bestScore.field}`)), 'average'],
@@ -529,9 +542,10 @@ class CourseController {
             courseId
         } = options.where;
 
-        const where = _({
+        // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
+        const where: sequelize.WhereOptions = _({
             courseId,
-        }).omitBy(_.isNil).value();
+        }).omitBy(_.isNil).value() as sequelize.WhereOptions;
 
         return CourseUnitContent.findAll({
             where,
@@ -568,11 +582,12 @@ class CourseController {
             courseUnitContentId,
             courseId
         } = options.where;
-
-        const where = _({
+        
+        // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
+        const where: sequelize.WhereOptions = _({
             courseUnitContentId,
             [`$unit.${CourseUnitContent.rawAttributes.courseId.field}$`]: courseId
-        }).omitBy(_.isNil).value();
+        }).omitBy(_.isNil).value() as sequelize.WhereOptions;
 
         const include: sequelize.IncludeOptions[] = [{
             model: CourseWWTopicQuestion,
@@ -616,10 +631,11 @@ class CourseController {
             courseId
         } = options.where;
 
-        const where = _({
+        // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
+        const where: sequelize.WhereOptions = _({
             courseTopicContentId,
             [`$topic.unit.${CourseUnitContent.rawAttributes.courseId.field}$`]: courseId
-        }).omitBy(_.isNil).value();
+        }).omitBy(_.isNil).value() as sequelize.WhereOptions;
 
         const include: sequelize.IncludeOptions[] = [{
             model: StudentGrade,
@@ -664,20 +680,21 @@ class CourseController {
 
         try {
             const include: sequelize.IncludeOptions[] = [];
-            if (_.isNil(userId) === false) {
+            if (!_.isNil(userId)) {
                 include.push({
                     model: StudentGrade,
                     as: 'grades',
                     required: false,
                     where: {
-                        userId
+                        userId: userId
                     }
                 });
             }
 
+            // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
             const where: sequelize.WhereOptions = _({
                 courseTopicContentId
-            }).omitBy(_.isUndefined).value();
+            }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
 
             const findOptions: sequelize.FindOptions = {
                 include,

@@ -5,7 +5,7 @@ import * as _ from 'lodash';
 
 const getPathStat = (filePath: string): Promise<fs.Stats> => {
     return new Promise((resolve, reject) => {
-        fs.stat(filePath, (error: Error, stats: fs.Stats) => {
+        fs.stat(filePath, (error: Error | null, stats: fs.Stats) => {
             if (error) {
                 reject(error);
                 return;
@@ -20,7 +20,7 @@ const isDirectory = async (filePath: string): Promise<boolean> => {
 };
 const listFilesInDirectory = (filePath: string): Promise<string[]> => {
     return new Promise((resolve, reject) => {
-        fs.readdir(filePath, (err: Error, files: string[]) => {
+        fs.readdir(filePath, (err: Error | null, files: string[]) => {
             if (err) {
                 reject(err);
                 return;
@@ -54,7 +54,7 @@ const writeFile = (filePath: string, fileContent: string): Promise<void> => {
             encoding: 'utf8',
             flag: 'w'
         };
-        fs.writeFile(filePath, fileContent, options, (err: Error) => {
+        fs.writeFile(filePath, fileContent, options, (err: Error | null) => {
             if (err) {
                 reject(err);
                 return;

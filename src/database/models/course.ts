@@ -47,6 +47,8 @@ export default class Course extends Model {
     public sectionCode!: string;
     public semesterCode!: string;
 
+    public units?: CourseUnitContent[];
+
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;

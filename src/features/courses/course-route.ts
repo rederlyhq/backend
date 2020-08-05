@@ -11,18 +11,20 @@ import multer = require('multer');
 import WebWorkDef from '../../utilities/web-work-def-parser';
 import * as proxy from 'express-http-proxy';
 import * as qs from 'qs';
+import * as _ from 'lodash';
 import configurations from '../../configurations';
 import WrappedError from '../../exceptions/wrapped-error';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
 import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest } from './course-route-request-types';
 import Boom = require('boom');
+import { Constants } from '../../constants';
 
 const fileUpload = multer();
 
 router.get('/statistics/units',
     authenticationMiddleware,
     validate(getStatisticsOnUnitsValidation),
-    asyncHandler(async (req: RederlyExpressRequest<GetStatisticsOnUnitsRequest.params, unknown, GetStatisticsOnUnitsRequest.body, GetStatisticsOnUnitsRequest.query>, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<GetStatisticsOnUnitsRequest.params, unknown, GetStatisticsOnUnitsRequest.body, GetStatisticsOnUnitsRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const stats = await courseController.getStatisticsOnUnits({
                 where: {
@@ -38,7 +40,7 @@ router.get('/statistics/units',
 router.get('/statistics/topics',
     authenticationMiddleware,
     validate(getStatisticsOnTopicsValidation),
-    asyncHandler(async (req: RederlyExpressRequest<GetStatisticsOnTopicsRequest.params, unknown, GetStatisticsOnTopicsRequest.body, GetStatisticsOnTopicsRequest.query>, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<GetStatisticsOnTopicsRequest.params, unknown, GetStatisticsOnTopicsRequest.body, GetStatisticsOnTopicsRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const stats = await courseController.getStatisticsOnTopics({
                 where: {
@@ -55,7 +57,7 @@ router.get('/statistics/topics',
 router.get('/statistics/questions',
     authenticationMiddleware,
     validate(getStatisticsOnQuestionsValidation),
-    asyncHandler(async (req: RederlyExpressRequest<GetStatisticsOnQuestionsRequest.params, unknown, GetStatisticsOnQuestionsRequest.body, GetStatisticsOnQuestionsRequest.query>, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<GetStatisticsOnQuestionsRequest.params, unknown, GetStatisticsOnQuestionsRequest.body, GetStatisticsOnQuestionsRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const stats = await courseController.getStatisticsOnQuestions({
                 where: {
@@ -81,8 +83,11 @@ router.post('/def',
 router.post('/',
     authenticationMiddleware,
     validate(createCourseValidation),
-    asyncHandler(async (req: RederlyExpressRequest<CreateCourseRequest.params, unknown, CreateCourseRequest.body, CreateCourseRequest.query>, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<CreateCourseRequest.params, unknown, CreateCourseRequest.body, CreateCourseRequest.query>, _res: Response, next: NextFunction) => {
         try {
+            if(_.isNil(req.session)) {
+                throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+            }
             const session = req.session;
             const user = await session.getUser();
             const university = await user.getUniversity();
@@ -101,7 +106,7 @@ router.post('/',
 router.post('/unit',
     authenticationMiddleware,
     validate(createCourseUnitValidation),
-    asyncHandler(async (req: RederlyExpressRequest<CreateCourseUnitRequest.params, unknown, CreateCourseUnitRequest.body, CreateCourseUnitRequest.query>, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<CreateCourseUnitRequest.params, unknown, CreateCourseUnitRequest.body, CreateCourseUnitRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const newUnit = await courseController.createUnit({
                 ...req.body
@@ -116,7 +121,7 @@ router.post('/unit',
 router.post('/topic',
     authenticationMiddleware,
     validate(createCourseTopicValidation),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
         try {
             const newTopic = await courseController.createTopic({
                 ...req.body
@@ -131,7 +136,7 @@ router.post('/topic',
 router.get('/grades',
     authenticationMiddleware,
     validate(getGradesValidation),
-    asyncHandler(async (req: RederlyExpressRequest<GetGradesRequest.params, unknown, GetGradesRequest.body, GetGradesRequest.query>, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<GetGradesRequest.params, unknown, GetGradesRequest.body, GetGradesRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const grades = await courseController.getGrades({
                 where: {
@@ -150,9 +155,13 @@ router.get('/grades',
 router.get('/questions',
     authenticationMiddleware,
     validate(getQuestionsValidation),
-    asyncHandler(async (req: RederlyExpressRequest<GetQuestionsRequest.params, unknown, GetQuestionsRequest.body, GetQuestionsRequest.query>, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<GetQuestionsRequest.params, unknown, GetQuestionsRequest.body, GetQuestionsRequest.query>, _res: Response, next: NextFunction) => {
+        if(_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+
         const userIdInput = req.query.userId;
-        let userId: number;
+        let userId: number | undefined;
         if (typeof userIdInput === 'string') {
             if (userIdInput === 'me') {
                 const session = req.session;
@@ -177,9 +186,9 @@ router.put('/topic/:id',
     validate(updateCourseTopicValidation),
     // This is due to a typescript issue where the type mismatches extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseTopicRequest.body, UpdateCourseTopicRequest.query>, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseTopicRequest.body, UpdateCourseTopicRequest.query>, _res: Response, next: NextFunction) => {
+        const params = req.params as UpdateCourseTopicRequest.params;
         try {
-            const params = req.params as UpdateCourseTopicRequest.params;
             const updates = await courseController.updateTopic({
                 where: {
                     id: params.id
@@ -200,7 +209,7 @@ router.put('/unit/:id',
     validate(updateCourseUnitValidation),
     // This is to work around "extractMap" error
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseUnitRequest.body, UpdateCourseUnitRequest.query>, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseUnitRequest.body, UpdateCourseUnitRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const params = req.params as UpdateCourseUnitRequest.params;
             const updates = await courseController.updateUnit({
@@ -221,7 +230,7 @@ router.put('/unit/:id',
 router.post('/question',
     authenticationMiddleware,
     validate(createCourseTopicQuestionValidation),
-    asyncHandler(async (req: RederlyExpressRequest<CreateCourseTopicQuestionRequest.params, unknown, CreateCourseTopicQuestionRequest.body, CreateCourseTopicQuestionRequest.query>, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<CreateCourseTopicQuestionRequest.params, unknown, CreateCourseTopicQuestionRequest.body, CreateCourseTopicQuestionRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const newQuestion = await courseController.addQuestion({
                 ...req.body
@@ -238,7 +247,11 @@ router.get('/question/:id',
     validate(getQuestionValidation),
     // This is a typescript workaround since it tries to use the type extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetQuestionRequest.body, GetQuestionRequest.query>, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetQuestionRequest.body, GetQuestionRequest.query>, _res: Response, next: NextFunction) => {
+        if(_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+
         const session = req.session;
 
         const params = req.params as GetQuestionRequest.params;
@@ -271,7 +284,11 @@ router.post('/question/:id',
                 formURL: req.originalUrl,
             })}`;
         },
-        userResDecorator: async (proxyRes, proxyResData, userReq: RederlyExpressRequest) => {
+        userResDecorator: async (_proxyRes, proxyResData, userReq: RederlyExpressRequest) => {
+            if(_.isNil(userReq.session)) {
+                throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+            }
+
             let data = proxyResData.toString('utf8');
             try {
                 data = JSON.parse(data);
@@ -309,7 +326,7 @@ router.post('/question/:id',
 router.get('/',
     authenticationMiddleware,
     validate(listCoursesValidation),
-    asyncHandler(async (req: RederlyExpressRequest<ListCoursesRequest.params, unknown, ListCoursesRequest.body, ListCoursesRequest.query>, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<ListCoursesRequest.params, unknown, ListCoursesRequest.body, ListCoursesRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const courses = await courseController.getCourses({
                 filter: {
@@ -326,7 +343,7 @@ router.get('/',
 router.get('/topics',
     authenticationMiddleware,
     validate(getTopicsValidation),
-    asyncHandler(async (req: RederlyExpressRequest<GetTopicsRequest.params, unknown, GetTopicsRequest.body, GetTopicsRequest.query>, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<GetTopicsRequest.params, unknown, GetTopicsRequest.body, GetTopicsRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const result = await courseController.getTopics({
                 courseId: req.query.courseId,
@@ -343,7 +360,7 @@ router.get('/:id',
     validate(getCourseValidation),
     // This is a work around because typescript has errors with "extractMap"
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetCourseRequest.body, GetCourseRequest.query>, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetCourseRequest.body, GetCourseRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const params = req.params as GetCourseRequest.params;
             const course = await courseController.getCourseById(params.id);
@@ -356,7 +373,7 @@ router.get('/:id',
 router.post('/enroll',
     authenticationMiddleware,
     validate(enrollInCourseValidation),
-    asyncHandler(async (req: RederlyExpressRequest<EnrollInCourseRequest.params, unknown, EnrollInCourseRequest.body, EnrollInCourseRequest.query>, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<EnrollInCourseRequest.params, unknown, EnrollInCourseRequest.body, EnrollInCourseRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const enrollment = await courseController.enroll({
                 ...req.body,
@@ -374,7 +391,11 @@ router.post('/enroll',
 router.post('/enroll/:code',
     authenticationMiddleware,
     validate(enrollInCourseByCodeValidation),
-    asyncHandler(async (req: RederlyExpressRequest<EnrollInCourseByCodeRequest.params, unknown, EnrollInCourseByCodeRequest.body, EnrollInCourseByCodeRequest.query>, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<EnrollInCourseByCodeRequest.params | { [key: string]: string }, unknown, EnrollInCourseByCodeRequest.body, EnrollInCourseByCodeRequest.query>, _res: Response, next: NextFunction) => {
+        if(_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+
         const session = req.session;
         try {
             const enrollment = await courseController.enrollByCode({

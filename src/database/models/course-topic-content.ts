@@ -22,6 +22,7 @@ export default class CourseTopicContent extends Model {
 
     public readonly curriculumTopicContent!: CurriculumTopicContent;
     public readonly topicType!: TopicType;
+    public readonly questions?: CourseWWTopicQuestion[];
 
     // timestamps!
     public readonly createdAt!: Date;

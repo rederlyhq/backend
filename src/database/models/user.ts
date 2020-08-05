@@ -12,6 +12,8 @@ export default class User extends Model {
   public verifyToken?: string;
   public verified!: boolean;
 
+  public courseEnrollments?: StudentEnrollment[]
+
   public getUniversity!: HasOneGetAssociationMixin<University>;
   public getRole!: BelongsToGetAssociationMixin<Permission>;
 

@@ -4,7 +4,7 @@ import UniversityCurriculumPermission from '../../database/models/university-cur
 import CurriculumUnitContent from '../../database/models/curriculum-unit-content';
 import CurriculumTopicContent from '../../database/models/curriculum-topic-content';
 import CurriculumWWTopicQuestion from '../../database/models/curriculum-ww-topic-question';
-import { UniqueConstraintError } from 'sequelize';
+import { UniqueConstraintError, BaseError } from 'sequelize';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import WrappedError from '../../exceptions/wrapped-error';
 import { ForeignKeyConstraintError } from 'sequelize';
@@ -41,20 +41,24 @@ class CurriculumController {
         return Curriculum.findAll();
     }
 
+    private checkCurriculumError(e: Error): void {
+        if (e instanceof BaseError === false) {
+            throw new WrappedError('An unknown application error occurred', e);
+        }
+        const databaseError = e as BaseError;
+        switch (databaseError.originalAsSequelizeError?.constraint) {
+            case Curriculum.constraints.uniqueNamePerUniversity:
+                throw new AlreadyExistsError('A curriculum with this name already exists for this university');
+            default:
+                throw new WrappedError('An unknown database error occurred', e);
+        }
+    }
+
     async createCurriculum(curriculumObject: Partial<Curriculum>): Promise<Curriculum> {
         try {
             return await Curriculum.create(curriculumObject);
         } catch (e) {
-            if (e instanceof UniqueConstraintError) {
-                // The sequelize type as original as error but the error comes back with this additional field
-                // To workaround the typescript error we must declare any
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint;
-                if (violatedConstraint === Curriculum.constraints.uniqueNamePerUniversity) {
-                    throw new AlreadyExistsError('A curriculum with this name already exists for this university');
-                }
-            }
-            throw new WrappedError('Unknown error occurred', e);
+            this.checkCurriculumError(e);
         }
     }
 
@@ -62,30 +66,45 @@ class CurriculumController {
         return UniversityCurriculumPermission.create(universityCurriculumPermission);
     }
 
+    private checkUnitError(e: Error): void {
+        if (e instanceof BaseError === false) {
+            throw new WrappedError('An unknown application error occurred', e);
+        }
+        const databaseError = e as BaseError;
+        switch (databaseError.originalAsSequelizeError?.constraint) {
+            case CurriculumUnitContent.constraints.uniqueNamePerCurriculum:
+                throw new AlreadyExistsError('A unit with this name already exists for this curriculum');
+            case CurriculumUnitContent.constraints.uniqueOrderPerCurriculum:
+                throw new AlreadyExistsError('A unit with this order already exists for this curriculum');
+            case CurriculumUnitContent.constraints.foreignKeyCurriculum:
+                throw new NotFoundError('Could not create the unit because the given curriculum does not exist');
+            default:
+                throw new WrappedError('An unknown database error occurred', e);
+        }
+    }
+
     async createUnit(unit: Partial<CurriculumUnitContent>): Promise<CurriculumUnitContent> {
         try {
             return await CurriculumUnitContent.create(unit);
         } catch (e) {
-            if (e instanceof UniqueConstraintError) {
-                // The sequelize type as original as error but the error comes back with this additional field
-                // To workaround the typescript error we must declare any
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint;
-                if (violatedConstraint === CurriculumUnitContent.constraints.uniqueNamePerCurriculum) {
-                    throw new AlreadyExistsError('A unit with this name already exists for this curriculum');
-                } else if (violatedConstraint === CurriculumUnitContent.constraints.uniqueOrderPerCurriculum) {
-                    throw new AlreadyExistsError('A unit with this order already exists for this curriculum');
-                }
-            } else if (e instanceof ForeignKeyConstraintError) {
-                // The sequelize type as original as error but the error comes back with this additional field
-                // To workaround the typescript error we must declare any
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint;
-                if (violatedConstraint === CurriculumUnitContent.constraints.foreignKeyCurriculum) {
-                    throw new NotFoundError('Could not create the unit because the given curriculum does not exist');
-                }
-            }
-            throw new WrappedError('Unknown error occurred', e);
+            this.checkUnitError(e);
+        }
+    }
+
+    private checkTopicError(e: Error): void {
+        if (e instanceof BaseError === false) {
+            throw new WrappedError('An unknown application error occurred', e);
+        }
+        const databaseError = e as BaseError;
+        switch (databaseError.originalAsSequelizeError?.constraint) {
+            case CurriculumTopicContent.constraints.uniqueNamePerUnit:
+                throw new AlreadyExistsError('A topic with this name already exists for this unit');
+            case CurriculumTopicContent.constraints.uniqueOrderPerUnit:
+                throw new AlreadyExistsError('A topic with this order already exists for this unit');
+            case CurriculumTopicContent.constraints.foreignKeyUnit:
+                throw new NotFoundError('Could not create the topic because the given unit does not exist');
+            default:
+                throw new WrappedError('An unknown database error occurred', e);
         }
     }
 
@@ -93,26 +112,22 @@ class CurriculumController {
         try {
             return await CurriculumTopicContent.create(topic);
         } catch (e) {
-            if (e instanceof UniqueConstraintError) {
-                // The sequelize type as original as error but the error comes back with this additional field
-                // To workaround the typescript error we must declare any
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint;
-                if (violatedConstraint === CurriculumTopicContent.constraints.uniqueNamePerUnit) {
-                    throw new AlreadyExistsError('A topic with this name already exists for this unit');
-                } else if (violatedConstraint === CurriculumTopicContent.constraints.uniqueOrderPerUnit) {
-                    throw new AlreadyExistsError('A topic with this order already exists for this unit');
-                }
-            } else if (e instanceof ForeignKeyConstraintError) {
-                // The sequelize type as original as error but the error comes back with this additional field
-                // To workaround the typescript error we must declare any
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint;
-                if (violatedConstraint === CurriculumTopicContent.constraints.foreignKeyUnit) {
-                    throw new NotFoundError('Could not create the topic because the given unit does not exist');
-                }
-            }
-            throw new WrappedError('Unknown error occurred', e);
+            this.checkTopicError(e);
+        }
+    }
+
+    private checkQuestionError(e: Error): void {
+        if (e instanceof BaseError === false) {
+            throw new WrappedError('An unknown application error occurred', e);
+        }
+        const databaseError = e as BaseError;
+        switch (databaseError.originalAsSequelizeError?.constraint) {
+            case CurriculumWWTopicQuestion.constraints.uniqueOrderPerTopic:
+                throw new AlreadyExistsError('A question already exists at this order for this topic');
+            case CurriculumWWTopicQuestion.constraints.foreignKeyTopic:
+                throw new AlreadyExistsError('Could not create the question because the given topic does not exist');
+            default:
+                throw new WrappedError('An unknown database error occurred', e);
         }
     }
 
@@ -120,24 +135,7 @@ class CurriculumController {
         try {
             return await CurriculumWWTopicQuestion.create(question);
         } catch (e) {
-            if (e instanceof UniqueConstraintError) {
-                // The sequelize type as original as error but the error comes back with this additional field
-                // To workaround the typescript error we must declare any
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint;
-                if (violatedConstraint === CurriculumWWTopicQuestion.constraints.uniqueOrderPerTopic) {
-                    throw new AlreadyExistsError('A question already exists at this order for this topic');
-                }
-            } else if (e instanceof ForeignKeyConstraintError) {
-                // The sequelize type as original as error but the error comes back with this additional field
-                // To workaround the typescript error we must declare any
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint;
-                if (violatedConstraint === CurriculumWWTopicQuestion.constraints.foreignKeyTopic) {
-                    throw new AlreadyExistsError('Could not create the question because the given topic does not exist');
-                }
-            }
-            throw new WrappedError('Unknown error occurred', e);
+            this.checkQuestionError(e);
         }
     }
 
@@ -149,18 +147,7 @@ class CurriculumController {
             // updates count
             return updates[0];
         } catch (e) {
-            if (e instanceof UniqueConstraintError) {
-                // The sequelize type as original as error but the error comes back with this additional field
-                // To workaround the typescript error we must declare any
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint;
-                if (violatedConstraint === CurriculumTopicContent.constraints.uniqueNamePerUnit) {
-                    throw new AlreadyExistsError('A topic with this name already exists for this unit');
-                } else if (violatedConstraint === CurriculumTopicContent.constraints.uniqueOrderPerUnit) {
-                    throw new AlreadyExistsError('A topic with this order already exists for this unit');
-                }
-            }
-            throw new WrappedError('Unknown error occurred', e);
+            this.checkTopicError(e);
         }
     }
 
@@ -172,18 +159,7 @@ class CurriculumController {
             // updates count
             return updates[0];
         } catch (e) {
-            if (e instanceof UniqueConstraintError) {
-                // The sequelize type as original as error but the error comes back with this additional field
-                // To workaround the typescript error we must declare any
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const violatedConstraint = (e.original as any).constraint;
-                if (violatedConstraint === CurriculumUnitContent.constraints.uniqueNamePerCurriculum) {
-                    throw new AlreadyExistsError('A unit with this name already exists for this curriculum');
-                } else if (violatedConstraint === CurriculumUnitContent.constraints.uniqueOrderPerCurriculum) {
-                    throw new AlreadyExistsError('A unit with this order already exists for this curriculum');
-                }
-            }
-            throw new WrappedError('Unknown error occurred', e);
+            this.checkUnitError(e);
         }
     }
 }

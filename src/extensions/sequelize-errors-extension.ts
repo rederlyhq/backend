@@ -14,6 +14,7 @@ declare module 'sequelize/types/lib/errors' {
 // https://stackoverflow.com/a/46002557
 Object.defineProperty(BaseError.prototype, 'originalAsSequelizeError', {
     get(this: BaseError) {
+        // This is an extension on sequelize "original" error which does not have a type
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return (this as any).original as SequelizeError;
     },

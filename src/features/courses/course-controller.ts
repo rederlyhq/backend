@@ -381,7 +381,7 @@ class CourseController {
             userId: enrollment.userId,
             enrollDate: new Date(),
             dropDate: new Date()
-        } as StudentEnrollment);
+        });
     }
 
     async findMissingGrades(): Promise<FindMissingGradesResult[]> {

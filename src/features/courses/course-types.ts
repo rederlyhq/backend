@@ -44,6 +44,13 @@ export interface UpdateUnitOptions {
     };
 }
 
+export interface UpdateQuestionOptions {
+    where: {
+        id: number;
+    };
+    updates: Partial<CourseWWTopicQuestion>;
+}
+
 export interface GetGradesOptions {
     where: {
         courseId?: number;

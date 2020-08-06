@@ -24,6 +24,10 @@ export default class User extends Model {
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
+  static constraints = {
+    uniqueEmail: 'users_user_email_key',
+  }
+
   static createAssociations(): void {
     // This is a hack to add the associations later to avoid cyclic dependencies
     /* eslint-disable @typescript-eslint/no-use-before-define */

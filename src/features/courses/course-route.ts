@@ -256,10 +256,9 @@ router.put('/:id',
     // This is to work around "extractMap" error
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseRequest.body, UpdateCourseRequest.query>, _res: Response, next: NextFunction) => {
-        throw new WrappedError('NOT IMPLEMENTED');
         try {
             const params = req.params as UpdateCourseRequest.params;
-            const updates = await courseController.updateUnit({
+            const updates = await courseController.updateCourse({
                 where: {
                     id: params.id
                 },
@@ -268,7 +267,7 @@ router.put('/:id',
                 }
             });
             // TODO handle not found case
-            next(httpResponse.Ok('Updated unit successfully', updates));
+            next(httpResponse.Ok('Updated course successfully', updates));
         } catch (e) {
             next(e);
         }

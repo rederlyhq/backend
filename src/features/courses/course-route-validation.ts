@@ -92,6 +92,7 @@ export const updateCourseValidation = {
         end: Joi.date().optional(),
         sectionCode: Joi.string().optional(),
         semesterCode: Joi.string().optional(),
+        textbooks: Joi.string().optional(),
         // Cannot change curriculum it was created from
         // curriculumId: Joi.number().optional(),
         // Cannot change which instructor owns the course

@@ -2,6 +2,7 @@ import StudentGrade from '../../database/models/student-grade';
 import StudentWorkbook from '../../database/models/student-workbook';
 import User from '../../database/models/user';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
+import Course from '../../database/models/course';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -49,6 +50,13 @@ export interface UpdateQuestionOptions {
         id: number;
     };
     updates: Partial<CourseWWTopicQuestion>;
+}
+
+export interface UpdateCourseOptions {
+    where: {
+        id: number;
+    };
+    updates: Partial<Course>;
 }
 
 export interface GetGradesOptions {

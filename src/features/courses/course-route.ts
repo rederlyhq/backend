@@ -5,7 +5,7 @@ import validate from '../../middleware/joi-validator';
 import { authenticationMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
-import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation } from './course-route-validation';
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation } from './course-route-validation';
 import NotFoundError from '../../exceptions/not-found-error';
 import multer = require('multer');
 import WebWorkDef from '../../utilities/web-work-def-parser';
@@ -15,7 +15,7 @@ import * as _ from 'lodash';
 import configurations from '../../configurations';
 import WrappedError from '../../exceptions/wrapped-error';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
-import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest } from './course-route-request-types';
+import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest } from './course-route-request-types';
 import Boom = require('boom');
 import { Constants } from '../../constants';
 
@@ -85,7 +85,7 @@ router.post('/',
     validate(createCourseValidation),
     asyncHandler(async (req: RederlyExpressRequest<CreateCourseRequest.params, unknown, CreateCourseRequest.body, CreateCourseRequest.query>, _res: Response, next: NextFunction) => {
         try {
-            if(_.isNil(req.session)) {
+            if (_.isNil(req.session)) {
                 throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
             }
             const session = req.session;
@@ -156,7 +156,7 @@ router.get('/questions',
     authenticationMiddleware,
     validate(getQuestionsValidation),
     asyncHandler(async (req: RederlyExpressRequest<GetQuestionsRequest.params, unknown, GetQuestionsRequest.body, GetQuestionsRequest.query>, _res: Response, next: NextFunction) => {
-        if(_.isNil(req.session)) {
+        if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
@@ -227,6 +227,54 @@ router.put('/unit/:id',
         }
     }));
 
+router.put('/question/:id',
+    authenticationMiddleware,
+    validate(updateCourseTopicQuestionValidation),
+    // This is to work around "extractMap" error
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseTopicQuestionRequest.body, UpdateCourseTopicQuestionRequest.query>, _res: Response, next: NextFunction) => {
+        throw new WrappedError('NOT IMPLEMENTED');
+        try {
+            const params = req.params as UpdateCourseTopicQuestionRequest.params;
+            const updates = await courseController.updateUnit({
+                where: {
+                    id: params.id
+                },
+                updates: {
+                    ...req.body
+                }
+            });
+            // TODO handle not found case
+            next(httpResponse.Ok('Updated unit successfully', updates));
+        } catch (e) {
+            next(e);
+        }
+    }));
+
+router.put('/:id',
+    authenticationMiddleware,
+    validate(updateCourseValidation),
+    // This is to work around "extractMap" error
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseRequest.body, UpdateCourseRequest.query>, _res: Response, next: NextFunction) => {
+        throw new WrappedError('NOT IMPLEMENTED');
+        try {
+            const params = req.params as UpdateCourseRequest.params;
+            const updates = await courseController.updateUnit({
+                where: {
+                    id: params.id
+                },
+                updates: {
+                    ...req.body
+                }
+            });
+            // TODO handle not found case
+            next(httpResponse.Ok('Updated unit successfully', updates));
+        } catch (e) {
+            next(e);
+        }
+    }));
+
 router.post('/question',
     authenticationMiddleware,
     validate(createCourseTopicQuestionValidation),
@@ -248,7 +296,7 @@ router.get('/question/:id',
     // This is a typescript workaround since it tries to use the type extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetQuestionRequest.body, GetQuestionRequest.query>, _res: Response, next: NextFunction) => {
-        if(_.isNil(req.session)) {
+        if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
@@ -285,7 +333,7 @@ router.post('/question/:id',
             })}`;
         },
         userResDecorator: async (_proxyRes, proxyResData, userReq: RederlyExpressRequest) => {
-            if(_.isNil(userReq.session)) {
+            if (_.isNil(userReq.session)) {
                 throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
             }
 
@@ -392,7 +440,7 @@ router.post('/enroll/:code',
     authenticationMiddleware,
     validate(enrollInCourseByCodeValidation),
     asyncHandler(async (req: RederlyExpressRequest<EnrollInCourseByCodeRequest.params | { [key: string]: string }, unknown, EnrollInCourseByCodeRequest.body, EnrollInCourseByCodeRequest.query>, _res: Response, next: NextFunction) => {
-        if(_.isNil(req.session)) {
+        if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 

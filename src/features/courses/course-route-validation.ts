@@ -57,11 +57,10 @@ export const updateCourseTopicValidation = {
         active: Joi.boolean().optional(),
         partialExtend: Joi.boolean().optional(),
         contentOrder: Joi.number().optional(),
-        // TODO do we support moving topics or changing their type?
-        // Omitting foreign key support
+        courseUnitContentId: Joi.number().optional(),
+        topicTypeId: Joi.number().optional(),
+        // Cannot change which curriculum topic it was created from
         // curriculumTopicContentId: Joi.number().optional(),
-        // courseUnitContentId: Joi.number().optional(),
-        // topicTypeId: Joi.number().optional(),
     },
     query: {},
 };
@@ -74,7 +73,51 @@ export const updateCourseUnitValidation = {
         name: Joi.string().optional(),
         active: Joi.boolean().optional(),
         contentOrder: Joi.number().optional(),
+        // Cannot move to another course
         // courseId: Joi.number().optional(),
+        // Cannot change which curriculum unit it was created from
+        // curriculumUnitId: Joi.number().optional(),
+    },
+    query: {},
+};
+
+export const updateCourseValidation = {
+    params: {
+        id: Joi.number().required()
+    },
+    body: {
+        name: Joi.string().optional(),
+        code: Joi.string().optional(),
+        start: Joi.date().optional(),
+        end: Joi.date().optional(),
+        sectionCode: Joi.string().optional(),
+        semesterCode: Joi.string().optional(),
+        // Cannot change curriculum it was created from
+        // curriculumId: Joi.number().optional(),
+        // Cannot change which instructor owns the course
+        // instructorId: Joi.number().optional(),
+        // cannot change university ownership
+        // universityId: Joi.number().optional(),
+    },
+    query: {},
+};
+
+export const updateCourseTopicQuestionValidation = {
+    params: {
+        id: Joi.number().required()
+    },
+    body: {
+        problemNumber: Joi.number().optional(),
+        webworkQuestionPath: Joi.string().optional(),
+        weight: Joi.number().optional(),
+        maxAttempts: Joi.number().optional(),
+        hidden: Joi.boolean().optional(),
+        active: Joi.boolean().optional(),
+        optional: Joi.boolean().optional(),
+        // You cannot change the curriculum question in which this was derived
+        // curriculumQuestionId: Joi.number().optional(),
+        // Right now we don't support moving from one topic to another
+        // courseTopicContentId: Joi.number().optional(),
     },
     query: {},
 };

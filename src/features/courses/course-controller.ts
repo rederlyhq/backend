@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import Bluebird = require('bluebird');
 import Course from '../../database/models/course';
 import StudentEnrollment from '../../database/models/student-enrollment';
-import { ForeignKeyConstraintError, BaseError } from 'sequelize';
+import { BaseError } from 'sequelize';
 import NotFoundError from '../../exceptions/not-found-error';
 import CourseUnitContent from '../../database/models/course-unit-content';
 import CourseTopicContent from '../../database/models/course-topic-content';
@@ -245,7 +245,7 @@ class CourseController {
             }
         });
 
-        if(_.isNil(courseQuestion)) {
+        if (_.isNil(courseQuestion)) {
             throw new NotFoundError('Could not find the question in the database');
         }
 
@@ -324,14 +324,14 @@ class CourseController {
             throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
 
-        if (e instanceof ForeignKeyConstraintError) {
-            throw new NotFoundError('User or course was not found');
-        }
-
         const databaseError = e as BaseError;
         switch (databaseError.originalAsSequelizeError?.constraint) {
             case StudentEnrollment.constraints.uniqueUserPerCourse:
                 throw new AlreadyExistsError('This user is already enrolled in this course');
+            case StudentEnrollment.constraints.foreignKeyCourse:
+                throw new NotFoundError('The given course could not be found thus we could not enroll the student');
+            case StudentEnrollment.constraints.foreignKeyUser:
+                throw new NotFoundError('The given user could not be found thus we could not enroll in the class');
             default:
                 throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
         }
@@ -583,7 +583,7 @@ class CourseController {
             courseUnitContentId,
             courseId
         } = options.where;
-        
+
         // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
         const where: sequelize.WhereOptions = _({
             courseUnitContentId,

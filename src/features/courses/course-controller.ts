@@ -348,10 +348,13 @@ class CourseController {
 
     async enroll(enrollment: CreateGradesForUserEnrollmentOptions): Promise<StudentEnrollment> {
         return await appSequelize.transaction(async () => {
-            const result = await this.createStudentEnrollment(enrollment);
+            const result = await this.createStudentEnrollment({
+                ...enrollment,
+                enrollDate: new Date()
+            });
             await this.createGradesForUserEnrollment({
                 courseId: enrollment.courseId,
-                userId: enrollment.userId
+                userId: enrollment.userId,
             });
             return result;
         });
@@ -365,8 +368,6 @@ class CourseController {
         return this.enroll({
             courseId: course.id,
             userId: enrollment.userId,
-            enrollDate: new Date(),
-            dropDate: new Date()
         });
     }
 

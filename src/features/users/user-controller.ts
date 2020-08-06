@@ -11,7 +11,7 @@ import Session from '../../database/models/session';
 import moment = require('moment');
 import configurations from '../../configurations';
 import NoAssociatedUniversityError from '../../exceptions/no-associated-university-error';
-import { UniqueConstraintError, WhereOptions, Includeable } from 'sequelize';
+import { WhereOptions, Includeable, BaseError } from 'sequelize';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import Role from '../permissions/roles';
 import { ListOptions } from '../../generic-interfaces/list-options';
@@ -25,13 +25,14 @@ import CourseUnitContent from '../../database/models/course-unit-content';
 import IncludeGradeOptions from './include-grade-options';
 import WrappedError from '../../exceptions/wrapped-error';
 import { EmailOptions, GetUserOptions, ListUserFilter, RegisterUserOptions, RegisterUserResponse } from './user-types';
+import { Constants } from '../../constants';
 
 const {
     sessionLife
 } = configurations.auth;
 
 class UserController {
-    getUserByEmail(email: string): Bluebird<User> {
+    getUserByEmail(email: string): Promise<User> {
         return User.findOne({
             where: {
                 email
@@ -83,6 +84,9 @@ class UserController {
                 }
 
                 if (listOptions.filters.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
+                    if (_.isNil(sequelizeGradeInclude.include)) {
+                        throw new Error('Grade join for list users has an undefined include');
+                    }
                     sequelizeGradeInclude.include.push({
                         model: StudentWorkbook,
                         as: 'workbooks'
@@ -122,7 +126,7 @@ class UserController {
         });
     }
 
-    async email(emailOptions?: EmailOptions): Promise<number[]> {
+    async email(emailOptions: EmailOptions): Promise<number[]> {
         const users = await this.list({
             filters: emailOptions.listUsersFilter
         });
@@ -188,6 +192,10 @@ class UserController {
         }
 
         if (options.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
+            if (_.isNil(sequelizeGradeInclude.include)) {
+                throw new Error('Grade join for get user has an undefined include');
+            }
+
             sequelizeGradeInclude.include.push({
                 model: StudentWorkbook,
                 as: 'workbooks'
@@ -205,11 +213,32 @@ class UserController {
         });
     }
 
-    createUser(userObject: Partial<User>): Bluebird<User> {
-        return User.create(userObject);
+    private checkUserError(e: Error): void {
+        if (e instanceof BaseError === false) {
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
+        }
+        const databaseError = e as BaseError;
+        switch (databaseError.originalAsSequelizeError?.constraint) {
+            case User.constraints.uniqueEmail:
+                if(_.isNil(User.rawAttributes.email.field)) {
+                    throw new WrappedError('Could not read the email field from sequelize raw attributes', e);
+                }
+                throw new AlreadyExistsError(`The email ${databaseError.fields && databaseError.fields[User.rawAttributes.email.field] || ''} already exists`);
+            default:
+                throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
+        }
     }
 
-    getSession(uuid: string): Bluebird<Session> {
+    async createUser(userObject: Partial<User>): Promise<User> {
+        try {
+            return await User.create(userObject);
+        } catch (e) {
+            this.checkUserError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
+        }
+    }
+
+    getSession(uuid: string): Promise<Session> {
         return Session.findOne({
             where: {
                 uuid,
@@ -228,7 +257,7 @@ class UserController {
         });
     }
 
-    async login(email: string, password: string): Promise<Session> {
+    async login(email: string, password: string): Promise<Session | null> {
         const user: User = await this.getUserByEmail(email);
         if (user == null)
             return null;
@@ -261,8 +290,6 @@ class UserController {
 
         const emailDomain = userObject.email.split('@')[1];
 
-        let newUser;
-
         const universities = await universityController.getUniversitiesAssociatedWithEmail({
             emailDomain
         });
@@ -286,16 +313,7 @@ class UserController {
         userObject.universityId = university.id;
         userObject.verifyToken = uuidv4();
         userObject.password = await hashPassword(userObject.password);
-        try {
-            newUser = await this.createUser(userObject);
-        } catch (e) {
-            if (e instanceof UniqueConstraintError) {
-                if (Object.keys(e.fields).includes(User.rawAttributes.email.field)) {
-                    throw new AlreadyExistsError(`The email ${e.fields[User.rawAttributes.email.field]} already exists`);
-                }
-            }
-            throw new WrappedError('Unknown error occurred', e);
-        }
+        const newUser = await this.createUser(userObject);
 
         let emailSent = false;
         const verifyURL = new URL(`/verify/${newUser.verifyToken}`, baseUrl);

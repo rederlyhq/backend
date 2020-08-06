@@ -1,10 +1,14 @@
 import * as _ from 'lodash';
 
-const fromBooleanField = (value: string): boolean => {
+const fromBooleanField = (value: string | undefined): boolean | null => {
     return value ? value.toLowerCase() === 'true' : null;
 };
 
-const fromIntValue = (value: string, defaultValue: number): number => {
+const fromIntValue = (value: string | undefined, defaultValue: number): number => {
+    if (_.isNil(value)) {
+        return defaultValue;
+    }
+    
     const result = parseInt(value);
     if (isNaN(result)) {
         return defaultValue;

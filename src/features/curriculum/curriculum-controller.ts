@@ -4,15 +4,15 @@ import UniversityCurriculumPermission from '../../database/models/university-cur
 import CurriculumUnitContent from '../../database/models/curriculum-unit-content';
 import CurriculumTopicContent from '../../database/models/curriculum-topic-content';
 import CurriculumWWTopicQuestion from '../../database/models/curriculum-ww-topic-question';
-import { UniqueConstraintError, BaseError } from 'sequelize';
+import { BaseError } from 'sequelize';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import WrappedError from '../../exceptions/wrapped-error';
-import { ForeignKeyConstraintError } from 'sequelize';
 import NotFoundError from '../../exceptions/not-found-error';
 import { UpdateTopicOptions, UpdateUnitOptions } from './curriculum-types';
+import { Constants } from '../../constants';
 
 class CurriculumController {
-    getCurriculumById(id: number): Bluebird<Curriculum> {
+    getCurriculumById(id: number): Promise<Curriculum> {
         return Curriculum.findOne({
             where: {
                 id
@@ -43,14 +43,14 @@ class CurriculumController {
 
     private checkCurriculumError(e: Error): void {
         if (e instanceof BaseError === false) {
-            throw new WrappedError('An unknown application error occurred', e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
         const databaseError = e as BaseError;
         switch (databaseError.originalAsSequelizeError?.constraint) {
             case Curriculum.constraints.uniqueNamePerUniversity:
                 throw new AlreadyExistsError('A curriculum with this name already exists for this university');
             default:
-                throw new WrappedError('An unknown database error occurred', e);
+                throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
         }
     }
 
@@ -59,6 +59,7 @@ class CurriculumController {
             return await Curriculum.create(curriculumObject);
         } catch (e) {
             this.checkCurriculumError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE);
         }
     }
 
@@ -68,7 +69,7 @@ class CurriculumController {
 
     private checkUnitError(e: Error): void {
         if (e instanceof BaseError === false) {
-            throw new WrappedError('An unknown application error occurred', e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
         const databaseError = e as BaseError;
         switch (databaseError.originalAsSequelizeError?.constraint) {
@@ -79,7 +80,7 @@ class CurriculumController {
             case CurriculumUnitContent.constraints.foreignKeyCurriculum:
                 throw new NotFoundError('Could not create the unit because the given curriculum does not exist');
             default:
-                throw new WrappedError('An unknown database error occurred', e);
+                throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
         }
     }
 
@@ -88,12 +89,13 @@ class CurriculumController {
             return await CurriculumUnitContent.create(unit);
         } catch (e) {
             this.checkUnitError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
     }
 
     private checkTopicError(e: Error): void {
         if (e instanceof BaseError === false) {
-            throw new WrappedError('An unknown application error occurred', e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
         const databaseError = e as BaseError;
         switch (databaseError.originalAsSequelizeError?.constraint) {
@@ -104,7 +106,7 @@ class CurriculumController {
             case CurriculumTopicContent.constraints.foreignKeyUnit:
                 throw new NotFoundError('Could not create the topic because the given unit does not exist');
             default:
-                throw new WrappedError('An unknown database error occurred', e);
+                throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
         }
     }
 
@@ -113,12 +115,13 @@ class CurriculumController {
             return await CurriculumTopicContent.create(topic);
         } catch (e) {
             this.checkTopicError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
     }
 
     private checkQuestionError(e: Error): void {
         if (e instanceof BaseError === false) {
-            throw new WrappedError('An unknown application error occurred', e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
         const databaseError = e as BaseError;
         switch (databaseError.originalAsSequelizeError?.constraint) {
@@ -127,7 +130,7 @@ class CurriculumController {
             case CurriculumWWTopicQuestion.constraints.foreignKeyTopic:
                 throw new AlreadyExistsError('Could not create the question because the given topic does not exist');
             default:
-                throw new WrappedError('An unknown database error occurred', e);
+                throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
         }
     }
 
@@ -136,6 +139,7 @@ class CurriculumController {
             return await CurriculumWWTopicQuestion.create(question);
         } catch (e) {
             this.checkQuestionError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
     }
 
@@ -148,6 +152,7 @@ class CurriculumController {
             return updates[0];
         } catch (e) {
             this.checkTopicError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
     }
 
@@ -160,6 +165,7 @@ class CurriculumController {
             return updates[0];
         } catch (e) {
             this.checkUnitError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
     }
 }

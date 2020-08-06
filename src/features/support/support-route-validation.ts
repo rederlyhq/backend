@@ -7,4 +7,4 @@ export const feedbackValidation = {
         summary: Joi.string().required(),
         description: Joi.string().required(),
     },
-}
+};

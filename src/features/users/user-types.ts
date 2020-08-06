@@ -1,8 +1,9 @@
 import IncludeGradeOptions from './include-grade-options';
 import User from '../../database/models/user';
+import { PartialWithRequiredFields } from '../../extensions/typescript-utility-extensions';
 
 export interface RegisterUserOptions {
-    userObject: Partial<User>;
+    userObject: PartialWithRequiredFields<User, 'email' | 'password'>;
     baseUrl: string;
 }
 

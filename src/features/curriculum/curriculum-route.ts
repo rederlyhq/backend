@@ -1,3 +1,4 @@
+import * as _ from 'lodash';
 import { Response, NextFunction } from 'express';
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator';
@@ -11,19 +12,23 @@ import { RederlyExpressRequest } from '../../extensions/rederly-express-request'
 import { CreateCurriculumRequest, CreateCurriculumTopicRequest, UpdateCurriculumUnitRequest, UpdateCurriculumTopicRequest, CreateCurriculumTopicQuestionRequest, GetCurriculumRequest, ListCurriculumRequest } from './curriculum-route-request-types';
 import appSequelize from '../../database/app-sequelize';
 import Curriculum from '../../database/models/curriculum';
+import { Constants } from '../../constants';
 
 router.post('/',
     authenticationMiddleware,
     validate(createCurriculumValidation),
     asyncHandler(async (req: RederlyExpressRequest<CreateCurriculumRequest.params, unknown, CreateCurriculumRequest.body, CreateCurriculumRequest.query>, res: Response, next: NextFunction) => {
         try {
+            if(_.isNil(req.session)) {
+                throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+            }
+
             const session = req.session;
             const user = await session.getUser();
             const university = await user.getUniversity();
 
-            let newCurriculum: Curriculum;
-            await appSequelize.transaction(async () => {
-                newCurriculum = await curriculumController.createCurriculum({
+            const newCurriculum: Curriculum = await appSequelize.transaction(async () => {
+                const newCurriculum = await curriculumController.createCurriculum({
                     ...req.body,
                     universityId: university.id
                 });
@@ -36,6 +41,7 @@ router.post('/',
                 } catch (e) {
                     logger.error(e);
                 }
+                return newCurriculum;
             });
             next(httpResponse.Created('Curriculum created successfully', newCurriculum));
         } catch (e) {

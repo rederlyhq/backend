@@ -3,7 +3,7 @@ import * as _ from 'lodash';
 export default class WrappedError extends Error {
     private cause?: Error;
     private msg: string;
-    private _stack: string;
+    private _stack?: string;
 
     constructor(message: string, cause?: Error) {
         super(message);

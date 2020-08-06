@@ -57,7 +57,7 @@ passport.serializeUser(async (session: Session, done) => {
     return done(null, session);
 });
 
-passport.deserializeUser(async (id: number, done: (err: Boom<null>, user?: unknown) => void): Promise<void> => {
+passport.deserializeUser(async (id: number, done: (err?: Boom<null> | null, user?: unknown) => void): Promise<void> => {
     try {
         const user = userController.getUser({
             id,
@@ -70,10 +70,10 @@ passport.deserializeUser(async (id: number, done: (err: Boom<null>, user?: unkno
 });
 
 
-passport.use(new LocalStrategy({ usernameField: 'email' }, async (email: string, password: string, done: (err: Boom<null>, user?: unknown) => void) => {
+passport.use(new LocalStrategy({ usernameField: 'email' }, async (email: string, password: string, done: (err?: Boom<null> | null, user?: unknown) => void) => {
     // TODO track ip?
     try {
-        const session: Session = await userController.login(email, password);
+        const session: Session | null = await userController.login(email, password);
         if (session) {
             done(null, session);
         } else {

@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import Bluebird = require('bluebird');
 import Course from '../../database/models/course';
 import StudentEnrollment from '../../database/models/student-enrollment';
-import { ForeignKeyConstraintError, BaseError } from 'sequelize';
+import { BaseError } from 'sequelize';
 import NotFoundError from '../../exceptions/not-found-error';
 import CourseUnitContent from '../../database/models/course-unit-content';
 import CourseTopicContent from '../../database/models/course-topic-content';
@@ -17,6 +17,7 @@ import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import appSequelize from '../../database/app-sequelize';
 import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions } from './course-types';
+import { Constants } from '../../constants';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -100,7 +101,7 @@ class CourseController {
 
     private checkCourseError(e: Error): void {
         if (e instanceof BaseError === false) {
-            throw new WrappedError('An unknown application error occurred', e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
         const databaseError = e as BaseError;
         switch (databaseError.originalAsSequelizeError?.constraint) {
@@ -109,7 +110,7 @@ class CourseController {
             case Course.constraints.uniqueCourseCode:
                 throw new AlreadyExistsError('A course already exists with this course code');
             default:
-                throw new WrappedError('An unknown database error occurred', e);
+                throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
         }
     }
 
@@ -118,12 +119,13 @@ class CourseController {
             return await Course.create(courseObject);
         } catch (e) {
             this.checkCourseError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
     }
 
     private checkCourseUnitError(e: Error): void {
         if (e instanceof BaseError === false) {
-            throw new WrappedError('An unknown application error occurred', e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
         const databaseError = e as BaseError;
         switch (databaseError.originalAsSequelizeError?.constraint) {
@@ -135,7 +137,7 @@ class CourseController {
             case CourseUnitContent.constraints.foreignKeyCourse:
                 throw new NotFoundError('The given course was not found to create the unit');
             default:
-                throw new WrappedError('An unknown database error occurred', e);
+                throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
         }
     }
 
@@ -144,12 +146,13 @@ class CourseController {
             return await CourseUnitContent.create(courseUnitContent);
         } catch (e) {
             this.checkCourseUnitError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
     }
 
     private checkCourseTopicError(e: Error): void {
         if (e instanceof BaseError === false) {
-            throw new WrappedError('An unknown application error occurred', e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
         const databaseError = e as BaseError;
         switch (databaseError.originalAsSequelizeError?.constraint) {
@@ -162,7 +165,7 @@ class CourseController {
             case CourseTopicContent.constraints.foreignKeyTopicType:
                 throw new NotFoundError('Invalid topic type provided');
             default:
-                throw new WrappedError('An unknown database error occurred', e);
+                throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
         }
     }
 
@@ -171,6 +174,7 @@ class CourseController {
             return await CourseTopicContent.create(courseTopicContent);
         } catch (e) {
             this.checkCourseTopicError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
     }
 
@@ -183,6 +187,7 @@ class CourseController {
             return updates[0];
         } catch (e) {
             this.checkCourseTopicError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
     }
 
@@ -195,12 +200,13 @@ class CourseController {
             return updates[0];
         } catch (e) {
             this.checkCourseUnitError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
     }
 
     private checkQuestionError(e: Error): void {
         if (e instanceof BaseError === false) {
-            throw new WrappedError('An unknown application error occurred', e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
         const databaseError = e as BaseError;
         switch (databaseError.originalAsSequelizeError?.constraint) {
@@ -209,7 +215,7 @@ class CourseController {
             case CourseWWTopicQuestion.constraints.foreignKeyTopic:
                 throw new NotFoundError('Could not create the question because the given topic does not exist');
             default:
-                throw new WrappedError('An unknown database error occurred', e);
+                throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
         }
     }
 
@@ -218,6 +224,7 @@ class CourseController {
             return await CourseWWTopicQuestion.create(question);
         } catch (e) {
             this.checkQuestionError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
     }
 
@@ -238,7 +245,11 @@ class CourseController {
             }
         });
 
-        const studentGrade: StudentGrade = await StudentGrade.findOne({
+        if (_.isNil(courseQuestion)) {
+            throw new NotFoundError('Could not find the question in the database');
+        }
+
+        const studentGrade: StudentGrade | null = await StudentGrade.findOne({
             where: {
                 userId: options.userId,
                 courseWWTopicQuestionId: options.questionId
@@ -310,19 +321,19 @@ class CourseController {
 
     private checkStudentEnrollmentError(e: Error): void {
         if (e instanceof BaseError === false) {
-            throw new WrappedError('An unknown application error occurred', e);
-        }
-
-        if (e instanceof ForeignKeyConstraintError) {
-            throw new NotFoundError('User or course was not found');
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
 
         const databaseError = e as BaseError;
         switch (databaseError.originalAsSequelizeError?.constraint) {
             case StudentEnrollment.constraints.uniqueUserPerCourse:
                 throw new AlreadyExistsError('This user is already enrolled in this course');
+            case StudentEnrollment.constraints.foreignKeyCourse:
+                throw new NotFoundError('The given course could not be found thus we could not enroll the student');
+            case StudentEnrollment.constraints.foreignKeyUser:
+                throw new NotFoundError('The given user could not be found thus we could not enroll in the class');
             default:
-                throw new WrappedError('An unknown database error occurred', e);
+                throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
         }
     }
 
@@ -331,15 +342,19 @@ class CourseController {
             return await StudentEnrollment.create(enrollment);
         } catch (e) {
             this.checkStudentEnrollmentError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
     }
 
-    async enroll(enrollment: Partial<StudentEnrollment>): Promise<StudentEnrollment> {
+    async enroll(enrollment: CreateGradesForUserEnrollmentOptions): Promise<StudentEnrollment> {
         return await appSequelize.transaction(async () => {
-            const result = await this.createStudentEnrollment(enrollment);
+            const result = await this.createStudentEnrollment({
+                ...enrollment,
+                enrollDate: new Date()
+            });
             await this.createGradesForUserEnrollment({
                 courseId: enrollment.courseId,
-                userId: enrollment.userId
+                userId: enrollment.userId,
             });
             return result;
         });
@@ -353,8 +368,6 @@ class CourseController {
         return this.enroll({
             courseId: course.id,
             userId: enrollment.userId,
-            enrollDate: new Date(),
-            dropDate: new Date()
         });
     }
 
@@ -393,11 +406,11 @@ class CourseController {
         });
 
         const results: FindMissingGradesResult[] = [];
-        result.forEach((student: User & { courseEnrollments: StudentEnrollment[] }) => {
-            student.courseEnrollments.forEach((studentEnrollment: StudentEnrollment & { course: { units: CourseUnitContent[] } }) => {
-                studentEnrollment.course.units.forEach((unit: CourseUnitContent & { topics: CourseTopicContent[] }) => {
-                    unit.topics.forEach((topic: CourseTopicContent & { questions: CourseWWTopicQuestion[] }) => {
-                        topic.questions.forEach((question: CourseWWTopicQuestion) => {
+        result.forEach((student: User) => {
+            student.courseEnrollments?.forEach((studentEnrollment: StudentEnrollment) => {
+                studentEnrollment.course?.units?.forEach((unit: CourseUnitContent) => {
+                    unit.topics?.forEach((topic: CourseTopicContent) => {
+                        topic.questions?.forEach((question: CourseWWTopicQuestion) => {
                             results.push({
                                 student,
                                 question,
@@ -434,18 +447,19 @@ class CourseController {
             questionId,
             topicId,
             unitId
-        ].reduce((accumulator, val) => accumulator + (!_.isNil(val) && 1 || 0), 0);
+        ].reduce((accumulator, val) => (accumulator || 0) + (!_.isNil(val) && 1 || 0), 0);
 
         if (setFilterCount !== 1) {
             throw new Error(`One filter must be set but found ${setFilterCount}`);
         }
 
-        const where = _({
+        // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
+        const where: sequelize.WhereOptions = _({
             [`$question.topic.unit.course.${Course.rawAttributes.id.field}$`]: courseId,
             [`$question.topic.unit.${CourseUnitContent.rawAttributes.id.field}$`]: unitId,
             [`$question.topic.${CourseTopicContent.rawAttributes.id.field}$`]: topicId,
             [`$question.${CourseWWTopicQuestion.rawAttributes.id.field}$`]: questionId,
-        }).omitBy(_.isUndefined).value();
+        }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
 
         const totalProblemCountCalculationString = `COUNT(question.${CourseWWTopicQuestion.rawAttributes.id.field})`;
         const pendingProblemCountCalculationString = `COUNT(CASE WHEN ${StudentGrade.rawAttributes.numAttempts.field} = 0 THEN ${StudentGrade.rawAttributes.numAttempts.field} END)`;
@@ -488,14 +502,15 @@ class CourseController {
 
         let attributes: sequelize.FindAttributeOptions;
         // Group cannot be empty array, use null if there is no group clause
-        let group: sequelize.GroupOption;
+        let group: string[] | undefined = undefined;
         if (_.isNil(questionId) === false) {
             attributes = [
                 'id',
                 'bestScore',
                 'numAttempts'
             ];
-            group = null;
+            // This should already be the case but let's guarentee it
+            group = undefined;
         } else {
             attributes = [
                 [sequelize.fn('avg', sequelize.col(`${StudentGrade.rawAttributes.bestScore.field}`)), 'average'],
@@ -529,9 +544,10 @@ class CourseController {
             courseId
         } = options.where;
 
-        const where = _({
+        // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
+        const where: sequelize.WhereOptions = _({
             courseId,
-        }).omitBy(_.isNil).value();
+        }).omitBy(_.isNil).value() as sequelize.WhereOptions;
 
         return CourseUnitContent.findAll({
             where,
@@ -569,10 +585,11 @@ class CourseController {
             courseId
         } = options.where;
 
-        const where = _({
+        // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
+        const where: sequelize.WhereOptions = _({
             courseUnitContentId,
             [`$unit.${CourseUnitContent.rawAttributes.courseId.field}$`]: courseId
-        }).omitBy(_.isNil).value();
+        }).omitBy(_.isNil).value() as sequelize.WhereOptions;
 
         const include: sequelize.IncludeOptions[] = [{
             model: CourseWWTopicQuestion,
@@ -616,10 +633,11 @@ class CourseController {
             courseId
         } = options.where;
 
-        const where = _({
+        // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
+        const where: sequelize.WhereOptions = _({
             courseTopicContentId,
             [`$topic.unit.${CourseUnitContent.rawAttributes.courseId.field}$`]: courseId
-        }).omitBy(_.isNil).value();
+        }).omitBy(_.isNil).value() as sequelize.WhereOptions;
 
         const include: sequelize.IncludeOptions[] = [{
             model: StudentGrade,
@@ -664,20 +682,21 @@ class CourseController {
 
         try {
             const include: sequelize.IncludeOptions[] = [];
-            if (_.isNil(userId) === false) {
+            if (!_.isNil(userId)) {
                 include.push({
                     model: StudentGrade,
                     as: 'grades',
                     required: false,
                     where: {
-                        userId
+                        userId: userId
                     }
                 });
             }
 
+            // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
             const where: sequelize.WhereOptions = _({
                 courseTopicContentId
-            }).omitBy(_.isUndefined).value();
+            }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
 
             const findOptions: sequelize.FindOptions = {
                 include,

@@ -100,8 +100,8 @@ export interface SubmitAnswerOptions {
 }
 
 export interface SubmitAnswerResult {
-    studentGrade: StudentGrade;
-    studentWorkbook: StudentWorkbook;
+    studentGrade: StudentGrade | null;
+    studentWorkbook: StudentWorkbook | null;
 }
 
 export interface FindMissingGradesResult {
@@ -110,8 +110,8 @@ export interface FindMissingGradesResult {
 }
 
 export interface GetQuestionsOptions {
-    courseTopicContentId: number;
-    userId: number;
+    courseTopicContentId?: number;
+    userId?: number;
 }
 
 export interface GetQuestionsThatRequireGradesForUserOptions {

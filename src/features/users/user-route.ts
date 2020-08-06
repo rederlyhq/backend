@@ -20,6 +20,9 @@ router.post('/login',
     validate(loginValidation),
     passport.authenticate('local'),
     asyncHandler(async (req: RederlyExpressRequest<LoginRequest.params, unknown, LoginRequest.body, LoginRequest.query>, res: Response, next: NextFunction) => {
+        if(_.isNil(req.session)) {
+            throw new Error('Session is nil even after authentication middleware');
+        }
         const newSession = req.session.passport.user;
         const user = await newSession.getUser();
         const role = await user.getRole();
@@ -68,8 +71,11 @@ router.post('/register',
 
 router.get('/verify',
     validate(verifyValidation),
-    asyncHandler(async (req: RederlyExpressRequest<VerifyRequest.params, unknown, VerifyRequest.body, VerifyRequest.query>, res: Response, next: NextFunction) => {
-        const verified = await userController.verifyUser(req.query.verifyToken);
+    // Query and params are more restrictive types, however with express middlewhere we can and do modify to match our types from validation
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, VerifyRequest.body, any>, _res: Response, next: NextFunction) => {
+        const query = req.query as VerifyRequest.query;
+        const verified = await userController.verifyUser(query.verifyToken);
         if (verified) {
             next(httpResponse.Ok('Verified'));
         } else {
@@ -81,6 +87,9 @@ router.post('/logout',
     authenticationMiddleware,
     validate(logoutValidation),
     asyncHandler(async (req: RederlyExpressRequest<LogoutRequest.params, unknown, LogoutRequest.body, LogoutRequest.query>, res: Response, next: NextFunction) => {
+        if(_.isNil(req.session)) {
+            throw new Error('Session is nil even after authentication middleware');
+        }
         await userController.logout(req.session.dataValues.uuid);
         res.clearCookie('sessionToken');
         next(httpResponse.Ok('Logged out'));

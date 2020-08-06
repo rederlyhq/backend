@@ -11,7 +11,7 @@ import Session from '../../database/models/session';
 import moment = require('moment');
 import configurations from '../../configurations';
 import NoAssociatedUniversityError from '../../exceptions/no-associated-university-error';
-import { UniqueConstraintError, WhereOptions, Includeable } from 'sequelize';
+import { WhereOptions, Includeable, BaseError } from 'sequelize';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import Role from '../permissions/roles';
 import { ListOptions } from '../../generic-interfaces/list-options';
@@ -25,6 +25,7 @@ import CourseUnitContent from '../../database/models/course-unit-content';
 import IncludeGradeOptions from './include-grade-options';
 import WrappedError from '../../exceptions/wrapped-error';
 import { EmailOptions, GetUserOptions, ListUserFilter, RegisterUserOptions, RegisterUserResponse } from './user-types';
+import { Constants } from '../../constants';
 
 const {
     sessionLife
@@ -212,8 +213,29 @@ class UserController {
         });
     }
 
-    createUser(userObject: Partial<User>): Bluebird<User> {
-        return User.create(userObject);
+    private checkUserError(e: Error): void {
+        if (e instanceof BaseError === false) {
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
+        }
+        const databaseError = e as BaseError;
+        switch (databaseError.originalAsSequelizeError?.constraint) {
+            case User.constraints.uniqueEmail:
+                if(_.isNil(User.rawAttributes.email.field)) {
+                    throw new WrappedError('Could not read the email field from sequelize raw attributes', e);
+                }
+                throw new AlreadyExistsError(`The email ${databaseError.fields && databaseError.fields[User.rawAttributes.email.field] || ''} already exists`);
+            default:
+                throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
+        }
+    }
+
+    async createUser(userObject: Partial<User>): Promise<User> {
+        try {
+            return await User.create(userObject);
+        } catch (e) {
+            this.checkUserError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
+        }
     }
 
     getSession(uuid: string): Promise<Session> {
@@ -268,8 +290,6 @@ class UserController {
 
         const emailDomain = userObject.email.split('@')[1];
 
-        let newUser;
-
         const universities = await universityController.getUniversitiesAssociatedWithEmail({
             emailDomain
         });
@@ -293,19 +313,7 @@ class UserController {
         userObject.universityId = university.id;
         userObject.verifyToken = uuidv4();
         userObject.password = await hashPassword(userObject.password);
-        try {
-            newUser = await this.createUser(userObject);
-        } catch (e) {
-            if (e instanceof UniqueConstraintError) {
-                if(_.isNil(User.rawAttributes.email.field)) {
-                    throw new Error('Raw attributes does not have a field name in register users error handling');
-                }
-                if (Object.keys(e.fields).includes(User.rawAttributes.email.field)) {
-                    throw new AlreadyExistsError(`The email ${e.fields[User.rawAttributes.email.field]} already exists`);
-                }
-            }
-            throw new WrappedError('Unknown error occurred', e);
-        }
+        const newUser = await this.createUser(userObject);
 
         let emailSent = false;
         const verifyURL = new URL(`/verify/${newUser.verifyToken}`, baseUrl);

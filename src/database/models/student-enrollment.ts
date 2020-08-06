@@ -19,7 +19,10 @@ export default class StudentEnrollment extends Model {
     public readonly updatedAt!: Date;
 
     static constraints = {
-        uniqueUserPerCourse: 'student_enrollment--user_id-course_id'
+        uniqueUserPerCourse: 'student_enrollment--user_id-course_id',
+
+        foreignKeyCourse: 'student_enrollment_course_id_fkey',
+        foreignKeyUser: 'student_enrollment_user_id_fkey'
     }
     static createAssociations(): void {
         // This is a hack to add the associations later to avoid cyclic dependencies

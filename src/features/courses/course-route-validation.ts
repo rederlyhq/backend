@@ -159,8 +159,6 @@ export const getQuestionsValidation = {
 export const getCourseValidation = {
     params: {
         id: Joi.number().required(),
-        query: {},
-        body: {},
     },
     body: {},
     query: {}

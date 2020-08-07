@@ -18,6 +18,7 @@ import AlreadyExistsError from '../../exceptions/already-exists-error';
 import appSequelize from '../../database/app-sequelize';
 import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions } from './course-types';
 import { Constants } from '../../constants';
+import courseRepository from './course-repository';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -218,40 +219,14 @@ class CourseController {
     }
 
     async updateQuestion(options: UpdateQuestionOptions): Promise<number> {
-        try {
-            const updates = await CourseWWTopicQuestion.update(options.updates, {
-                where: options.where
-            });
-            // updates count
-            return updates[0];
-        } catch (e) {
-            this.checkQuestionError(e);
-            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
-        }
-    }
-
-    private checkQuestionError(e: Error): void {
-        if (e instanceof BaseError === false) {
-            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
-        }
-        const databaseError = e as BaseError;
-        switch (databaseError.originalAsSequelizeError?.constraint) {
-            case CourseWWTopicQuestion.constraints.uniqueOrderPerTopic:
-                throw new AlreadyExistsError('A question with this topic order already exists');
-            case CourseWWTopicQuestion.constraints.foreignKeyTopic:
-                throw new NotFoundError('Could not create the question because the given topic does not exist');
-            default:
-                throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
-        }
+        return await appSequelize.transaction(async () => {
+            const result = await courseRepository.updateQuestion(options);
+            return result;
+        });
     }
 
     async createQuestion(question: Partial<CourseWWTopicQuestion>): Promise<CourseWWTopicQuestion> {
-        try {
-            return await CourseWWTopicQuestion.create(question);
-        } catch (e) {
-            this.checkQuestionError(e);
-            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
-        }
+        return courseRepository.createQuestion(question);
     }
 
     async addQuestion(question: Partial<CourseWWTopicQuestion>): Promise<CourseWWTopicQuestion> {

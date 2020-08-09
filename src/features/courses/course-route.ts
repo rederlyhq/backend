@@ -143,7 +143,8 @@ router.get('/grades',
                     courseId: req.query.courseId,
                     questionId: req.query.questionId,
                     topicId: req.query.topicId,
-                    unitId: req.query.unitId
+                    unitId: req.query.unitId,
+                    userId: req.query.userId,
                 }
             });
             next(httpResponse.Ok('Fetched successfully', grades));

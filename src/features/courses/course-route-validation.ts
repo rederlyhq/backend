@@ -164,6 +164,7 @@ export const getGradesValidation = {
         unitId: Joi.number().optional(),
         topicId: Joi.number().optional(),
         questionId: Joi.number().optional(),
+        userId: Joi.number().optional(),
     },
     body: {},
 };

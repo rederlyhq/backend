@@ -439,14 +439,15 @@ class CourseController {
             courseId,
             questionId,
             topicId,
-            unitId
+            unitId,
+            userId,
         } = options.where;
 
         const setFilterCount = [
             courseId,
             questionId,
             topicId,
-            unitId
+            unitId,
         ].reduce((accumulator, val) => (accumulator || 0) + (!_.isNil(val) && 1 || 0), 0);
 
         if (setFilterCount !== 1) {
@@ -459,6 +460,7 @@ class CourseController {
             [`$question.topic.unit.${CourseUnitContent.rawAttributes.id.field}$`]: unitId,
             [`$question.topic.${CourseTopicContent.rawAttributes.id.field}$`]: topicId,
             [`$question.${CourseWWTopicQuestion.rawAttributes.id.field}$`]: questionId,
+            [`$user.${User.rawAttributes.id.field}$`]: userId,
         }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
 
         const totalProblemCountCalculationString = `COUNT(question.${CourseWWTopicQuestion.rawAttributes.id.field})`;

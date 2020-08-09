@@ -50,6 +50,7 @@ export interface GetGradesOptions {
         unitId?: number;
         topicId?: number;
         questionId?: number;
+        userId?: number;
     };
 }
 

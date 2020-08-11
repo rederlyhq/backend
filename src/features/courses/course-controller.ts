@@ -220,6 +220,10 @@ class CourseController {
     }
 
     private async makeProblemNumberAvailable(options: MakeProblemNumberAvailableOptions): Promise<UpdateResult<CourseWWTopicQuestion>[]> {
+        // TODO make this more efficient
+        // Currently this updates more records than it has to so that it can remain generic due to time constraints
+        // i.e. if update the problem number from 1 to 1, it will increment and decrement all question in the topic
+        // if that problem number update was the only parameter we would not actually make any changes even though it updated all the records
         const problemNumberField = CourseWWTopicQuestion.rawAttributes.problemNumber.field;
         const decrementResult = await courseRepository.updateQuestions({
             where: {
@@ -270,7 +274,7 @@ class CourseController {
         return [decrementResult, fixResult, incrementResult, fixResult2];
     }
 
-    updateQuestion(options: UpdateQuestionOptions): Promise<number> {
+    updateQuestion(options: UpdateQuestionOptions): Promise<CourseWWTopicQuestion[]> {
         return appSequelize.transaction(async () => {
             // This is a set of all update results as they come in, since there are 5 updates that occur this will have 5 elements
             let updatesResults: UpdateResult<CourseWWTopicQuestion>[]  = [];
@@ -280,9 +284,11 @@ class CourseController {
                     id: options.where.id
                 });
                 const sourceProblemNumber = existingQuestion.problemNumber;
+                // Move the question out of the way for now, this is due to constraint issues
+                // TODO make unique index a deferable unique constraint and then make the transaction deferable
+                // NOTE: sequelize did not have a nice way of doing this on unique constraints that use the same key in a composite key
                 existingQuestion.problemNumber = 2147483640;
                 await existingQuestion.save();
-                console.log('tom 1 1');
                 updatesResults = await this.makeProblemNumberAvailable({
                     sourceProblemNumber: sourceProblemNumber,
                     sourceTopicId: existingQuestion.courseTopicContentId,

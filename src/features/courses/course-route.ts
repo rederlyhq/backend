@@ -233,21 +233,19 @@ router.put('/question/:id',
     // This is to work around "extractMap" error
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseTopicQuestionRequest.body, UpdateCourseTopicQuestionRequest.query>, _res: Response, next: NextFunction) => {
-        try {
-            const params = req.params as UpdateCourseTopicQuestionRequest.params;
-            const updates = await courseController.updateQuestion({
-                where: {
-                    id: params.id
-                },
-                updates: {
-                    ...req.body
-                }
-            });
-            // TODO handle not found case
-            next(httpResponse.Ok('Updated question successfully', updates));
-        } catch (e) {
-            next(e);
-        }
+        const params = req.params as UpdateCourseTopicQuestionRequest.params;
+        const updatesResult = await courseController.updateQuestion({
+            where: {
+                id: params.id
+            },
+            updates: {
+                ...req.body
+            }
+        });
+        next(httpResponse.Ok('Updated question successfully', {
+            updatesResult,
+            updatesCount: updatesResult.length
+        }));
     }));
 
 router.put('/:id',

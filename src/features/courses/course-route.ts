@@ -212,7 +212,7 @@ router.put('/unit/:id',
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseUnitRequest.body, UpdateCourseUnitRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const params = req.params as UpdateCourseUnitRequest.params;
-            const updates = await courseController.updateUnit({
+            const updatesResult = await courseController.updateCourseUnit({
                 where: {
                     id: params.id
                 },
@@ -221,7 +221,10 @@ router.put('/unit/:id',
                 }
             });
             // TODO handle not found case
-            next(httpResponse.Ok('Updated unit successfully', updates));
+            next(httpResponse.Ok('Updated unit successfully', {
+                updatesResult,
+                updatesCount: updatesResult.length
+            }));
         } catch (e) {
             next(e);
         }

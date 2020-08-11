@@ -4,6 +4,7 @@ import User from '../../database/models/user';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 import Course from '../../database/models/course';
 import { WhereOptions } from 'sequelize/types';
+import CourseUnitContent from '../../database/models/course-unit-content';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -26,6 +27,11 @@ export interface GetQuestionRepositoryOptions {
     id: number;
 }
 
+// TODO make generic interface
+export interface GetCourseUnitRepositoryOptions {
+    id: number;
+}
+
 export interface UpdateTopicOptions {
     where: {
         id: number;
@@ -40,14 +46,16 @@ export interface UpdateTopicOptions {
     };
 }
 
+export interface UpdateCourseUnitsOptions {
+    where: WhereOptions;
+    updates: Partial<CourseUnitContent> | any;
+}
+
 export interface UpdateUnitOptions {
     where: {
         id: number;
     };
-    updates: {
-        name?: string;
-        active?: boolean;
-    };
+    updates: Partial<CourseUnitContent> | any;
 }
 
 export interface MakeProblemNumberAvailableOptions {
@@ -55,6 +63,13 @@ export interface MakeProblemNumberAvailableOptions {
     targetTopicId: number;
     sourceProblemNumber: number;
     targetProblemNumber: number;
+}
+
+export interface MakeUnitContentOrderAvailableOptions {
+    sourceCourseId: number;
+    targetCourseId: number;
+    sourceContentOrder: number;
+    targetContentOrder: number;
 }
 
 export interface UpdateQuestionOptions {

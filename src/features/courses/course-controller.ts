@@ -16,7 +16,7 @@ import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import appSequelize from '../../database/app-sequelize';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -125,31 +125,8 @@ class CourseController {
         }
     }
 
-    private checkCourseUnitError(e: Error): void {
-        if (e instanceof BaseError === false) {
-            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
-        }
-        const databaseError = e as BaseError;
-        switch (databaseError.originalAsSequelizeError?.constraint) {
-            // case CourseUnitContent.constraints.uniqueNamePerCourse:
-            case CourseUnitContent.constraints.uniqueNamePerCourse:
-                throw new AlreadyExistsError('A unit with that name already exists within this course');
-            case CourseUnitContent.constraints.unqiueOrderPerCourse:
-                throw new AlreadyExistsError('A unit already exists with this order');
-            case CourseUnitContent.constraints.foreignKeyCourse:
-                throw new NotFoundError('The given course was not found to create the unit');
-            default:
-                throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
-        }
-    }
-
     async createUnit(courseUnitContent: Partial<CourseUnitContent>): Promise<CourseUnitContent> {
-        try {
-            return await CourseUnitContent.create(courseUnitContent);
-        } catch (e) {
-            this.checkCourseUnitError(e);
-            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
-        }
+        return courseRepository.createUnit(courseUnitContent);
     }
 
     private checkCourseTopicError(e: Error): void {
@@ -206,17 +183,96 @@ class CourseController {
         }
     }
 
-    async updateUnit(options: UpdateUnitOptions): Promise<number> {
-        try {
-            const updates = await CourseUnitContent.update(options.updates, {
-                where: options.where
-            });
-            // updates count
-            return updates[0];
-        } catch (e) {
-            this.checkCourseUnitError(e);
-            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
-        }
+    private async makeCourseUnitOrderAvailable(options: MakeUnitContentOrderAvailableOptions): Promise<UpdateResult<CourseUnitContent>[]> {
+        // TODO make this more efficient
+        // Currently this updates more records than it has to so that it can remain generic due to time constraints
+        // See problem number comment for more details
+        const contentOrderField = CourseUnitContent.rawAttributes.contentOrder.field;
+        const decrementResult = await courseRepository.updateUnits({
+            where: {
+                contentOrder: {
+                    [Sequelize.Op.gt]: options.sourceContentOrder
+                },
+                courseId: options.sourceCourseId
+            },
+            updates: {
+                contentOrder: sequelize.literal(`-1 * (${contentOrderField} - 1)`),
+            }
+        });
+
+        const fixResult = await courseRepository.updateUnits({
+            where: {
+                contentOrder: {
+                    [Sequelize.Op.lt]: 0
+                },
+            },
+            updates: {
+                contentOrder: sequelize.literal(`ABS(${contentOrderField})`),
+            }
+        });
+
+        const incrementResult = await courseRepository.updateUnits({
+            where: {
+                contentOrder: {
+                    [Sequelize.Op.gte]: options.targetContentOrder
+                },
+                courseId: options.targetCourseId
+            },
+            updates: {
+                contentOrder: sequelize.literal(`-1 * (${contentOrderField} + 1)`),
+            }
+        });
+
+        const fixResult2 = await courseRepository.updateUnits({
+            where: {
+                contentOrder: {
+                    [Sequelize.Op.lt]: 0
+                },
+            },
+            updates: {
+                contentOrder: sequelize.literal(`ABS(${contentOrderField})`),
+            }
+        });
+
+        return [decrementResult, fixResult, incrementResult, fixResult2];
+    }
+
+    async updateCourseUnit(options: UpdateUnitOptions): Promise<CourseUnitContent[]> {
+        return appSequelize.transaction(async () => {
+            // This is a set of all update results as they come in, since there are 5 updates that occur this will have 5 elements
+            let updatesResults: UpdateResult<CourseUnitContent>[]  = [];
+            if(!_.isNil(options.updates.contentOrder)) {
+                // What happens if you move from one topic to another? Disregarding since that should not be possible from the UI
+                const existingUnit = await courseRepository.getCourseUnit({
+                    id: options.where.id
+                });
+                const sourceContentOrder = existingUnit.contentOrder;
+                // Move the object out of the way for now, this is due to constraint issues
+                // TODO make unique index a deferable unique constraint and then make the transaction deferable
+                // NOTE: sequelize did not have a nice way of doing this on unique constraints that use the same key in a composite key
+                existingUnit.contentOrder = 2147483640;
+                await existingUnit.save();
+                updatesResults = await this.makeCourseUnitOrderAvailable({
+                    sourceContentOrder,
+                    sourceCourseId: existingUnit.courseId,
+                    targetContentOrder: options.updates.contentOrder,
+                    targetCourseId: options.updates.courseId ?? existingUnit.courseId
+                });
+            }
+            const updateCourseUnitResult = await courseRepository.updateCourseUnit(options);
+            updatesResults.push(updateCourseUnitResult);
+
+            // Here we extract the list of updated records
+            const updatesResultsUpdatedRecords: CourseUnitContent[][] = updatesResults.map((arr: UpdateResult<CourseUnitContent>) => arr.updatedRecords);
+            // Here we come up with a list of all records (they are in the order in which they were updated)
+            const updatedRecords: CourseUnitContent[] = new Array<CourseUnitContent>().concat(...updatesResultsUpdatedRecords);
+            // Lastly we convert to an object and back to an array so that we only have the last updates
+            const resultantUpdates: CourseUnitContent[] = _.chain(updatedRecords)
+            .keyBy('id')
+            .values()
+            .value();
+            return resultantUpdates;
+        });
     }
 
     private async makeProblemNumberAvailable(options: MakeProblemNumberAvailableOptions): Promise<UpdateResult<CourseWWTopicQuestion>[]> {

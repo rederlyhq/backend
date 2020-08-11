@@ -16,9 +16,10 @@ import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import appSequelize from '../../database/app-sequelize';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
+import { UpdateResult } from '../../generic-interfaces/sequelize-generic-interfaces';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -218,10 +219,90 @@ class CourseController {
         }
     }
 
-    async updateQuestion(options: UpdateQuestionOptions): Promise<number> {
-        return await appSequelize.transaction(async () => {
-            const result = await courseRepository.updateQuestion(options);
-            return result;
+    private async makeProblemNumberAvailable(options: MakeProblemNumberAvailableOptions): Promise<UpdateResult<CourseWWTopicQuestion>[]> {
+        const problemNumberField = CourseWWTopicQuestion.rawAttributes.problemNumber.field;
+        const decrementResult = await courseRepository.updateQuestions({
+            where: {
+                problemNumber: {
+                    [Sequelize.Op.gt]: options.sourceProblemNumber
+                },
+                courseTopicContentId: options.sourceTopicId
+            },
+            updates: {
+                problemNumber: sequelize.literal(`-1 * (${problemNumberField} - 1)`),
+            }
+        });
+
+        const fixResult = await courseRepository.updateQuestions({
+            where: {
+                problemNumber: {
+                    [Sequelize.Op.lt]: 0
+                },
+            },
+            updates: {
+                problemNumber: sequelize.literal(`ABS(${problemNumberField})`),
+            }
+        });
+
+        const incrementResult = await courseRepository.updateQuestions({
+            where: {
+                problemNumber: {
+                    [Sequelize.Op.gte]: options.targetProblemNumber
+                },
+                courseTopicContentId: options.targetTopicId
+            },
+            updates: {
+                problemNumber: sequelize.literal(`-1 * (${problemNumberField} + 1)`),
+            }
+        });
+
+        const fixResult2 = await courseRepository.updateQuestions({
+            where: {
+                problemNumber: {
+                    [Sequelize.Op.lt]: 0
+                },
+            },
+            updates: {
+                problemNumber: sequelize.literal(`ABS(${problemNumberField})`),
+            }
+        });
+
+        return [decrementResult, fixResult, incrementResult, fixResult2];
+    }
+
+    updateQuestion(options: UpdateQuestionOptions): Promise<number> {
+        return appSequelize.transaction(async () => {
+            // This is a set of all update results as they come in, since there are 5 updates that occur this will have 5 elements
+            let updatesResults: UpdateResult<CourseWWTopicQuestion>[]  = [];
+            if(!_.isNil(options.updates.problemNumber)) {
+                // What happens if you move from one topic to another? Disregarding since that should not be possible from the UI
+                const existingQuestion = await courseRepository.getQuestion({
+                    id: options.where.id
+                });
+                const sourceProblemNumber = existingQuestion.problemNumber;
+                existingQuestion.problemNumber = 2147483640;
+                await existingQuestion.save();
+                console.log('tom 1 1');
+                updatesResults = await this.makeProblemNumberAvailable({
+                    sourceProblemNumber: sourceProblemNumber,
+                    sourceTopicId: existingQuestion.courseTopicContentId,
+                    targetProblemNumber: options.updates.problemNumber,
+                    targetTopicId: options.updates.courseTopicContentId ?? existingQuestion.courseTopicContentId
+                });
+            }
+            const updateQuestionResult = await courseRepository.updateQuestion(options);
+            updatesResults.push(updateQuestionResult);
+
+            // Here we extract the list of updated records
+            const updatesResultsUpdatedRecords: CourseWWTopicQuestion[][] = updatesResults.map((arr: UpdateResult<CourseWWTopicQuestion>) => arr.updatedRecords);
+            // Here we come up with a list of all records (they are in the order in which they were updated)
+            const updatedRecords: CourseWWTopicQuestion[] = new Array<CourseWWTopicQuestion>().concat(...updatesResultsUpdatedRecords);
+            // Lastly we convert to an object and back to an array so that we only have the last updates
+            const resultantUpdates: CourseWWTopicQuestion[] = _.chain(updatedRecords)
+            .keyBy('id')
+            .values()
+            .value();
+            return resultantUpdates;
         });
     }
 
@@ -240,10 +321,8 @@ class CourseController {
     }
 
     async getQuestion(options: GetQuestionOptions): Promise<GetQuestionResult> {
-        const courseQuestion = await CourseWWTopicQuestion.findOne({
-            where: {
-                id: options.questionId
-            }
+        const courseQuestion = await courseRepository.getQuestion({
+            id: options.questionId
         });
 
         if (_.isNil(courseQuestion)) {

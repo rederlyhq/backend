@@ -3,6 +3,7 @@ import StudentWorkbook from '../../database/models/student-workbook';
 import User from '../../database/models/user';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 import Course from '../../database/models/course';
+import { WhereOptions } from 'sequelize/types';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -19,6 +20,10 @@ export interface CourseListOptions {
 export interface GetQuestionOptions {
     userId: number;
     questionId: number;
+}
+
+export interface GetQuestionRepositoryOptions {
+    id: number;
 }
 
 export interface UpdateTopicOptions {
@@ -45,11 +50,23 @@ export interface UpdateUnitOptions {
     };
 }
 
+export interface MakeProblemNumberAvailableOptions {
+    sourceTopicId: number;
+    targetTopicId: number;
+    sourceProblemNumber: number;
+    targetProblemNumber: number;
+}
+
 export interface UpdateQuestionOptions {
     where: {
         id: number;
     };
     updates: Partial<CourseWWTopicQuestion>;
+}
+
+export interface UpdateQuestionsOptions {
+    where: WhereOptions;
+    updates: Partial<CourseWWTopicQuestion> | any;
 }
 
 export interface UpdateCourseOptions {

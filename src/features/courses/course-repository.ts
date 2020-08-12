@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import WrappedError from '../../exceptions/wrapped-error';
 import { Constants } from '../../constants';
-import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions } from './course-types';
+import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions } from './course-types';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 import NotFoundError from '../../exceptions/not-found-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
@@ -9,6 +9,7 @@ import { BaseError } from 'sequelize';
 import { UpdateResult } from '../../generic-interfaces/sequelize-generic-interfaces';
 import CourseUnitContent from '../../database/models/course-unit-content';
 import { UpdateUnitOptions } from '../curriculum/curriculum-types';
+import CourseTopicContent from '../../database/models/course-topic-content';
 
 class CourseRepository {
     /* ************************* ************************* */
@@ -72,7 +73,7 @@ class CourseRepository {
                 updatedRecords: updates[1],
             };
         } catch (e) {
-            this.checkQuestionError(e);
+            this.checkCourseUnitError(e);
             throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
     }
@@ -82,6 +83,81 @@ class CourseRepository {
             return await CourseUnitContent.create(courseUnitContent);
         } catch (e) {
             this.checkCourseUnitError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
+        }
+    }
+
+    /* ************************* ************************* */
+    /* ********************* Topics  ********************* */
+    /* ************************* ************************* */
+    async getCourseTopic(options: GetCourseTopicRepositoryOptions): Promise<CourseTopicContent> {
+        const result = await CourseTopicContent.findOne({
+            where: {
+                id: options.id
+            },
+        });
+        if (_.isNil(result)) {
+            throw new NotFoundError('The requested topic does not exist');
+        }
+        return result;
+    }
+
+    private checkCourseTopicError(e: Error): void {
+        if (e instanceof BaseError === false) {
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
+        }
+        const databaseError = e as BaseError;
+        switch (databaseError.originalAsSequelizeError?.constraint) {
+            case CourseTopicContent.constraints.uniqueNamePerUnit:
+                throw new AlreadyExistsError('A topic with that name already exists within this unit');
+            case CourseTopicContent.constraints.uniqueOrderPerUnit:
+                throw new AlreadyExistsError('A topic already exists with this unit order');
+            case CourseTopicContent.constraints.foreignKeyUnit:
+                throw new NotFoundError('A unit with the given unit id was not found');
+            case CourseTopicContent.constraints.foreignKeyTopicType:
+                throw new NotFoundError('Invalid topic type provided');
+            default:
+                throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
+        }
+    }
+
+    async createCourseTopic(courseTopicContent: CourseTopicContent): Promise<CourseTopicContent> {
+        try {
+            return await CourseTopicContent.create(courseTopicContent);
+        } catch (e) {
+            this.checkCourseTopicError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
+        }
+    }
+
+    async updateCourseTopic(options: UpdateTopicOptions): Promise<UpdateResult<CourseTopicContent>> {
+        try {
+            const updates = await CourseTopicContent.update(options.updates, {
+                where: options.where,
+                returning: true,
+            });
+            return {
+                updatedCount: updates[0],
+                updatedRecords: updates[1],
+            };
+        } catch (e) {
+            this.checkCourseTopicError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
+        }
+    }
+
+    async updateTopics(options: UpdateCourseTopicsOptions): Promise<UpdateResult<CourseTopicContent>> {
+        try {
+            const updates = await CourseTopicContent.update(options.updates, {
+                where: options.where,
+                returning: true,
+            });
+            return {
+                updatedCount: updates[0],
+                updatedRecords: updates[1],
+            };
+        } catch (e) {
+            this.checkCourseTopicError(e);
             throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
     }

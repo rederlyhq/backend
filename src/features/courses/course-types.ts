@@ -5,6 +5,7 @@ import CourseWWTopicQuestion from '../../database/models/course-ww-topic-questio
 import Course from '../../database/models/course';
 import { WhereOptions } from 'sequelize/types';
 import CourseUnitContent from '../../database/models/course-unit-content';
+import CourseTopicContent from '../../database/models/course-topic-content';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -27,6 +28,10 @@ export interface GetQuestionRepositoryOptions {
     id: number;
 }
 
+export interface GetCourseTopicRepositoryOptions {
+    id: number;
+}
+
 // TODO make generic interface
 export interface GetCourseUnitRepositoryOptions {
     id: number;
@@ -36,19 +41,17 @@ export interface UpdateTopicOptions {
     where: {
         id: number;
     };
-    updates: {
-        startDate?: Date;
-        endDate?: Date;
-        deadDate?: Date;
-        name?: string;
-        active?: boolean;
-        partialExtend?: boolean;
-    };
+    updates: Partial<CourseTopicContent> | any;
 }
 
 export interface UpdateCourseUnitsOptions {
     where: WhereOptions;
     updates: Partial<CourseUnitContent> | any;
+}
+
+export interface UpdateCourseTopicsOptions {
+    where: WhereOptions;
+    updates: Partial<CourseTopicContent> | any;
 }
 
 export interface UpdateUnitOptions {
@@ -68,6 +71,13 @@ export interface MakeProblemNumberAvailableOptions {
 export interface MakeUnitContentOrderAvailableOptions {
     sourceCourseId: number;
     targetCourseId: number;
+    sourceContentOrder: number;
+    targetContentOrder: number;
+}
+
+export interface MakeTopicContentOrderAvailableOptions {
+    sourceCourseUnitId: number;
+    targetCourseUnitId: number;
     sourceContentOrder: number;
     targetContentOrder: number;
 }

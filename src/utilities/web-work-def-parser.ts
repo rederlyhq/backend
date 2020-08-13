@@ -53,6 +53,14 @@ const webWorkDefProblemKeyMaps: Array<WebWorkDefKeyValueMap> = [
 ];
 
 export class Problem {
+    public problem_id?: string;
+    public source_file?: string;
+    public value?: string;
+    public max_attempts?: string;
+    public showMeAnother?: string;
+    public prPeriod?: string;
+    public counts_parent_grade?: string;
+    public att_to_open_children?: string;
 }
 
 export default class WebWorkDef {

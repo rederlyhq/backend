@@ -19,6 +19,14 @@ export const createCourseValidation = {
     }
 };
 
+export const createQuestionsForTopicFromDefFileValidation = {
+    params: {},
+    query: {
+        courseTopicId: Joi.number().required()
+    },
+    body: {}
+};
+
 export const createCourseUnitValidation = {
     params: {},
     body: {

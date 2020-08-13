@@ -273,6 +273,14 @@ class CourseRepository {
             throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
     }
+
+    async getLatestProblemNumberForTopic(courseTopicId: number): Promise<number> {
+        return CourseWWTopicQuestion.max('problemNumber', {
+            where: {
+                courseTopicContentId: courseTopicId
+            }
+        });
+    }
 }
 
 const courseRepository = new CourseRepository();

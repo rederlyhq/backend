@@ -200,3 +200,8 @@ export interface CreateNewStudentGradeOptions {
     userId: number;
     courseTopicQuestionId: number;
 }
+
+export interface CreateQuestionsForTopicFromDefFileContentOptions {
+    webworkDefFileContent: string;
+    courseTopicId: number;
+}

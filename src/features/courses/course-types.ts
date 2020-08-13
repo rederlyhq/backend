@@ -57,6 +57,7 @@ export interface GetGradesOptions {
 export interface GetStatisticsOnUnitsOptions {
     where: {
         courseId?: number;
+        userId?: number;
     };
 }
 
@@ -64,6 +65,7 @@ export interface GetStatisticsOnTopicsOptions {
     where: {
         courseUnitContentId?: number;
         courseId?: number;
+        userId?: number;
     };
 }
 
@@ -71,6 +73,7 @@ export interface GetStatisticsOnQuestionsOptions {
     where: {
         courseTopicContentId?: number;
         courseId?: number;
+        userId?: number;
     };
 }
 

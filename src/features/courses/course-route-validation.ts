@@ -173,6 +173,7 @@ export const getStatisticsOnUnitsValidation = {
     params: {},
     query: {
         courseId: Joi.number().optional(),
+        userId: Joi.number().optional(),
     },
     body: {},
 };
@@ -182,6 +183,7 @@ export const getStatisticsOnTopicsValidation = {
     query: {
         courseUnitContentId: Joi.number().optional(),
         courseId: Joi.number().optional(),
+        userId: Joi.number().optional(),
     },
     body: {},
 };
@@ -191,6 +193,7 @@ export const getStatisticsOnQuestionsValidation = {
     query: {
         courseTopicContentId: Joi.number().optional(),
         courseId: Joi.number().optional(),
+        userId: Joi.number().optional(),
     },
     body: {},
 };

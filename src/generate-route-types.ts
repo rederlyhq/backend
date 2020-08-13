@@ -34,12 +34,10 @@ const recursiveListFilesInDirectory = async (filePath: string, result: string[],
     const isDir = await isDirectory(filePath);
     if (isDir) {
         const files = await listFilesInDirectory(filePath);
-        // TODO fix async for each
-        const promises: Promise<void>[] = files.asyncForEach(async (listFilePath: string) => {
+        await files.asyncForEach(async (listFilePath: string) => {
             const resultPath = path.resolve(path.join(filePath, listFilePath));
             await recursiveListFilesInDirectory(resultPath, result, filter);
         });
-        await Promise.all(promises);
     } else {
         if (filter(filePath)) {
             result.push(filePath);
@@ -70,7 +68,7 @@ const writeFile = (filePath: string, fileContent: string): Promise<void> => {
     await recursiveListFilesInDirectory('./', result, (filePath: string) => {
         return filePath.endsWith('-route-validation.ts');
     });
-    result.asyncForEach(async (validationFilePath) => {
+    await result.asyncForEach(async (validationFilePath) => {
         const validationFileName = path.basename(validationFilePath);
         // Since this is a code generator we need to require dynamic paths
         // eslint-disable-next-line @typescript-eslint/no-var-requires

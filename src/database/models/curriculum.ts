@@ -8,6 +8,9 @@ export default class Curriculum extends Model {
     public active!: boolean;
     public public!: boolean;
 
+    // Foreign key objects, only exists if included
+    public units?: CurriculumUnitContent[];
+
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;

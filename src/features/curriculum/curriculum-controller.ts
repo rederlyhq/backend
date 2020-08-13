@@ -10,31 +10,11 @@ import WrappedError from '../../exceptions/wrapped-error';
 import NotFoundError from '../../exceptions/not-found-error';
 import { UpdateTopicOptions, UpdateUnitOptions } from './curriculum-types';
 import { Constants } from '../../constants';
+import curriculumRepository from './curriculum-repository';
 
 class CurriculumController {
     getCurriculumById(id: number): Promise<Curriculum> {
-        return Curriculum.findOne({
-            where: {
-                id
-            },
-            include: [{
-                model: CurriculumUnitContent,
-                as: 'units',
-                include: [{
-                    model: CurriculumTopicContent,
-                    as: 'topics',
-                    include: [{
-                        model: CurriculumWWTopicQuestion,
-                        as: 'questions'
-                    }]
-                }]
-            }],
-            order: [
-                ['units', 'contentOrder', 'ASC'],
-                ['units', 'topics', 'contentOrder', 'ASC'],
-                ['units', 'topics', 'questions', 'problemNumber', 'ASC'],
-            ]
-        });
+        return curriculumRepository.getCurriculumById(id);
     }
 
     getCurriculums(): Bluebird<Curriculum[]> {

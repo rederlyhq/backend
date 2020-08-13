@@ -2,7 +2,9 @@ import * as Joi from '@hapi/joi';
 
 export const createCourseValidation = {
     params: {},
-    query: {},
+    query: {
+        useCurriculum: Joi.boolean().optional().default(false)
+    },
     body: {
         curriculumId: Joi.number().optional(),
         name: Joi.string().required(),

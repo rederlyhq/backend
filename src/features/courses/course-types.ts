@@ -94,6 +94,13 @@ export interface UpdateQuestionsOptions {
     updates: Partial<CourseWWTopicQuestion> | any;
 }
 
+export interface CreateCourseOptions {
+    object: Partial<Course>;
+    options: {
+        useCurriculum: boolean;
+    };
+}
+
 export interface UpdateCourseOptions {
     where: {
         id: number;

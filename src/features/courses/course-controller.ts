@@ -16,10 +16,14 @@ import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import appSequelize from '../../database/app-sequelize';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult } from '../../generic-interfaces/sequelize-generic-interfaces';
+import curriculumRepository from '../curriculum/curriculum-repository';
+import CurriculumUnitContent from '../../database/models/curriculum-unit-content';
+import CurriculumTopicContent from '../../database/models/curriculum-topic-content';
+import CurriculumWWTopicQuestion from '../../database/models/curriculum-ww-topic-question';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -101,27 +105,57 @@ class CourseController {
         });
     }
 
-    private checkCourseError(e: Error): void {
-        if (e instanceof BaseError === false) {
-            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
-        }
-        const databaseError = e as BaseError;
-        switch (databaseError.originalAsSequelizeError?.constraint) {
-            case Course.constraints.foreignKeyCurriculum:
-                throw new NotFoundError('Could not create the course since the given curriculum does not exist');
-            case Course.constraints.uniqueCourseCode:
-                throw new AlreadyExistsError('A course already exists with this course code');
-            default:
-                throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
-        }
-    }
+    async createCourse(options: CreateCourseOptions): Promise<Course> {
+        if(options.options.useCurriculum) {
+            return appSequelize.transaction(async () => {
+                // I didn't want this in the transaction, however use strict throws errors if not
+                if(_.isNil(options.object.curriculumId)) {
+                    throw new NotFoundError('Cannot useCurriculum if curriculumId is not given');
+                }
+                const curriculum = await curriculumRepository.getCurriculumById(options.object.curriculumId);
+                const createdCourse = await courseRepository.createCourse(options.object);
+                await curriculum.units?.asyncForEach(async (curriculumUnit: CurriculumUnitContent) => {
+                    const createdCourseUnit = await courseRepository.createUnit({
+                        active: curriculumUnit.active,
+                        contentOrder: curriculumUnit.contentOrder,
+                        courseId: createdCourse.id,
+                        curriculumUnitId: curriculumUnit.id,
+                        name: curriculumUnit.name,
 
-    async createCourse(courseObject: Partial<Course>): Promise<Course> {
-        try {
-            return await Course.create(courseObject);
-        } catch (e) {
-            this.checkCourseError(e);
-            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
+                    });
+                    await curriculumUnit.topics?.asyncForEach(async (curriculumTopic: CurriculumTopicContent) => {
+                        const createdCourseTopic: CourseTopicContent = await courseRepository.createCourseTopic({
+                            curriculumTopicContentId: curriculumTopic.id,
+                            courseUnitContentId: createdCourseUnit.id,
+                            topicTypeId: curriculumTopic.topicTypeId,
+                            name: curriculumTopic.name,
+                            active: curriculumTopic.active,
+                            contentOrder: curriculumTopic.contentOrder,
+
+                            startDate: createdCourse.end,
+                            endDate: createdCourse.end,
+                            deadDate: createdCourse.end,
+                            partialExtend: false
+                        });
+                        await curriculumTopic.questions?.asyncForEach(async (curriculumQuestion: CurriculumWWTopicQuestion) => {
+                            await courseRepository.createQuestion({
+                                courseTopicContentId: createdCourseTopic.id,
+                                problemNumber: curriculumQuestion.problemNumber,
+                                webworkQuestionPath: curriculumQuestion.webworkQuestionPath,
+                                weight: curriculumQuestion.weight,
+                                maxAttempts: curriculumQuestion.maxAttempts,
+                                hidden: curriculumQuestion.hidden,
+                                active: curriculumQuestion.active,
+                                optional: curriculumQuestion.optional,
+                                curriculumQuestionId: curriculumQuestion.id
+                            });
+                        });
+                    });
+                });
+                return createdCourse;
+            });
+        } else {
+            return courseRepository.createCourse(options.object);
         }
     }
 
@@ -135,16 +169,7 @@ class CourseController {
     }
 
     async updateCourse(options: UpdateCourseOptions): Promise<number> {
-        try {
-            const updates = await Course.update(options.updates, {
-                where: options.where
-            });
-            // updates count
-            return updates[0];
-        } catch (e) {
-            this.checkCourseError(e);
-            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
-        }
+        return courseRepository.updateCourse(options);
     }
 
     private async makeCourseTopicOrderAvailable(options: MakeTopicContentOrderAvailableOptions): Promise<UpdateResult<CourseTopicContent>[]> {

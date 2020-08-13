@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import WrappedError from '../../exceptions/wrapped-error';
 import { Constants } from '../../constants';
-import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions } from './course-types';
+import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions } from './course-types';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 import NotFoundError from '../../exceptions/not-found-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
@@ -10,8 +10,49 @@ import { UpdateResult } from '../../generic-interfaces/sequelize-generic-interfa
 import CourseUnitContent from '../../database/models/course-unit-content';
 import { UpdateUnitOptions } from '../curriculum/curriculum-types';
 import CourseTopicContent from '../../database/models/course-topic-content';
+import Course from '../../database/models/course';
 
 class CourseRepository {
+    /* ************************* ************************* */
+    /* ********************* Courses ********************* */
+    /* ************************* ************************* */
+    private checkCourseError(e: Error): void {
+        if (e instanceof BaseError === false) {
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
+        }
+        const databaseError = e as BaseError;
+        switch (databaseError.originalAsSequelizeError?.constraint) {
+            case Course.constraints.foreignKeyCurriculum:
+                throw new NotFoundError('Could not create the course since the given curriculum does not exist');
+            case Course.constraints.uniqueCourseCode:
+                throw new AlreadyExistsError('A course already exists with this course code');
+            default:
+                throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
+        }
+    }
+
+    async createCourse(courseObject: Partial<Course>): Promise<Course> {
+        try {
+            return await Course.create(courseObject);
+        } catch (e) {
+            this.checkCourseError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
+        }
+    }
+
+    async updateCourse(options: UpdateCourseOptions): Promise<number> {
+        try {
+            const updates = await Course.update(options.updates, {
+                where: options.where
+            });
+            // updates count
+            return updates[0];
+        } catch (e) {
+            this.checkCourseError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
+        }
+    }
+
     /* ************************* ************************* */
     /* ********************** Units ********************** */
     /* ************************* ************************* */
@@ -121,7 +162,7 @@ class CourseRepository {
         }
     }
 
-    async createCourseTopic(courseTopicContent: CourseTopicContent): Promise<CourseTopicContent> {
+    async createCourseTopic(courseTopicContent: Partial<CourseTopicContent>): Promise<CourseTopicContent> {
         try {
             return await CourseTopicContent.create(courseTopicContent);
         } catch (e) {

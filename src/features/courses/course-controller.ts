@@ -687,14 +687,15 @@ class CourseController {
             courseId,
             questionId,
             topicId,
-            unitId
+            unitId,
+            userId,
         } = options.where;
 
         const setFilterCount = [
             courseId,
             questionId,
             topicId,
-            unitId
+            unitId,
         ].reduce((accumulator, val) => (accumulator || 0) + (!_.isNil(val) && 1 || 0), 0);
 
         if (setFilterCount !== 1) {
@@ -707,6 +708,7 @@ class CourseController {
             [`$question.topic.unit.${CourseUnitContent.rawAttributes.id.field}$`]: unitId,
             [`$question.topic.${CourseTopicContent.rawAttributes.id.field}$`]: topicId,
             [`$question.${CourseWWTopicQuestion.rawAttributes.id.field}$`]: questionId,
+            [`$user.${User.rawAttributes.id.field}$`]: userId,
         }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
 
         const totalProblemCountCalculationString = `COUNT(question.${CourseWWTopicQuestion.rawAttributes.id.field})`;
@@ -789,12 +791,14 @@ class CourseController {
 
     getStatisticsOnUnits(options: GetStatisticsOnUnitsOptions): Promise<CourseUnitContent[]> {
         const {
-            courseId
+            courseId,
+            userId,
         } = options.where;
 
         // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
         const where: sequelize.WhereOptions = _({
             courseId,
+            [`$topics.questions.grades.${StudentGrade.rawAttributes.userId.field}$`]: userId,
         }).omitBy(_.isNil).value() as sequelize.WhereOptions;
 
         return CourseUnitContent.findAll({
@@ -830,13 +834,15 @@ class CourseController {
     getStatisticsOnTopics(options: GetStatisticsOnTopicsOptions): Promise<CourseTopicContent[]> {
         const {
             courseUnitContentId,
-            courseId
+            courseId,
+            userId,
         } = options.where;
 
         // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
         const where: sequelize.WhereOptions = _({
             courseUnitContentId,
-            [`$unit.${CourseUnitContent.rawAttributes.courseId.field}$`]: courseId
+            [`$unit.${CourseUnitContent.rawAttributes.courseId.field}$`]: courseId,
+            [`$questions.grades.${StudentGrade.rawAttributes.userId.field}$`]: userId,
         }).omitBy(_.isNil).value() as sequelize.WhereOptions;
 
         const include: sequelize.IncludeOptions[] = [{
@@ -878,13 +884,15 @@ class CourseController {
     getStatisticsOnQuestions(options: GetStatisticsOnQuestionsOptions): Promise<CourseWWTopicQuestion[]> {
         const {
             courseTopicContentId,
-            courseId
+            courseId,
+            userId,
         } = options.where;
 
         // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
         const where: sequelize.WhereOptions = _({
             courseTopicContentId,
-            [`$topic.unit.${CourseUnitContent.rawAttributes.courseId.field}$`]: courseId
+            [`$topic.unit.${CourseUnitContent.rawAttributes.courseId.field}$`]: courseId,
+            [`$grades.${StudentGrade.rawAttributes.userId.field}$`]: userId,
         }).omitBy(_.isNil).value() as sequelize.WhereOptions;
 
         const include: sequelize.IncludeOptions[] = [{

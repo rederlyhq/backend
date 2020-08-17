@@ -27,7 +27,8 @@ router.get('/statistics/units',
         try {
             const stats = await courseController.getStatisticsOnUnits({
                 where: {
-                    courseId: req.query.courseId
+                    courseId: req.query.courseId,
+                    userId: req.query.userId,
                 }
             });
             next(httpResponse.Ok('Fetched successfully', stats));
@@ -44,7 +45,8 @@ router.get('/statistics/topics',
             const stats = await courseController.getStatisticsOnTopics({
                 where: {
                     courseUnitContentId: req.query.courseUnitContentId,
-                    courseId: req.query.courseId
+                    courseId: req.query.courseId,
+                    userId: req.query.userId,
                 }
             });
             next(httpResponse.Ok('Fetched successfully', stats));
@@ -61,7 +63,8 @@ router.get('/statistics/questions',
             const stats = await courseController.getStatisticsOnQuestions({
                 where: {
                     courseTopicContentId: req.query.courseTopicContentId,
-                    courseId: req.query.courseId
+                    courseId: req.query.courseId,
+                    userId: req.query.userId,
                 }
             });
             next(httpResponse.Ok('Fetched successfully', stats));
@@ -158,7 +161,8 @@ router.get('/grades',
                     courseId: req.query.courseId,
                     questionId: req.query.questionId,
                     topicId: req.query.topicId,
-                    unitId: req.query.unitId
+                    unitId: req.query.unitId,
+                    userId: req.query.userId,
                 }
             });
             next(httpResponse.Ok('Fetched successfully', grades));

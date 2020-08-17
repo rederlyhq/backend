@@ -169,8 +169,9 @@ class CourseController {
         return courseRepository.createCourseTopic(courseTopicContent);
     }
 
-    async updateCourse(options: UpdateCourseOptions): Promise<number> {
-        return courseRepository.updateCourse(options);
+    async updateCourse(options: UpdateCourseOptions): Promise<Course[]> {
+        const result = await courseRepository.updateCourse(options);
+        return result.updatedRecords;
     }
 
     private async makeCourseTopicOrderAvailable(options: MakeTopicContentOrderAvailableOptions): Promise<UpdateResult<CourseTopicContent>[]> {

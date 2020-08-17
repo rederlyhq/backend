@@ -40,13 +40,16 @@ class CourseRepository {
         }
     }
 
-    async updateCourse(options: UpdateCourseOptions): Promise<number> {
+    async updateCourse(options: UpdateCourseOptions): Promise<UpdateResult<Course>> {
         try {
             const updates = await Course.update(options.updates, {
-                where: options.where
+                where: options.where,
+                returning: true
             });
-            // updates count
-            return updates[0];
+            return {
+                updatedCount: updates[0],
+                updatedRecords: updates[1],
+            };
         } catch (e) {
             this.checkCourseError(e);
             throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
@@ -121,6 +124,7 @@ class CourseRepository {
 
     async createUnit(courseUnitContent: Partial<CourseUnitContent>): Promise<CourseUnitContent> {
         try {
+            
             return await CourseUnitContent.create(courseUnitContent);
         } catch (e) {
             this.checkCourseUnitError(e);

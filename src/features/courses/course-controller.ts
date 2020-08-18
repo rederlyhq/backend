@@ -336,10 +336,11 @@ class CourseController {
     }
 
     async softDeleteQuestions(options: DeleteQuestionsOptions): Promise<UpdateResult<CourseWWTopicQuestion>> {
+        let courseTopicContentId = options.courseTopicContentId;
         return appSequelize.transaction(async (): Promise<UpdateResult<CourseWWTopicQuestion>> => {
             const where: sequelize.WhereOptions = _({
                 id: options.id,
-                courseTopicContentId: options.courseTopicContentId,
+                courseTopicContentId,
                 active: true
             }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
             
@@ -347,13 +348,23 @@ class CourseController {
             if(Object.keys(where).length < 2) {
                 throw new Error('Not enough information in where clause');
             }
-    
+
+            if(_.isNil(courseTopicContentId) && !_.isNil(options.id)) {
+                const existingQuestion = await courseRepository.getQuestion({
+                    id: options.id
+                });
+                courseTopicContentId = existingQuestion.courseTopicContentId;
+            }
+
+            if(_.isNil(courseTopicContentId)) {
+                throw new Error('Could not figure out course topic content id');
+            }
+
             const results: UpdateResult<CourseWWTopicQuestion> = await courseRepository.updateQuestions({
                 where,
                 updates: {
                     active: false,
-                    // TODO
-                    // contentOrder
+                    problemNumber: await courseRepository.getNextDeletedProblemNumberForTopic(courseTopicContentId)
                 }
             });
     

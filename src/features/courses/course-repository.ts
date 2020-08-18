@@ -11,6 +11,9 @@ import CourseUnitContent from '../../database/models/course-unit-content';
 import { UpdateUnitOptions } from '../curriculum/curriculum-types';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import Course from '../../database/models/course';
+// When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const Sequelize = require('sequelize');
 
 class CourseRepository {
     /* ************************* ************************* */
@@ -308,6 +311,26 @@ class CourseRepository {
                 active: true
             }
         });
+    }
+
+    async getLatestDeletedProblemNumberForTopic(courseTopicId: number): Promise<number> {
+        return CourseWWTopicQuestion.max('problemNumber', {
+            where: {
+                courseTopicContentId: courseTopicId,
+                active: false,
+                problemNumber: {
+                    [Sequelize.Op.lt]: 0
+                }
+            }
+        });
+    }
+
+    async getNextDeletedProblemNumberForTopic(courseTopicId: number): Promise<number> {
+        let result = await this.getLatestDeletedProblemNumberForTopic(courseTopicId);
+        if (_.isNaN(result)) {
+            result = Constants.Database.MIN_INTEGER_VALUE;
+        }
+        return result + 1;
     }
 }
 

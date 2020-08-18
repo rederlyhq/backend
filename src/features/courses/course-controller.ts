@@ -16,7 +16,7 @@ import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import appSequelize from '../../database/app-sequelize';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -28,6 +28,7 @@ import WebWorkDef, { Problem } from '../../utilities/web-work-def-parser';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
+const namespace = require('cls-hooked').getNamespace('rederly-backend-api');
 
 class CourseController {
     getCourseById(id: number): Promise<Course> {
@@ -333,6 +334,83 @@ class CourseController {
         });
 
         return [decrementResult, fixResult, incrementResult, fixResult2];
+    }
+
+    async softDeleteQuestions(options: DeleteQuestionsOptions): Promise<UpdateResult<CourseWWTopicQuestion>> {
+        const where: sequelize.WhereOptions = _({
+            id: options.id,
+            courseTopicContentId: options.courseTopicContentId,
+            active: true
+        }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
+        
+        // It will always have active, needs more info than that
+        if(Object.keys(where).length < 2) {
+            throw new Error('Not enough information in where clause');
+        }
+
+        const results: UpdateResult<CourseWWTopicQuestion> = await courseRepository.updateQuestions({
+            where,
+            updates: {
+                active: false,
+                // TODO
+                // contentOrder
+            }
+        });
+
+        return results;
+    }
+
+    async softDeleteTopics(options: DeleteTopicsOptions): Promise<any> {
+        const where: sequelize.WhereOptions = _({
+            id: options.id,
+            courseUnitContentId: options.courseUnitContentId,
+            active: true
+        }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
+        
+        // It will always have active, needs more info than that
+        if(Object.keys(where).length < 2) {
+            throw new Error('Not enough information in where clause');
+        }
+
+        const updateCourseTopicResult: UpdateResult<CourseTopicContent> = await courseRepository.updateTopics({
+            where,
+            updates: {
+                active: false,
+                // TODO
+                // contentOrder
+            }
+        });
+        
+        await updateCourseTopicResult.updatedRecords.asyncForEach(async (topic: CourseTopicContent) => {
+            await this.softDeleteQuestions({
+                courseTopicContentId: topic.id
+            });
+        });
+    }
+
+    async softDeleteUnits(options: DeleteUnitsOptions): Promise<any> {
+        const where: sequelize.WhereOptions = _({
+            id: options.id,
+            active: true
+        }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
+        
+        // It will always have active, needs more info than that
+        if(Object.keys(where).length < 2) {
+            throw new Error('Not enough information in where clause');
+        }
+
+        const updateCourseUnitResult = await courseRepository.updateUnits({
+            where,
+            updates: {
+                active: false
+            }
+        });
+
+        await updateCourseUnitResult.updatedRecords.asyncForEach(async(unit: CourseUnitContent) => {
+            await this.softDeleteTopics({
+                courseUnitContentId: unit.id
+            });
+        });
     }
 
     async updateCourseUnit(options: UpdateUnitOptions): Promise<CourseUnitContent[]> {

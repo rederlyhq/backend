@@ -31,9 +31,10 @@ export const createCourseUnitValidation = {
     params: {},
     body: {
         name: Joi.string().required(),
-        active: Joi.boolean().optional().default(true),
         courseId: Joi.number().required(),
         contentOrder: Joi.number().required(),
+        // Deletes are one directional and soft
+        // active: Joi.boolean().optional().default(true),
     },
     query: {}
 };
@@ -44,13 +45,14 @@ export const createCourseTopicValidation = {
         courseUnitContentId: Joi.number().required(),
         curriculumTopicContentId: Joi.number().optional(),
         name: Joi.string().required(),
-        active: Joi.boolean().optional().default(true),
         topicTypeId: Joi.number().optional().default(1),
         startDate: Joi.date().required(),
         endDate: Joi.date().required(),
         deadDate: Joi.date().required(),
         partialExtend: Joi.boolean().required(),
         contentOrder: Joi.number().required(),
+        // Deletes are one directional and soft
+        // active: Joi.boolean().optional().default(true),
     },
     query: {}
 };
@@ -106,8 +108,9 @@ export const updateCourseUnitValidation = {
     },
     body: {
         name: Joi.string().optional(),
-        active: Joi.boolean().optional(),
         contentOrder: Joi.number().optional(),
+        // Deletes are soft and one directional
+        // active: Joi.boolean().optional(),
         // Cannot move to another course
         // courseId: Joi.number().optional(),
         // Cannot change which curriculum unit it was created from
@@ -148,8 +151,9 @@ export const updateCourseTopicQuestionValidation = {
         weight: Joi.number().optional(),
         maxAttempts: Joi.number().optional(),
         hidden: Joi.boolean().optional(),
-        active: Joi.boolean().optional(),
         optional: Joi.boolean().optional(),
+        // Deletes are one directional and soft
+        // active: Joi.boolean().optional(),
         // You cannot change the curriculum question in which this was derived
         // curriculumQuestionId: Joi.number().optional(),
         // Right now we don't support moving from one topic to another
@@ -168,7 +172,8 @@ export const createCourseTopicQuestionValidation = {
         maxAttempts: Joi.number().required(),
         hidden: Joi.boolean().required(),
         optional: Joi.boolean().required(),
-        active: Joi.boolean().optional().default(true)
+        // Deletes are one directional and soft
+        // active: Joi.boolean().optional().default(true)
     },
     query: {}
 };

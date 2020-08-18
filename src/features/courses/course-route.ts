@@ -231,18 +231,13 @@ router.delete('/unit/:id',
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, DeleteCourseUnitRequest.body, DeleteCourseUnitRequest.query>, _res: Response, next: NextFunction) => {
         const params = req.params as DeleteCourseUnitRequest.params;
         try {
-            const updatesResult = await courseController.updateCourseUnit({
-                where: {
-                    id: params.id
-                },
-                updates: {
-                    active: false
-                }
+            const updatesResult = await courseController.softDeleteUnits({
+                id: params.id
             });
             // TODO handle not found case
-            next(httpResponse.Ok('Updated topic successfully', {
+            next(httpResponse.Ok('Deleted questions successfully', {
                 updatesResult,
-                updatesCount: updatesResult.length
+                // updatesCount: updatesResult.length
             }));
         } catch (e) {
             next(e);
@@ -257,18 +252,13 @@ router.delete('/topic/:id',
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, DeleteCourseTopicRequest.body, DeleteCourseTopicRequest.query>, _res: Response, next: NextFunction) => {
         const params = req.params as DeleteCourseTopicRequest.params;
         try {
-            const updatesResult = await courseController.updateTopic({
-                where: {
-                    id: params.id
-                },
-                updates: {
-                    active: false
-                }
+            const updatesResult = await courseController.softDeleteTopics({
+                id: params.id
             });
             // TODO handle not found case
             next(httpResponse.Ok('Updated topic successfully', {
                 updatesResult,
-                updatesCount: updatesResult.length
+                // updatesCount: updatesResult.length
             }));
         } catch (e) {
             next(e);
@@ -283,18 +273,13 @@ router.delete('/question/:id',
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, DeleteCourseQuestionRequest.body, DeleteCourseQuestionRequest.query>, _res: Response, next: NextFunction) => {
         const params = req.params as DeleteCourseQuestionRequest.params;
         try {
-            const updatesResult = await courseController.updateQuestion({
-                where: {
-                    id: params.id
-                },
-                updates: {
-                    active: false
-                }
+            const updatesResult = await courseController.softDeleteQuestions({
+                id: params.id
             });
             // TODO handle not found case
             next(httpResponse.Ok('Updated topic successfully', {
-                updatesResult,
-                updatesCount: updatesResult.length
+                updatesResult: updatesResult.updatedRecords,
+                updatesCount: updatesResult.updatedCount
             }));
         } catch (e) {
             next(e);

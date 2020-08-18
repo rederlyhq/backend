@@ -209,3 +209,17 @@ export interface CreateQuestionsForTopicFromDefFileContentOptions {
     webworkDefFileContent: string;
     courseTopicId: number;
 }
+
+export interface DeleteQuestionsOptions {
+    id?: number;
+    courseTopicContentId?: number;
+}
+
+export interface DeleteTopicsOptions {
+    id?: number;
+    courseUnitContentId?: number;
+}
+
+export interface DeleteUnitsOptions {
+    id?: number;
+}

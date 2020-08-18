@@ -133,7 +133,6 @@ class CourseController {
                         courseId: createdCourse.id,
                         curriculumUnitId: curriculumUnit.id,
                         name: curriculumUnit.name,
-
                     });
                     await curriculumUnit.topics?.asyncForEach(async (curriculumTopic: CurriculumTopicContent) => {
                         const createdCourseTopic: CourseTopicContent = await courseRepository.createCourseTopic({
@@ -172,6 +171,16 @@ class CourseController {
     }
 
     async createUnit(courseUnitContent: Partial<CourseUnitContent>): Promise<CourseUnitContent> {
+        if(_.isNil(courseUnitContent.contentOrder)) {
+            if(_.isNil(courseUnitContent.courseId)) {
+                throw new Error('We need a course id in order to get a content order');
+            }
+            courseUnitContent.contentOrder = await courseRepository.getNextContentOrderForCourse(courseUnitContent.courseId);
+        }
+
+        if(_.isNil(courseUnitContent.name)) {
+            courseUnitContent.name = `Unit #${courseUnitContent.contentOrder}`;
+        }
         return courseRepository.createUnit(courseUnitContent);
     }
 

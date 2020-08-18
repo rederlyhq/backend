@@ -11,6 +11,7 @@ import CourseUnitContent from '../../database/models/course-unit-content';
 import { UpdateUnitOptions } from '../curriculum/curriculum-types';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import Course from '../../database/models/course';
+import logger from '../../utilities/logger';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -136,8 +137,15 @@ class CourseRepository {
     }
 
     async createUnit(courseUnitContent: Partial<CourseUnitContent>): Promise<CourseUnitContent> {
+        if (!_.isNil(courseUnitContent.active)) {
+            logger.error('Create unit should not be defining it\'s `active` status');
+        }
+
         try {
-            return await CourseUnitContent.create(courseUnitContent);
+            return await CourseUnitContent.create({
+                ...courseUnitContent,
+                active: true // as of right now we don't support creating 
+            });
         } catch (e) {
             this.checkCourseUnitError(e);
             throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
@@ -160,6 +168,23 @@ class CourseRepository {
         let result = await this.getLatestDeletedContentOrderForCourse(courseId);
         if (_.isNaN(result)) {
             result = Constants.Database.MIN_INTEGER_VALUE;
+        }
+        return result + 1;
+    }
+
+    async getLatestContentOrderForCourse(courseId: number): Promise<number> {
+        return CourseUnitContent.max('contentOrder', {
+            where: {
+                courseId: courseId,
+                active: true,
+            }
+        });
+    }
+
+    async getNextContentOrderForCourse(courseId: number): Promise<number> {
+        let result = await this.getLatestContentOrderForCourse(courseId);
+        if (_.isNaN(result)) {
+            result = 0;
         }
         return result + 1;
     }

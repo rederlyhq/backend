@@ -226,6 +226,26 @@ class CourseRepository {
         }
     }
 
+    async getLatestDeletedContentOrderForUnit(courseUnitContentId: number): Promise<number> {
+        return CourseTopicContent.max('contentOrder', {
+            where: {
+                courseUnitContentId: courseUnitContentId,
+                active: false,
+                contentOrder: {
+                    [Sequelize.Op.lt]: 0
+                }
+            }
+        });
+    }
+
+    async getNextDeletedContentOrderForUnit(courseUnitContentId: number): Promise<number> {
+        let result = await this.getLatestDeletedContentOrderForUnit(courseUnitContentId);
+        if (_.isNaN(result)) {
+            result = Constants.Database.MIN_INTEGER_VALUE;
+        }
+        return result + 1;
+    }
+
     /* ************************* ************************* */
     /* ******************** Questions ******************** */
     /* ************************* ************************* */

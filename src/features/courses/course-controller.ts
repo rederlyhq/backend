@@ -360,11 +360,16 @@ class CourseController {
                 throw new Error('Could not figure out course topic content id');
             }
 
+            let problemNumber: number | sequelize.Utils.Literal = await courseRepository.getNextDeletedProblemNumberForTopic(courseTopicContentId);
+            if(!_.isNil(courseTopicContentId)) {
+                problemNumber = sequelize.literal(`${CourseWWTopicQuestion.rawAttributes.problemNumber.field} + ${problemNumber}`);
+            }
+
             const results: UpdateResult<CourseWWTopicQuestion> = await courseRepository.updateQuestions({
                 where,
                 updates: {
                     active: false,
-                    problemNumber: await courseRepository.getNextDeletedProblemNumberForTopic(courseTopicContentId)
+                    problemNumber
                 }
             });
     
@@ -373,12 +378,13 @@ class CourseController {
     }
 
     async softDeleteTopics(options: DeleteTopicsOptions): Promise<UpdateResult<CourseTopicContent>> {
+        let courseUnitContentId = options.courseUnitContentId;
         return appSequelize.transaction(async (): Promise<UpdateResult<CourseTopicContent>> => {
             const results: CourseTopicContent[] = [];
             let updatedCount = 0;
             const where: sequelize.WhereOptions = _({
                 id: options.id,
-                courseUnitContentId: options.courseUnitContentId,
+                courseUnitContentId: courseUnitContentId,
                 active: true
             }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
             
@@ -387,12 +393,22 @@ class CourseController {
                 throw new Error('Not enough information in where clause');
             }
 
+            if(_.isNil(courseUnitContentId) && !_.isNil(options.id)) {
+                const existingTopic = await courseRepository.getCourseTopic({
+                    id: options.id
+                });
+                courseUnitContentId = existingTopic.courseUnitContentId;
+            }
+
+            if(_.isNil(courseUnitContentId)) {
+                throw new Error('Could not figure out course unit content id');
+            }
+
             const updateCourseTopicResult: UpdateResult<CourseTopicContent> = await courseRepository.updateTopics({
                 where,
                 updates: {
                     active: false,
-                    // TODO
-                    // contentOrder
+                    contentOrder: await courseRepository.getNextDeletedContentOrderForUnit(courseUnitContentId)
                 }
             });
             

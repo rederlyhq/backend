@@ -5,7 +5,7 @@ import validate from '../../middleware/joi-validator';
 import { authenticationMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
-import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation } from './course-route-validation';
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation } from './course-route-validation';
 import NotFoundError from '../../exceptions/not-found-error';
 import multer = require('multer');
 import * as proxy from 'express-http-proxy';
@@ -14,7 +14,7 @@ import * as _ from 'lodash';
 import configurations from '../../configurations';
 import WrappedError from '../../exceptions/wrapped-error';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
-import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest } from './course-route-request-types';
+import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest } from './course-route-request-types';
 import Boom = require('boom');
 import { Constants } from '../../constants';
 
@@ -109,7 +109,7 @@ router.post('/',
                 object: {
                     instructorId: user.id,
                     universityId: university.id,
-                    ...req.body    
+                    ...req.body
                 },
                 options: {
                     useCurriculum: query.useCurriculum
@@ -218,6 +218,84 @@ router.put('/topic/:id',
             });
             // TODO handle not found case
             next(httpResponse.Ok('Updated topic successfully', updates));
+        } catch (e) {
+            next(e);
+        }
+    }));
+
+router.delete('/unit/:id',
+    authenticationMiddleware,
+    validate(deleteCourseUnitValidation),
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, DeleteCourseUnitRequest.body, DeleteCourseUnitRequest.query>, _res: Response, next: NextFunction) => {
+        const params = req.params as DeleteCourseUnitRequest.params;
+        try {
+            const updatesResult = await courseController.updateCourseUnit({
+                where: {
+                    id: params.id
+                },
+                updates: {
+                    active: false
+                }
+            });
+            // TODO handle not found case
+            next(httpResponse.Ok('Updated topic successfully', {
+                updatesResult,
+                updatesCount: updatesResult.length
+            }));
+        } catch (e) {
+            next(e);
+        }
+    }));
+
+router.delete('/topic/:id',
+    authenticationMiddleware,
+    validate(deleteCourseTopicValidation),
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, DeleteCourseTopicRequest.body, DeleteCourseTopicRequest.query>, _res: Response, next: NextFunction) => {
+        const params = req.params as DeleteCourseTopicRequest.params;
+        try {
+            const updatesResult = await courseController.updateTopic({
+                where: {
+                    id: params.id
+                },
+                updates: {
+                    active: false
+                }
+            });
+            // TODO handle not found case
+            next(httpResponse.Ok('Updated topic successfully', {
+                updatesResult,
+                updatesCount: updatesResult.length
+            }));
+        } catch (e) {
+            next(e);
+        }
+    }));
+
+router.delete('/question/:id',
+    authenticationMiddleware,
+    validate(deleteCourseQuestionValidation),
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, DeleteCourseQuestionRequest.body, DeleteCourseQuestionRequest.query>, _res: Response, next: NextFunction) => {
+        const params = req.params as DeleteCourseQuestionRequest.params;
+        try {
+            const updatesResult = await courseController.updateQuestion({
+                where: {
+                    id: params.id
+                },
+                updates: {
+                    active: false
+                }
+            });
+            // TODO handle not found case
+            next(httpResponse.Ok('Updated topic successfully', {
+                updatesResult,
+                updatesCount: updatesResult.length
+            }));
         } catch (e) {
             next(e);
         }

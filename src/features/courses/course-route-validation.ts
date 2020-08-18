@@ -64,14 +64,39 @@ export const updateCourseTopicValidation = {
         endDate: Joi.date().optional(),
         deadDate: Joi.date().optional(),
         name: Joi.string().optional(),
-        active: Joi.boolean().optional(),
         partialExtend: Joi.boolean().optional(),
         contentOrder: Joi.number().optional(),
         courseUnitContentId: Joi.number().optional(),
         topicTypeId: Joi.number().optional(),
+        // Deletes cannot be undone, use delete endpoint
+        // active: Joi.boolean().optional(),
         // Cannot change which curriculum topic it was created from
         // curriculumTopicContentId: Joi.number().optional(),
     },
+    query: {},
+};
+
+export const deleteCourseUnitValidation = {
+    params: {
+        id: Joi.number().required()
+    },
+    body: {},
+    query: {},
+};
+
+export const deleteCourseTopicValidation = {
+    params: {
+        id: Joi.number().required()
+    },
+    body: {},
+    query: {},
+};
+
+export const deleteCourseQuestionValidation = {
+    params: {
+        id: Joi.number().required()
+    },
+    body: {},
     query: {},
 };
 

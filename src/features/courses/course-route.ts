@@ -235,9 +235,9 @@ router.delete('/unit/:id',
                 id: params.id
             });
             // TODO handle not found case
-            next(httpResponse.Ok('Deleted questions successfully', {
-                updatesResult,
-                // updatesCount: updatesResult.length
+            next(httpResponse.Ok('Deleted units and subobjects successfully', {
+                updatedRecords: updatesResult.updatedRecords,
+                updatesCount: updatesResult.updatedCount
             }));
         } catch (e) {
             next(e);
@@ -256,9 +256,9 @@ router.delete('/topic/:id',
                 id: params.id
             });
             // TODO handle not found case
-            next(httpResponse.Ok('Updated topic successfully', {
-                updatesResult,
-                // updatesCount: updatesResult.length
+            next(httpResponse.Ok('Deleted topics and subobjects successfully', {
+                updatedRecords: updatesResult.updatedRecords,
+                updatesCount: updatesResult.updatedCount
             }));
         } catch (e) {
             next(e);
@@ -277,8 +277,8 @@ router.delete('/question/:id',
                 id: params.id
             });
             // TODO handle not found case
-            next(httpResponse.Ok('Updated topic successfully', {
-                updatesResult: updatesResult.updatedRecords,
+            next(httpResponse.Ok('Deleted questions and subobjects successfully', {
+                updatedRecords: updatesResult.updatedRecords,
                 updatesCount: updatesResult.updatedCount
             }));
         } catch (e) {

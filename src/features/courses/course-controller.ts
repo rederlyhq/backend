@@ -403,7 +403,9 @@ class CourseController {
         };
     }
 
-    async softDeleteUnits(options: DeleteUnitsOptions): Promise<any> {
+    async softDeleteUnits(options: DeleteUnitsOptions): Promise<UpdateResult<CourseUnitContent>> {
+        const results: CourseUnitContent[] = [];
+        let updatedCount = 0;
         const where: sequelize.WhereOptions = _({
             id: options.id,
             active: true
@@ -422,10 +424,24 @@ class CourseController {
         });
 
         await updateCourseUnitResult.updatedRecords.asyncForEach(async(unit: CourseUnitContent) => {
-            await this.softDeleteTopics({
+            const result: CourseUnitContent = {
+                ...unit.get({ plain: true }),
+                topics: []
+            } as never as CourseUnitContent;
+
+            const topicResult: UpdateResult<CourseTopicContent> = await this.softDeleteTopics({
                 courseUnitContentId: unit.id
             });
+
+            result.topics?.push(...topicResult.updatedRecords);
+            updatedCount += topicResult.updatedCount;
+            results.push(result);
         });
+
+        return {
+            updatedCount: updatedCount,
+            updatedRecords: results
+        };
     }
 
     async updateCourseUnit(options: UpdateUnitOptions): Promise<CourseUnitContent[]> {

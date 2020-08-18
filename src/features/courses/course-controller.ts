@@ -44,8 +44,19 @@ class CourseController {
                     include: [{
                         model: CourseWWTopicQuestion,
                         as: 'questions',
-                    }]
-                }]
+                        required: false,
+                        where: {
+                            active: true
+                        }
+                    }],
+                    required: false,
+                    where: {
+                        active: true
+                    }
+                }],
+                where: {
+                    active: true
+                }
             }],
             order: [
                 ['units', 'contentOrder', 'ASC'],

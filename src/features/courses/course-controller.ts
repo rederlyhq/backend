@@ -28,7 +28,6 @@ import WebWorkDef, { Problem } from '../../utilities/web-work-def-parser';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
-const namespace = require('cls-hooked').getNamespace('rederly-backend-api');
 
 class CourseController {
     getCourseById(id: number): Promise<Course> {
@@ -360,7 +359,9 @@ class CourseController {
         return results;
     }
 
-    async softDeleteTopics(options: DeleteTopicsOptions): Promise<any> {
+    async softDeleteTopics(options: DeleteTopicsOptions): Promise<UpdateResult<CourseTopicContent>> {
+        const results: CourseTopicContent[] = [];
+        let updatedCount = 0;
         const where: sequelize.WhereOptions = _({
             id: options.id,
             courseUnitContentId: options.courseUnitContentId,
@@ -381,11 +382,25 @@ class CourseController {
             }
         });
         
+        updatedCount = updateCourseTopicResult.updatedCount;
         await updateCourseTopicResult.updatedRecords.asyncForEach(async (topic: CourseTopicContent) => {
-            await this.softDeleteQuestions({
+            const result: CourseTopicContent = {
+                ...topic.get({ plain: true }),
+                questions: []
+            } as never as CourseTopicContent;
+
+            const questionsResult: UpdateResult<CourseWWTopicQuestion> = await this.softDeleteQuestions({
                 courseTopicContentId: topic.id
             });
+
+            result.questions?.push(...questionsResult.updatedRecords);
+            updatedCount += questionsResult.updatedCount;
+            results.push(result);
         });
+        return {
+            updatedCount: updatedCount,
+            updatedRecords: results
+        };
     }
 
     async softDeleteUnits(options: DeleteUnitsOptions): Promise<any> {

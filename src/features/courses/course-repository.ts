@@ -43,7 +43,10 @@ class CourseRepository {
     async updateCourse(options: UpdateCourseOptions): Promise<UpdateResult<Course>> {
         try {
             const updates = await Course.update(options.updates, {
-                where: options.where,
+                where: {
+                    ...options.where,
+                    active: true
+                },
                 returning: true
             });
             return {
@@ -62,7 +65,8 @@ class CourseRepository {
     async getCourseUnit(options: GetCourseUnitRepositoryOptions): Promise<CourseUnitContent> {
         const result = await CourseUnitContent.findOne({
             where: {
-                id: options.id
+                id: options.id,
+                active: true
             },
         });
         if (_.isNil(result)) {
@@ -93,7 +97,10 @@ class CourseRepository {
         try {
             // makeUnitOrderAvailable
             const updates = await CourseUnitContent.update(options.updates, {
-                where: options.where,
+                where: {
+                    ...options.where,
+                    active: true
+                },
                 returning: true
             });
             return {
@@ -109,7 +116,10 @@ class CourseRepository {
     async updateUnits(options: UpdateCourseUnitsOptions): Promise<UpdateResult<CourseUnitContent>> {
         try {
             const updates = await CourseUnitContent.update(options.updates, {
-                where: options.where,
+                where: {
+                    ...options.where,
+                    active: true
+                },
                 returning: true,
             });
             return {
@@ -124,7 +134,6 @@ class CourseRepository {
 
     async createUnit(courseUnitContent: Partial<CourseUnitContent>): Promise<CourseUnitContent> {
         try {
-            
             return await CourseUnitContent.create(courseUnitContent);
         } catch (e) {
             this.checkCourseUnitError(e);
@@ -138,7 +147,8 @@ class CourseRepository {
     async getCourseTopic(options: GetCourseTopicRepositoryOptions): Promise<CourseTopicContent> {
         const result = await CourseTopicContent.findOne({
             where: {
-                id: options.id
+                id: options.id,
+                active: true
             },
         });
         if (_.isNil(result)) {
@@ -178,7 +188,10 @@ class CourseRepository {
     async updateCourseTopic(options: UpdateTopicOptions): Promise<UpdateResult<CourseTopicContent>> {
         try {
             const updates = await CourseTopicContent.update(options.updates, {
-                where: options.where,
+                where: {
+                    ...options.where,
+                    active: true,
+                },
                 returning: true,
             });
             return {
@@ -194,7 +207,10 @@ class CourseRepository {
     async updateTopics(options: UpdateCourseTopicsOptions): Promise<UpdateResult<CourseTopicContent>> {
         try {
             const updates = await CourseTopicContent.update(options.updates, {
-                where: options.where,
+                where: {
+                    ...options.where,
+                    active: true
+                },
                 returning: true,
             });
             return {
@@ -213,7 +229,8 @@ class CourseRepository {
     async getQuestion(options: GetQuestionRepositoryOptions): Promise<CourseWWTopicQuestion> {
         const result = await CourseWWTopicQuestion.findOne({
             where: {
-                id: options.id
+                id: options.id,
+                active: true
             },
         });
         if (_.isNil(result)) {
@@ -240,7 +257,10 @@ class CourseRepository {
     async updateQuestions(options: UpdateQuestionsOptions): Promise<UpdateResult<CourseWWTopicQuestion>> {
         try {
             const updates = await CourseWWTopicQuestion.update(options.updates, {
-                where: options.where,
+                where: {
+                    ...options.where,
+                    active: true
+                },
                 returning: true,
             });
             return {
@@ -256,7 +276,10 @@ class CourseRepository {
     async updateQuestion(options: UpdateQuestionOptions): Promise<UpdateResult<CourseWWTopicQuestion>> {
         try {
             const updates = await CourseWWTopicQuestion.update(options.updates, {
-                where: options.where,
+                where: {
+                    ...options.where,
+                    active: true
+                },
                 returning: true,
             });
             return {
@@ -281,7 +304,8 @@ class CourseRepository {
     async getLatestProblemNumberForTopic(courseTopicId: number): Promise<number> {
         return CourseWWTopicQuestion.max('problemNumber', {
             where: {
-                courseTopicContentId: courseTopicId
+                courseTopicContentId: courseTopicId,
+                active: true
             }
         });
     }

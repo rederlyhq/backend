@@ -30,9 +30,9 @@ export const createQuestionsForTopicFromDefFileValidation = {
 export const createCourseUnitValidation = {
     params: {},
     body: {
-        name: Joi.string().required(),
+        name: Joi.string().optional(),
         courseId: Joi.number().required(),
-        contentOrder: Joi.number().required(),
+        contentOrder: Joi.number().optional(),
         // Deletes are one directional and soft
         // active: Joi.boolean().optional().default(true),
     },
@@ -43,14 +43,20 @@ export const createCourseTopicValidation = {
     params: {},
     body: {
         courseUnitContentId: Joi.number().required(),
+        // TODO - I don't think this should be allowed
         curriculumTopicContentId: Joi.number().optional(),
-        name: Joi.string().required(),
+        // Default to `Topic #n`
+        name: Joi.string().optional(),
         topicTypeId: Joi.number().optional().default(1),
-        startDate: Joi.date().required(),
-        endDate: Joi.date().required(),
-        deadDate: Joi.date().required(),
-        partialExtend: Joi.boolean().required(),
-        contentOrder: Joi.number().required(),
+        // Default to course end date
+        startDate: Joi.date().optional(),
+        // Default to course end date
+        endDate: Joi.date().optional(),
+        // Default to course end date
+        deadDate: Joi.date().optional(),
+        partialExtend: Joi.boolean().optional().default(false),
+        // Default to next in line
+        contentOrder: Joi.number().optional(),
         // Deletes are one directional and soft
         // active: Joi.boolean().optional().default(true),
     },
@@ -165,13 +171,14 @@ export const updateCourseTopicQuestionValidation = {
 export const createCourseTopicQuestionValidation = {
     params: {},
     body: {
-        problemNumber: Joi.number().required(),
-        webworkQuestionPath: Joi.string().required(),
+        // Can be defined in business logic
+        problemNumber: Joi.number().optional(),
+        webworkQuestionPath: Joi.string().optional().default('webwork-open-problem-library/Contrib/CUNY/CityTech/CollegeAlgebra_Trig/QuadraticFormula/two-real-NS.pg'),
         courseTopicContentId: Joi.number().required(),
-        weight: Joi.number().required(),
-        maxAttempts: Joi.number().required(),
-        hidden: Joi.boolean().required(),
-        optional: Joi.boolean().required(),
+        weight: Joi.number().optional().default(1),
+        maxAttempts: Joi.number().optional().default(-1),
+        hidden: Joi.boolean().optional().default(false),
+        optional: Joi.boolean().optional().default(false),
         // Deletes are one directional and soft
         // active: Joi.boolean().optional().default(true)
     },

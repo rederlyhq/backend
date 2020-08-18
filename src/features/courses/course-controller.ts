@@ -404,11 +404,16 @@ class CourseController {
                 throw new Error('Could not figure out course unit content id');
             }
 
+            let contentOrder: number | sequelize.Utils.Literal = await courseRepository.getNextDeletedContentOrderForUnit(courseUnitContentId);
+            if(!_.isNil(courseUnitContentId)) {
+                contentOrder = sequelize.literal(`${CourseTopicContent.rawAttributes.contentOrder.field} + ${contentOrder}`);
+            }
+
             const updateCourseTopicResult: UpdateResult<CourseTopicContent> = await courseRepository.updateTopics({
                 where,
                 updates: {
                     active: false,
-                    contentOrder: await courseRepository.getNextDeletedContentOrderForUnit(courseUnitContentId)
+                    contentOrder
                 }
             });
             
@@ -436,7 +441,6 @@ class CourseController {
 
     async softDeleteUnits(options: DeleteUnitsOptions): Promise<UpdateResult<CourseUnitContent>> {
         return appSequelize.transaction(async (): Promise<UpdateResult<CourseUnitContent>> => {
-
             const results: CourseUnitContent[] = [];
             let updatedCount = 0;
             const where: sequelize.WhereOptions = _({
@@ -449,10 +453,17 @@ class CourseController {
                 throw new Error('Not enough information in where clause');
             }
 
+            // When deleting multiple units is support this will need to be handled like the other calls
+            const existingUnit = await courseRepository.getCourseUnit({
+                id: options.id
+            });
+            const courseId = existingUnit.courseId;
+
             const updateCourseUnitResult = await courseRepository.updateUnits({
                 where,
                 updates: {
-                    active: false
+                    active: false,
+                    contentOrder: await courseRepository.getNextDeletedContentOrderForCourse(courseId)
                 }
             });
 

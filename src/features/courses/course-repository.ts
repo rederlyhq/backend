@@ -144,6 +144,26 @@ class CourseRepository {
         }
     }
 
+    async getLatestDeletedContentOrderForCourse(courseId: number): Promise<number> {
+        return CourseUnitContent.max('contentOrder', {
+            where: {
+                courseId: courseId,
+                active: false,
+                contentOrder: {
+                    [Sequelize.Op.lt]: 0
+                }
+            }
+        });
+    }
+
+    async getNextDeletedContentOrderForCourse(courseId: number): Promise<number> {
+        let result = await this.getLatestDeletedContentOrderForCourse(courseId);
+        if (_.isNaN(result)) {
+            result = Constants.Database.MIN_INTEGER_VALUE;
+        }
+        return result + 1;
+    }
+
     /* ************************* ************************* */
     /* ********************* Topics  ********************* */
     /* ************************* ************************* */

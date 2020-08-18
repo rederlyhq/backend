@@ -221,5 +221,6 @@ export interface DeleteTopicsOptions {
 }
 
 export interface DeleteUnitsOptions {
-    id?: number;
+    // Currently you cannot delete a course so you must supply an id
+    id: number;
 }

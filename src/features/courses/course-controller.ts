@@ -336,112 +336,119 @@ class CourseController {
     }
 
     async softDeleteQuestions(options: DeleteQuestionsOptions): Promise<UpdateResult<CourseWWTopicQuestion>> {
-        const where: sequelize.WhereOptions = _({
-            id: options.id,
-            courseTopicContentId: options.courseTopicContentId,
-            active: true
-        }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
-        
-        // It will always have active, needs more info than that
-        if(Object.keys(where).length < 2) {
-            throw new Error('Not enough information in where clause');
-        }
-
-        const results: UpdateResult<CourseWWTopicQuestion> = await courseRepository.updateQuestions({
-            where,
-            updates: {
-                active: false,
-                // TODO
-                // contentOrder
+        return appSequelize.transaction(async (): Promise<UpdateResult<CourseWWTopicQuestion>> => {
+            const where: sequelize.WhereOptions = _({
+                id: options.id,
+                courseTopicContentId: options.courseTopicContentId,
+                active: true
+            }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
+            
+            // It will always have active, needs more info than that
+            if(Object.keys(where).length < 2) {
+                throw new Error('Not enough information in where clause');
             }
+    
+            const results: UpdateResult<CourseWWTopicQuestion> = await courseRepository.updateQuestions({
+                where,
+                updates: {
+                    active: false,
+                    // TODO
+                    // contentOrder
+                }
+            });
+    
+            return results;    
         });
-
-        return results;
     }
 
     async softDeleteTopics(options: DeleteTopicsOptions): Promise<UpdateResult<CourseTopicContent>> {
-        const results: CourseTopicContent[] = [];
-        let updatedCount = 0;
-        const where: sequelize.WhereOptions = _({
-            id: options.id,
-            courseUnitContentId: options.courseUnitContentId,
-            active: true
-        }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
-        
-        // It will always have active, needs more info than that
-        if(Object.keys(where).length < 2) {
-            throw new Error('Not enough information in where clause');
-        }
-
-        const updateCourseTopicResult: UpdateResult<CourseTopicContent> = await courseRepository.updateTopics({
-            where,
-            updates: {
-                active: false,
-                // TODO
-                // contentOrder
+        return appSequelize.transaction(async (): Promise<UpdateResult<CourseTopicContent>> => {
+            const results: CourseTopicContent[] = [];
+            let updatedCount = 0;
+            const where: sequelize.WhereOptions = _({
+                id: options.id,
+                courseUnitContentId: options.courseUnitContentId,
+                active: true
+            }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
+            
+            // It will always have active, needs more info than that
+            if(Object.keys(where).length < 2) {
+                throw new Error('Not enough information in where clause');
             }
-        });
-        
-        updatedCount = updateCourseTopicResult.updatedCount;
-        await updateCourseTopicResult.updatedRecords.asyncForEach(async (topic: CourseTopicContent) => {
-            const result: CourseTopicContent = {
-                ...topic.get({ plain: true }),
-                questions: []
-            } as never as CourseTopicContent;
 
-            const questionsResult: UpdateResult<CourseWWTopicQuestion> = await this.softDeleteQuestions({
-                courseTopicContentId: topic.id
+            const updateCourseTopicResult: UpdateResult<CourseTopicContent> = await courseRepository.updateTopics({
+                where,
+                updates: {
+                    active: false,
+                    // TODO
+                    // contentOrder
+                }
             });
+            
+            updatedCount = updateCourseTopicResult.updatedCount;
+            await updateCourseTopicResult.updatedRecords.asyncForEach(async (topic: CourseTopicContent) => {
+                const result: CourseTopicContent = {
+                    ...topic.get({ plain: true }),
+                    questions: []
+                } as never as CourseTopicContent;
 
-            result.questions?.push(...questionsResult.updatedRecords);
-            updatedCount += questionsResult.updatedCount;
-            results.push(result);
+                const questionsResult: UpdateResult<CourseWWTopicQuestion> = await this.softDeleteQuestions({
+                    courseTopicContentId: topic.id
+                });
+
+                result.questions?.push(...questionsResult.updatedRecords);
+                updatedCount += questionsResult.updatedCount;
+                results.push(result);
+            });
+            return {
+                updatedCount: updatedCount,
+                updatedRecords: results
+            };
         });
-        return {
-            updatedCount: updatedCount,
-            updatedRecords: results
-        };
     }
 
     async softDeleteUnits(options: DeleteUnitsOptions): Promise<UpdateResult<CourseUnitContent>> {
-        const results: CourseUnitContent[] = [];
-        let updatedCount = 0;
-        const where: sequelize.WhereOptions = _({
-            id: options.id,
-            active: true
-        }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
-        
-        // It will always have active, needs more info than that
-        if(Object.keys(where).length < 2) {
-            throw new Error('Not enough information in where clause');
-        }
+        return appSequelize.transaction(async (): Promise<UpdateResult<CourseUnitContent>> => {
 
-        const updateCourseUnitResult = await courseRepository.updateUnits({
-            where,
-            updates: {
-                active: false
+            const results: CourseUnitContent[] = [];
+            let updatedCount = 0;
+            const where: sequelize.WhereOptions = _({
+                id: options.id,
+                active: true
+            }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
+            
+            // It will always have active, needs more info than that
+            if(Object.keys(where).length < 2) {
+                throw new Error('Not enough information in where clause');
             }
-        });
 
-        await updateCourseUnitResult.updatedRecords.asyncForEach(async(unit: CourseUnitContent) => {
-            const result: CourseUnitContent = {
-                ...unit.get({ plain: true }),
-                topics: []
-            } as never as CourseUnitContent;
-
-            const topicResult: UpdateResult<CourseTopicContent> = await this.softDeleteTopics({
-                courseUnitContentId: unit.id
+            const updateCourseUnitResult = await courseRepository.updateUnits({
+                where,
+                updates: {
+                    active: false
+                }
             });
 
-            result.topics?.push(...topicResult.updatedRecords);
-            updatedCount += topicResult.updatedCount;
-            results.push(result);
-        });
+            await updateCourseUnitResult.updatedRecords.asyncForEach(async(unit: CourseUnitContent) => {
+                const result: CourseUnitContent = {
+                    ...unit.get({ plain: true }),
+                    topics: []
+                } as never as CourseUnitContent;
 
-        return {
-            updatedCount: updatedCount,
-            updatedRecords: results
-        };
+                const topicResult: UpdateResult<CourseTopicContent> = await this.softDeleteTopics({
+                    courseUnitContentId: unit.id
+                });
+
+                result.topics?.push(...topicResult.updatedRecords);
+                updatedCount += topicResult.updatedCount;
+                results.push(result);
+            });
+
+            return {
+                updatedCount: updatedCount,
+                updatedRecords: results
+            };
+        });
     }
 
     async updateCourseUnit(options: UpdateUnitOptions): Promise<CourseUnitContent[]> {

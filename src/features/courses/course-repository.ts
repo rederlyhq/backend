@@ -49,7 +49,7 @@ class CourseRepository {
             const updates = await Course.update(options.updates, {
                 where: {
                     ...options.where,
-                    active: true
+                    // active: true
                 },
                 returning: true
             });

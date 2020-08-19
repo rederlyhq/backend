@@ -385,8 +385,15 @@ class CourseRepository {
     }
 
     async createQuestion(question: Partial<CourseWWTopicQuestion>): Promise<CourseWWTopicQuestion> {
+        if (!_.isNil(question.active)) {
+            logger.error('Create question should not be defining it\'s `active` status');
+        }
+
         try {
-            return await CourseWWTopicQuestion.create(question);
+            return await CourseWWTopicQuestion.create({
+                ...question,
+                active: true // as of right now we don't support creating deleted questions
+            });
         } catch (e) {
             this.checkQuestionError(e);
             throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
@@ -400,6 +407,14 @@ class CourseRepository {
                 active: true
             }
         });
+    }
+
+    async getNextProblemNumberForTopic(courseTopicId: number): Promise<number> {
+        let result = await this.getLatestProblemNumberForTopic(courseTopicId);
+        if (_.isNaN(result)) {
+            result = 0;
+        }
+        return result + 1;
     }
 
     async getLatestDeletedProblemNumberForTopic(courseTopicId: number): Promise<number> {

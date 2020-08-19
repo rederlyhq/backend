@@ -665,6 +665,12 @@ class CourseController {
     }
 
     async createQuestion(question: Partial<CourseWWTopicQuestion>): Promise<CourseWWTopicQuestion> {
+        if (_.isNil(question.problemNumber)) {
+            if (_.isNil(question.courseTopicContentId)) {
+                throw new Error('Cannot assume problem number if a topic is not provided');
+            }
+            question.problemNumber = await courseRepository.getNextProblemNumberForTopic(question.courseTopicContentId);
+        }
         return courseRepository.createQuestion(question);
     }
     

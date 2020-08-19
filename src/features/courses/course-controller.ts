@@ -25,6 +25,7 @@ import CurriculumUnitContent from '../../database/models/curriculum-unit-content
 import CurriculumTopicContent from '../../database/models/curriculum-topic-content';
 import CurriculumWWTopicQuestion from '../../database/models/curriculum-ww-topic-question';
 import WebWorkDef, { Problem } from '../../utilities/web-work-def-parser';
+import { nameof } from '../../utilities/typescript-helpers';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -449,15 +450,19 @@ class CourseController {
             }
 
             let contentOrder: number | sequelize.Utils.Literal = await courseRepository.getNextDeletedContentOrderForUnit(courseUnitContentId);
+            let name: sequelize.Utils.Literal = sequelize.literal(`${CourseTopicContent.rawAttributes[nameof<CourseTopicContent>('name') as string].field} || ${contentOrder}`);
             if(!_.isNil(courseUnitContentId)) {
-                contentOrder = sequelize.literal(`${CourseTopicContent.rawAttributes.contentOrder.field} + ${contentOrder}`);
+                const problemNumberLiteralString = `${CourseTopicContent.rawAttributes[nameof<CourseTopicContent>('contentOrder') as string].field} + ${contentOrder}`;
+                contentOrder = sequelize.literal(problemNumberLiteralString);
+                name = sequelize.literal(`${CourseTopicContent.rawAttributes[nameof<CourseTopicContent>('name') as string].field} || (${problemNumberLiteralString})`);
             }
 
             const updateCourseTopicResult: UpdateResult<CourseTopicContent> = await courseRepository.updateTopics({
                 where,
                 updates: {
                     active: false,
-                    contentOrder
+                    contentOrder,
+                    name
                 }
             });
             

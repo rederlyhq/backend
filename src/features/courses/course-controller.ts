@@ -69,7 +69,9 @@ class CourseController {
 
     getTopics(options: GetTopicsOptions): Promise<CourseTopicContent[]> {
         const { courseId, isOpen } = options;
-        const where: sequelize.WhereOptions = {};
+        const where: sequelize.WhereOptions = {
+            active: true
+        };
         const include = [];
         if (!_.isNil(courseId)) {
             include.push({

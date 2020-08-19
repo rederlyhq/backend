@@ -174,7 +174,7 @@ export const createCourseTopicQuestionValidation = {
     body: {
         // Can be defined in business logic
         problemNumber: Joi.number().optional(),
-        webworkQuestionPath: Joi.string().optional().default('webwork-open-problem-library/Contrib/CUNY/CityTech/CollegeAlgebra_Trig/QuadraticFormula/two-real-NS.pg'),
+        webworkQuestionPath: Joi.string().optional().default('private/templates/barebones.pg'),
         courseTopicContentId: Joi.number().required(),
         weight: Joi.number().optional().default(1),
         maxAttempts: Joi.number().optional().default(-1),

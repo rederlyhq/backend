@@ -508,11 +508,15 @@ class CourseController {
             });
             const courseId = existingUnit.courseId;
 
+            const contentOrder: number | sequelize.Utils.Literal = await courseRepository.getNextDeletedContentOrderForCourse(courseId);
+            const name: sequelize.Utils.Literal = sequelize.literal(`${CourseUnitContent.rawAttributes[nameof<CourseUnitContent>('name') as string].field} || ${contentOrder}`);
+
             const updateCourseUnitResult = await courseRepository.updateUnits({
                 where,
                 updates: {
                     active: false,
-                    contentOrder: await courseRepository.getNextDeletedContentOrderForCourse(courseId)
+                    contentOrder,
+                    name
                 }
             });
 

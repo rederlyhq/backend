@@ -225,8 +225,15 @@ class CourseRepository {
     }
 
     async createCourseTopic(courseTopicContent: Partial<CourseTopicContent>): Promise<CourseTopicContent> {
+        if (!_.isNil(courseTopicContent.active)) {
+            logger.error('Create topic should not be defining it\'s `active` status');
+        }
+
         try {
-            return await CourseTopicContent.create(courseTopicContent);
+            return await CourseTopicContent.create({
+                ...courseTopicContent,
+                active: true // as of right now we don't support creating deleted objects
+            });
         } catch (e) {
             this.checkCourseTopicError(e);
             throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
@@ -287,6 +294,23 @@ class CourseRepository {
         let result = await this.getLatestDeletedContentOrderForUnit(courseUnitContentId);
         if (_.isNaN(result)) {
             result = Constants.Database.MIN_INTEGER_VALUE;
+        }
+        return result + 1;
+    }
+
+    async getLatestContentOrderForUnit(courseUnitContentId: number): Promise<number> {
+        return CourseTopicContent.max('contentOrder', {
+            where: {
+                courseUnitContentId: courseUnitContentId,
+                active: true,
+            }
+        });
+    }
+
+    async getNextContentOrderForUnit(courseUnitContentId: number): Promise<number> {
+        let result = await this.getLatestContentOrderForUnit(courseUnitContentId);
+        if (_.isNaN(result)) {
+            result = 0;
         }
         return result + 1;
     }

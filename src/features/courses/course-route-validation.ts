@@ -47,6 +47,7 @@ export const createCourseTopicValidation = {
         curriculumTopicContentId: Joi.number().optional(),
         // Default to `Topic #n`
         name: Joi.string().optional(),
+        // TODO use enum
         topicTypeId: Joi.number().optional().default(1),
         // Default to course end date
         startDate: Joi.date().optional(),

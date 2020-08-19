@@ -186,6 +186,41 @@ class CourseController {
 
 
     async createTopic(courseTopicContent: CourseTopicContent): Promise<CourseTopicContent> {
+        if(_.isNil(courseTopicContent.startDate) || _.isNil(courseTopicContent.endDate) || _.isNil(courseTopicContent.deadDate)) {
+            if(_.isNil(courseTopicContent.courseUnitContentId)) {
+                throw new Error('Cannot assume start, end or dead date if a unit is not supplied');
+            }
+
+            const unit = await courseRepository.getCourseUnit({
+                id: courseTopicContent.courseUnitContentId
+            });
+
+            const course = await unit.getCourse();
+
+            // Date default to end date
+            if(_.isNil(courseTopicContent.startDate)) {
+                courseTopicContent.startDate = course.end;
+            }
+            
+            if(_.isNil(courseTopicContent.endDate)) {
+                courseTopicContent.endDate = course.end;
+            }
+            
+            if(_.isNil(courseTopicContent.deadDate)) {
+                courseTopicContent.deadDate = course.end;    
+            }    
+        }
+
+        if(_.isNil(courseTopicContent.contentOrder)) {
+            if(_.isNil(courseTopicContent.courseUnitContentId)) {
+                throw new Error('Cannot assume assume content order if a unit is not supplied');
+            }
+            courseTopicContent.contentOrder = await courseRepository.getNextContentOrderForUnit(courseTopicContent.courseUnitContentId);
+        }
+
+        if(_.isNil(courseTopicContent.name)) {
+            courseTopicContent.name = `Topic #${courseTopicContent.contentOrder}`;
+        }
         return courseRepository.createCourseTopic(courseTopicContent);
     }
 

@@ -1023,6 +1023,7 @@ class CourseController {
 
         // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
         const where: sequelize.WhereOptions = _({
+            active: true,
             courseId,
             [`$topics.questions.grades.${StudentGrade.rawAttributes.userId.field}$`]: userId,
         }).omitBy(_.isNil).value() as sequelize.WhereOptions;
@@ -1066,6 +1067,7 @@ class CourseController {
 
         // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
         const where: sequelize.WhereOptions = _({
+            active: true,
             courseUnitContentId,
             [`$unit.${CourseUnitContent.rawAttributes.courseId.field}$`]: courseId,
             [`$questions.grades.${StudentGrade.rawAttributes.userId.field}$`]: userId,
@@ -1116,6 +1118,7 @@ class CourseController {
 
         // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
         const where: sequelize.WhereOptions = _({
+            active: true,
             courseTopicContentId,
             [`$topic.unit.${CourseUnitContent.rawAttributes.courseId.field}$`]: courseId,
             [`$grades.${StudentGrade.rawAttributes.userId.field}$`]: userId,

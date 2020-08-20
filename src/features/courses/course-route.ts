@@ -414,6 +414,7 @@ router.post('/question/:id',
                 format: 'json',
                 template: 'single',
                 formURL: req.originalUrl,
+                baseURL: '/'
             })}`;
         },
         userResDecorator: async (_proxyRes, proxyResData, userReq: RederlyExpressRequest) => {

@@ -21,6 +21,7 @@ class RendererHelper {
                 formURL: getProblemParameters.formURL,
                 template: 'single',
                 format: 'json',
+                baseURL: '/'
             },
         });
 

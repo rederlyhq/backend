@@ -386,7 +386,7 @@ class CourseRepository {
 
     async createQuestion(question: Partial<CourseWWTopicQuestion>): Promise<CourseWWTopicQuestion> {
         if (!_.isNil(question.active)) {
-            logger.error('Create question should not be defining it\'s `active` status');
+            logger.warn(new Error('Create question should not be defining it\'s `active` status').stack);
         }
 
         try {

@@ -152,14 +152,18 @@ class CourseController {
                             partialExtend: false
                         });
                         await curriculumTopic.questions?.asyncForEach(async (curriculumQuestion: CurriculumWWTopicQuestion) => {
+                            if (curriculumQuestion.active === false) {
+                                logger.warn(`Inactive curriculum question was fetched in query for create course ID#${curriculumQuestion.id}`);
+                                return;
+                            }
                             await courseRepository.createQuestion({
+                                // active: curriculumQuestion.active,
                                 courseTopicContentId: createdCourseTopic.id,
                                 problemNumber: curriculumQuestion.problemNumber,
                                 webworkQuestionPath: curriculumQuestion.webworkQuestionPath,
                                 weight: curriculumQuestion.weight,
                                 maxAttempts: curriculumQuestion.maxAttempts,
                                 hidden: curriculumQuestion.hidden,
-                                active: curriculumQuestion.active,
                                 optional: curriculumQuestion.optional,
                                 curriculumQuestionId: curriculumQuestion.id
                             });

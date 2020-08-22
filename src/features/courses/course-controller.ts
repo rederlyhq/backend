@@ -138,12 +138,16 @@ class CourseController {
                         name: curriculumUnit.name,
                     });
                     await curriculumUnit.topics?.asyncForEach(async (curriculumTopic: CurriculumTopicContent) => {
+                        if (curriculumTopic.active === false) {
+                            logger.warn(`Inactive curriculum topic was fetched in query for create course ID#${curriculumTopic.id}`);
+                            return;
+                        }
                         const createdCourseTopic: CourseTopicContent = await courseRepository.createCourseTopic({
+                            // active: curriculumTopic.active,
                             curriculumTopicContentId: curriculumTopic.id,
                             courseUnitContentId: createdCourseUnit.id,
                             topicTypeId: curriculumTopic.topicTypeId,
                             name: curriculumTopic.name,
-                            active: curriculumTopic.active,
                             contentOrder: curriculumTopic.contentOrder,
 
                             startDate: createdCourse.end,

@@ -226,7 +226,7 @@ class CourseRepository {
 
     async createCourseTopic(courseTopicContent: Partial<CourseTopicContent>): Promise<CourseTopicContent> {
         if (!_.isNil(courseTopicContent.active)) {
-            logger.error('Create topic should not be defining it\'s `active` status');
+            logger.warn(new Error('Create topic should not be defining it\'s `active` status').stack);
         }
 
         try {

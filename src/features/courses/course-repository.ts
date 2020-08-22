@@ -138,7 +138,7 @@ class CourseRepository {
 
     async createUnit(courseUnitContent: Partial<CourseUnitContent>): Promise<CourseUnitContent> {
         if (!_.isNil(courseUnitContent.active)) {
-            logger.error('Create unit should not be defining it\'s `active` status');
+            logger.warn(new Error('Create unit should not be defining it\'s `active` status').stack);
         }
 
         try {

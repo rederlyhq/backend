@@ -121,17 +121,21 @@ class CourseController {
     }
 
     async createCourse(options: CreateCourseOptions): Promise<Course> {
-        if(options.options.useCurriculum) {
+        if (options.options.useCurriculum) {
             return appSequelize.transaction(async () => {
                 // I didn't want this in the transaction, however use strict throws errors if not
-                if(_.isNil(options.object.curriculumId)) {
+                if (_.isNil(options.object.curriculumId)) {
                     throw new NotFoundError('Cannot useCurriculum if curriculumId is not given');
                 }
                 const curriculum = await curriculumRepository.getCurriculumById(options.object.curriculumId);
                 const createdCourse = await courseRepository.createCourse(options.object);
                 await curriculum.units?.asyncForEach(async (curriculumUnit: CurriculumUnitContent) => {
+                    if (curriculumUnit.active === false) {
+                        logger.warn(`Inactive curriculum unit was fetched in query for create course ID#${curriculumUnit.id}`);
+                        return;
+                    }
                     const createdCourseUnit = await courseRepository.createUnit({
-                        active: curriculumUnit.active,
+                        // active: curriculumUnit.active,
                         contentOrder: curriculumUnit.contentOrder,
                         courseId: createdCourse.id,
                         curriculumUnitId: curriculumUnit.id,
@@ -182,14 +186,14 @@ class CourseController {
     }
 
     async createUnit(courseUnitContent: Partial<CourseUnitContent>): Promise<CourseUnitContent> {
-        if(_.isNil(courseUnitContent.contentOrder)) {
-            if(_.isNil(courseUnitContent.courseId)) {
+        if (_.isNil(courseUnitContent.contentOrder)) {
+            if (_.isNil(courseUnitContent.courseId)) {
                 throw new Error('We need a course id in order to get a content order');
             }
             courseUnitContent.contentOrder = await courseRepository.getNextContentOrderForCourse(courseUnitContent.courseId);
         }
 
-        if(_.isNil(courseUnitContent.name)) {
+        if (_.isNil(courseUnitContent.name)) {
             courseUnitContent.name = `Unit #${courseUnitContent.contentOrder}`;
         }
         return courseRepository.createUnit(courseUnitContent);
@@ -197,8 +201,8 @@ class CourseController {
 
 
     async createTopic(courseTopicContent: CourseTopicContent): Promise<CourseTopicContent> {
-        if(_.isNil(courseTopicContent.startDate) || _.isNil(courseTopicContent.endDate) || _.isNil(courseTopicContent.deadDate)) {
-            if(_.isNil(courseTopicContent.courseUnitContentId)) {
+        if (_.isNil(courseTopicContent.startDate) || _.isNil(courseTopicContent.endDate) || _.isNil(courseTopicContent.deadDate)) {
+            if (_.isNil(courseTopicContent.courseUnitContentId)) {
                 throw new Error('Cannot assume start, end or dead date if a unit is not supplied');
             }
 
@@ -209,27 +213,27 @@ class CourseController {
             const course = await unit.getCourse();
 
             // Date default to end date
-            if(_.isNil(courseTopicContent.startDate)) {
+            if (_.isNil(courseTopicContent.startDate)) {
                 courseTopicContent.startDate = course.end;
             }
-            
-            if(_.isNil(courseTopicContent.endDate)) {
+
+            if (_.isNil(courseTopicContent.endDate)) {
                 courseTopicContent.endDate = course.end;
             }
-            
-            if(_.isNil(courseTopicContent.deadDate)) {
-                courseTopicContent.deadDate = course.end;    
-            }    
+
+            if (_.isNil(courseTopicContent.deadDate)) {
+                courseTopicContent.deadDate = course.end;
+            }
         }
 
-        if(_.isNil(courseTopicContent.contentOrder)) {
-            if(_.isNil(courseTopicContent.courseUnitContentId)) {
+        if (_.isNil(courseTopicContent.contentOrder)) {
+            if (_.isNil(courseTopicContent.courseUnitContentId)) {
                 throw new Error('Cannot assume assume content order if a unit is not supplied');
             }
             courseTopicContent.contentOrder = await courseRepository.getNextContentOrderForUnit(courseTopicContent.courseUnitContentId);
         }
 
-        if(_.isNil(courseTopicContent.name)) {
+        if (_.isNil(courseTopicContent.name)) {
             courseTopicContent.name = `Topic #${courseTopicContent.contentOrder}`;
         }
         return courseRepository.createCourseTopic(courseTopicContent);
@@ -297,8 +301,8 @@ class CourseController {
     async updateTopic(options: UpdateTopicOptions): Promise<CourseTopicContent[]> {
         return appSequelize.transaction(async () => {
             // This is a set of all update results as they come in, since there are 5 updates that occur this will have 5 elements
-            let updatesResults: UpdateResult<CourseTopicContent>[]  = [];
-            if(!_.isNil(options.updates.contentOrder) || !_.isNil(options.updates.courseUnitContentId)) {
+            let updatesResults: UpdateResult<CourseTopicContent>[] = [];
+            if (!_.isNil(options.updates.contentOrder) || !_.isNil(options.updates.courseUnitContentId)) {
                 // What happens if you move from one topic to another? Disregarding since that should not be possible from the UI
                 const existingTopic = await courseRepository.getCourseTopic({
                     id: options.where.id
@@ -315,9 +319,9 @@ class CourseController {
                     targetContentOrder: options.updates.contentOrder ?? sourceContentOrder,
                     targetCourseUnitId: options.updates.courseUnitContentId ?? existingTopic.courseUnitContentId
                 });
-                if(_.isNil(options.updates.contentOrder) && !_.isNil(options.updates.courseUnitContentId)) {
+                if (_.isNil(options.updates.contentOrder) && !_.isNil(options.updates.courseUnitContentId)) {
                     options.updates.contentOrder = sourceContentOrder;
-                }    
+                }
             }
 
             const updateCourseTopicResult = await courseRepository.updateCourseTopic(options);
@@ -329,9 +333,9 @@ class CourseController {
             const updatedRecords: CourseTopicContent[] = new Array<CourseTopicContent>().concat(...updatesResultsUpdatedRecords);
             // Lastly we convert to an object and back to an array so that we only have the last updates
             const resultantUpdates: CourseTopicContent[] = _.chain(updatedRecords)
-            .keyBy('id')
-            .values()
-            .value();
+                .keyBy('id')
+                .values()
+                .value();
             return resultantUpdates;
         });
     }
@@ -398,25 +402,25 @@ class CourseController {
                 courseTopicContentId,
                 active: true
             }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
-            
+
             // It will always have active, needs more info than that
-            if(Object.keys(where).length < 2) {
+            if (Object.keys(where).length < 2) {
                 throw new Error('Not enough information in where clause');
             }
 
-            if(_.isNil(courseTopicContentId) && !_.isNil(options.id)) {
+            if (_.isNil(courseTopicContentId) && !_.isNil(options.id)) {
                 const existingQuestion = await courseRepository.getQuestion({
                     id: options.id
                 });
                 courseTopicContentId = existingQuestion.courseTopicContentId;
             }
 
-            if(_.isNil(courseTopicContentId)) {
+            if (_.isNil(courseTopicContentId)) {
                 throw new Error('Could not figure out course topic content id');
             }
 
             let problemNumber: number | sequelize.Utils.Literal = await courseRepository.getNextDeletedProblemNumberForTopic(courseTopicContentId);
-            if(!_.isNil(courseTopicContentId)) {
+            if (!_.isNil(courseTopicContentId)) {
                 problemNumber = sequelize.literal(`${CourseWWTopicQuestion.rawAttributes.problemNumber.field} + ${problemNumber}`);
             }
 
@@ -427,8 +431,8 @@ class CourseController {
                     problemNumber
                 }
             });
-    
-            return results;    
+
+            return results;
         });
     }
 
@@ -442,26 +446,26 @@ class CourseController {
                 courseUnitContentId: courseUnitContentId,
                 active: true
             }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
-            
+
             // It will always have active, needs more info than that
-            if(Object.keys(where).length < 2) {
+            if (Object.keys(where).length < 2) {
                 throw new Error('Not enough information in where clause');
             }
 
-            if(_.isNil(courseUnitContentId) && !_.isNil(options.id)) {
+            if (_.isNil(courseUnitContentId) && !_.isNil(options.id)) {
                 const existingTopic = await courseRepository.getCourseTopic({
                     id: options.id
                 });
                 courseUnitContentId = existingTopic.courseUnitContentId;
             }
 
-            if(_.isNil(courseUnitContentId)) {
+            if (_.isNil(courseUnitContentId)) {
                 throw new Error('Could not figure out course unit content id');
             }
 
             let contentOrder: number | sequelize.Utils.Literal = await courseRepository.getNextDeletedContentOrderForUnit(courseUnitContentId);
             let name: sequelize.Utils.Literal = sequelize.literal(`${CourseTopicContent.rawAttributes[nameof<CourseTopicContent>('name') as string].field} || ${contentOrder}`);
-            if(!_.isNil(courseUnitContentId)) {
+            if (!_.isNil(courseUnitContentId)) {
                 const problemNumberLiteralString = `${CourseTopicContent.rawAttributes[nameof<CourseTopicContent>('contentOrder') as string].field} + ${contentOrder}`;
                 contentOrder = sequelize.literal(problemNumberLiteralString);
                 name = sequelize.literal(`${CourseTopicContent.rawAttributes[nameof<CourseTopicContent>('name') as string].field} || (${problemNumberLiteralString})`);
@@ -475,7 +479,7 @@ class CourseController {
                     name
                 }
             });
-            
+
             updatedCount = updateCourseTopicResult.updatedCount;
             await updateCourseTopicResult.updatedRecords.asyncForEach(async (topic: CourseTopicContent) => {
                 const result: CourseTopicContent = {
@@ -506,9 +510,9 @@ class CourseController {
                 id: options.id,
                 active: true
             }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
-            
+
             // It will always have active, needs more info than that
-            if(Object.keys(where).length < 2) {
+            if (Object.keys(where).length < 2) {
                 throw new Error('Not enough information in where clause');
             }
 
@@ -530,7 +534,7 @@ class CourseController {
                 }
             });
 
-            await updateCourseUnitResult.updatedRecords.asyncForEach(async(unit: CourseUnitContent) => {
+            await updateCourseUnitResult.updatedRecords.asyncForEach(async (unit: CourseUnitContent) => {
                 const result: CourseUnitContent = {
                     ...unit.get({ plain: true }),
                     topics: []
@@ -555,8 +559,8 @@ class CourseController {
     async updateCourseUnit(options: UpdateUnitOptions): Promise<CourseUnitContent[]> {
         return appSequelize.transaction(async () => {
             // This is a set of all update results as they come in, since there are 5 updates that occur this will have 5 elements
-            let updatesResults: UpdateResult<CourseUnitContent>[]  = [];
-            if(!_.isNil(options.updates.contentOrder)) {
+            let updatesResults: UpdateResult<CourseUnitContent>[] = [];
+            if (!_.isNil(options.updates.contentOrder)) {
                 // What happens if you move from one topic to another? Disregarding since that should not be possible from the UI
                 const existingUnit = await courseRepository.getCourseUnit({
                     id: options.where.id
@@ -583,9 +587,9 @@ class CourseController {
             const updatedRecords: CourseUnitContent[] = new Array<CourseUnitContent>().concat(...updatesResultsUpdatedRecords);
             // Lastly we convert to an object and back to an array so that we only have the last updates
             const resultantUpdates: CourseUnitContent[] = _.chain(updatedRecords)
-            .keyBy('id')
-            .values()
-            .value();
+                .keyBy('id')
+                .values()
+                .value();
             return resultantUpdates;
         });
     }
@@ -648,8 +652,8 @@ class CourseController {
     updateQuestion(options: UpdateQuestionOptions): Promise<CourseWWTopicQuestion[]> {
         return appSequelize.transaction(async () => {
             // This is a set of all update results as they come in, since there are 5 updates that occur this will have 5 elements
-            let updatesResults: UpdateResult<CourseWWTopicQuestion>[]  = [];
-            if(!_.isNil(options.updates.problemNumber)) {
+            let updatesResults: UpdateResult<CourseWWTopicQuestion>[] = [];
+            if (!_.isNil(options.updates.problemNumber)) {
                 // What happens if you move from one topic to another? Disregarding since that should not be possible from the UI
                 const existingQuestion = await courseRepository.getQuestion({
                     id: options.where.id
@@ -676,9 +680,9 @@ class CourseController {
             const updatedRecords: CourseWWTopicQuestion[] = new Array<CourseWWTopicQuestion>().concat(...updatesResultsUpdatedRecords);
             // Lastly we convert to an object and back to an array so that we only have the last updates
             const resultantUpdates: CourseWWTopicQuestion[] = _.chain(updatedRecords)
-            .keyBy('id')
-            .values()
-            .value();
+                .keyBy('id')
+                .values()
+                .value();
             return resultantUpdates;
         });
     }
@@ -692,7 +696,7 @@ class CourseController {
         }
         return courseRepository.createQuestion(question);
     }
-    
+
     async createQuestionsForTopicFromDefFileContent(options: CreateQuestionsForTopicFromDefFileContentOptions): Promise<CourseWWTopicQuestion[]> {
         const parsedWebworkDef = new WebWorkDef(options.webworkDefFileContent);
         let lastProblemNumber = await courseRepository.getLatestProblemNumberForTopic(options.courseTopicId) || 0;

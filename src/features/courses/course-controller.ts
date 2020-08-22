@@ -251,8 +251,11 @@ class CourseController {
         const contentOrderField = CourseTopicContent.rawAttributes.contentOrder.field;
         const decrementResult = await courseRepository.updateTopics({
             where: {
+                active: true,
                 contentOrder: {
-                    [Sequelize.Op.gt]: options.sourceContentOrder
+                    [Sequelize.Op.gt]: options.sourceContentOrder,
+                    // Don't want to mess with the object that was moved out of the way
+                    [Sequelize.Op.lt]: Constants.Database.MAX_INTEGER_VALUE
                 },
                 courseUnitContentId: options.sourceCourseUnitId
             },
@@ -263,6 +266,7 @@ class CourseController {
 
         const fixResult = await courseRepository.updateTopics({
             where: {
+                active: true,
                 contentOrder: {
                     [Sequelize.Op.lt]: 0
                 },
@@ -274,8 +278,11 @@ class CourseController {
 
         const incrementResult = await courseRepository.updateTopics({
             where: {
+                active: true,
                 contentOrder: {
-                    [Sequelize.Op.gte]: options.targetContentOrder
+                    [Sequelize.Op.gte]: options.targetContentOrder,
+                    // Don't want to mess with the object that was moved out of the way
+                    [Sequelize.Op.lt]: Constants.Database.MAX_INTEGER_VALUE
                 },
                 courseUnitContentId: options.targetCourseUnitId
             },
@@ -286,6 +293,7 @@ class CourseController {
 
         const fixResult2 = await courseRepository.updateTopics({
             where: {
+                active: true,
                 contentOrder: {
                     [Sequelize.Op.lt]: 0
                 },
@@ -347,8 +355,11 @@ class CourseController {
         const contentOrderField = CourseUnitContent.rawAttributes.contentOrder.field;
         const decrementResult = await courseRepository.updateUnits({
             where: {
+                active: true,
                 contentOrder: {
-                    [Sequelize.Op.gt]: options.sourceContentOrder
+                    [Sequelize.Op.gt]: options.sourceContentOrder,
+                    // Don't want to mess with the object that was moved out of the way
+                    [Sequelize.Op.lt]: Constants.Database.MAX_INTEGER_VALUE
                 },
                 courseId: options.sourceCourseId
             },
@@ -359,6 +370,7 @@ class CourseController {
 
         const fixResult = await courseRepository.updateUnits({
             where: {
+                active: true,
                 contentOrder: {
                     [Sequelize.Op.lt]: 0
                 },
@@ -370,8 +382,11 @@ class CourseController {
 
         const incrementResult = await courseRepository.updateUnits({
             where: {
+                active: true,
                 contentOrder: {
-                    [Sequelize.Op.gte]: options.targetContentOrder
+                    [Sequelize.Op.gte]: options.targetContentOrder,
+                    // Don't want to mess with the object that was moved out of the way
+                    [Sequelize.Op.lt]: Constants.Database.MAX_INTEGER_VALUE
                 },
                 courseId: options.targetCourseId
             },
@@ -382,6 +397,7 @@ class CourseController {
 
         const fixResult2 = await courseRepository.updateUnits({
             where: {
+                active: true,
                 contentOrder: {
                     [Sequelize.Op.lt]: 0
                 },
@@ -602,8 +618,11 @@ class CourseController {
         const problemNumberField = CourseWWTopicQuestion.rawAttributes.problemNumber.field;
         const decrementResult = await courseRepository.updateQuestions({
             where: {
+                active: true,
                 problemNumber: {
-                    [Sequelize.Op.gt]: options.sourceProblemNumber
+                    [Sequelize.Op.gt]: options.sourceProblemNumber,
+                    // Don't want to mess with the object that was moved out of the way
+                    [Sequelize.Op.lt]: Constants.Database.MAX_INTEGER_VALUE
                 },
                 courseTopicContentId: options.sourceTopicId
             },
@@ -614,6 +633,7 @@ class CourseController {
 
         const fixResult = await courseRepository.updateQuestions({
             where: {
+                active: true,
                 problemNumber: {
                     [Sequelize.Op.lt]: 0
                 },
@@ -625,8 +645,11 @@ class CourseController {
 
         const incrementResult = await courseRepository.updateQuestions({
             where: {
+                active: true,
                 problemNumber: {
-                    [Sequelize.Op.gte]: options.targetProblemNumber
+                    [Sequelize.Op.gte]: options.targetProblemNumber,
+                    // Don't want to mess with the object that was moved out of the way
+                    [Sequelize.Op.lt]: Constants.Database.MAX_INTEGER_VALUE
                 },
                 courseTopicContentId: options.targetTopicId
             },
@@ -637,6 +660,7 @@ class CourseController {
 
         const fixResult2 = await courseRepository.updateQuestions({
             where: {
+                active: true,
                 problemNumber: {
                     [Sequelize.Op.lt]: 0
                 },

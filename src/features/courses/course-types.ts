@@ -41,16 +41,25 @@ export interface UpdateTopicOptions {
     where: {
         id: number;
     };
+    // Updates can take any form, i.e. I can have problemNumber: { [sequelize.OP.gte]: 0 } or sequelize.literal
+    // TODO further investigation if there is any way for the suggested type to show but allow other values
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updates: Partial<CourseTopicContent> | any;
 }
 
 export interface UpdateCourseUnitsOptions {
     where: WhereOptions;
+    // Updates can take any form, i.e. I can have problemNumber: { [sequelize.OP.gte]: 0 } or sequelize.literal
+    // TODO further investigation if there is any way for the suggested type to show but allow other values
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updates: Partial<CourseUnitContent> | any;
 }
 
 export interface UpdateCourseTopicsOptions {
     where: WhereOptions;
+    // Updates can take any form, i.e. I can have problemNumber: { [sequelize.OP.gte]: 0 } or sequelize.literal
+    // TODO further investigation if there is any way for the suggested type to show but allow other values
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updates: Partial<CourseTopicContent> | any;
 }
 
@@ -58,6 +67,9 @@ export interface UpdateUnitOptions {
     where: {
         id: number;
     };
+    // Updates can take any form, i.e. I can have problemNumber: { [sequelize.OP.gte]: 0 } or sequelize.literal
+    // TODO further investigation if there is any way for the suggested type to show but allow other values
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updates: Partial<CourseUnitContent> | any;
 }
 
@@ -91,6 +103,9 @@ export interface UpdateQuestionOptions {
 
 export interface UpdateQuestionsOptions {
     where: WhereOptions;
+    // Updates can take any form, i.e. I can have problemNumber: { [sequelize.OP.gte]: 0 } or sequelize.literal
+    // TODO further investigation if there is any way for the suggested type to show but allow other values
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updates: Partial<CourseWWTopicQuestion> | any;
 }
 

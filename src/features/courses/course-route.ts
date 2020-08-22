@@ -77,7 +77,7 @@ router.post('/def',
     authenticationMiddleware,
     validate(createQuestionsForTopicFromDefFileValidation),
     fileUpload.single('def-file'),
-    asyncHandler(async (req: RederlyExpressRequest<CreateQuestionsForTopicFromDefFileRequest.params, unknown, CreateQuestionsForTopicFromDefFileRequest.body, any>, _res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<CreateQuestionsForTopicFromDefFileRequest.params, unknown, CreateQuestionsForTopicFromDefFileRequest.body, unknown>, _res: Response, next: NextFunction) => {
         const query = req.query as CreateQuestionsForTopicFromDefFileRequest.query;
         const results = await courseController.createQuestionsForTopicFromDefFileContent({
             webworkDefFileContent: req.file.buffer.toString(),
@@ -91,7 +91,7 @@ router.post('/def',
 router.post('/',
     authenticationMiddleware,
     validate(createCourseValidation),
-    asyncHandler(async (req: RederlyExpressRequest<CreateCourseRequest.params, unknown, CreateCourseRequest.body, any>, _res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<CreateCourseRequest.params, unknown, CreateCourseRequest.body, unknown>, _res: Response, next: NextFunction) => {
         const query = req.query as CreateCourseRequest.query;
         try {
             if (_.isNil(req.session)) {

@@ -311,7 +311,7 @@ class CourseController {
                 // Move the object out of the way for now, this is due to constraint issues
                 // TODO make unique index a deferable unique constraint and then make the transaction deferable
                 // NOTE: sequelize did not have a nice way of doing this on unique constraints that use the same key in a composite key
-                existingTopic.contentOrder = 2147483640;
+                existingTopic.contentOrder = Constants.Database.MAX_INTEGER_VALUE;;
                 await existingTopic.save();
                 updatesResults = await this.makeCourseTopicOrderAvailable({
                     sourceContentOrder,
@@ -569,7 +569,7 @@ class CourseController {
                 // Move the object out of the way for now, this is due to constraint issues
                 // TODO make unique index a deferable unique constraint and then make the transaction deferable
                 // NOTE: sequelize did not have a nice way of doing this on unique constraints that use the same key in a composite key
-                existingUnit.contentOrder = 2147483640;
+                existingUnit.contentOrder = Constants.Database.MAX_INTEGER_VALUE;
                 await existingUnit.save();
                 updatesResults = await this.makeCourseUnitOrderAvailable({
                     sourceContentOrder,
@@ -662,7 +662,7 @@ class CourseController {
                 // Move the question out of the way for now, this is due to constraint issues
                 // TODO make unique index a deferable unique constraint and then make the transaction deferable
                 // NOTE: sequelize did not have a nice way of doing this on unique constraints that use the same key in a composite key
-                existingQuestion.problemNumber = 2147483640;
+                existingQuestion.problemNumber = Constants.Database.MAX_INTEGER_VALUE;
                 await existingQuestion.save();
                 updatesResults = await this.makeProblemNumberAvailable({
                     sourceProblemNumber: sourceProblemNumber,

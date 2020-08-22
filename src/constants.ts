@@ -7,5 +7,6 @@ export namespace Constants {
     }
     export namespace Database {
         export const MIN_INTEGER_VALUE = -2147483648;
+        export const MAX_INTEGER_VALUE = 2147483647;
     }
 };

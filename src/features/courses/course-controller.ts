@@ -703,13 +703,13 @@ class CourseController {
         return appSequelize.transaction(() => {
             return parsedWebworkDef.problems.asyncForEach(async (problem: Problem) => {
                 return courseRepository.createQuestion({
+                    // active: true,
                     courseTopicContentId: options.courseTopicId,
                     problemNumber: ++lastProblemNumber,
                     webworkQuestionPath: problem.source_file,
                     weight: parseInt(problem.value ?? '1'),
                     maxAttempts: parseInt(problem.max_attempts ?? '-1'),
                     hidden: false,
-                    active: false,
                     optional: false
                 });
             });

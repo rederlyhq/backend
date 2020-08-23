@@ -90,6 +90,7 @@ CourseWWTopicQuestion.init({
         field: 'course_topic_question_active',
         type: DataTypes.BOOLEAN,
         allowNull: false,
+        defaultValue: true
     },
     optional: {
         field: 'course_topic_question_optional',

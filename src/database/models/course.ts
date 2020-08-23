@@ -37,6 +37,7 @@ export default class Course extends Model {
     }
 
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
+    public active!: boolean;
     public curriculumId!: number;
     public instructorId!: number;
     public universityId!: number;
@@ -60,6 +61,12 @@ Course.init({
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
+    },
+    active: {
+        field: 'course_active',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true
     },
     curriculumId: {
         field: 'curriculum_id',

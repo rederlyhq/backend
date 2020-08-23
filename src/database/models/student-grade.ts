@@ -3,6 +3,7 @@ import appSequelize from '../app-sequelize';
 
 export default class StudentGrade extends Model {
   public id!: number; // Note that the `null assertion` `!` is required in strict mode.
+  public active!: boolean;
   public userId!: number;
   public courseWWTopicQuestionId!: number;
   public randomSeed!: number;
@@ -11,6 +12,10 @@ export default class StudentGrade extends Model {
   public firstAttempts!: number;
   public latestAttempts!: number;
   public overallBestScore!: number;
+  public effectiveScore!: number;
+  public partialCreditBestScore!: number;
+  public legalScore!: number;
+  public locked!: boolean;
 
   public getUser!: BelongsToGetAssociationMixin<User>;
   public getCourseWWTopicQuestion!: BelongsToGetAssociationMixin<CourseWWTopicQuestion>;
@@ -62,6 +67,12 @@ StudentGrade.init({
     autoIncrement: true,
     primaryKey: true,
   },
+  active: {
+    field: 'student_grade_active',
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true
+  },
   userId: {
     field: 'user_id',
     type: DataTypes.INTEGER,
@@ -76,31 +87,61 @@ StudentGrade.init({
     field: 'student_grade_random_seed',
     type: DataTypes.INTEGER,
     allowNull: false,
+    defaultValue: 666
   },
   bestScore: {
     field: 'student_grade_best_score',
     type: DataTypes.FLOAT,
     allowNull: false,
+    defaultValue: 0
   },
   overallBestScore: {
     field: 'student_grade_overall_best_score',
     type: DataTypes.FLOAT,
     allowNull: false,
+    defaultValue: 0
   },
   numAttempts: {
     field: 'student_grade_num_attempts',
     type: DataTypes.INTEGER,
     allowNull: false,
+    defaultValue: 0
   },
   firstAttempts: {
     field: 'student_grade_first_attempt',
     type: DataTypes.FLOAT,
     allowNull: false,
+    defaultValue: 0
   },
   latestAttempts: {
     field: 'student_grade_latest_attempt',
     type: DataTypes.FLOAT,
     allowNull: false,
+    defaultValue: 0
+  },
+  effectiveScore: {
+    field: 'student_grade_effective_score',
+    type: DataTypes.FLOAT,
+    allowNull: false,
+    defaultValue: 0
+  },
+  partialCreditBestScore: {
+    field: 'student_grade_partial_best_score',
+    type: DataTypes.FLOAT,
+    allowNull: false,
+    defaultValue: 0
+  },
+  legalScore: {
+    field: 'student_grade_legal_score',
+    type: DataTypes.FLOAT,
+    allowNull: false,
+    defaultValue: 0
+  },
+  locked: {
+    field: 'student_grade_locked',
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
   },
 }, {
   tableName: 'student_grade',

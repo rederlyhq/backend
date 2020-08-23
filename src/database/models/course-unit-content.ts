@@ -70,6 +70,7 @@ CourseUnitContent.init({
         field: 'course_unit_content_active',
         type: DataTypes.BOOLEAN,
         allowNull: false,
+        defaultValue: true
     },
     contentOrder: {
         field: 'course_unit_content_order',

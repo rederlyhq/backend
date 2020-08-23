@@ -73,7 +73,8 @@ Curriculum.init({
     active: {
         field: 'curriculum_active',
         type: DataTypes.BOOLEAN,
-        allowNull: false
+        allowNull: false,
+        defaultValue: true
     },
     public: {
         field: 'curriculum_public',

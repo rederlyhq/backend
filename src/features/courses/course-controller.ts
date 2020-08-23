@@ -424,8 +424,9 @@ class CourseController {
                 throw new Error('Not enough information in where clause');
             }
 
+            let existingQuestion: CourseWWTopicQuestion | null = null;
             if (_.isNil(courseTopicContentId) && !_.isNil(options.id)) {
-                const existingQuestion = await courseRepository.getQuestion({
+                existingQuestion = await courseRepository.getQuestion({
                     id: options.id
                 });
                 courseTopicContentId = existingQuestion.courseTopicContentId;
@@ -448,6 +449,24 @@ class CourseController {
                 }
             });
 
+            if (!_.isNil(existingQuestion)) {
+                const problemNumberField = CourseWWTopicQuestion.rawAttributes.problemNumber.field;
+                await courseRepository.updateQuestions({
+                    where: {
+                        active: true,
+                        problemNumber: {
+                            [Sequelize.Op.gt]: existingQuestion.problemNumber,
+                            // Don't want to mess with the object that was moved out of the way
+                            [Sequelize.Op.lt]: Constants.Database.MAX_INTEGER_VALUE
+                        },
+                        courseTopicContentId: existingQuestion.courseTopicContentId
+                    },
+                    updates: {
+                        problemNumber: sequelize.literal(`${problemNumberField} - 1`),
+                    }
+                });
+            }
+
             return results;
         });
     }
@@ -468,8 +487,9 @@ class CourseController {
                 throw new Error('Not enough information in where clause');
             }
 
+            let existingTopic: CourseTopicContent | null = null;
             if (_.isNil(courseUnitContentId) && !_.isNil(options.id)) {
-                const existingTopic = await courseRepository.getCourseTopic({
+                existingTopic = await courseRepository.getCourseTopic({
                     id: options.id
                 });
                 courseUnitContentId = existingTopic.courseUnitContentId;
@@ -495,6 +515,25 @@ class CourseController {
                     name
                 }
             });
+
+            // TODO should this be returned in the response
+            if (!_.isNil(existingTopic)) {
+                const contentOrderField = CourseTopicContent.rawAttributes.contentOrder.field;
+                await courseRepository.updateTopics({
+                    where: {
+                        active: true,
+                        contentOrder: {
+                            [Sequelize.Op.gt]: existingTopic.contentOrder,
+                            // Don't want to mess with the object that was moved out of the way
+                            [Sequelize.Op.lt]: Constants.Database.MAX_INTEGER_VALUE
+                        },
+                        courseUnitContentId: existingTopic.courseUnitContentId
+                    },
+                    updates: {
+                        contentOrder: sequelize.literal(`${contentOrderField} - 1`),
+                    }
+                });
+            }
 
             updatedCount = updateCourseTopicResult.updatedCount;
             await updateCourseTopicResult.updatedRecords.asyncForEach(async (topic: CourseTopicContent) => {
@@ -549,6 +588,23 @@ class CourseController {
                     name
                 }
             });
+
+            const contentOrderField = CourseUnitContent.rawAttributes.contentOrder.field;
+            await courseRepository.updateUnits({
+                where: {
+                    active: true,
+                    contentOrder: {
+                        [Sequelize.Op.gt]: existingUnit.contentOrder,
+                        // Don't want to mess with the object that was moved out of the way
+                        [Sequelize.Op.lt]: Constants.Database.MAX_INTEGER_VALUE
+                    },
+                    courseId: existingUnit.courseId
+                },
+                updates: {
+                    contentOrder: sequelize.literal(`${contentOrderField} - 1`),
+                }
+            });
+
 
             await updateCourseUnitResult.updatedRecords.asyncForEach(async (unit: CourseUnitContent) => {
                 const result: CourseUnitContent = {

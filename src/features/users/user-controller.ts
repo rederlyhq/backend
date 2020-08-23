@@ -311,24 +311,29 @@ class UserController {
         }
 
         userObject.universityId = university.id;
-        userObject.verifyToken = uuidv4();
-        userObject.password = await hashPassword(userObject.password);
+        if (university.verifyInstitutionalEmail) {
+            userObject.verifyToken = uuidv4();
+        } else {
+            userObject.verified = true;
+        }
+        userObject.password = await hashPassword(userObject.password);    
         const newUser = await this.createUser(userObject);
-
         let emailSent = false;
-        const verifyURL = new URL(`/verify/${newUser.verifyToken}`, baseUrl);
-        try {
-            await emailHelper.sendEmail({
-                content: `Hello,
-
-                Please verify your account by clicking this url: ${verifyURL}
-                `,
-                email: newUser.email,
-                subject: 'Please verify account'
-            });
-            emailSent = configurations.email.enabled;
-        } catch (e) {
-            logger.error(e);
+        if (university.verifyInstitutionalEmail) {
+            const verifyURL = new URL(`/verify/${newUser.verifyToken}`, baseUrl);
+            try {
+                await emailHelper.sendEmail({
+                    content: `Hello,
+    
+                    Please verify your account by clicking this url: ${verifyURL}
+                    `,
+                    email: newUser.email,
+                    subject: 'Please verify account'
+                });
+                emailSent = configurations.email.enabled;
+            } catch (e) {
+                logger.error(e);
+            }
         }
 
         return {
@@ -340,7 +345,8 @@ class UserController {
 
     async verifyUser(verifyToken: string): Promise<boolean> {
         const updateResp = await User.update({
-            verified: true
+            verified: true,
+            actuallyVerified: true
         }, {
             where: {
                 verifyToken,

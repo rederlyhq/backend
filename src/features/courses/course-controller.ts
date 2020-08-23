@@ -55,6 +55,7 @@ class CourseController {
                         active: true
                     }
                 }],
+                required: false,
                 where: {
                     active: true
                 }

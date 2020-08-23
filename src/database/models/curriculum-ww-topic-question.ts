@@ -61,7 +61,7 @@ CurriculumWWTopicQuestion.init({
     field: 'curriculum_topic_question_max_attempts',
     type: DataTypes.INTEGER,
     allowNull: false,
-    defaultValue: 1
+    defaultValue: -1
   },
   hidden: {
     field: 'curriculum_topic_question_hidden',

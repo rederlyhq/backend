@@ -7,6 +7,7 @@ export default class University extends Model {
   public universityName!: string;
   public profEmailDomain!: string;
   public studentEmailDomain!: string;
+  public verifyInstitutionalEmail!: boolean;
 
   // timestamps!
   public readonly createdAt!: Date;
@@ -43,6 +44,12 @@ University.init({
     type: DataTypes.TEXT,
     allowNull: false,
     unique: true
+  },
+  verifyInstitutionalEmail: {
+    field: 'university_verify_institutional_email',
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true
   },
 }, {
   tableName: 'university',

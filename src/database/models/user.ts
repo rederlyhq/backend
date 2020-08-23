@@ -12,6 +12,7 @@ export default class User extends Model {
   public password!: string;
   public verifyToken?: string;
   public verified!: boolean;
+  public actuallyVerified!: boolean;
 
   public courseEnrollments?: StudentEnrollment[]
 
@@ -118,6 +119,12 @@ User.init({
   },
   verified: {
     field: 'user_verified',
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  actuallyVerified: {
+    field: 'user_actually_verified',
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: false

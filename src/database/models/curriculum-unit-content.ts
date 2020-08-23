@@ -12,6 +12,10 @@ export default class CurriculumUnitContent extends Model {
 
     public readonly curriculum!: Curriculum;
 
+    // Foreign key objects, only exists if included
+    public topics?: CurriculumTopicContent[];
+
+
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;

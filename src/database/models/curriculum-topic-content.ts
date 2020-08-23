@@ -7,6 +7,10 @@ export default class CurriculumTopicContent extends Model {
     public name!: string;
     public active!: boolean;
     public contentOrder!: number;
+    public topicTypeId!: number;
+
+    // Foreign key objects, only exists if included
+    public questions?: CurriculumWWTopicQuestion[];
 
     public getCurriculumUnitContent!: BelongsToGetAssociationMixin<CurriculumUnitContent>;
 
@@ -50,6 +54,11 @@ CurriculumTopicContent.init({
     },
     curriculumUnitContentId: {
         field: 'curriculum_unit_content_id',
+        type: DataTypes.INTEGER,
+        allowNull: false,
+    },
+    topicTypeId: {
+        field: 'topic_type_id',
         type: DataTypes.INTEGER,
         allowNull: false,
     },

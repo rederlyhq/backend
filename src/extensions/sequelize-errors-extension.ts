@@ -8,7 +8,7 @@ interface SequelizeOriginalError extends Error {
 declare module 'sequelize/types/lib/errors' {
     export interface BaseError {
         originalAsSequelizeError: SequelizeOriginalError;
-        fields?: { [fieldName: string]: string};
+        fields?: { [key: string]: unknown } | { [fieldName: string]: string};
         original?: Error;
     }
   }

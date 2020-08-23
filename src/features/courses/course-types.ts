@@ -2,6 +2,10 @@ import StudentGrade from '../../database/models/student-grade';
 import StudentWorkbook from '../../database/models/student-workbook';
 import User from '../../database/models/user';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
+import Course from '../../database/models/course';
+import { WhereOptions } from 'sequelize/types';
+import CourseUnitContent from '../../database/models/course-unit-content';
+import CourseTopicContent from '../../database/models/course-topic-content';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -20,28 +24,103 @@ export interface GetQuestionOptions {
     questionId: number;
 }
 
+export interface GetQuestionRepositoryOptions {
+    id: number;
+}
+
+export interface GetCourseTopicRepositoryOptions {
+    id: number;
+}
+
+// TODO make generic interface
+export interface GetCourseUnitRepositoryOptions {
+    id: number;
+}
+
 export interface UpdateTopicOptions {
     where: {
         id: number;
     };
-    updates: {
-        startDate?: Date;
-        endDate?: Date;
-        deadDate?: Date;
-        name?: string;
-        active?: boolean;
-        partialExtend?: boolean;
-    };
+    // Updates can take any form, i.e. I can have problemNumber: { [sequelize.OP.gte]: 0 } or sequelize.literal
+    // TODO further investigation if there is any way for the suggested type to show but allow other values
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    updates: Partial<CourseTopicContent> | any;
+}
+
+export interface UpdateCourseUnitsOptions {
+    where: WhereOptions;
+    // Updates can take any form, i.e. I can have problemNumber: { [sequelize.OP.gte]: 0 } or sequelize.literal
+    // TODO further investigation if there is any way for the suggested type to show but allow other values
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    updates: Partial<CourseUnitContent> | any;
+}
+
+export interface UpdateCourseTopicsOptions {
+    where: WhereOptions;
+    // Updates can take any form, i.e. I can have problemNumber: { [sequelize.OP.gte]: 0 } or sequelize.literal
+    // TODO further investigation if there is any way for the suggested type to show but allow other values
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    updates: Partial<CourseTopicContent> | any;
 }
 
 export interface UpdateUnitOptions {
     where: {
         id: number;
     };
-    updates: {
-        name?: string;
-        active?: boolean;
+    // Updates can take any form, i.e. I can have problemNumber: { [sequelize.OP.gte]: 0 } or sequelize.literal
+    // TODO further investigation if there is any way for the suggested type to show but allow other values
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    updates: Partial<CourseUnitContent> | any;
+}
+
+export interface MakeProblemNumberAvailableOptions {
+    sourceTopicId: number;
+    targetTopicId: number;
+    sourceProblemNumber: number;
+    targetProblemNumber: number;
+}
+
+export interface MakeUnitContentOrderAvailableOptions {
+    sourceCourseId: number;
+    targetCourseId: number;
+    sourceContentOrder: number;
+    targetContentOrder: number;
+}
+
+export interface MakeTopicContentOrderAvailableOptions {
+    sourceCourseUnitId: number;
+    targetCourseUnitId: number;
+    sourceContentOrder: number;
+    targetContentOrder: number;
+}
+
+export interface UpdateQuestionOptions {
+    where: {
+        id: number;
     };
+    updates: Partial<CourseWWTopicQuestion>;
+}
+
+export interface UpdateQuestionsOptions {
+    where: WhereOptions;
+    // Updates can take any form, i.e. I can have problemNumber: { [sequelize.OP.gte]: 0 } or sequelize.literal
+    // TODO further investigation if there is any way for the suggested type to show but allow other values
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    updates: Partial<CourseWWTopicQuestion> | any;
+}
+
+export interface CreateCourseOptions {
+    object: Partial<Course>;
+    options: {
+        useCurriculum: boolean;
+    };
+}
+
+export interface UpdateCourseOptions {
+    where: {
+        id: number;
+    };
+    updates: Partial<Course>;
 }
 
 export interface GetGradesOptions {
@@ -139,4 +218,24 @@ export interface CreateGradesForQuestionOptions {
 export interface CreateNewStudentGradeOptions {
     userId: number;
     courseTopicQuestionId: number;
+}
+
+export interface CreateQuestionsForTopicFromDefFileContentOptions {
+    webworkDefFileContent: string;
+    courseTopicId: number;
+}
+
+export interface DeleteQuestionsOptions {
+    id?: number;
+    courseTopicContentId?: number;
+}
+
+export interface DeleteTopicsOptions {
+    id?: number;
+    courseUnitContentId?: number;
+}
+
+export interface DeleteUnitsOptions {
+    // Currently you cannot delete a course so you must supply an id
+    id: number;
 }

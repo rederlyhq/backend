@@ -15,8 +15,8 @@ export default class User extends Model {
   public verified!: boolean;
   public actuallyVerified!: boolean;
   public preferredEmail!: string;
-  public preferredEmailInstitutionalVerificationToken?: string;
-  public preferredEmailInstitutionalVerificationTokenExpiresAt!: Date;
+  public preferredEmailInstitutionVerificationToken?: string;
+  public preferredEmailInstitutionVerificationTokenExpiresAt!: Date;
   public preferredEmailVerificationToken?: string;
   public preferredEmailVerificationTokenExpiresAt!: Date;
   public forgotPasswordToken?: string;
@@ -144,8 +144,8 @@ User.init({
     allowNull: false,
     defaultValue: '' // temporary we should drop this
   },
-  preferredEmailInstitutionalVerificationToken: {
-    field: 'user_preferred_email_institutional_verification_token',
+  preferredEmailInstitutionVerificationToken: {
+    field: 'user_preferred_email_institution_verification_token',
     type: DataTypes.TEXT,
     allowNull: true,
   },
@@ -158,19 +158,19 @@ User.init({
       field: 'user_verify_token_expires_at',
       type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: DataTypes.NOW
+      defaultValue: appSequelize.literal('NOW()')
   },
-  preferredEmailInstitutionalVerificationTokenExpiresAt: {
-      field: 'user_preferred_email_institutional_verification_token_expires_at',
+  preferredEmailInstitutionVerificationTokenExpiresAt: {
+      field: 'user_preferred_email_institution_verification_token_expires_at',
       type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: DataTypes.NOW
+      defaultValue: appSequelize.literal('NOW()')
   },
   preferredEmailVerificationTokenExpiresAt: {
       field: 'user_preferred_email_verification_token_expires_at',
       type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: DataTypes.NOW
+      defaultValue: appSequelize.literal('NOW()')
   },
   forgotPasswordToken: {
     field: 'user_forgot_password_token',
@@ -181,7 +181,7 @@ User.init({
       field: 'user_forgot_password_token_expires_at',
       type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: DataTypes.NOW
+      defaultValue: appSequelize.literal('NOW()')
   },
 }, {
   tableName: 'users',

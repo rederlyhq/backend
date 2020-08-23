@@ -70,7 +70,7 @@ StudentEnrollment.init({
         field: 'student_enrollment_enroll_date',
         type: DataTypes.DATE,
         allowNull: false,
-        defaultValue: DataTypes.NOW
+        defaultValue: appSequelize.literal('NOW()')
     },
     dropDate: {
         field: 'student_enrollment_drop_date',

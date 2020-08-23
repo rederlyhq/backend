@@ -19,6 +19,8 @@ export default class User extends Model {
   public preferredEmailInstitutionalVerificationTokenExpiresAt!: Date;
   public preferredEmailVerificationToken?: string;
   public preferredEmailVerificationTokenExpiresAt!: Date;
+  public forgotPasswordToken?: string;
+  public forgotPasswordTokenExpiresAt!: Date
 
 
   public courseEnrollments?: StudentEnrollment[]
@@ -166,6 +168,17 @@ User.init({
   },
   preferredEmailVerificationTokenExpiresAt: {
       field: 'user_preferred_email_verification_token_expires_at',
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW
+  },
+  forgotPasswordToken: {
+    field: 'user_forgot_password_token',
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  forgotPasswordTokenExpiresAt: {
+      field: 'user_forgot_password_token_expires_at',
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW

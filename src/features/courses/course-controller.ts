@@ -424,8 +424,9 @@ class CourseController {
                 throw new Error('Not enough information in where clause');
             }
 
+            let existingQuestion: CourseWWTopicQuestion | null = null;
             if (_.isNil(courseTopicContentId) && !_.isNil(options.id)) {
-                const existingQuestion = await courseRepository.getQuestion({
+                existingQuestion = await courseRepository.getQuestion({
                     id: options.id
                 });
                 courseTopicContentId = existingQuestion.courseTopicContentId;
@@ -447,6 +448,24 @@ class CourseController {
                     problemNumber
                 }
             });
+
+            if (!_.isNil(existingQuestion)) {
+                const problemNumberField = CourseWWTopicQuestion.rawAttributes.problemNumber.field;
+                await courseRepository.updateQuestions({
+                    where: {
+                        active: true,
+                        problemNumber: {
+                            [Sequelize.Op.gt]: existingQuestion.problemNumber,
+                            // Don't want to mess with the object that was moved out of the way
+                            [Sequelize.Op.lt]: Constants.Database.MAX_INTEGER_VALUE
+                        },
+                        courseTopicContentId: existingQuestion.courseTopicContentId
+                    },
+                    updates: {
+                        problemNumber: sequelize.literal(`${problemNumberField} - 1`),
+                    }
+                });
+            }
 
             return results;
         });

@@ -208,7 +208,7 @@ router.put('/topic/:id',
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseTopicRequest.body, UpdateCourseTopicRequest.query>, _res: Response, next: NextFunction) => {
         const params = req.params as UpdateCourseTopicRequest.params;
         try {
-            const updates = await courseController.updateTopic({
+            const updatesResult = await courseController.updateTopic({
                 where: {
                     id: params.id
                 },
@@ -217,7 +217,10 @@ router.put('/topic/:id',
                 }
             });
             // TODO handle not found case
-            next(httpResponse.Ok('Updated topic successfully', updates));
+            next(httpResponse.Ok('Updated topic successfully', {
+                updatesResult,
+                updatesCount: updatesResult.length
+            }));
         } catch (e) {
             next(e);
         }

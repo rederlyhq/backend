@@ -550,6 +550,23 @@ class CourseController {
                 }
             });
 
+            const contentOrderField = CourseUnitContent.rawAttributes.contentOrder.field;
+            await courseRepository.updateUnits({
+                where: {
+                    active: true,
+                    contentOrder: {
+                        [Sequelize.Op.gt]: existingUnit.contentOrder,
+                        // Don't want to mess with the object that was moved out of the way
+                        [Sequelize.Op.lt]: Constants.Database.MAX_INTEGER_VALUE
+                    },
+                    courseId: existingUnit.courseId
+                },
+                updates: {
+                    contentOrder: sequelize.literal(`${contentOrderField} - 1`),
+                }
+            });
+    
+
             await updateCourseUnitResult.updatedRecords.asyncForEach(async (unit: CourseUnitContent) => {
                 const result: CourseUnitContent = {
                     ...unit.get({ plain: true }),

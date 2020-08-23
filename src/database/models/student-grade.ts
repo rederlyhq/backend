@@ -3,6 +3,7 @@ import appSequelize from '../app-sequelize';
 
 export default class StudentGrade extends Model {
   public id!: number; // Note that the `null assertion` `!` is required in strict mode.
+  public active!: boolean;
   public userId!: number;
   public courseWWTopicQuestionId!: number;
   public randomSeed!: number;
@@ -61,6 +62,12 @@ StudentGrade.init({
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
+  },
+  active: {
+    field: 'student_grade_active',
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true
   },
   userId: {
     field: 'user_id',

@@ -3,6 +3,7 @@ import appSequelize from '../app-sequelize';
 
 export default class University extends Model {
   public id!: number; // Note that the `null assertion` `!` is required in strict mode.
+  public active!: boolean;
   public universityName!: string;
   public profEmailDomain!: string;
   public studentEmailDomain!: string;
@@ -18,6 +19,12 @@ University.init({
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
+  },
+  active: {
+    field: 'university_active',
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true
   },
   universityName: {
     field: 'university_name',

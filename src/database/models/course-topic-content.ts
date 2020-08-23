@@ -102,6 +102,7 @@ CourseTopicContent.init({
         field: 'course_topic_content_active',
         type: DataTypes.BOOLEAN,
         allowNull: false,
+        defaultValue: true
     },
 
     startDate: {

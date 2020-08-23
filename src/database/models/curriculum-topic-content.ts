@@ -71,6 +71,7 @@ CurriculumTopicContent.init({
         field: 'curriculum_topic_content_active',
         type: DataTypes.BOOLEAN,
         allowNull: false,
+        defaultValue: true
     },
     contentOrder: {
         field: 'curriculum_topic_content_order',

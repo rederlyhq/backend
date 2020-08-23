@@ -5,6 +5,7 @@ import Curriculum from './curriculum';
 
 export default class UniversityCurriculumPermission extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
+    public active!: boolean;
     public universityId!: number;
     public curriculumId!: number;
 
@@ -25,6 +26,12 @@ UniversityCurriculumPermission.init({
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
+    },
+    active: {
+        field: 'university_curriculum_permission_active',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true
     },
     universityId: {
         field: 'university_id',

@@ -71,6 +71,7 @@ CurriculumUnitContent.init({
         field: 'curriculum_unit_content_active',
         type: DataTypes.BOOLEAN,
         allowNull: false,
+        defaultValue: true
     },
 }, {
     tableName: 'curriculum_unit_content',

@@ -3,6 +3,7 @@ import appSequelize from '../app-sequelize';
 
 export default class User extends Model {
   public id!: number; // Note that the `null assertion` `!` is required in strict mode.
+  public active!: boolean;
   public universityId!: number;
   public roleId!: number;
   public firstName!: string;
@@ -71,6 +72,12 @@ User.init({
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
+  },
+  active: {
+    field: 'course_topic_question_active',
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true
   },
   universityId: {
     field: 'university_id',

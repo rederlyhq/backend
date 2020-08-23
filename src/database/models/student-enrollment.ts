@@ -3,6 +3,7 @@ import appSequelize from '../app-sequelize';
 
 export default class StudentEnrollment extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
+    public active!: boolean;
     public courseId!: number;
     public userId!: number;
     public enrollDate!: Date;
@@ -48,6 +49,12 @@ StudentEnrollment.init({
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
+    },
+    active: {
+        field: 'student_enrollment_active',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true
     },
     courseId: {
         field: 'course_id',

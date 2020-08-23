@@ -7,6 +7,10 @@ export default class CurriculumTopicContent extends Model {
     public name!: string;
     public active!: boolean;
     public contentOrder!: number;
+    public topicTypeId!: number;
+
+    // Foreign key objects, only exists if included
+    public questions?: CurriculumWWTopicQuestion[];
 
     public getCurriculumUnitContent!: BelongsToGetAssociationMixin<CurriculumUnitContent>;
 
@@ -22,7 +26,7 @@ export default class CurriculumTopicContent extends Model {
 
         foreignKeyUnit: 'curriculum_topic_content_curriculum_unit_content_id_fkey'
     }
-    
+
     static createAssociations(): void {
         // This is a hack to add the associations later to avoid cyclic dependencies
         /* eslint-disable @typescript-eslint/no-use-before-define */
@@ -31,14 +35,14 @@ export default class CurriculumTopicContent extends Model {
             targetKey: 'id',
             as: 'curriculumUnitContent'
         });
-    
+
         CurriculumTopicContent.hasMany(CurriculumWWTopicQuestion, {
-          foreignKey: 'curriculumTopicContentId',
-          sourceKey: 'id',
-          as: 'questions'
+            foreignKey: 'curriculumTopicContentId',
+            sourceKey: 'id',
+            as: 'questions'
         });
         /* eslint-enable @typescript-eslint/no-use-before-define */
-      }
+    }
 }
 
 CurriculumTopicContent.init({
@@ -53,6 +57,11 @@ CurriculumTopicContent.init({
         type: DataTypes.INTEGER,
         allowNull: false,
     },
+    topicTypeId: {
+        field: 'topic_type_id',
+        type: DataTypes.INTEGER,
+        allowNull: false,
+    },
     name: {
         field: 'curriculum_topic_content_name',
         type: DataTypes.TEXT,
@@ -62,6 +71,7 @@ CurriculumTopicContent.init({
         field: 'curriculum_topic_content_active',
         type: DataTypes.BOOLEAN,
         allowNull: false,
+        defaultValue: true
     },
     contentOrder: {
         field: 'curriculum_topic_content_order',

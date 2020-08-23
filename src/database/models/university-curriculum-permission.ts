@@ -1,10 +1,11 @@
 import { Model, DataTypes, HasOneGetAssociationMixin, BelongsToGetAssociationMixin } from 'sequelize';
-import appSequelize from '../app-sequelize'
+import appSequelize from '../app-sequelize';
 import University from './university';
 import Curriculum from './curriculum';
 
 export default class UniversityCurriculumPermission extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
+    public active!: boolean;
     public universityId!: number;
     public curriculumId!: number;
 
@@ -26,6 +27,12 @@ UniversityCurriculumPermission.init({
         autoIncrement: true,
         primaryKey: true,
     },
+    active: {
+        field: 'university_curriculum_permission_active',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true
+    },
     universityId: {
         field: 'university_id',
         type: DataTypes.INTEGER,
@@ -46,7 +53,7 @@ UniversityCurriculumPermission.init({
                 'university_id',
             ],
             unique: true,
-            name:'university_curriculum_permission--curriculum_id-university_id'
+            name: 'university_curriculum_permission--curriculum_id-university_id'
         },
     ]
 });

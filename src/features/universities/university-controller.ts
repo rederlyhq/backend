@@ -1,5 +1,5 @@
-import University from "../../database/models/university";
-import Bluebird = require("bluebird");
+import University from '../../database/models/university';
+import Bluebird = require('bluebird');
 import Sequelize = require('sequelize');
 
 interface GetUniversitiesAssociatedWithEmail {
@@ -21,7 +21,7 @@ class UniversityController {
                     studentEmailDomain: emailDomain
                 },
             )
-        })
+        });
     }
 }
 

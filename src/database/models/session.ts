@@ -42,7 +42,7 @@ Session.init({
         field: 'session_expires_active',
         type: DataTypes.BOOLEAN,
         allowNull: false,
-        defaultValue: false
+        defaultValue: true
     },
 }, {
     tableName: 'session',

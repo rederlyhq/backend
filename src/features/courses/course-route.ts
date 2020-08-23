@@ -1,108 +1,130 @@
-import { Request, Response, NextFunction } from "express";
-import courseController from "./course-controller";
+import { Request, Response, NextFunction } from 'express';
+import courseController from './course-controller';
 const router = require('express').Router();
-import validate from '../../middleware/joi-validator'
-import { authenticationMiddleware } from "../../middleware/auth";
-import httpResponse from "../../utilities/http-response";
-import * as asyncHandler from 'express-async-handler'
-import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGrades, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation } from "./course-route-validation";
-import Session from "../../database/models/session";
-import Boom = require("boom");
-import NotFoundError from "../../exceptions/not-found-error";
-import multer = require("multer");
-import WebWorkDef from "../../utilities/web-work-def-parser";
+import validate from '../../middleware/joi-validator';
+import { authenticationMiddleware } from '../../middleware/auth';
+import httpResponse from '../../utilities/http-response';
+import * as asyncHandler from 'express-async-handler';
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation } from './course-route-validation';
+import NotFoundError from '../../exceptions/not-found-error';
+import multer = require('multer');
 import * as proxy from 'express-http-proxy';
 import * as qs from 'qs';
-import configurations from "../../configurations";
-import WrappedError from "../../exceptions/wrapped-error";
+import * as _ from 'lodash';
+import configurations from '../../configurations';
+import WrappedError from '../../exceptions/wrapped-error';
+import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
+import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest } from './course-route-request-types';
+import Boom = require('boom');
+import { Constants } from '../../constants';
 
 const fileUpload = multer();
 
 router.get('/statistics/units',
     authenticationMiddleware,
     validate(getStatisticsOnUnitsValidation),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<GetStatisticsOnUnitsRequest.params, unknown, GetStatisticsOnUnitsRequest.body, GetStatisticsOnUnitsRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const stats = await courseController.getStatisticsOnUnits({
                 where: {
-                    courseId: (req.query as any).courseId
+                    courseId: req.query.courseId,
+                    userId: req.query.userId,
                 }
             });
             next(httpResponse.Ok('Fetched successfully', stats));
         } catch (e) {
-            next(e)
+            next(e);
         }
     }));
 
 router.get('/statistics/topics',
     authenticationMiddleware,
     validate(getStatisticsOnTopicsValidation),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<GetStatisticsOnTopicsRequest.params, unknown, GetStatisticsOnTopicsRequest.body, GetStatisticsOnTopicsRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const stats = await courseController.getStatisticsOnTopics({
                 where: {
-                    courseUnitContentId: (req.query as any).courseUnitContentId,
-                    courseId: (req.query as any).courseId
+                    courseUnitContentId: req.query.courseUnitContentId,
+                    courseId: req.query.courseId,
+                    userId: req.query.userId,
                 }
             });
             next(httpResponse.Ok('Fetched successfully', stats));
         } catch (e) {
-            next(e)
+            next(e);
         }
     }));
 
 router.get('/statistics/questions',
     authenticationMiddleware,
     validate(getStatisticsOnQuestionsValidation),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<GetStatisticsOnQuestionsRequest.params, unknown, GetStatisticsOnQuestionsRequest.body, GetStatisticsOnQuestionsRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const stats = await courseController.getStatisticsOnQuestions({
                 where: {
-                    courseTopicContentId: (req.query as any).courseTopicContentId,
-                    courseId: (req.query as any).courseId
+                    courseTopicContentId: req.query.courseTopicContentId,
+                    courseId: req.query.courseId,
+                    userId: req.query.userId,
                 }
             });
             next(httpResponse.Ok('Fetched successfully', stats));
         } catch (e) {
-            next(e)
+            next(e);
         }
     }));
 
 router.post('/def',
     authenticationMiddleware,
-    // validate(createCourseValidation),
+    validate(createQuestionsForTopicFromDefFileValidation),
     fileUpload.single('def-file'),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-        const parsedDefFile = new WebWorkDef(req.file.buffer.toString())
-        res.json(parsedDefFile);
+    asyncHandler(async (req: RederlyExpressRequest<CreateQuestionsForTopicFromDefFileRequest.params, unknown, CreateQuestionsForTopicFromDefFileRequest.body, unknown>, _res: Response, next: NextFunction) => {
+        const query = req.query as CreateQuestionsForTopicFromDefFileRequest.query;
+        const results = await courseController.createQuestionsForTopicFromDefFileContent({
+            webworkDefFileContent: req.file.buffer.toString(),
+            courseTopicId: query.courseTopicId
+        });
+        next(httpResponse.Created('Course successfully', {
+            newQuestions: results
+        }));
     }));
 
 router.post('/',
     authenticationMiddleware,
     validate(createCourseValidation),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<CreateCourseRequest.params, unknown, CreateCourseRequest.body, unknown>, _res: Response, next: NextFunction) => {
+        const query = req.query as CreateCourseRequest.query;
         try {
-            // TODO figure out session for request
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const session = (req as any).session as Session;
+            if (_.isNil(req.session)) {
+                throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+            }
+
+            if (_.isNil(query.useCurriculum)) {
+                throw new Error('useCurriculum has a default value and therefore is not possible to be nil');
+            }
+            const session = req.session;
             const user = await session.getUser();
             const university = await user.getUniversity();
 
             const newCourse = await courseController.createCourse({
-                instructorId: user.id,
-                universityId: university.id,
-                ...req.body
+                object: {
+                    instructorId: user.id,
+                    universityId: university.id,
+                    ...req.body
+                },
+                options: {
+                    useCurriculum: query.useCurriculum
+                }
             });
             next(httpResponse.Created('Course successfully', newCourse));
         } catch (e) {
-            next(e)
+            next(e);
         }
     }));
 
 router.post('/unit',
     authenticationMiddleware,
     validate(createCourseUnitValidation),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<CreateCourseUnitRequest.params, unknown, CreateCourseUnitRequest.body, CreateCourseUnitRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const newUnit = await courseController.createUnit({
                 ...req.body
@@ -117,7 +139,7 @@ router.post('/unit',
 router.post('/topic',
     authenticationMiddleware,
     validate(createCourseTopicValidation),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
         try {
             const newTopic = await courseController.createTopic({
                 ...req.body
@@ -131,46 +153,49 @@ router.post('/topic',
 
 router.get('/grades',
     authenticationMiddleware,
-    validate(getGrades),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    validate(getGradesValidation),
+    asyncHandler(async (req: RederlyExpressRequest<GetGradesRequest.params, unknown, GetGradesRequest.body, GetGradesRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const grades = await courseController.getGrades({
                 where: {
-                    courseId: (req.query as any).courseId as number,
-                    questionId: (req.query as any).questionId as number,
-                    topicId: (req.query as any).topicId as number,
-                    unitId: (req.query as any).unitId as number
+                    courseId: req.query.courseId,
+                    questionId: req.query.questionId,
+                    topicId: req.query.topicId,
+                    unitId: req.query.unitId,
+                    userId: req.query.userId,
                 }
             });
             next(httpResponse.Ok('Fetched successfully', grades));
         } catch (e) {
-            next(e)
+            next(e);
         }
     }));
 
 router.get('/questions',
     authenticationMiddleware,
     validate(getQuestionsValidation),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-        const userIdInput: number | string = (req.query as any).userId as number | string
-        let userId: number;
-        if(typeof userIdInput === 'string') {
+    asyncHandler(async (req: RederlyExpressRequest<GetQuestionsRequest.params, unknown, GetQuestionsRequest.body, GetQuestionsRequest.query>, _res: Response, next: NextFunction) => {
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+
+        const userIdInput = req.query.userId;
+        let userId: number | undefined;
+        if (typeof userIdInput === 'string') {
             if (userIdInput === 'me') {
-                // TODO figure out session for request
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const session = (req as any).session as Session;
-                userId = session.userId
+                const session = req.session;
+                userId = session.userId;
             } else {
                 next(Boom.badRequest('userIdInput as a string must be the value `me`'));
                 return;
             }
         } else if (typeof userIdInput === 'number') {
-            userId = userIdInput
+            userId = userIdInput;
         }
 
         const result = await courseController.getQuestions({
             userId: userId,
-            courseTopicContentId: (req.query as any).courseTopicContentId as number
+            courseTopicContentId: req.query.courseTopicContentId
         });
         next(httpResponse.Ok(null, result));
     }));
@@ -178,18 +203,87 @@ router.get('/questions',
 router.put('/topic/:id',
     authenticationMiddleware,
     validate(updateCourseTopicValidation),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseTopicRequest.body, UpdateCourseTopicRequest.query>, _res: Response, next: NextFunction) => {
+        const params = req.params as UpdateCourseTopicRequest.params;
         try {
-            const updates = await courseController.updateTopic({
+            const updatesResult = await courseController.updateTopic({
                 where: {
-                    id: parseInt(req.params.id)
+                    id: params.id
                 },
                 updates: {
                     ...req.body
                 }
             });
             // TODO handle not found case
-            next(httpResponse.Ok('Updated topic successfully', updates));
+            next(httpResponse.Ok('Updated topic successfully', {
+                updatesResult,
+                updatesCount: updatesResult.length
+            }));
+        } catch (e) {
+            next(e);
+        }
+    }));
+
+router.delete('/unit/:id',
+    authenticationMiddleware,
+    validate(deleteCourseUnitValidation),
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, DeleteCourseUnitRequest.body, DeleteCourseUnitRequest.query>, _res: Response, next: NextFunction) => {
+        const params = req.params as DeleteCourseUnitRequest.params;
+        try {
+            const updatesResult = await courseController.softDeleteUnits({
+                id: params.id
+            });
+            // TODO handle not found case
+            next(httpResponse.Ok('Deleted units and subobjects successfully', {
+                updatedRecords: updatesResult.updatedRecords,
+                updatesCount: updatesResult.updatedCount
+            }));
+        } catch (e) {
+            next(e);
+        }
+    }));
+
+router.delete('/topic/:id',
+    authenticationMiddleware,
+    validate(deleteCourseTopicValidation),
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, DeleteCourseTopicRequest.body, DeleteCourseTopicRequest.query>, _res: Response, next: NextFunction) => {
+        const params = req.params as DeleteCourseTopicRequest.params;
+        try {
+            const updatesResult = await courseController.softDeleteTopics({
+                id: params.id
+            });
+            // TODO handle not found case
+            next(httpResponse.Ok('Deleted topics and subobjects successfully', {
+                updatedRecords: updatesResult.updatedRecords,
+                updatesCount: updatesResult.updatedCount
+            }));
+        } catch (e) {
+            next(e);
+        }
+    }));
+
+router.delete('/question/:id',
+    authenticationMiddleware,
+    validate(deleteCourseQuestionValidation),
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, DeleteCourseQuestionRequest.body, DeleteCourseQuestionRequest.query>, _res: Response, next: NextFunction) => {
+        const params = req.params as DeleteCourseQuestionRequest.params;
+        try {
+            const updatesResult = await courseController.softDeleteQuestions({
+                id: params.id
+            });
+            // TODO handle not found case
+            next(httpResponse.Ok('Deleted questions and subobjects successfully', {
+                updatedRecords: updatesResult.updatedRecords,
+                updatesCount: updatesResult.updatedCount
+            }));
         } catch (e) {
             next(e);
         }
@@ -198,18 +292,71 @@ router.put('/topic/:id',
 router.put('/unit/:id',
     authenticationMiddleware,
     validate(updateCourseUnitValidation),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    // This is to work around "extractMap" error
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseUnitRequest.body, UpdateCourseUnitRequest.query>, _res: Response, next: NextFunction) => {
         try {
-            const updates = await courseController.updateUnit({
+            const params = req.params as UpdateCourseUnitRequest.params;
+            const updatesResult = await courseController.updateCourseUnit({
                 where: {
-                    id: parseInt(req.params.id)
+                    id: params.id
                 },
                 updates: {
                     ...req.body
                 }
             });
             // TODO handle not found case
-            next(httpResponse.Ok('Updated unit successfully', updates));
+            next(httpResponse.Ok('Updated unit successfully', {
+                updatesResult,
+                updatesCount: updatesResult.length
+            }));
+        } catch (e) {
+            next(e);
+        }
+    }));
+
+router.put('/question/:id',
+    authenticationMiddleware,
+    validate(updateCourseTopicQuestionValidation),
+    // This is to work around "extractMap" error
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseTopicQuestionRequest.body, UpdateCourseTopicQuestionRequest.query>, _res: Response, next: NextFunction) => {
+        const params = req.params as UpdateCourseTopicQuestionRequest.params;
+        const updatesResult = await courseController.updateQuestion({
+            where: {
+                id: params.id
+            },
+            updates: {
+                ...req.body
+            }
+        });
+        next(httpResponse.Ok('Updated question successfully', {
+            updatesResult,
+            updatesCount: updatesResult.length
+        }));
+    }));
+
+router.put('/:id',
+    authenticationMiddleware,
+    validate(updateCourseValidation),
+    // This is to work around "extractMap" error
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseRequest.body, UpdateCourseRequest.query>, _res: Response, next: NextFunction) => {
+        try {
+            const params = req.params as UpdateCourseRequest.params;
+            const updatesResult = await courseController.updateCourse({
+                where: {
+                    id: params.id
+                },
+                updates: {
+                    ...req.body
+                }
+            });
+            // TODO handle not found case
+            next(httpResponse.Ok('Updated course successfully', {
+                updatesResult,
+                updatesCount: updatesResult.length
+            }));
         } catch (e) {
             next(e);
         }
@@ -218,7 +365,7 @@ router.put('/unit/:id',
 router.post('/question',
     authenticationMiddleware,
     validate(createCourseTopicQuestionValidation),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<CreateCourseTopicQuestionRequest.params, unknown, CreateCourseTopicQuestionRequest.body, CreateCourseTopicQuestionRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const newQuestion = await courseController.addQuestion({
                 ...req.body
@@ -233,15 +380,20 @@ router.post('/question',
 router.get('/question/:id',
     authenticationMiddleware,
     validate(getQuestionValidation),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-        // TODO figure out session for request
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const session = (req as any).session as Session;
+    // This is a typescript workaround since it tries to use the type extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetQuestionRequest.body, GetQuestionRequest.query>, _res: Response, next: NextFunction) => {
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
 
+        const session = req.session;
+
+        const params = req.params as GetQuestionRequest.params;
         try {
             // TODO handle not found case
             const question = await courseController.getQuestion({
-                questionId: parseInt(req.params.id),
+                questionId: params.id,
                 userId: session.userId,
                 formURL: req.originalUrl
             });
@@ -265,9 +417,14 @@ router.post('/question/:id',
                 format: 'json',
                 template: 'single',
                 formURL: req.originalUrl,
+                baseURL: '/'
             })}`;
         },
-        userResDecorator: async (proxyRes: Response<any>, proxyResData: any, userReq: any, userRes: Response<any>) => {
+        userResDecorator: async (_proxyRes, proxyResData, userReq: RederlyExpressRequest) => {
+            if (_.isNil(userReq.session)) {
+                throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+            }
+
             let data = proxyResData.toString('utf8');
             try {
                 data = JSON.parse(data);
@@ -275,9 +432,13 @@ router.post('/question/:id',
                 throw new WrappedError('Error parsing data response from renderer', e);
             }
 
+            const params = userReq.params as unknown as {
+                id: number;
+            };
+
             const result = await courseController.submitAnswer({
                 userId: userReq.session.userId,
-                questionId: userReq.params.id,
+                questionId: params.id as number,
                 score: data.problem_result.score,
                 submitted: data,
             });
@@ -301,57 +462,58 @@ router.post('/question/:id',
 router.get('/',
     authenticationMiddleware,
     validate(listCoursesValidation),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<ListCoursesRequest.params, unknown, ListCoursesRequest.body, ListCoursesRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const courses = await courseController.getCourses({
                 filter: {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    instructorId: (req.query as any).instructorId as number,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    enrolledUserId: (req.query as any).enrolledUserId as number,
+                    instructorId: req.query.instructorId,
+                    enrolledUserId: req.query.enrolledUserId,
                 }
             });
             next(httpResponse.Ok('Fetched successfully', courses));
         } catch (e) {
-            next(e)
+            next(e);
         }
     }));
 
 router.get('/topics',
     authenticationMiddleware,
     validate(getTopicsValidation),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<GetTopicsRequest.params, unknown, GetTopicsRequest.body, GetTopicsRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const result = await courseController.getTopics({
-                courseId: (req.query as any).courseId as number,
-                isOpen: (req.query as any).isOpen as boolean
-            })
-            next(httpResponse.Ok('Fetched successfully', result))
+                courseId: req.query.courseId,
+                isOpen: req.query.isOpen
+            });
+            next(httpResponse.Ok('Fetched successfully', result));
         } catch (e) {
-            next(e)
+            next(e);
         }
     }));
 
 router.get('/:id',
     authenticationMiddleware,
     validate(getCourseValidation),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    // This is a work around because typescript has errors with "extractMap"
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetCourseRequest.body, GetCourseRequest.query>, _res: Response, next: NextFunction) => {
         try {
-            const course = await courseController.getCourseById(parseInt(req.params.id));
+            const params = req.params as GetCourseRequest.params;
+            const course = await courseController.getCourseById(params.id);
             next(httpResponse.Ok('Fetched successfully', course));
         } catch (e) {
-            next(e)
+            next(e);
         }
     }));
 
 router.post('/enroll',
     authenticationMiddleware,
     validate(enrollInCourseValidation),
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<EnrollInCourseRequest.params, unknown, EnrollInCourseRequest.body, EnrollInCourseRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const enrollment = await courseController.enroll({
                 ...req.body,
-            })
+            });
             next(httpResponse.Ok('Enrolled', enrollment));
         } catch (e) {
             if (e instanceof NotFoundError) {
@@ -364,11 +526,13 @@ router.post('/enroll',
 
 router.post('/enroll/:code',
     authenticationMiddleware,
-    asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-        // TODO figure out session for request
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const session = (req as any).session as Session;
+    validate(enrollInCourseByCodeValidation),
+    asyncHandler(async (req: RederlyExpressRequest<EnrollInCourseByCodeRequest.params | { [key: string]: string }, unknown, EnrollInCourseByCodeRequest.body, EnrollInCourseByCodeRequest.query>, _res: Response, next: NextFunction) => {
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
 
+        const session = req.session;
         try {
             const enrollment = await courseController.enrollByCode({
                 code: req.params.code,

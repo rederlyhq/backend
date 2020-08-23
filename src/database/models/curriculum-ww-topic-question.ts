@@ -1,6 +1,6 @@
 // TODO rename
 import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
-import appSequelize from '../app-sequelize'
+import appSequelize from '../app-sequelize';
 import CurriculumTopicContent from './curriculum-topic-content';
 
 export default class CurriculumWWTopicQuestion extends Model {
@@ -8,6 +8,11 @@ export default class CurriculumWWTopicQuestion extends Model {
   public curriculumTopicContentId!: number;
   public problemNumber!: number;
   public webworkQuestionPath!: string;
+  public weight!: number;
+  public maxAttempts!: number;
+  public hidden!: boolean;
+  public active!: boolean;
+  public optional!: boolean;
 
   public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
 
@@ -45,6 +50,36 @@ CurriculumWWTopicQuestion.init({
     field: 'curriculum_topic_question_webwork_question_ww_path',
     type: DataTypes.TEXT,
     allowNull: false,
+  },
+  weight: {
+    field: 'curriculum_topic_question_weight',
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 1
+  },
+  maxAttempts: {
+    field: 'curriculum_topic_question_max_attempts',
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: -1
+  },
+  hidden: {
+    field: 'curriculum_topic_question_hidden',
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  active: {
+    field: 'curriculum_topic_question_active',
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true
+  },
+  optional: {
+    field: 'curriculum_topic_question_optional',
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
   },
 }, {
   tableName: 'curriculum_topic_question',

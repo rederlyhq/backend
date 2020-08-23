@@ -8,6 +8,9 @@ export default class Curriculum extends Model {
     public active!: boolean;
     public public!: boolean;
 
+    // Foreign key objects, only exists if included
+    public units?: CurriculumUnitContent[];
+
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -70,7 +73,8 @@ Curriculum.init({
     active: {
         field: 'curriculum_active',
         type: DataTypes.BOOLEAN,
-        allowNull: false
+        allowNull: false,
+        defaultValue: true
     },
     public: {
         field: 'curriculum_public',

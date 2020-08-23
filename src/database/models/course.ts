@@ -20,7 +20,7 @@ export default class Course extends Model {
             foreignKey: 'curriculumId',
             targetKey: 'id',
             as: 'curriculum'
-        })
+        });
 
         Course.hasMany(StudentEnrollment, {
             foreignKey: 'courseId',
@@ -37,6 +37,7 @@ export default class Course extends Model {
     }
 
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
+    public active!: boolean;
     public curriculumId!: number;
     public instructorId!: number;
     public universityId!: number;
@@ -46,6 +47,8 @@ export default class Course extends Model {
     public end!: Date;
     public sectionCode!: string;
     public semesterCode!: string;
+
+    public units?: CourseUnitContent[];
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -58,6 +61,12 @@ Course.init({
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
+    },
+    active: {
+        field: 'course_active',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true
     },
     curriculumId: {
         field: 'curriculum_id',
@@ -119,4 +128,3 @@ import User from './user';
 import StudentEnrollment from './student-enrollment';
 import CourseUnitContent from './course-unit-content';
 import Curriculum from './curriculum';
-

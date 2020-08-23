@@ -1,11 +1,12 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
-import appSequelize from '../app-sequelize'
+import appSequelize from '../app-sequelize';
 import CourseWWTopicQuestion from './course-ww-topic-question';
 import User from './user';
 import StudentGrade from './student-grade';
 
 export default class StudentWorkbook extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
+    public active!: boolean;
     public studentGradeId!: number;
     public userId!: number;
     public courseWWTopicQuestionId!: number;
@@ -35,6 +36,12 @@ StudentWorkbook.init({
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
+    },
+    active: {
+        field: 'student_workbook_active',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true
     },
     studentGradeId: {
         field: 'student_grade_id',

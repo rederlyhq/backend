@@ -1,5 +1,5 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
-import appSequelize from '../app-sequelize'
+import appSequelize from '../app-sequelize';
 
 export default class CourseUnitContent extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
@@ -12,6 +12,7 @@ export default class CourseUnitContent extends Model {
     public getCourse!: BelongsToGetAssociationMixin<Course>;
 
     public readonly course!: Course;
+    public readonly topics?: CourseTopicContent[];
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -69,6 +70,7 @@ CourseUnitContent.init({
         field: 'course_unit_content_active',
         type: DataTypes.BOOLEAN,
         allowNull: false,
+        defaultValue: true
     },
     contentOrder: {
         field: 'course_unit_content_order',
@@ -103,6 +105,6 @@ CourseUnitContent.init({
     ]
 });
 
-import Course from './course';import CourseTopicContent from './course-topic-content';
+import Course from './course';
+import CourseTopicContent from './course-topic-content';
 import CurriculumUnitContent from './curriculum-unit-content';
-

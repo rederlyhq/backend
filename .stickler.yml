@@ -1,0 +1,8 @@
+linters:
+  eslint:
+    config: './.eslintrc.js'
+files:
+  ignore:
+    - 'node_modules/*'
+    - 'ts-built/*'
+    - 'logs/*'

@@ -11,6 +11,7 @@ export interface RegisterUserResponse {
     id: number;
     roleId: number;
     emailSent: boolean;
+    verificationBypass: boolean;
 }
 
 export interface ListUserFilter {

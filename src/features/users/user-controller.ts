@@ -339,7 +339,8 @@ class UserController {
         return {
             id: newUser.id,
             roleId: newUser.roleId,
-            emailSent
+            emailSent,
+            verificationBypass: !university.verifyInstitutionalEmail
         };
     }
 

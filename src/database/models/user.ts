@@ -11,8 +11,15 @@ export default class User extends Model {
   public email!: string;
   public password!: string;
   public verifyToken?: string;
+  public verifyTokenExpiresAt!: Date;
   public verified!: boolean;
   public actuallyVerified!: boolean;
+  public preferredEmail!: string;
+  public preferredEmailInstitutionalVerificationToken?: string;
+  public preferredEmailInstitutionalVerificationTokenExpiresAt!: Date;
+  public preferredEmailVerificationToken?: string;
+  public preferredEmailVerificationTokenExpiresAt!: Date;
+
 
   public courseEnrollments?: StudentEnrollment[]
 
@@ -128,6 +135,40 @@ User.init({
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: false
+  },
+  preferredEmail: {
+    field: 'user_preferred_email',
+    type: DataTypes.TEXT,
+    allowNull: false,
+    defaultValue: '' // temporary we should drop this
+  },
+  preferredEmailInstitutionalVerificationToken: {
+    field: 'user_preferred_email_institutional_verification_token',
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  preferredEmailVerificationToken: {
+    field: 'user_preferred_email_verification_token',
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  verifyTokenExpiresAt: {
+      field: 'user_verify_token_expires_at',
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW
+  },
+  preferredEmailInstitutionalVerificationTokenExpiresAt: {
+      field: 'user_preferred_email_institutional_verification_token_expires_at',
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW
+  },
+  preferredEmailVerificationTokenExpiresAt: {
+      field: 'user_preferred_email_verification_token_expires_at',
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW
   },
 }, {
   tableName: 'users',

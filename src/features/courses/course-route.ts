@@ -187,7 +187,7 @@ router.get('/questions',
             if (new Date().getTime() < topic.startDate.getTime()) {
                 const user = await req.session.getUser();
                 if (user.roleId === Role.STUDENT) {
-                    next(Boom.badRequest('This topic has not started yet'));
+                    next(Boom.badRequest(`The topic "${topic.name}" has not started yet.`));
                     return;    
                 }
             }
@@ -207,11 +207,15 @@ router.get('/questions',
             userId = userIdInput;
         }
 
-        const result = await courseController.getQuestions({
+        const questions = await courseController.getQuestions({
             userId: userId,
             courseTopicContentId: req.query.courseTopicContentId
         });
-        next(httpResponse.Ok(null, result));
+
+        next(httpResponse.Ok(null, {
+            questions: questions,
+            topic
+        }));
     }));
 
 router.put('/topic/:id',

@@ -1,5 +1,5 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
-import appSequelize from '../app-sequelize'
+import appSequelize from '../app-sequelize';
 
 export default class CourseTopicContent extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
@@ -22,6 +22,7 @@ export default class CourseTopicContent extends Model {
 
     public readonly curriculumTopicContent!: CurriculumTopicContent;
     public readonly topicType!: TopicType;
+    public readonly questions?: CourseWWTopicQuestion[];
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -34,7 +35,7 @@ export default class CourseTopicContent extends Model {
         foreignKeyTopicType: 'course_topic_content_topic_type_id_fkey',
         foreignKeyUnit: 'course_topic_content_course_unit_content_id_fkey'
     }
-    
+
     static createAssociations(): void {
         // This is a hack to add the associations later to avoid cyclic dependencies
         /* eslint-disable @typescript-eslint/no-use-before-define */
@@ -43,7 +44,7 @@ export default class CourseTopicContent extends Model {
             targetKey: 'id',
             as: 'curriculumTopicContent'
         });
-        
+
         CourseTopicContent.belongsTo(CourseUnitContent, {
             foreignKey: 'courseUnitContentId',
             targetKey: 'id',
@@ -101,6 +102,7 @@ CourseTopicContent.init({
         field: 'course_topic_content_active',
         type: DataTypes.BOOLEAN,
         allowNull: false,
+        defaultValue: true
     },
 
     startDate: {
@@ -150,4 +152,3 @@ import CurriculumTopicContent from './curriculum-topic-content';
 import TopicType from './topic-type';
 import CourseUnitContent from './course-unit-content';
 import CourseWWTopicQuestion from './course-ww-topic-question';
-

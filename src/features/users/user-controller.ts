@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import * as _ from 'lodash';
 import { URL } from 'url';
 import emailHelper from '../../utilities/email-helper';
 import logger from '../../utilities/logger';
@@ -11,7 +11,7 @@ import Session from '../../database/models/session';
 import moment = require('moment');
 import configurations from '../../configurations';
 import NoAssociatedUniversityError from '../../exceptions/no-associated-university-error';
-import { UniqueConstraintError, Op } from 'sequelize';
+import { WhereOptions, Includeable, BaseError } from 'sequelize';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import Role from '../permissions/roles';
 import { ListOptions } from '../../generic-interfaces/list-options';
@@ -19,102 +19,74 @@ import StudentEnrollment from '../../database/models/student-enrollment';
 import Course from '../../database/models/course';
 import StudentGrade from '../../database/models/student-grade';
 import StudentWorkbook from '../../database/models/student-workbook';
-import CourseWWTopicQuestion from "../../database/models/course-ww-topic-question";
-import CourseTopicContent from "../../database/models/course-topic-content";
-import CourseUnitContent from "../../database/models/course-unit-content";
-import IncludeGradeOptions from "./include-grade-options";
-import WrappedError from "../../exceptions/wrapped-error";
-
-interface RegisterUserOptions {
-    userObject: User;
-    baseUrl: string;
-}
-
-interface RegisterUserResponse {
-    id: number;
-    roleId: number;
-    emailSent: boolean;
-}
-
-interface ListUserFilter {
-    userIds?: number[] | number;
-    courseId?: number;
-    includeGrades?: IncludeGradeOptions;
-}
-
-interface EmailOptions {
-    listUsersFilter: ListUserFilter;
-    content: string;
-    subject: string;
-}
-
-interface GetUserOptions {
-    id: number;
-    includeGrades?: IncludeGradeOptions;
-    courseId?: number;
-    includeSensitive?: boolean;
-}
+import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
+import CourseTopicContent from '../../database/models/course-topic-content';
+import CourseUnitContent from '../../database/models/course-unit-content';
+import IncludeGradeOptions from './include-grade-options';
+import WrappedError from '../../exceptions/wrapped-error';
+import { EmailOptions, GetUserOptions, ListUserFilter, RegisterUserOptions, RegisterUserResponse } from './user-types';
+import { Constants } from '../../constants';
 
 const {
     sessionLife
 } = configurations.auth;
 
 class UserController {
-    getUserByEmail(email: string): Bluebird<User> {
+    getUserByEmail(email: string): Promise<User> {
         return User.findOne({
             where: {
                 email
             }
-        })
+        });
     }
 
     list(listOptions?: ListOptions<ListUserFilter>): Promise<User[]> {
         // Dynamic sequelize where object
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const where: any = {};
+        const where: WhereOptions = {};
         // Dynamic sequelize where object
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const include: any = [];
+        const include: Includeable[] = [];
         if (listOptions) {
             if (listOptions.filters) {
 
                 const sequelizeInclude = [];
-                const sequelizeGradeInclude: any = {};
-                if(listOptions.filters.includeGrades === IncludeGradeOptions.JUST_GRADE || listOptions.filters.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
+                const sequelizeGradeInclude: Includeable = {};
+                if (listOptions.filters.includeGrades === IncludeGradeOptions.JUST_GRADE || listOptions.filters.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
                     sequelizeGradeInclude.model = StudentGrade;
                     sequelizeGradeInclude.as = 'grades';
                     sequelizeGradeInclude.include = [];
-                    if(!_.isNil(listOptions.filters.courseId)) {
+                    if (!_.isNil(listOptions.filters.courseId)) {
                         sequelizeGradeInclude.include.push({
                             model: CourseWWTopicQuestion,
                             as: 'question',
                             attributes: [], // Don't care about the data, just the where
-                            include: {
+                            include: [{
                                 model: CourseTopicContent,
                                 as: 'topic',
-                                include: {
+                                include: [{
                                     model: CourseUnitContent,
                                     as: 'unit',
-                                    include: {
+                                    include: [{
                                         model: Course,
                                         as: 'course',
                                         where: {
                                             id: listOptions.filters.courseId
                                         }
-                                    },
+                                    }],
                                     where: {} // If you don't include where the course where won't propogate down
-                                },
+                                }],
                                 where: {} // If you don't include where the course where won't propogate down
-                            },
+                            }],
                             where: {} // If you don't include where the course where won't propogate down
                         });
-        
                     }
-        
+
                     sequelizeInclude.push(sequelizeGradeInclude);
                 }
-        
-                if(listOptions.filters.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
+
+                if (listOptions.filters.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
+                    if (_.isNil(sequelizeGradeInclude.include)) {
+                        throw new Error('Grade join for list users has an undefined include');
+                    }
                     sequelizeGradeInclude.include.push({
                         model: StudentWorkbook,
                         as: 'workbooks'
@@ -123,7 +95,7 @@ class UserController {
                 include.push(...sequelizeInclude);
 
                 if (listOptions.filters.userIds) {
-                    where.id = listOptions.filters.userIds
+                    where.id = listOptions.filters.userIds;
                 }
                 if (listOptions.filters.courseId) {
                     include.push({
@@ -135,7 +107,7 @@ class UserController {
                             attributes: [],
                             as: 'course'
                         }]
-                    })
+                    });
                     where[`$courseEnrollments.course.${StudentEnrollment.rawAttributes.courseId.field}$`] = listOptions.filters.courseId;
                 }
             }
@@ -154,7 +126,7 @@ class UserController {
         });
     }
 
-    async email(emailOptions?: EmailOptions): Promise<number[]> {
+    async email(emailOptions: EmailOptions): Promise<number[]> {
         const users = await this.list({
             filters: emailOptions.listUsersFilter
         });
@@ -185,42 +157,45 @@ class UserController {
         }
 
         const sequelizeInclude = [];
-        const sequelizeGradeInclude: any = {};
-        if(options.includeGrades === IncludeGradeOptions.JUST_GRADE || options.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
+        const sequelizeGradeInclude: Includeable = {};
+        if (options.includeGrades === IncludeGradeOptions.JUST_GRADE || options.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
             sequelizeGradeInclude.model = StudentGrade;
             sequelizeGradeInclude.as = 'grades';
             sequelizeGradeInclude.include = [];
-            if(!_.isNil(options.courseId)) {
+            if (!_.isNil(options.courseId)) {
                 sequelizeGradeInclude.include.push({
                     model: CourseWWTopicQuestion,
                     as: 'question',
                     attributes: [], // Don't care about the data, just the where
-                    include: {
+                    include: [{
                         model: CourseTopicContent,
                         as: 'topic',
-                        include: {
+                        include: [{
                             model: CourseUnitContent,
                             as: 'unit',
-                            include: {
+                            include: [{
                                 model: Course,
                                 as: 'course',
                                 where: {
                                     id: options.courseId
                                 }
-                            },
+                            }],
                             where: {} // If you don't include where the course where won't propogate down
-                        },
+                        }],
                         where: {} // If you don't include where the course where won't propogate down
-                    },
+                    }],
                     where: {} // If you don't include where the course where won't propogate down
                 });
-
             }
 
             sequelizeInclude.push(sequelizeGradeInclude);
         }
 
-        if(options.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
+        if (options.includeGrades === IncludeGradeOptions.WITH_ATTEMPTS) {
+            if (_.isNil(sequelizeGradeInclude.include)) {
+                throw new Error('Grade join for get user has an undefined include');
+            }
+
             sequelizeGradeInclude.include.push({
                 model: StudentWorkbook,
                 as: 'workbooks'
@@ -235,20 +210,41 @@ class UserController {
                 exclude: excludedAttributes
             },
             include: sequelizeInclude
-        })
+        });
     }
 
-    createUser(userObject: User): Bluebird<User> {
-        return User.create(userObject);
+    private checkUserError(e: Error): void {
+        if (e instanceof BaseError === false) {
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
+        }
+        const databaseError = e as BaseError;
+        switch (databaseError.originalAsSequelizeError?.constraint) {
+            case User.constraints.uniqueEmail:
+                if(_.isNil(User.rawAttributes.email.field)) {
+                    throw new WrappedError('Could not read the email field from sequelize raw attributes', e);
+                }
+                throw new AlreadyExistsError(`The email ${databaseError.fields && databaseError.fields[User.rawAttributes.email.field] || ''} already exists`);
+            default:
+                throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
+        }
     }
 
-    getSession(uuid: string): Bluebird<Session> {
+    async createUser(userObject: Partial<User>): Promise<User> {
+        try {
+            return await User.create(userObject);
+        } catch (e) {
+            this.checkUserError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
+        }
+    }
+
+    getSession(uuid: string): Promise<Session> {
         return Session.findOne({
             where: {
                 uuid,
                 active: true
             }
-        })
+        });
     }
 
     createSession(userId: number): Bluebird<Session> {
@@ -258,10 +254,10 @@ class UserController {
             uuid: uuidv4(),
             expiresAt: expiresAt,
             active: true
-        })
+        });
     }
 
-    async login(email: string, password: string): Promise<Session> {
+    async login(email: string, password: string): Promise<Session | null> {
         const user: User = await this.getUserByEmail(email);
         if (user == null)
             return null;
@@ -294,8 +290,6 @@ class UserController {
 
         const emailDomain = userObject.email.split('@')[1];
 
-        let newUser;
-
         const universities = await universityController.getUniversitiesAssociatedWithEmail({
             emailDomain
         });
@@ -317,45 +311,43 @@ class UserController {
         }
 
         userObject.universityId = university.id;
-        userObject.verifyToken = uuidv4();
-        userObject.password = await hashPassword(userObject.password);
-        try {
-            newUser = await this.createUser(userObject);
-        } catch (e) {
-            if (e instanceof UniqueConstraintError) {
-                if (Object.keys(e.fields).includes(User.rawAttributes.email.field)) {
-                    throw new AlreadyExistsError(`The email ${e.fields[User.rawAttributes.email.field]} already exists`);
-                }
-            }
-            throw new WrappedError("Unknown error occurred", e);
+        if (university.verifyInstitutionalEmail) {
+            userObject.verifyToken = uuidv4();
+        } else {
+            userObject.verified = true;
         }
-
+        userObject.password = await hashPassword(userObject.password);    
+        const newUser = await this.createUser(userObject);
         let emailSent = false;
-        const verifyURL = new URL(`/verify/${newUser.verifyToken}`, baseUrl)
-        try {
-            await emailHelper.sendEmail({
-                content: `Hello,
-
-                Please verify your account by clicking this url: ${verifyURL}
-                `,
-                email: newUser.email,
-                subject: 'Please verify account'
-            });
-            emailSent = configurations.email.enabled;
-        } catch (e) {
-            logger.error(e);
+        if (university.verifyInstitutionalEmail) {
+            const verifyURL = new URL(`/verify/${newUser.verifyToken}`, baseUrl);
+            try {
+                await emailHelper.sendEmail({
+                    content: `Hello,
+    
+                    Please verify your account by clicking this url: ${verifyURL}
+                    `,
+                    email: newUser.email,
+                    subject: 'Please verify account'
+                });
+                emailSent = configurations.email.enabled;
+            } catch (e) {
+                logger.error(e);
+            }
         }
 
         return {
             id: newUser.id,
             roleId: newUser.roleId,
-            emailSent
-        }
+            emailSent,
+            verificationBypass: !university.verifyInstitutionalEmail
+        };
     }
 
     async verifyUser(verifyToken: string): Promise<boolean> {
         const updateResp = await User.update({
-            verified: true
+            verified: true,
+            actuallyVerified: true
         }, {
             where: {
                 verifyToken,

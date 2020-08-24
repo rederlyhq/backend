@@ -1,5 +1,5 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
-import appSequelize from '../app-sequelize'
+import appSequelize from '../app-sequelize';
 
 export default class CurriculumUnitContent extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
@@ -12,11 +12,15 @@ export default class CurriculumUnitContent extends Model {
 
     public readonly curriculum!: Curriculum;
 
+    // Foreign key objects, only exists if included
+    public topics?: CurriculumTopicContent[];
+
+
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 
-    static  constraints = {
+    static constraints = {
         uniqueOrderPerCurriculum: 'curriculum_unit_content--order-curriculum_id',
         uniqueNamePerCurriculum: 'curriculum_unit_content--name-curriculum_id',
 
@@ -31,14 +35,14 @@ export default class CurriculumUnitContent extends Model {
             targetKey: 'id',
             as: 'curriculum'
         });
-    
+
         CurriculumUnitContent.hasMany(CurriculumTopicContent, {
-          foreignKey: 'curriculumUnitContentId',
-          sourceKey: 'id',
-          as: 'topics'
+            foreignKey: 'curriculumUnitContentId',
+            sourceKey: 'id',
+            as: 'topics'
         });
         /* eslint-enable @typescript-eslint/no-use-before-define */
-      }
+    }
 }
 
 CurriculumUnitContent.init({
@@ -67,6 +71,7 @@ CurriculumUnitContent.init({
         field: 'curriculum_unit_content_active',
         type: DataTypes.BOOLEAN,
         allowNull: false,
+        defaultValue: true
     },
 }, {
     tableName: 'curriculum_unit_content',

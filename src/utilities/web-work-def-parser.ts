@@ -50,21 +50,26 @@ const webWorkDefProblemKeyMaps: Array<WebWorkDefKeyValueMap> = [
     new WebWorkDefKeyValueMap('prPeriod'),
     new WebWorkDefKeyValueMap('counts_parent_grade'),
     new WebWorkDefKeyValueMap('att_to_open_children'),
-]
+];
 
 export class Problem {
-    constructor() {
-
-    }
+    public problem_id?: string;
+    public source_file?: string;
+    public value?: string;
+    public max_attempts?: string;
+    public showMeAnother?: string;
+    public prPeriod?: string;
+    public counts_parent_grade?: string;
+    public att_to_open_children?: string;
 }
 
 export default class WebWorkDef {
     public problems: Array<Problem> = [];
-    public assignmentType: string;
+    public assignmentType?: string;
 
     constructor(content: string) {
         const lines = content.split('\n');
-        let currentProblem: Problem = null;
+        let currentProblem: Problem | null = null;
         lineLoop: for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
             const line = lines[lineNumber].trim();
 

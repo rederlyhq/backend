@@ -1,8 +1,9 @@
 import { Model, DataTypes } from 'sequelize';
-import appSequelize from '../app-sequelize'
+import appSequelize from '../app-sequelize';
 
 export default class Permission extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
+    public active!: boolean;
     public roleName!: string;
     public permissionName!: string;
     public permissionDescription!: string;
@@ -18,6 +19,12 @@ Permission.init({
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
+    },
+    active: {
+        field: 'permission_active',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true
     },
     roleName: {
         field: 'permission_role_name',
@@ -42,4 +49,3 @@ Permission.init({
     tableName: 'permission',
     sequelize: appSequelize, // this bit is important
 });
-

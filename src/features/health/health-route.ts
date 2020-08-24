@@ -1,15 +1,11 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from 'express';
 const router = require('express').Router();
-import * as asyncHandler from 'express-async-handler'
-import multer = require("multer");
+import * as asyncHandler from 'express-async-handler';
+import httpResponse from '../../utilities/http-response';
 
 router.get('/',
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            return res.status(200).json({status:"ok"})
-        } catch (e) {
-            return res.status(500).json({error: "Internal server error"});
-        }
+        next(httpResponse.Ok('Health Ok'));
     }));
 
 module.exports = router;

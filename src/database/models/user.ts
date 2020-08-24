@@ -1,8 +1,9 @@
 import { Model, DataTypes, HasOneGetAssociationMixin, BelongsToGetAssociationMixin } from 'sequelize';
-import appSequelize from '../app-sequelize'
+import appSequelize from '../app-sequelize';
 
 export default class User extends Model {
   public id!: number; // Note that the `null assertion` `!` is required in strict mode.
+  public active!: boolean;
   public universityId!: number;
   public roleId!: number;
   public firstName!: string;
@@ -10,7 +11,19 @@ export default class User extends Model {
   public email!: string;
   public password!: string;
   public verifyToken?: string;
+  public verifyTokenExpiresAt!: Date;
   public verified!: boolean;
+  public actuallyVerified!: boolean;
+  public preferredEmail!: string;
+  public preferredEmailInstitutionVerificationToken?: string;
+  public preferredEmailInstitutionVerificationTokenExpiresAt!: Date;
+  public preferredEmailVerificationToken?: string;
+  public preferredEmailVerificationTokenExpiresAt!: Date;
+  public forgotPasswordToken?: string;
+  public forgotPasswordTokenExpiresAt!: Date
+
+
+  public courseEnrollments?: StudentEnrollment[]
 
   public getUniversity!: HasOneGetAssociationMixin<University>;
   public getRole!: BelongsToGetAssociationMixin<Permission>;
@@ -21,6 +34,10 @@ export default class User extends Model {
   // timestamps!
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+
+  static constraints = {
+    uniqueEmail: 'users_user_email_key',
+  }
 
   static createAssociations(): void {
     // This is a hack to add the associations later to avoid cyclic dependencies
@@ -66,6 +83,12 @@ User.init({
     autoIncrement: true,
     primaryKey: true,
   },
+  active: {
+    field: 'course_topic_question_active',
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true
+  },
   universityId: {
     field: 'university_id',
     type: DataTypes.INTEGER,
@@ -109,6 +132,57 @@ User.init({
     allowNull: false,
     defaultValue: false
   },
+  actuallyVerified: {
+    field: 'user_actually_verified',
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  preferredEmail: {
+    field: 'user_preferred_email',
+    type: DataTypes.TEXT,
+    allowNull: false,
+    defaultValue: '' // temporary we should drop this
+  },
+  preferredEmailInstitutionVerificationToken: {
+    field: 'user_preferred_email_institution_verification_token',
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  preferredEmailVerificationToken: {
+    field: 'user_preferred_email_verification_token',
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  verifyTokenExpiresAt: {
+      field: 'user_verify_token_expires_at',
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: appSequelize.literal('NOW()')
+  },
+  preferredEmailInstitutionVerificationTokenExpiresAt: {
+      field: 'user_preferred_email_institution_verification_token_expires_at',
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: appSequelize.literal('NOW()')
+  },
+  preferredEmailVerificationTokenExpiresAt: {
+      field: 'user_preferred_email_verification_token_expires_at',
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: appSequelize.literal('NOW()')
+  },
+  forgotPasswordToken: {
+    field: 'user_forgot_password_token',
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  forgotPasswordTokenExpiresAt: {
+      field: 'user_forgot_password_token_expires_at',
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: appSequelize.literal('NOW()')
+  },
 }, {
   tableName: 'users',
   sequelize: appSequelize, // this bit is important
@@ -119,4 +193,3 @@ import University from './university';
 import Permission from './permission';
 import StudentEnrollment from './student-enrollment';
 import StudentGrade from './student-grade';
-

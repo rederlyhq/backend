@@ -1,8 +1,7 @@
-import * as Joi from 'joi';
-import { ValidationObject } from '../../generic-interfaces/validation-object';
+import * as Joi from '@hapi/joi';
 import IncludeGradeOptions from './include-grade-options';
 
-export const registerValidation: ValidationObject = {
+export const registerValidation = {
     params: {},
     query: {},
     body: {
@@ -11,26 +10,32 @@ export const registerValidation: ValidationObject = {
         email: Joi.string().email().required(),
         password: Joi.string().required(),
     },
-}
+};
 
-export const loginValidation: ValidationObject = {
+export const loginValidation = {
     params: {},
     query: {},
     body: {
         email: Joi.string().email().required(),
         password: Joi.string().required(),
     },
-}
+};
 
-export const verifyValidation: ValidationObject = {
+export const verifyValidation = {
     params: {},
     query: {
         verifyToken: Joi.string().required()
     },
     body: {}
-}
+};
 
-export const listUsers: ValidationObject = {
+export const logoutValidation = {
+    params: {},
+    query: {},
+    body: {}
+};
+
+export const listUsersValidation = {
     params: {},
     query: {
         userIds: Joi.alternatives().try(Joi.array().items(Joi.number()), Joi.number()).optional(),
@@ -38,9 +43,9 @@ export const listUsers: ValidationObject = {
         includeGrades: Joi.string().valid(Object.keys(IncludeGradeOptions)).optional(),
     },
     body: {},
-}
+};
 
-export const getUser: ValidationObject = {
+export const getUserValidation = {
     params: {
         id: Joi.number().required()
     },
@@ -49,9 +54,9 @@ export const getUser: ValidationObject = {
         includeGrades: Joi.string().valid(Object.keys(IncludeGradeOptions)).optional(),
     },
     body: {},
-}
+};
 
-export const emailUsers: ValidationObject = {
+export const emailUsersValidation = {
     params: {},
     query: {},
     body: {
@@ -59,4 +64,4 @@ export const emailUsers: ValidationObject = {
         subject: Joi.string().required(),
         content: Joi.string().required(),
     },
-}
+};

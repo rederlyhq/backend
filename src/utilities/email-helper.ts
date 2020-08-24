@@ -39,7 +39,7 @@ class EmailHelper {
                 // eslint-disable-next-line @typescript-eslint/camelcase
                 api_key: this.key, // TODO figure out why api key doesn't work
             }
-        }
+        };
 
         this.client = nodemailer.createTransport(sgTransport(clientOptions));
 
@@ -65,7 +65,7 @@ class EmailHelper {
         return new Promise<any>((resolve: (data: any) => void, reject: (err: Error) => void) => {
             // Nodemailer's callback uses any
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            this.client.sendMail(email, (err: Error, info: any) => {
+            this.client.sendMail(email, (err: Error | null, info: any) => {
                 if (err) {
                     reject(err);
                 }

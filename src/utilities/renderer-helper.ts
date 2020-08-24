@@ -19,7 +19,7 @@ class RendererHelper {
                 sourceFilePath: getProblemParameters.sourceFilePath,
                 problemSeed: getProblemParameters.problemSeed,
                 formURL: getProblemParameters.formURL,
-                template: 'single',
+                outputformat: 'single',
                 format: 'json',
                 baseURL: '/'
             },

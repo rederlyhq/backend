@@ -415,7 +415,7 @@ router.post('/question/:id',
         proxyReqPathResolver: (req) => {
             return `/rendered?${qs.stringify({
                 format: 'json',
-                template: 'single',
+                outputformat: 'single',
                 formURL: req.originalUrl,
                 baseURL: '/'
             })}`;

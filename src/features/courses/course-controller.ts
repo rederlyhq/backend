@@ -68,6 +68,14 @@ class CourseController {
         });
     }
 
+    getTopicById(id: number): Promise<CourseTopicContent> {
+        return CourseTopicContent.findOne({
+            where: {
+                id,
+            },
+        });
+    }
+
     getTopics(options: GetTopicsOptions): Promise<CourseTopicContent[]> {
         const { courseId, isOpen } = options;
         const where: sequelize.WhereOptions = {

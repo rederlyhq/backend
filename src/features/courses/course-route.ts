@@ -17,6 +17,8 @@ import { RederlyExpressRequest } from '../../extensions/rederly-express-request'
 import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest } from './course-route-request-types';
 import Boom = require('boom');
 import { Constants } from '../../constants';
+import CourseTopicContent from '../../database/models/course-topic-content';
+import Role from '../permissions/roles';
 
 const fileUpload = multer();
 
@@ -179,6 +181,18 @@ router.get('/questions',
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
+        let topic: CourseTopicContent | null = null;
+        if(!_.isNil(req.query.courseTopicContentId)) {
+            topic = await courseController.getTopicById(req.query.courseTopicContentId);
+            if (new Date().getTime() < topic.startDate.getTime()) {
+                const user = await req.session.getUser();
+                if (user.roleId === Role.STUDENT) {
+                    next(Boom.badRequest(`The topic "${topic.name}" has not started yet.`));
+                    return;    
+                }
+            }
+        }
+
         const userIdInput = req.query.userId;
         let userId: number | undefined;
         if (typeof userIdInput === 'string') {
@@ -193,11 +207,15 @@ router.get('/questions',
             userId = userIdInput;
         }
 
-        const result = await courseController.getQuestions({
+        const questions = await courseController.getQuestions({
             userId: userId,
             courseTopicContentId: req.query.courseTopicContentId
         });
-        next(httpResponse.Ok(null, result));
+
+        next(httpResponse.Ok(null, {
+            questions: questions,
+            topic
+        }));
     }));
 
 router.put('/topic/:id',

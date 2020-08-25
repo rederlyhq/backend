@@ -27,6 +27,8 @@ import CurriculumWWTopicQuestion from '../../database/models/curriculum-ww-topic
 import WebWorkDef, { Problem } from '../../utilities/web-work-def-parser';
 import { nameof } from '../../utilities/typescript-helpers';
 import Role from '../permissions/roles';
+import moment = require('moment');
+
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -817,12 +819,21 @@ class CourseController {
     }
 
     async getQuestion(options: GetQuestionOptions): Promise<GetQuestionResult> {
+        let showSolutions = options.role !== Role.STUDENT;
         const courseQuestion = await courseRepository.getQuestion({
             id: options.questionId
         });
 
         if (_.isNil(courseQuestion)) {
             throw new NotFoundError('Could not find the question in the database');
+        }
+
+        // Currently we only need this fetch for student, small optimizatino to not call the db for
+        if (!showSolutions) {
+            if (_.isNil(options.topic)) {
+                options.topic = await this.getTopicById(courseQuestion.courseTopicContentId);
+            }
+            showSolutions = moment(options.topic.deadDate).add(1, 'days').isBefore(moment());
         }
 
         const studentGrade: StudentGrade | null = await StudentGrade.findOne({
@@ -834,16 +845,13 @@ class CourseController {
 
         const randomSeed = _.isNil(studentGrade) ? 666 : studentGrade.randomSeed;
 
-        // TODO define this based on topic dead date
-        const showSolutions = false;
-
         const rendererData = await rendererHelper.getProblem({
             sourceFilePath: courseQuestion.webworkQuestionPath,
             problemSeed: randomSeed,
             formURL: options.formURL,
             outputformat: rendererHelper.getOutputFormatForRole(options.role),
             permissionLevel: rendererHelper.getPermissionForRole(options.role),
-            showSolutions: options.role !== Role.STUDENT || showSolutions,
+            showSolutions: showSolutions,
             numIncorrect: studentGrade?.numAttempts
         });
         return {

@@ -167,6 +167,7 @@ export interface GetQuestionOptions {
     questionId: number;
     formURL: string;
     role: Role;
+    topic?: CourseTopicContent;
 };
 
 export interface GetQuestionResult {

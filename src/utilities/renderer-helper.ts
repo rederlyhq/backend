@@ -1,18 +1,23 @@
 import axios from 'axios';
 import configurations from '../configurations';
+import Role from '../features/permissions/roles';
 
 const rendererAxios = axios.create({
     baseURL: configurations.renderer.url,
     responseType: 'json',
 });
 
-interface GetProblemParameters {
+export enum OutputFormat {
+    SINGLE = 'single',
+    SIMPLE = 'simple'
+}
+
+export interface GetProblemParameters {
     sourceFilePath: string;
     problemSeed: number;
     formURL: string;
     baseURL?: string;
-    outputformat?: string;
-    showSolution?: boolean;
+    outputformat?: OutputFormat;
     problemSource?: boolean;
     format?: string;
     lanugage?: string;
@@ -26,13 +31,37 @@ interface GetProblemParameters {
 }
 
 class RendererHelper {
+    getOutputFormatForPermission = (permissionLevel: number): OutputFormat => {
+        if (permissionLevel < 10) {
+            return OutputFormat.SINGLE;
+        } else {
+            return OutputFormat.SIMPLE;
+        }
+    };
+
+    getPermissionForRole = (role: Role): number => {
+        switch(role) {
+            case Role.STUDENT:
+                return 0;
+            case Role.PROFESSOR:
+                return 10;
+            case Role.ADMIN:
+                return 20;
+            default:
+                return -1;
+        }
+    }
+
+    getOutputFormatForRole = (role: Role): OutputFormat => this.getOutputFormatForPermission(this.getPermissionForRole(role));
+
+
     async getProblem({
         sourceFilePath,
         problemSource,
         problemSeed,
         formURL,
         baseURL = '/',
-        outputformat = 'single',
+        outputformat = OutputFormat.SIMPLE,
         lanugage,
         showHints,
         showSolutions,
@@ -54,8 +83,8 @@ class RendererHelper {
                 outputformat,
                 format,
                 lanugage,
-                showHints,
-                showSolutions,
+                showHints: Number(showHints),
+                showSolutions: Number(showSolutions),
                 permissionLevel,
                 problemNumber,
                 numCorrect,

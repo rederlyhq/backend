@@ -6,6 +6,7 @@ import Course from '../../database/models/course';
 import { WhereOptions } from 'sequelize/types';
 import CourseUnitContent from '../../database/models/course-unit-content';
 import CourseTopicContent from '../../database/models/course-topic-content';
+import Role from '../permissions/roles';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -165,6 +166,7 @@ export interface GetQuestionOptions {
     userId: number;
     questionId: number;
     formURL: string;
+    role: Role;
 };
 
 export interface GetQuestionResult {

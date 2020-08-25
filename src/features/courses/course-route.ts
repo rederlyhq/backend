@@ -406,6 +406,7 @@ router.get('/question/:id',
         }
 
         const session = req.session;
+        const user = await req.session.getUser();
 
         const params = req.params as GetQuestionRequest.params;
         try {
@@ -413,7 +414,8 @@ router.get('/question/:id',
             const question = await courseController.getQuestion({
                 questionId: params.id,
                 userId: session.userId,
-                formURL: req.originalUrl
+                formURL: req.originalUrl,
+                role: user.roleId
             });
             next(httpResponse.Ok('Fetched question successfully', question));
 

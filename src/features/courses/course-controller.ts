@@ -837,6 +837,8 @@ class CourseController {
             sourceFilePath: courseQuestion.webworkQuestionPath,
             problemSeed: randomSeed,
             formURL: options.formURL,
+            outputformat: rendererHelper.getOutputFormatForRole(options.role),
+            permissionLevel: rendererHelper.getPermissionForRole(options.role),
         });
         return {
             // courseQuestion,

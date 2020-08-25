@@ -1281,7 +1281,8 @@ class CourseController {
 
             // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
             const where: sequelize.WhereOptions = _({
-                courseTopicContentId
+                courseTopicContentId,
+                active: true
             }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
 
             const findOptions: sequelize.FindOptions = {

@@ -843,7 +843,8 @@ class CourseController {
             formURL: options.formURL,
             outputformat: rendererHelper.getOutputFormatForRole(options.role),
             permissionLevel: rendererHelper.getPermissionForRole(options.role),
-            showSolutions: options.role !== Role.STUDENT || showSolutions
+            showSolutions: options.role !== Role.STUDENT || showSolutions,
+            numIncorrect: studentGrade?.numAttempts
         });
         return {
             // courseQuestion,

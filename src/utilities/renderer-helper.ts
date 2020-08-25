@@ -10,18 +10,57 @@ interface GetProblemParameters {
     sourceFilePath: string;
     problemSeed: number;
     formURL: string;
+    baseURL?: string;
+    outputformat?: string;
+    showSolution?: boolean;
+    problemSource?: boolean;
+    format?: string;
+    lanugage?: string;
+    showHints?: boolean;
+    showSolutions?: boolean;
+    permissionLevel?: number;
+    problemNumber?: number;
+    numCorrect?: number;
+    numIncorrect?: number;
+    processAnswers?: boolean;
 }
 
 class RendererHelper {
-    async getProblem(getProblemParameters: GetProblemParameters): Promise<unknown> {
+    async getProblem({
+        sourceFilePath,
+        problemSource,
+        problemSeed,
+        formURL,
+        baseURL = '/',
+        outputformat = 'single',
+        lanugage,
+        showHints,
+        showSolutions,
+        permissionLevel,
+        problemNumber,
+        numCorrect,
+        numIncorrect,
+        processAnswers,
+        format = 'json',
+        
+    }: GetProblemParameters): Promise<unknown> {
         const resp = await rendererAxios.get('/rendered', {
             params: {
-                sourceFilePath: getProblemParameters.sourceFilePath,
-                problemSeed: getProblemParameters.problemSeed,
-                formURL: getProblemParameters.formURL,
-                outputformat: 'single',
-                format: 'json',
-                baseURL: '/'
+                sourceFilePath,
+                problemSource,
+                problemSeed,
+                formURL,
+                baseURL,
+                outputformat,
+                format,
+                lanugage,
+                showHints,
+                showSolutions,
+                permissionLevel,
+                problemNumber,
+                numCorrect,
+                numIncorrect,
+                processAnswers,
             },
         });
 

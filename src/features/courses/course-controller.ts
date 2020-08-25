@@ -26,6 +26,7 @@ import CurriculumTopicContent from '../../database/models/curriculum-topic-conte
 import CurriculumWWTopicQuestion from '../../database/models/curriculum-ww-topic-question';
 import WebWorkDef, { Problem } from '../../utilities/web-work-def-parser';
 import { nameof } from '../../utilities/typescript-helpers';
+import Role from '../permissions/roles';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -833,12 +834,16 @@ class CourseController {
 
         const randomSeed = _.isNil(studentGrade) ? 666 : studentGrade.randomSeed;
 
+        // TODO define this based on topic dead date
+        const showSolutions = false;
+
         const rendererData = await rendererHelper.getProblem({
             sourceFilePath: courseQuestion.webworkQuestionPath,
             problemSeed: randomSeed,
             formURL: options.formURL,
             outputformat: rendererHelper.getOutputFormatForRole(options.role),
             permissionLevel: rendererHelper.getPermissionForRole(options.role),
+            showSolutions: options.role !== Role.STUDENT || showSolutions
         });
         return {
             // courseQuestion,

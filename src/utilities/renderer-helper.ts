@@ -1,11 +1,14 @@
 import axios from 'axios';
 import configurations from '../configurations';
 import Role from '../features/permissions/roles';
+import * as _ from 'lodash';
 
 const rendererAxios = axios.create({
     baseURL: configurations.renderer.url,
     responseType: 'json',
 });
+
+export const RENDERER_ENDPOINT = '/rendered';
 
 export enum OutputFormat {
     SINGLE = 'single',
@@ -73,7 +76,7 @@ class RendererHelper {
         format = 'json',
         
     }: GetProblemParameters): Promise<unknown> {
-        const resp = await rendererAxios.get('/rendered', {
+        const resp = await rendererAxios.get(RENDERER_ENDPOINT, {
             params: {
                 sourceFilePath,
                 problemSource,
@@ -83,7 +86,7 @@ class RendererHelper {
                 outputformat,
                 format,
                 lanugage,
-                showHints: Number(showHints),
+                showHints: _.isNil(showHints) ? undefined : Number(showHints),
                 showSolutions: Number(showSolutions),
                 permissionLevel,
                 problemNumber,

@@ -21,6 +21,8 @@ import CourseTopicContent from '../../database/models/course-topic-content';
 import Role from '../permissions/roles';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 import { GetCalculatedRendererParamsResponse } from './course-types';
+import { RENDERER_ENDPOINT } from '../../utilities/renderer-helper';
+import StudentGrade from '../../database/models/student-grade';
 
 const fileUpload = multer();
 
@@ -433,7 +435,9 @@ router.get('/question/:id',
 
 router.post('/question/:id',
     authenticationMiddleware,
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, unknown, unknown, GetCalculatedRendererParamsResponse>, _res: Response, next: NextFunction) => {
+    // Can't use unknown due to restrictions on the type from express
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, unknown, unknown, { rendererParams: GetCalculatedRendererParamsResponse; studentGrade?: StudentGrade | null }>, _res: Response, next: NextFunction) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -446,22 +450,39 @@ router.post('/question/:id',
 
         const question = await courseController.getQuestionRecord(params.id);
 
-        req.meta = await courseController.getCalculatedRendererParams({
+        const rendererParams = await courseController.getCalculatedRendererParams({
             courseQuestion: question,
             role: user.roleId
         });
+
+        const studentGrade = await StudentGrade.findOne({
+            where: {
+                userId: user.id,
+                courseWWTopicQuestionId: params.id
+            }
+        });
+
+        req.meta = {
+            rendererParams,
+            // TODO investigate why having full sequelize model causes proxy to hang
+            // maybe meta is a reserved field?
+            studentGrade: studentGrade?.get({ plain: true}) as StudentGrade
+        };
         next();
     }),
     proxy(configurations.renderer.url, {
-        proxyReqPathResolver: (req: RederlyExpressRequest<any, unknown, unknown, unknown, GetCalculatedRendererParamsResponse>) => {
+        // Can't use unknown due to restrictions on the type from express
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        proxyReqPathResolver: (req: RederlyExpressRequest<any, unknown, unknown, unknown, { rendererParams: GetCalculatedRendererParamsResponse; studentGrade?: StudentGrade | null }>) => {
             if(_.isNil(req.meta)) {
                 throw new Error('Previously fetched metadata is nil');
             }
-            return `/rendered?${qs.stringify({
+            return `${RENDERER_ENDPOINT}?${qs.stringify({
                 format: 'json',
                 formURL: req.originalUrl,
                 baseURL: '/',
-                ...req.meta
+                ...req.meta,
+                numIncorrect: req.meta.studentGrade?.numAttempts
             })}`;
         },
         userResDecorator: async (_proxyRes, proxyResData, userReq: RederlyExpressRequest) => {

@@ -7,7 +7,7 @@ import NotFoundError from '../../exceptions/not-found-error';
 import CourseUnitContent from '../../database/models/course-unit-content';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
-import rendererHelper from '../../utilities/renderer-helper';
+import rendererHelper, { OutputFormat } from '../../utilities/renderer-helper';
 import StudentWorkbook from '../../database/models/student-workbook';
 import StudentGrade from '../../database/models/student-grade';
 import User from '../../database/models/user';
@@ -16,7 +16,7 @@ import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import appSequelize from '../../database/app-sequelize';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -26,6 +26,9 @@ import CurriculumTopicContent from '../../database/models/curriculum-topic-conte
 import CurriculumWWTopicQuestion from '../../database/models/curriculum-ww-topic-question';
 import WebWorkDef, { Problem } from '../../utilities/web-work-def-parser';
 import { nameof } from '../../utilities/typescript-helpers';
+import Role from '../permissions/roles';
+import moment = require('moment');
+
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -815,10 +818,34 @@ class CourseController {
         });
     }
 
-    async getQuestion(options: GetQuestionOptions): Promise<GetQuestionResult> {
-        const courseQuestion = await courseRepository.getQuestion({
-            id: options.questionId
+    getQuestionRecord(id: number): Promise<CourseWWTopicQuestion> {
+        return courseRepository.getQuestion({
+            id
         });
+    }
+
+    async getCalculatedRendererParams({
+        role,
+        topic,
+        courseQuestion
+    }: GetCalculatedRendererParamsOptions): Promise<GetCalculatedRendererParamsResponse> {
+        let showSolutions = role !== Role.STUDENT;
+        // Currently we only need this fetch for student, small optimizatino to not call the db for
+        if (!showSolutions) {
+            if (_.isNil(topic)) {
+                topic = await this.getTopicById(courseQuestion.courseTopicContentId);
+            }
+            showSolutions = moment(topic.deadDate).add(1, 'days').isBefore(moment());
+        }
+        return {
+            outputformat: rendererHelper.getOutputFormatForRole(role),
+            permissionLevel: rendererHelper.getPermissionForRole(role),
+            showSolutions: Number(showSolutions),
+        };
+    }
+
+    async getQuestion(options: GetQuestionOptions): Promise<GetQuestionResult> {
+        const courseQuestion = await this.getQuestionRecord(options.questionId);
 
         if (_.isNil(courseQuestion)) {
             throw new NotFoundError('Could not find the question in the database');
@@ -833,10 +860,17 @@ class CourseController {
 
         const randomSeed = _.isNil(studentGrade) ? 666 : studentGrade.randomSeed;
 
+        const calculatedRendererParameters = await this.getCalculatedRendererParams({
+            courseQuestion,
+            role: options.role,
+        });
+
         const rendererData = await rendererHelper.getProblem({
             sourceFilePath: courseQuestion.webworkQuestionPath,
             problemSeed: randomSeed,
             formURL: options.formURL,
+            numIncorrect: studentGrade?.numAttempts,
+            ...calculatedRendererParameters
         });
         return {
             // courseQuestion,

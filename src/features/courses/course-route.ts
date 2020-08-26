@@ -21,7 +21,7 @@ import CourseTopicContent from '../../database/models/course-topic-content';
 import Role from '../permissions/roles';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 import { GetCalculatedRendererParamsResponse } from './course-types';
-import { RENDERER_ENDPOINT } from '../../utilities/renderer-helper';
+import { RENDERER_ENDPOINT, GetProblemParameters } from '../../utilities/renderer-helper';
 import StudentGrade from '../../database/models/student-grade';
 
 const fileUpload = multer();
@@ -477,13 +477,14 @@ router.post('/question/:id',
             if(_.isNil(req.meta)) {
                 throw new Error('Previously fetched metadata is nil');
             }
-            return `${RENDERER_ENDPOINT}?${qs.stringify({
+            const params: GetProblemParameters = {
                 format: 'json',
                 formURL: req.originalUrl,
                 baseURL: '/',
-                ...req.meta,
+                ...req.meta?.rendererParams,
                 numIncorrect: req.meta.studentGrade?.numAttempts
-            })}`;
+            };
+            return `${RENDERER_ENDPOINT}?${qs.stringify(params)}`;
         },
         userResDecorator: async (_proxyRes, proxyResData, userReq: RederlyExpressRequest) => {
             if (_.isNil(userReq.session)) {

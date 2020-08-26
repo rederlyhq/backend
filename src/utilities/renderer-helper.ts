@@ -16,8 +16,8 @@ export enum OutputFormat {
 }
 
 export interface GetProblemParameters {
-    sourceFilePath: string;
-    problemSeed: number;
+    sourceFilePath?: string;
+    problemSeed?: number;
     formURL: string;
     baseURL?: string;
     outputformat?: OutputFormat;

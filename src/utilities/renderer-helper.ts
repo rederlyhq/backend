@@ -22,8 +22,8 @@ export interface GetProblemParameters {
     format?: string;
     lanugage?: string;
     showHints?: boolean;
-    showSolutions?: boolean;
-    permissionLevel?: number;
+    showSolutions?: boolean | number;
+    permissionLevel?: number | number;
     problemNumber?: number;
     numCorrect?: number;
     numIncorrect?: number;
@@ -61,7 +61,7 @@ class RendererHelper {
         problemSeed,
         formURL,
         baseURL = '/',
-        outputformat = OutputFormat.SIMPLE,
+        outputformat,
         lanugage,
         showHints,
         showSolutions,

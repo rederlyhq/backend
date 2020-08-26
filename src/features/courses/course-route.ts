@@ -19,6 +19,8 @@ import Boom = require('boom');
 import { Constants } from '../../constants';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import Role from '../permissions/roles';
+import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
+import { GetCalculatedRendererParamsResponse } from './course-types';
 
 const fileUpload = multer();
 
@@ -431,13 +433,35 @@ router.get('/question/:id',
 
 router.post('/question/:id',
     authenticationMiddleware,
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, unknown, unknown, GetCalculatedRendererParamsResponse>, _res: Response, next: NextFunction) => {
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+
+        const user = await req.session.getUser();
+
+        const params = req.params as unknown as {
+            id: number;
+        };
+
+        const question = await courseController.getQuestionRecord(params.id);
+
+        req.meta = await courseController.getCalculatedRendererParams({
+            courseQuestion: question,
+            role: user.roleId
+        });
+        next();
+    }),
     proxy(configurations.renderer.url, {
-        proxyReqPathResolver: (req) => {
+        proxyReqPathResolver: (req: RederlyExpressRequest<any, unknown, unknown, unknown, GetCalculatedRendererParamsResponse>) => {
+            if(_.isNil(req.meta)) {
+                throw new Error('Previously fetched metadata is nil');
+            }
             return `/rendered?${qs.stringify({
                 format: 'json',
-                outputformat: 'single',
                 formURL: req.originalUrl,
-                baseURL: '/'
+                baseURL: '/',
+                ...req.meta
             })}`;
         },
         userResDecorator: async (_proxyRes, proxyResData, userReq: RederlyExpressRequest) => {

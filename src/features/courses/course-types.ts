@@ -7,6 +7,7 @@ import { WhereOptions } from 'sequelize/types';
 import CourseUnitContent from '../../database/models/course-unit-content';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import Role from '../permissions/roles';
+import { OutputFormat } from '../../utilities/renderer-helper';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -241,4 +242,16 @@ export interface DeleteTopicsOptions {
 export interface DeleteUnitsOptions {
     // Currently you cannot delete a course so you must supply an id
     id: number;
+}
+
+export interface GetCalculatedRendererParamsOptions {
+    role: Role;
+    topic?: CourseTopicContent;
+    courseQuestion: CourseWWTopicQuestion;
+}
+
+export interface GetCalculatedRendererParamsResponse {
+    outputformat: OutputFormat;
+    permissionLevel: number;
+    showSolutions: number;
 }

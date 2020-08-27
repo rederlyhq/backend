@@ -23,6 +23,7 @@ import CourseWWTopicQuestion from '../../database/models/course-ww-topic-questio
 import { GetCalculatedRendererParamsResponse } from './course-types';
 import { RENDERER_ENDPOINT, GetProblemParameters } from '../../utilities/renderer-helper';
 import StudentGrade from '../../database/models/student-grade';
+import bodyParser = require('body-parser');
 
 const fileUpload = multer();
 
@@ -435,6 +436,11 @@ router.get('/question/:id',
 
 router.post('/question/:id',
     authenticationMiddleware,
+    // TODO investigate if this is a problem
+    // if the body were to be consumed it should hang here
+    bodyParser.raw({
+        type: '*/*'
+    }),
     // Can't use unknown due to restrictions on the type from express
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, unknown, unknown, { rendererParams: GetCalculatedRendererParamsResponse; studentGrade?: StudentGrade | null }>, _res: Response, next: NextFunction) => {

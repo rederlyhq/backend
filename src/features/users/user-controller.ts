@@ -390,7 +390,7 @@ class UserController {
         }
         const user = result.updatedRecords[0];
         const resetURL = new URL(`/forgot-password/${user.forgotPasswordToken}`, baseUrl);
-        emailHelper.sendEmail({
+        await emailHelper.sendEmail({
             email,
             subject: 'Reset Rederly Password',
             content: `Hello ${user.firstName},
@@ -401,7 +401,7 @@ If you received this email in error please contact support@rederly.com
 
 All the best,
 The Rederly Team
-            `
+`
         });
     }
 

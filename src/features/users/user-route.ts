@@ -3,8 +3,8 @@ import { Response, NextFunction } from 'express';
 import userController from './user-controller';
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator';
-import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation, updatePasswordValidation } from './user-route-validation';
-import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest, ForgotPasswordRequest, UpdatePasswordRequest } from './user-route-request-types';
+import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation, updatePasswordValidation, updateForgottonPasswordValidation } from './user-route-validation';
+import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest, ForgotPasswordRequest, UpdatePasswordRequest, UpdateForgottonPasswordRequest } from './user-route-request-types';
 import Boom = require('boom');
 import passport = require('passport');
 import { authenticationMiddleware } from '../../middleware/auth';
@@ -15,6 +15,7 @@ import AlreadyExistsError from '../../exceptions/already-exists-error';
 import WrappedError from '../../exceptions/wrapped-error';
 import IncludeGradeOptions from './include-grade-options';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
+import logger from '../../utilities/logger';
 
 router.post('/login',
     validate(loginValidation),
@@ -86,15 +87,29 @@ router.post('/forgot-password',
     }));
 
 router.put('/update-password',
+    authenticationMiddleware,
     validate(updatePasswordValidation),
     asyncHandler(async (req: RederlyExpressRequest<UpdatePasswordRequest.params, unknown, UpdatePasswordRequest.body, UpdatePasswordRequest.query>, res: Response, next: NextFunction) => {
-
+        const user = await req.session?.getUser();
+        if(_.isNil(user)) {
+            logger.error('Impossible! A user must exist with a session with authentication middleware');
+            throw new Error('An error occurred');
+        }
         await userController.updatePassword({
             newPassword: req.body.newPassword,
+            oldPassword: req.body.oldPassword,
+            id: user.id
+        });
+        next(httpResponse.Ok('Password updated!'));
+    }));
+
+router.put('/update-forgotton-password',
+    validate(updateForgottonPasswordValidation),
+    asyncHandler(async (req: RederlyExpressRequest<UpdateForgottonPasswordRequest.params, unknown, UpdateForgottonPasswordRequest.body, UpdateForgottonPasswordRequest.query>, res: Response, next: NextFunction) => {
+        await userController.updateForgottonPassword({
+            newPassword: req.body.newPassword,
             email: req.body.email,
-            forgotPasswordToken: req.body.forgotPasswordToken,
-            id: req.body.id,
-            oldPassword: req.body.oldPassword
+            forgotPasswordToken: req.body.forgotPasswordToken
         });
         next(httpResponse.Ok('Forgot password request successful!'));
     }));

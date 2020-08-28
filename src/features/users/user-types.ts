@@ -2,7 +2,7 @@ import IncludeGradeOptions from './include-grade-options';
 import User from '../../database/models/user';
 import { PartialWithRequiredFields } from '../../extensions/typescript-utility-extensions';
 import { WhereOptions } from 'sequelize/types';
-import { UpdatePasswordRequest } from './user-route-request-types';
+import { UpdatePasswordRequest, UpdateForgottonPasswordRequest } from './user-route-request-types';
 
 export interface RegisterUserOptions {
     userObject: PartialWithRequiredFields<User, 'email' | 'password'>;
@@ -40,7 +40,11 @@ export interface ForgotPasswordOptions {
     baseUrl: string;
 }
 
-export type UpdatePasswordOptions = UpdatePasswordRequest.body;
+export interface UpdatePasswordOptions extends UpdatePasswordRequest.body {
+    id: number;
+};
+
+export type UpdateForgottonPasswordOptions = UpdateForgottonPasswordRequest.body;
 
 export interface UpdateUserOptions {
     where: WhereOptions;

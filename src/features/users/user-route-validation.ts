@@ -14,10 +14,17 @@ export const updatePasswordValidation = {
     query: {},
     body: {
         newPassword: Joi.string().required(),
-        forgotPasswordToken: Joi.string().optional(),
-        oldPassword: Joi.string().optional(),
-        email: Joi.string().email().optional(),
-        id: Joi.number().optional(),
+        oldPassword: Joi.string().required(),
+    },
+};
+
+export const updateForgottonPasswordValidation = {
+    params: {},
+    query: {},
+    body: {
+        newPassword: Joi.string().required(),
+        forgotPasswordToken: Joi.string().required(),
+        email: Joi.string().email().required(),
     },
 };
 

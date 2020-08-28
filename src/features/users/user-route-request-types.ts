@@ -11,6 +11,12 @@ import * as Joi from '@hapi/joi';
 import 'joi-extract-type';
 import * as validations from './user-route-validation';
 
+export namespace ForgotPasswordRequest {
+    export type params = Joi.extractType<typeof validations.forgotPasswordValidation.params>;
+    export type query = Joi.extractType<typeof validations.forgotPasswordValidation.query>;
+    export type body = Joi.extractType<typeof validations.forgotPasswordValidation.body>;
+};
+
 export namespace RegisterRequest {
     export type params = Joi.extractType<typeof validations.registerValidation.params>;
     export type query = Joi.extractType<typeof validations.registerValidation.query>;

@@ -24,8 +24,9 @@ import CourseTopicContent from '../../database/models/course-topic-content';
 import CourseUnitContent from '../../database/models/course-unit-content';
 import IncludeGradeOptions from './include-grade-options';
 import WrappedError from '../../exceptions/wrapped-error';
-import { EmailOptions, GetUserOptions, ListUserFilter, RegisterUserOptions, RegisterUserResponse } from './user-types';
+import { EmailOptions, GetUserOptions, ListUserFilter, RegisterUserOptions, RegisterUserResponse, ForgotPasswordOptions } from './user-types';
 import { Constants } from '../../constants';
+import userRepository from './user-repository';
 
 const {
     sessionLife
@@ -355,6 +356,21 @@ class UserController {
             }
         });
         return updateResp[0] > 0;
+    }
+
+    async forgotPassword({
+        email
+    }: ForgotPasswordOptions): Promise<void> {
+        await userRepository.updateUser({
+            updates: {
+                forgotPasswordToken: uuidv4(),
+                // TODO make configurable
+                forgotPasswordTokenExpiresAt: moment().add(1, 'days').toDate()    
+            },
+            where: {
+                email
+            }
+        });
     }
 }
 const userController = new UserController();

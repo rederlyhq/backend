@@ -1,6 +1,14 @@
 import * as Joi from '@hapi/joi';
 import IncludeGradeOptions from './include-grade-options';
 
+export const forgotPasswordValidation = {
+    params: {},
+    query: {},
+    body: {
+        email: Joi.string().email().required(),
+    },
+};
+
 export const registerValidation = {
     params: {},
     query: {},

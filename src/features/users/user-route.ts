@@ -3,8 +3,8 @@ import { Response, NextFunction } from 'express';
 import userController from './user-controller';
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator';
-import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation } from './user-route-validation';
-import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest } from './user-route-request-types';
+import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation } from './user-route-validation';
+import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest, ForgotPasswordRequest } from './user-route-request-types';
 import Boom = require('boom');
 import passport = require('passport');
 import { authenticationMiddleware } from '../../middleware/auth';
@@ -20,7 +20,7 @@ router.post('/login',
     validate(loginValidation),
     passport.authenticate('local'),
     asyncHandler(async (req: RederlyExpressRequest<LoginRequest.params, unknown, LoginRequest.body, LoginRequest.query>, res: Response, next: NextFunction) => {
-        if(_.isNil(req.session)) {
+        if (_.isNil(req.session)) {
             throw new Error('Session is nil even after authentication middleware');
         }
         const newSession = req.session.passport.user;
@@ -68,6 +68,14 @@ router.post('/register',
         }
     }));
 
+router.post('/forgot-password',
+    validate(forgotPasswordValidation),
+    asyncHandler(async (req: RederlyExpressRequest<ForgotPasswordRequest.params, unknown, ForgotPasswordRequest.body, ForgotPasswordRequest.query>, res: Response, next: NextFunction) => {
+        await userController.forgotPassword({
+            email: req.body.email
+        });
+        next(httpResponse.Ok('Forgot password request successful!'));
+    }));
 
 router.get('/verify',
     validate(verifyValidation),
@@ -87,7 +95,7 @@ router.post('/logout',
     authenticationMiddleware,
     validate(logoutValidation),
     asyncHandler(async (req: RederlyExpressRequest<LogoutRequest.params, unknown, LogoutRequest.body, LogoutRequest.query>, res: Response, next: NextFunction) => {
-        if(_.isNil(req.session)) {
+        if (_.isNil(req.session)) {
             throw new Error('Session is nil even after authentication middleware');
         }
         await userController.logout(req.session.dataValues.uuid);

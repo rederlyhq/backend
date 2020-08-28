@@ -9,6 +9,18 @@ export const forgotPasswordValidation = {
     },
 };
 
+export const updatePasswordValidation = {
+    params: {},
+    query: {},
+    body: {
+        newPassword: Joi.string().required(),
+        forgotPasswordToken: Joi.string().optional(),
+        oldPassword: Joi.string().optional(),
+        email: Joi.string().email().optional(),
+        id: Joi.number().optional(),
+    },
+};
+
 export const registerValidation = {
     params: {},
     query: {},

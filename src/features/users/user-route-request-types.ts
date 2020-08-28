@@ -17,6 +17,12 @@ export namespace ForgotPasswordRequest {
     export type body = Joi.extractType<typeof validations.forgotPasswordValidation.body>;
 };
 
+export namespace UpdatePasswordRequest {
+    export type params = Joi.extractType<typeof validations.updatePasswordValidation.params>;
+    export type query = Joi.extractType<typeof validations.updatePasswordValidation.query>;
+    export type body = Joi.extractType<typeof validations.updatePasswordValidation.body>;
+};
+
 export namespace RegisterRequest {
     export type params = Joi.extractType<typeof validations.registerValidation.params>;
     export type query = Joi.extractType<typeof validations.registerValidation.query>;

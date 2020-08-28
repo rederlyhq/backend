@@ -15,6 +15,7 @@ import rateLimit = require('express-rate-limit');
 import Boom = require('boom');
 import AlreadyExistsError from './exceptions/already-exists-error';
 import NotFoundError from './exceptions/not-found-error';
+import IllegalArgumentException from './exceptions/illegal-argument-exception';
 
 interface ErrorResponse {
     statusCode: number;
@@ -61,7 +62,7 @@ app.use(basePath, router);
 // TODO: err is Boom | Error | any, the any is errors that we have to define
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
 app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
-    if (obj instanceof AlreadyExistsError || obj instanceof NotFoundError) {
+    if (obj instanceof AlreadyExistsError || obj instanceof NotFoundError || obj instanceof IllegalArgumentException) {
         next(Boom.badRequest(obj.message));
     } else {
         next(obj);

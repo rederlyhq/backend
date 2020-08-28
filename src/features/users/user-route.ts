@@ -3,8 +3,8 @@ import { Response, NextFunction } from 'express';
 import userController from './user-controller';
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator';
-import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation } from './user-route-validation';
-import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest, ForgotPasswordRequest } from './user-route-request-types';
+import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation, updatePasswordValidation } from './user-route-validation';
+import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest, ForgotPasswordRequest, UpdatePasswordRequest } from './user-route-request-types';
 import Boom = require('boom');
 import passport = require('passport');
 import { authenticationMiddleware } from '../../middleware/auth';
@@ -71,8 +71,30 @@ router.post('/register',
 router.post('/forgot-password',
     validate(forgotPasswordValidation),
     asyncHandler(async (req: RederlyExpressRequest<ForgotPasswordRequest.params, unknown, ForgotPasswordRequest.body, ForgotPasswordRequest.query>, res: Response, next: NextFunction) => {
+        // Typing is incorrect here, even if I specify the header twice it comes back as a string (comma delimeted)
+        const baseUrl: string = req.headers.origin as string;
+        if (_.isNil(baseUrl)) {
+            next(Boom.badRequest('The `origin` header is required!'));
+            return;
+        }
+
         await userController.forgotPassword({
-            email: req.body.email
+            email: req.body.email,
+            baseUrl
+        });
+        next(httpResponse.Ok('Forgot password request successful!'));
+    }));
+
+router.put('/update-password',
+    validate(updatePasswordValidation),
+    asyncHandler(async (req: RederlyExpressRequest<UpdatePasswordRequest.params, unknown, UpdatePasswordRequest.body, UpdatePasswordRequest.query>, res: Response, next: NextFunction) => {
+
+        await userController.updatePassword({
+            newPassword: req.body.newPassword,
+            email: req.body.email,
+            forgotPasswordToken: req.body.forgotPasswordToken,
+            id: req.body.id,
+            oldPassword: req.body.oldPassword
         });
         next(httpResponse.Ok('Forgot password request successful!'));
     }));

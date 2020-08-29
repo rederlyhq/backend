@@ -56,6 +56,14 @@ export const verifyValidation = {
     body: {}
 };
 
+export const resendVerificationValidation = {
+    params: {},
+    query: {},
+    body: {
+        email: Joi.string().email().required()
+    }
+};
+
 export const logoutValidation = {
     params: {},
     query: {},

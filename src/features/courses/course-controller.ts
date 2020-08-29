@@ -794,7 +794,7 @@ class CourseController {
         let lastProblemNumber = await courseRepository.getLatestProblemNumberForTopic(options.courseTopicId) || 0;
         return appSequelize.transaction(() => {
             return parsedWebworkDef.problems.asyncForEach(async (problem: Problem) => {
-                return courseRepository.createQuestion({
+                return this.addQuestion({
                     // active: true,
                     courseTopicContentId: options.courseTopicId,
                     problemNumber: ++lastProblemNumber,
@@ -902,22 +902,25 @@ class CourseController {
             studentGrade.firstAttempts = options.score;
         }
         studentGrade.latestAttempts = options.score;
-        await studentGrade.save();
+        
+        return appSequelize.transaction(async (): Promise<SubmitAnswerResult> => {
+            await studentGrade.save();
 
-        const studentWorkbook = await StudentWorkbook.create({
-            studentGradeId: studentGrade.id,
-            userId: options.userId,
-            courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
-            randomSeed: studentGrade.randomSeed,
-            submitted: options.submitted,
-            result: options.score,
-            time: new Date()
+            const studentWorkbook = await StudentWorkbook.create({
+                studentGradeId: studentGrade.id,
+                userId: options.userId,
+                courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
+                randomSeed: studentGrade.randomSeed,
+                submitted: options.submitted,
+                result: options.score,
+                time: new Date()
+            });
+    
+            return {
+                studentGrade,
+                studentWorkbook
+            };    
         });
-
-        return {
-            studentGrade,
-            studentWorkbook
-        };
     }
 
     getCourseByCode(code: string): Promise<Course> {

@@ -794,7 +794,7 @@ class CourseController {
         let lastProblemNumber = await courseRepository.getLatestProblemNumberForTopic(options.courseTopicId) || 0;
         return appSequelize.transaction(() => {
             return parsedWebworkDef.problems.asyncForEach(async (problem: Problem) => {
-                return courseRepository.createQuestion({
+                return this.addQuestion({
                     // active: true,
                     courseTopicContentId: options.courseTopicId,
                     problemNumber: ++lastProblemNumber,

@@ -1,9 +1,9 @@
-import WrappedError from './wrapped-error';
+import RederlyExtendedError from './rederly-extended-error';
 
-export default class ForbiddenError extends WrappedError {
+export default class ForbiddenError extends RederlyExtendedError {
     public name: string;
-    constructor(message: string, cause?: Error) {
-        super(message, cause);
+    constructor(message: string) {
+        super(message);
         this.name = 'ForbiddenError';
     }
 }

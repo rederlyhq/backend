@@ -30,6 +30,7 @@ import userRepository from './user-repository';
 import NotFoundError from '../../exceptions/not-found-error';
 import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
 import ForbiddenError from '../../exceptions/forbidden-error';
+import RederlyExtendedError from '../../exceptions/rederly-extended-error';
 
 const {
     sessionLife
@@ -37,6 +38,7 @@ const {
 
 class UserController {
     getUserByEmail(email: string): Promise<User> {
+        email = email.toLowerCase();
         return User.findOne({
             where: {
                 email
@@ -234,6 +236,10 @@ class UserController {
     }
 
     private checkUserError(e: Error): void {
+        if (e instanceof RederlyExtendedError === true) {
+            // Already handled
+            throw e;
+        }
         if (e instanceof BaseError === false) {
             throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
@@ -251,6 +257,16 @@ class UserController {
 
     async createUser(userObject: Partial<User>): Promise<User> {
         try {
+            if(!_.isNil(userObject.email)) {
+                userObject.email = userObject.email.toLowerCase();
+                const user = await this.getUserByEmail(userObject.email);
+                if(!_.isNil(user)) {
+                    throw new AlreadyExistsError(`A user with the email ${userObject.email} already exists`);
+                }
+            } else {
+                logger.error('This should not happen ')
+                throw new IllegalArgumentException('Email is required to create a user!');
+            }
             return await User.create(userObject);
         } catch (e) {
             this.checkUserError(e);
@@ -282,14 +298,13 @@ class UserController {
         if (user == null)
             return null;
 
-        if (!user.verified) {
-            const university = await user.getUniversity();
-            if(university.verifyInstitutionalEmail) {
-                throw new ForbiddenError('User has not been verified');
-            }
-        }
-
         if (await comparePassword(password, user.password)) {
+            if (!user.verified) {
+                const university = await user.getUniversity();
+                if(university.verifyInstitutionalEmail) {
+                    throw new ForbiddenError('User has not been verified');
+                }
+            }
             return this.createSession(user.id);
         }
         return null;
@@ -425,6 +440,7 @@ class UserController {
         email,
         baseUrl
     }: ForgotPasswordOptions): Promise<void> {
+        email = email.toLowerCase();
         const result = await userRepository.updateUser({
             updates: {
                 forgotPasswordToken: uuidv4(),

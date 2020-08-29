@@ -902,22 +902,25 @@ class CourseController {
             studentGrade.firstAttempts = options.score;
         }
         studentGrade.latestAttempts = options.score;
-        await studentGrade.save();
+        
+        return appSequelize.transaction(async (): Promise<SubmitAnswerResult> => {
+            await studentGrade.save();
 
-        const studentWorkbook = await StudentWorkbook.create({
-            studentGradeId: studentGrade.id,
-            userId: options.userId,
-            courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
-            randomSeed: studentGrade.randomSeed,
-            submitted: options.submitted,
-            result: options.score,
-            time: new Date()
+            const studentWorkbook = await StudentWorkbook.create({
+                studentGradeId: studentGrade.id,
+                userId: options.userId,
+                courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
+                randomSeed: studentGrade.randomSeed,
+                submitted: options.submitted,
+                result: options.score,
+                time: new Date()
+            });
+    
+            return {
+                studentGrade,
+                studentWorkbook
+            };    
         });
-
-        return {
-            studentGrade,
-            studentWorkbook
-        };
     }
 
     getCourseByCode(code: string): Promise<Course> {

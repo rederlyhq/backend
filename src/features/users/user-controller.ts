@@ -504,12 +504,10 @@ The Rederly Team
 
         const user = await this.getUserByEmail(email);
         let validated = false;
-        if(!Boolean(user?.forgotPasswordToken)) {
-            throw new IllegalArgumentException('Invalid forgot password token!');
-        } else if (user.forgotPasswordToken !== forgotPasswordToken) {
-            throw new IllegalArgumentException('Invalid forgot password token!');
+        if(_.isNil(user?.forgotPasswordToken) || user.forgotPasswordToken !== forgotPasswordToken) {
+            throw new IllegalArgumentException('The institutional email address (which you login with) is not valid for the current url. Please check your set preferred email for a more up to date `Forgot Password` email or go to the homepage and make another request.');
         } else if (moment(user.forgotPasswordTokenExpiresAt).isBefore(moment())) {
-            throw new IllegalArgumentException('Your forgot password request has expired, please click forgot password on login again.');
+            throw new IllegalArgumentException('Your forgot password request has expired, please click forgot password on the home page again.');
         } else {
             validated = true;
         }

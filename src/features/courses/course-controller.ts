@@ -28,6 +28,7 @@ import WebWorkDef, { Problem } from '../../utilities/web-work-def-parser';
 import { nameof } from '../../utilities/typescript-helpers';
 import Role from '../permissions/roles';
 import moment = require('moment');
+import RederlyExtendedError from '../../exceptions/rederly-extended-error';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -903,24 +904,32 @@ class CourseController {
         }
         studentGrade.latestAttempts = options.score;
         
-        return appSequelize.transaction(async (): Promise<SubmitAnswerResult> => {
-            await studentGrade.save();
-
-            const studentWorkbook = await StudentWorkbook.create({
-                studentGradeId: studentGrade.id,
-                userId: options.userId,
-                courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
-                randomSeed: studentGrade.randomSeed,
-                submitted: options.submitted,
-                result: options.score,
-                time: new Date()
-            });
+        try {
+            return await appSequelize.transaction(async (): Promise<SubmitAnswerResult> => {
+                await studentGrade.save();
     
-            return {
-                studentGrade,
-                studentWorkbook
-            };    
-        });
+                const studentWorkbook = await StudentWorkbook.create({
+                    studentGradeId: studentGrade.id,
+                    userId: options.userId,
+                    courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
+                    randomSeed: studentGrade.randomSeed,
+                    submitted: JSON.stringify(options.submitted),
+                    result: options.score,
+                    time: new Date()
+                });
+        
+                return {
+                    studentGrade,
+                    studentWorkbook
+                };    
+            });    
+        } catch (e) {
+            if (e instanceof RederlyExtendedError === false) {
+                throw new WrappedError(e.message, e);
+            } else {
+                throw e;
+            }
+        }
     }
 
     getCourseByCode(code: string): Promise<Course> {

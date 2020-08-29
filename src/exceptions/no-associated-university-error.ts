@@ -1,4 +1,6 @@
-export default class NoAssociatedUniversityError extends Error {
+import NotFoundError from './not-found-error';
+
+export default class NoAssociatedUniversityError extends NotFoundError {
     public name: string;
     constructor(message: string) {
         super(message);

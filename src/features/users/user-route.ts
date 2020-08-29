@@ -16,6 +16,7 @@ import WrappedError from '../../exceptions/wrapped-error';
 import IncludeGradeOptions from './include-grade-options';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
 import logger from '../../utilities/logger';
+import RederlyError from '../../exceptions/rederly-error';
 
 router.post('/login',
     validate(loginValidation),
@@ -45,28 +46,18 @@ router.post('/login',
 
 router.post('/register',
     validate(registerValidation),
-    asyncHandler(async (req: RederlyExpressRequest<RegisterRequest.params, unknown, RegisterRequest.body, RegisterRequest.query>, res: Response, next: NextFunction) => {
-        try {
-            // Typing is incorrect here, even if I specify the header twice it comes back as a string (comma delimeted)
-            const baseUrl: string = req.headers.origin as string;
-            if (_.isNil(baseUrl)) {
-                next(Boom.badRequest('The `origin` header is required!'));
-                return;
-            }
-            const newUser = await userController.registerUser({
-                userObject: req.body,
-                baseUrl
-            });
-            next(httpResponse.Created('User registered successfully', newUser));
-        } catch (e) {
-            if (e instanceof NoAssociatedUniversityError) {
-                next(Boom.notFound(e.message));
-            } else if (e instanceof AlreadyExistsError) {
-                next(Boom.badRequest(e.message));
-            } else {
-                throw new WrappedError('An unknown error occurred', e);
-            }
+    asyncHandler(async (req: RederlyExpressRequest<RegisterRequest.params, unknown, RegisterRequest.body, RegisterRequest.query>, _res: Response, next: NextFunction) => {
+        // Typing is incorrect here, even if I specify the header twice it comes back as a string (comma delimeted)
+        const baseUrl: string = req.headers.origin as string;
+        if (_.isNil(baseUrl)) {
+            next(Boom.badRequest('The `origin` header is required!'));
+            return;
         }
+        const newUser = await userController.registerUser({
+            userObject: req.body,
+            baseUrl
+        });
+        next(httpResponse.Created('User registered successfully', newUser));
     }));
 
 router.post('/forgot-password',

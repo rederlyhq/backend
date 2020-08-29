@@ -29,6 +29,7 @@ import { Constants } from '../../constants';
 import userRepository from './user-repository';
 import NotFoundError from '../../exceptions/not-found-error';
 import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
+import ForbiddenError from '../../exceptions/forbidden-error';
 
 const {
     sessionLife
@@ -47,6 +48,14 @@ class UserController {
         return User.findOne({
             where: {
                 id
+            }
+        });
+    }
+
+    getUserByVerifyToken(verifyToken: string): Promise<User> {
+        return User.findOne({
+            where: {
+                verifyToken
             }
         });
     }
@@ -274,7 +283,10 @@ class UserController {
             return null;
 
         if (!user.verified) {
-            return null;
+            const university = await user.getUniversity();
+            if(university.verifyInstitutionalEmail) {
+                throw new ForbiddenError('User has not been verified');
+            }
         }
 
         if (await comparePassword(password, user.password)) {
@@ -291,6 +303,54 @@ class UserController {
                 uuid
             }
         });
+    }
+
+    async setupUserVerification({
+        user,
+        userEmail,
+        refreshVerifyToken = true,
+        baseUrl,
+    }: {
+        user?: User;
+        userEmail?: string;
+        refreshVerifyToken?: boolean;
+        baseUrl: string;
+    }): Promise<boolean> {
+        let emailSent = false;
+        if(_.isNil(user)) {
+            if(_.isNil(userEmail)) {
+                throw new IllegalArgumentException('If you do not supply a user you need to supply an email');
+            }
+            user = await this.getUserByEmail(userEmail);
+        } else if(!_.isNil(userEmail)) {
+            logger.warn('If user is provided there is no reason to provide an email, this seems like an error');
+        }
+
+        if(user.verified) {
+            throw new IllegalArgumentException('This user is already verified');
+        }
+
+        if(refreshVerifyToken) {
+            user.verifyToken = uuidv4();
+            user.verifyTokenExpiresAt = moment().add(1, 'days').toDate();
+            await user.save();
+        }
+
+        const verifyURL = new URL(`/verify/${user.verifyToken}`, baseUrl);
+        try {
+            await emailHelper.sendEmail({
+                content: `Hello,
+
+                Please verify your account by clicking this url: ${verifyURL}
+                `,
+                email: user.email,
+                subject: 'Please verify account'
+            });
+            emailSent = configurations.email.enabled;
+        } catch (e) {
+            logger.error(e);
+        }
+        return emailSent;
     }
 
     async registerUser(options: RegisterUserOptions): Promise<RegisterUserResponse> {
@@ -322,30 +382,16 @@ class UserController {
         }
 
         userObject.universityId = university.id;
-        if (university.verifyInstitutionalEmail) {
-            userObject.verifyToken = uuidv4();
-        } else {
-            userObject.verified = true;
-        }
+        userObject.verifyToken = uuidv4();
+        userObject.verifyTokenExpiresAt = moment().add(1,'days').toDate();
         userObject.password = await hashPassword(userObject.password);    
         const newUser = await this.createUser(userObject);
-        let emailSent = false;
-        if (university.verifyInstitutionalEmail) {
-            const verifyURL = new URL(`/verify/${newUser.verifyToken}`, baseUrl);
-            try {
-                await emailHelper.sendEmail({
-                    content: `Hello,
-    
-                    Please verify your account by clicking this url: ${verifyURL}
-                    `,
-                    email: newUser.email,
-                    subject: 'Please verify account'
-                });
-                emailSent = configurations.email.enabled;
-            } catch (e) {
-                logger.error(e);
-            }
-        }
+        const emailSent = await this.setupUserVerification({
+            baseUrl,
+            // no need to refresh, we just created it
+            refreshVerifyToken: false,
+            user: newUser,
+        });
 
         return {
             id: newUser.id,
@@ -356,16 +402,23 @@ class UserController {
     }
 
     async verifyUser(verifyToken: string): Promise<boolean> {
-        const updateResp = await User.update({
-            verified: true,
-            actuallyVerified: true
-        }, {
-            where: {
-                verifyToken,
-                verified: false
-            }
-        });
-        return updateResp[0] > 0;
+        const user = await this.getUserByVerifyToken(verifyToken);
+        if (_.isNil(user?.verifyToken)) {
+            throw new IllegalArgumentException('Invalid verification token');
+        } else if(user.verifyToken !== verifyToken) {
+            throw new IllegalArgumentException('Invalid verification token');
+        } else if(moment().isAfter(user.verifyTokenExpiresAt)) {
+            throw new IllegalArgumentException('Verification token has expired');
+        } else if(user.verified) {
+            logger.warn('Verification token should be set to null on verify, thus this should not be possible');
+            throw new IllegalArgumentException('Already verified');
+        } else {
+            user.verified = true;
+            user.actuallyVerified = true;
+            user.verifyToken = null;
+            user.save();
+            return true;
+        }
     }
 
     async forgotPassword({

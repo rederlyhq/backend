@@ -47,6 +47,12 @@ export namespace VerifyRequest {
     export type body = Joi.extractType<typeof validations.verifyValidation.body>;
 };
 
+export namespace ResendVerificationRequest {
+    export type params = Joi.extractType<typeof validations.resendVerificationValidation.params>;
+    export type query = Joi.extractType<typeof validations.resendVerificationValidation.query>;
+    export type body = Joi.extractType<typeof validations.resendVerificationValidation.body>;
+};
+
 export namespace LogoutRequest {
     export type params = Joi.extractType<typeof validations.logoutValidation.params>;
     export type query = Joi.extractType<typeof validations.logoutValidation.query>;

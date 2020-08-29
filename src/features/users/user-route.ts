@@ -3,8 +3,8 @@ import { Response, NextFunction } from 'express';
 import userController from './user-controller';
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator';
-import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation, updatePasswordValidation, updateForgottonPasswordValidation } from './user-route-validation';
-import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest, ForgotPasswordRequest, UpdatePasswordRequest, UpdateForgottonPasswordRequest } from './user-route-request-types';
+import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation, updatePasswordValidation, updateForgottonPasswordValidation, resendVerificationValidation } from './user-route-validation';
+import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest, ForgotPasswordRequest, UpdatePasswordRequest, UpdateForgottonPasswordRequest, ResendVerificationRequest } from './user-route-request-types';
 import Boom = require('boom');
 import passport = require('passport');
 import { authenticationMiddleware } from '../../middleware/auth';
@@ -126,6 +126,23 @@ router.get('/verify',
         } else {
             next(Boom.badRequest('Invalid verification token'));
         }
+    }));
+
+router.post('/resend-verification',
+    validate(resendVerificationValidation),
+    asyncHandler(async (req: RederlyExpressRequest<ResendVerificationRequest.params, unknown, ResendVerificationRequest.body, ResendVerificationRequest.query>, _res: Response, next: NextFunction) => {
+        const baseUrl: string = req.headers.origin as string;
+        if (_.isNil(baseUrl)) {
+            next(Boom.badRequest('The `origin` header is required!'));
+            return;
+        }
+        await userController.setupUserVerification({
+            baseUrl,
+            refreshVerifyToken: true,
+            userEmail: req.body.email
+        });
+
+        next(httpResponse.Ok('Verification information updated'));
     }));
 
 router.post('/logout',

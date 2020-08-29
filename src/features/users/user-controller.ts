@@ -24,8 +24,13 @@ import CourseTopicContent from '../../database/models/course-topic-content';
 import CourseUnitContent from '../../database/models/course-unit-content';
 import IncludeGradeOptions from './include-grade-options';
 import WrappedError from '../../exceptions/wrapped-error';
-import { EmailOptions, GetUserOptions, ListUserFilter, RegisterUserOptions, RegisterUserResponse } from './user-types';
+import { EmailOptions, GetUserOptions, ListUserFilter, RegisterUserOptions, RegisterUserResponse, ForgotPasswordOptions, UpdatePasswordOptions, UpdateForgottonPasswordOptions } from './user-types';
 import { Constants } from '../../constants';
+import userRepository from './user-repository';
+import NotFoundError from '../../exceptions/not-found-error';
+import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
+import ForbiddenError from '../../exceptions/forbidden-error';
+import RederlyExtendedError from '../../exceptions/rederly-extended-error';
 
 const {
     sessionLife
@@ -33,9 +38,26 @@ const {
 
 class UserController {
     getUserByEmail(email: string): Promise<User> {
+        email = email.toLowerCase();
         return User.findOne({
             where: {
                 email
+            }
+        });
+    }
+
+    getUserById(id: number): Promise<User> {
+        return User.findOne({
+            where: {
+                id
+            }
+        });
+    }
+
+    getUserByVerifyToken(verifyToken: string): Promise<User> {
+        return User.findOne({
+            where: {
+                verifyToken
             }
         });
     }
@@ -214,6 +236,10 @@ class UserController {
     }
 
     private checkUserError(e: Error): void {
+        if (e instanceof RederlyExtendedError === true) {
+            // Already handled
+            throw e;
+        }
         if (e instanceof BaseError === false) {
             throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
@@ -231,6 +257,16 @@ class UserController {
 
     async createUser(userObject: Partial<User>): Promise<User> {
         try {
+            if(!_.isNil(userObject.email)) {
+                userObject.email = userObject.email.toLowerCase();
+                const user = await this.getUserByEmail(userObject.email);
+                if(!_.isNil(user)) {
+                    throw new AlreadyExistsError(`A user with the email ${userObject.email} already exists`);
+                }
+            } else {
+                logger.error('This should not happen ')
+                throw new IllegalArgumentException('Email is required to create a user!');
+            }
             return await User.create(userObject);
         } catch (e) {
             this.checkUserError(e);
@@ -262,11 +298,13 @@ class UserController {
         if (user == null)
             return null;
 
-        if (!user.verified) {
-            return null;
-        }
-
         if (await comparePassword(password, user.password)) {
+            if (!user.verified) {
+                const university = await user.getUniversity();
+                if(university.verifyInstitutionalEmail) {
+                    throw new ForbiddenError('User has not been verified');
+                }
+            }
             return this.createSession(user.id);
         }
         return null;
@@ -280,6 +318,54 @@ class UserController {
                 uuid
             }
         });
+    }
+
+    async setupUserVerification({
+        user,
+        userEmail,
+        refreshVerifyToken = true,
+        baseUrl,
+    }: {
+        user?: User;
+        userEmail?: string;
+        refreshVerifyToken?: boolean;
+        baseUrl: string;
+    }): Promise<boolean> {
+        let emailSent = false;
+        if(_.isNil(user)) {
+            if(_.isNil(userEmail)) {
+                throw new IllegalArgumentException('If you do not supply a user you need to supply an email');
+            }
+            user = await this.getUserByEmail(userEmail);
+        } else if(!_.isNil(userEmail)) {
+            logger.warn('If user is provided there is no reason to provide an email, this seems like an error');
+        }
+
+        if(user.verified) {
+            throw new IllegalArgumentException('This user is already verified');
+        }
+
+        if(refreshVerifyToken) {
+            user.verifyToken = uuidv4();
+            user.verifyTokenExpiresAt = moment().add(1, 'days').toDate();
+            await user.save();
+        }
+
+        const verifyURL = new URL(`/verify/${user.verifyToken}`, baseUrl);
+        try {
+            await emailHelper.sendEmail({
+                content: `Hello,
+
+                Please verify your account by clicking this url: ${verifyURL}
+                `,
+                email: user.email,
+                subject: 'Please verify account'
+            });
+            emailSent = configurations.email.enabled;
+        } catch (e) {
+            logger.error(e);
+        }
+        return emailSent;
     }
 
     async registerUser(options: RegisterUserOptions): Promise<RegisterUserResponse> {
@@ -311,30 +397,16 @@ class UserController {
         }
 
         userObject.universityId = university.id;
-        if (university.verifyInstitutionalEmail) {
-            userObject.verifyToken = uuidv4();
-        } else {
-            userObject.verified = true;
-        }
+        userObject.verifyToken = uuidv4();
+        userObject.verifyTokenExpiresAt = moment().add(1,'days').toDate();
         userObject.password = await hashPassword(userObject.password);    
         const newUser = await this.createUser(userObject);
-        let emailSent = false;
-        if (university.verifyInstitutionalEmail) {
-            const verifyURL = new URL(`/verify/${newUser.verifyToken}`, baseUrl);
-            try {
-                await emailHelper.sendEmail({
-                    content: `Hello,
-    
-                    Please verify your account by clicking this url: ${verifyURL}
-                    `,
-                    email: newUser.email,
-                    subject: 'Please verify account'
-                });
-                emailSent = configurations.email.enabled;
-            } catch (e) {
-                logger.error(e);
-            }
-        }
+        const emailSent = await this.setupUserVerification({
+            baseUrl,
+            // no need to refresh, we just created it
+            refreshVerifyToken: false,
+            user: newUser,
+        });
 
         return {
             id: newUser.id,
@@ -345,16 +417,140 @@ class UserController {
     }
 
     async verifyUser(verifyToken: string): Promise<boolean> {
-        const updateResp = await User.update({
-            verified: true,
-            actuallyVerified: true
-        }, {
+        const user = await this.getUserByVerifyToken(verifyToken);
+        if (_.isNil(user?.verifyToken)) {
+            throw new IllegalArgumentException('Invalid verification token');
+        } else if(user.verifyToken !== verifyToken) {
+            throw new IllegalArgumentException('Invalid verification token');
+        } else if(moment().isAfter(user.verifyTokenExpiresAt)) {
+            throw new IllegalArgumentException('Verification token has expired');
+        } else if(user.verified) {
+            logger.warn('Verification token should be set to null on verify, thus this should not be possible');
+            throw new IllegalArgumentException('Already verified');
+        } else {
+            user.verified = true;
+            user.actuallyVerified = true;
+            user.verifyToken = null;
+            user.save();
+            return true;
+        }
+    }
+
+    async forgotPassword({
+        email,
+        baseUrl
+    }: ForgotPasswordOptions): Promise<void> {
+        email = email.toLowerCase();
+        const result = await userRepository.updateUser({
+            updates: {
+                forgotPasswordToken: uuidv4(),
+                // TODO make configurable
+                forgotPasswordTokenExpiresAt: moment().add(1, 'days').toDate()    
+            },
             where: {
-                verifyToken,
-                verified: false
+                email
             }
         });
-        return updateResp[0] > 0;
+
+        if(result.updatedRecords.length < 1) {
+            throw new NotFoundError('This user is not registered');
+        } else if (result.updatedRecords.length > 1) {
+            logger.warn('Multiple users were updated for forgot password');
+        }
+        const user = result.updatedRecords[0];
+        const resetURL = new URL(`/forgot-password/${user.forgotPasswordToken}`, baseUrl);
+        await emailHelper.sendEmail({
+            email,
+            subject: 'Reset Rederly Password',
+            content: `Hello ${user.firstName},
+
+To reset your password please follow this link: ${resetURL}
+
+If you received this email in error please contact support@rederly.com
+
+All the best,
+The Rederly Team
+`
+        });
+    }
+
+    async updatePassword({
+        newPassword,
+        id,
+        oldPassword
+    }: UpdatePasswordOptions): Promise<void> {
+        let validated = false;
+        const user = await this.getUserById(id);
+        if(await comparePassword(oldPassword, user.password)) {
+            validated = true;
+        } else {
+            throw new IllegalArgumentException('Invalid password');
+        }
+
+        if(!validated) {
+            logger.error('Impossible! an error should have already been thrown for verification');
+            throw new IllegalArgumentException('You could not be verified!');
+        }
+
+        const where = _({
+            id
+        }).omitBy(_.isUndefined).value() as WhereOptions;
+
+        if(Object.keys(where).length !== 1) {
+            logger.error('Impossible! Somehow with all the checks I had the xor of id and email got through');
+            throw new Error('An application error occurred');
+        }
+
+        const hashedPassword = await hashPassword(newPassword);
+        await userRepository.updateUser({
+            updates: {
+                forgotPasswordToken: null,
+                forgotPasswordTokenExpiresAt: new Date(),
+                password: hashedPassword
+            },
+            where
+        });
+    }
+
+    async updateForgottonPassword({
+        newPassword,
+        email,
+        forgotPasswordToken,
+    }: UpdateForgottonPasswordOptions): Promise<void> {
+
+        const user = await this.getUserByEmail(email);
+        let validated = false;
+        if(_.isNil(user?.forgotPasswordToken) || user.forgotPasswordToken !== forgotPasswordToken) {
+            throw new IllegalArgumentException('The institutional email address (which you login with) is not valid for the current url. Please check your set preferred email for a more up to date `Forgot Password` email or go to the homepage and make another request.');
+        } else if (moment(user.forgotPasswordTokenExpiresAt).isBefore(moment())) {
+            throw new IllegalArgumentException('Your forgot password request has expired, please click forgot password on the home page again.');
+        } else {
+            validated = true;
+        }
+
+        if(!validated) {
+            logger.error('Impossible! an error should have already been thrown for verification');
+            throw new IllegalArgumentException('You could not be verified!');
+        }
+
+        const where = _({
+            email
+        }).omitBy(_.isUndefined).value() as WhereOptions;
+
+        if(Object.keys(where).length !== 1) {
+            logger.error('Impossible! Somehow with all the checks I had the xor of id and email got through');
+            throw new Error('An application error occurred');
+        }
+
+        const hashedPassword = await hashPassword(newPassword);
+        await userRepository.updateUser({
+            updates: {
+                forgotPasswordToken: null,
+                forgotPasswordTokenExpiresAt: new Date(),
+                password: hashedPassword
+            },
+            where
+        });
     }
 }
 const userController = new UserController();

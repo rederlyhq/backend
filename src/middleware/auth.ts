@@ -81,7 +81,6 @@ passport.use(new LocalStrategy({ usernameField: 'email' }, async (email: string,
             done(Boom.unauthorized('Invalid login'));
         }
     } catch (e) {
-        logger.error(e);
-        done(Boom.internal());
+        done(e);
     }
 }));

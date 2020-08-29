@@ -11,6 +11,24 @@ import * as Joi from '@hapi/joi';
 import 'joi-extract-type';
 import * as validations from './user-route-validation';
 
+export namespace ForgotPasswordRequest {
+    export type params = Joi.extractType<typeof validations.forgotPasswordValidation.params>;
+    export type query = Joi.extractType<typeof validations.forgotPasswordValidation.query>;
+    export type body = Joi.extractType<typeof validations.forgotPasswordValidation.body>;
+};
+
+export namespace UpdatePasswordRequest {
+    export type params = Joi.extractType<typeof validations.updatePasswordValidation.params>;
+    export type query = Joi.extractType<typeof validations.updatePasswordValidation.query>;
+    export type body = Joi.extractType<typeof validations.updatePasswordValidation.body>;
+};
+
+export namespace UpdateForgottonPasswordRequest {
+    export type params = Joi.extractType<typeof validations.updateForgottonPasswordValidation.params>;
+    export type query = Joi.extractType<typeof validations.updateForgottonPasswordValidation.query>;
+    export type body = Joi.extractType<typeof validations.updateForgottonPasswordValidation.body>;
+};
+
 export namespace RegisterRequest {
     export type params = Joi.extractType<typeof validations.registerValidation.params>;
     export type query = Joi.extractType<typeof validations.registerValidation.query>;
@@ -27,6 +45,12 @@ export namespace VerifyRequest {
     export type params = Joi.extractType<typeof validations.verifyValidation.params>;
     export type query = Joi.extractType<typeof validations.verifyValidation.query>;
     export type body = Joi.extractType<typeof validations.verifyValidation.body>;
+};
+
+export namespace ResendVerificationRequest {
+    export type params = Joi.extractType<typeof validations.resendVerificationValidation.params>;
+    export type query = Joi.extractType<typeof validations.resendVerificationValidation.query>;
+    export type body = Joi.extractType<typeof validations.resendVerificationValidation.body>;
 };
 
 export namespace LogoutRequest {

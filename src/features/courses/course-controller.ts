@@ -28,6 +28,7 @@ import WebWorkDef, { Problem } from '../../utilities/web-work-def-parser';
 import { nameof } from '../../utilities/typescript-helpers';
 import Role from '../permissions/roles';
 import moment = require('moment');
+import RederlyExtendedError from '../../exceptions/rederly-extended-error';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -794,7 +795,7 @@ class CourseController {
         let lastProblemNumber = await courseRepository.getLatestProblemNumberForTopic(options.courseTopicId) || 0;
         return appSequelize.transaction(() => {
             return parsedWebworkDef.problems.asyncForEach(async (problem: Problem) => {
-                return courseRepository.createQuestion({
+                return this.addQuestion({
                     // active: true,
                     courseTopicContentId: options.courseTopicId,
                     problemNumber: ++lastProblemNumber,
@@ -902,22 +903,33 @@ class CourseController {
             studentGrade.firstAttempts = options.score;
         }
         studentGrade.latestAttempts = options.score;
-        await studentGrade.save();
-
-        const studentWorkbook = await StudentWorkbook.create({
-            studentGradeId: studentGrade.id,
-            userId: options.userId,
-            courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
-            randomSeed: studentGrade.randomSeed,
-            submitted: options.submitted,
-            result: options.score,
-            time: new Date()
-        });
-
-        return {
-            studentGrade,
-            studentWorkbook
-        };
+        
+        try {
+            return await appSequelize.transaction(async (): Promise<SubmitAnswerResult> => {
+                await studentGrade.save();
+    
+                const studentWorkbook = await StudentWorkbook.create({
+                    studentGradeId: studentGrade.id,
+                    userId: options.userId,
+                    courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
+                    randomSeed: studentGrade.randomSeed,
+                    submitted: JSON.stringify(options.submitted),
+                    result: options.score,
+                    time: new Date()
+                });
+        
+                return {
+                    studentGrade,
+                    studentWorkbook
+                };    
+            });    
+        } catch (e) {
+            if (e instanceof RederlyExtendedError === false) {
+                throw new WrappedError(e.message, e);
+            } else {
+                throw e;
+            }
+        }
     }
 
     getCourseByCode(code: string): Promise<Course> {

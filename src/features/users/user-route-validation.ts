@@ -1,6 +1,33 @@
 import * as Joi from '@hapi/joi';
 import IncludeGradeOptions from './include-grade-options';
 
+export const forgotPasswordValidation = {
+    params: {},
+    query: {},
+    body: {
+        email: Joi.string().email().required(),
+    },
+};
+
+export const updatePasswordValidation = {
+    params: {},
+    query: {},
+    body: {
+        newPassword: Joi.string().required(),
+        oldPassword: Joi.string().required(),
+    },
+};
+
+export const updateForgottonPasswordValidation = {
+    params: {},
+    query: {},
+    body: {
+        newPassword: Joi.string().required(),
+        forgotPasswordToken: Joi.string().required(),
+        email: Joi.string().email().required(),
+    },
+};
+
 export const registerValidation = {
     params: {},
     query: {},
@@ -27,6 +54,14 @@ export const verifyValidation = {
         verifyToken: Joi.string().required()
     },
     body: {}
+};
+
+export const resendVerificationValidation = {
+    params: {},
+    query: {},
+    body: {
+        email: Joi.string().email().required()
+    }
 };
 
 export const logoutValidation = {

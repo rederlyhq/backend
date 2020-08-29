@@ -19,7 +19,6 @@ import Boom = require('boom');
 import { Constants } from '../../constants';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import Role from '../permissions/roles';
-import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 import { GetCalculatedRendererParamsResponse } from './course-types';
 import { RENDERER_ENDPOINT, GetProblemParameters } from '../../utilities/renderer-helper';
 import StudentGrade from '../../database/models/student-grade';

@@ -24,8 +24,11 @@ import CourseTopicContent from '../../database/models/course-topic-content';
 import CourseUnitContent from '../../database/models/course-unit-content';
 import IncludeGradeOptions from './include-grade-options';
 import WrappedError from '../../exceptions/wrapped-error';
-import { EmailOptions, GetUserOptions, ListUserFilter, RegisterUserOptions, RegisterUserResponse } from './user-types';
+import { EmailOptions, GetUserOptions, ListUserFilter, RegisterUserOptions, RegisterUserResponse, ForgotPasswordOptions, UpdatePasswordOptions, UpdateForgottonPasswordOptions } from './user-types';
 import { Constants } from '../../constants';
+import userRepository from './user-repository';
+import NotFoundError from '../../exceptions/not-found-error';
+import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
 
 const {
     sessionLife
@@ -36,6 +39,14 @@ class UserController {
         return User.findOne({
             where: {
                 email
+            }
+        });
+    }
+
+    getUserById(id: number): Promise<User> {
+        return User.findOne({
+            where: {
+                id
             }
         });
     }
@@ -355,6 +366,124 @@ class UserController {
             }
         });
         return updateResp[0] > 0;
+    }
+
+    async forgotPassword({
+        email,
+        baseUrl
+    }: ForgotPasswordOptions): Promise<void> {
+        const result = await userRepository.updateUser({
+            updates: {
+                forgotPasswordToken: uuidv4(),
+                // TODO make configurable
+                forgotPasswordTokenExpiresAt: moment().add(1, 'days').toDate()    
+            },
+            where: {
+                email
+            }
+        });
+
+        if(result.updatedRecords.length < 1) {
+            throw new NotFoundError('This user is not registered');
+        } else if (result.updatedRecords.length > 1) {
+            logger.warn('Multiple users were updated for forgot password');
+        }
+        const user = result.updatedRecords[0];
+        const resetURL = new URL(`/forgot-password/${user.forgotPasswordToken}`, baseUrl);
+        await emailHelper.sendEmail({
+            email,
+            subject: 'Reset Rederly Password',
+            content: `Hello ${user.firstName},
+
+To reset your password please follow this link: ${resetURL}
+
+If you received this email in error please contact support@rederly.com
+
+All the best,
+The Rederly Team
+`
+        });
+    }
+
+    async updatePassword({
+        newPassword,
+        id,
+        oldPassword
+    }: UpdatePasswordOptions): Promise<void> {
+        let validated = false;
+        const user = await this.getUserById(id);
+        if(await comparePassword(oldPassword, user.password)) {
+            validated = true;
+        } else {
+            throw new IllegalArgumentException('Invalid password');
+        }
+
+        if(!validated) {
+            logger.error('Impossible! an error should have already been thrown for verification');
+            throw new IllegalArgumentException('You could not be verified!');
+        }
+
+        const where = _({
+            id
+        }).omitBy(_.isUndefined).value() as WhereOptions;
+
+        if(Object.keys(where).length !== 1) {
+            logger.error('Impossible! Somehow with all the checks I had the xor of id and email got through');
+            throw new Error('An application error occurred');
+        }
+
+        const hashedPassword = await hashPassword(newPassword);
+        await userRepository.updateUser({
+            updates: {
+                forgotPasswordToken: null,
+                forgotPasswordTokenExpiresAt: new Date(),
+                password: hashedPassword
+            },
+            where
+        });
+    }
+
+    async updateForgottonPassword({
+        newPassword,
+        email,
+        forgotPasswordToken,
+    }: UpdateForgottonPasswordOptions): Promise<void> {
+
+        const user = await this.getUserByEmail(email);
+        let validated = false;
+        if(!Boolean(user?.forgotPasswordToken)) {
+            throw new IllegalArgumentException('Invalid forgot password token!');
+        } else if (user.forgotPasswordToken !== forgotPasswordToken) {
+            throw new IllegalArgumentException('Invalid forgot password token!');
+        } else if (moment(user.forgotPasswordTokenExpiresAt).isBefore(moment())) {
+            throw new IllegalArgumentException('Your forgot password request has expired, please click forgot password on login again.');
+        } else {
+            validated = true;
+        }
+
+        if(!validated) {
+            logger.error('Impossible! an error should have already been thrown for verification');
+            throw new IllegalArgumentException('You could not be verified!');
+        }
+
+        const where = _({
+            email
+        }).omitBy(_.isUndefined).value() as WhereOptions;
+
+        if(Object.keys(where).length !== 1) {
+            logger.error('Impossible! Somehow with all the checks I had the xor of id and email got through');
+            throw new Error('An application error occurred');
+        }
+
+        const hashedPassword = await hashPassword(newPassword);
+        await userRepository.updateUser({
+            updates: {
+                forgotPasswordToken: null,
+                forgotPasswordTokenExpiresAt: new Date(),
+                password: hashedPassword
+            },
+            where
+        });
     }
 }
 const userController = new UserController();

@@ -3,8 +3,8 @@ import { Response, NextFunction } from 'express';
 import userController from './user-controller';
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator';
-import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation } from './user-route-validation';
-import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest } from './user-route-request-types';
+import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation, updatePasswordValidation, updateForgottonPasswordValidation } from './user-route-validation';
+import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest, ForgotPasswordRequest, UpdatePasswordRequest, UpdateForgottonPasswordRequest } from './user-route-request-types';
 import Boom = require('boom');
 import passport = require('passport');
 import { authenticationMiddleware } from '../../middleware/auth';
@@ -15,12 +15,13 @@ import AlreadyExistsError from '../../exceptions/already-exists-error';
 import WrappedError from '../../exceptions/wrapped-error';
 import IncludeGradeOptions from './include-grade-options';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
+import logger from '../../utilities/logger';
 
 router.post('/login',
     validate(loginValidation),
     passport.authenticate('local'),
     asyncHandler(async (req: RederlyExpressRequest<LoginRequest.params, unknown, LoginRequest.body, LoginRequest.query>, res: Response, next: NextFunction) => {
-        if(_.isNil(req.session)) {
+        if (_.isNil(req.session)) {
             throw new Error('Session is nil even after authentication middleware');
         }
         const newSession = req.session.passport.user;
@@ -68,6 +69,50 @@ router.post('/register',
         }
     }));
 
+router.post('/forgot-password',
+    validate(forgotPasswordValidation),
+    asyncHandler(async (req: RederlyExpressRequest<ForgotPasswordRequest.params, unknown, ForgotPasswordRequest.body, ForgotPasswordRequest.query>, res: Response, next: NextFunction) => {
+        // Typing is incorrect here, even if I specify the header twice it comes back as a string (comma delimeted)
+        const baseUrl: string = req.headers.origin as string;
+        if (_.isNil(baseUrl)) {
+            next(Boom.badRequest('The `origin` header is required!'));
+            return;
+        }
+
+        await userController.forgotPassword({
+            email: req.body.email,
+            baseUrl
+        });
+        next(httpResponse.Ok('Forgot password request successful!'));
+    }));
+
+router.put('/update-password',
+    authenticationMiddleware,
+    validate(updatePasswordValidation),
+    asyncHandler(async (req: RederlyExpressRequest<UpdatePasswordRequest.params, unknown, UpdatePasswordRequest.body, UpdatePasswordRequest.query>, res: Response, next: NextFunction) => {
+        const user = await req.session?.getUser();
+        if(_.isNil(user)) {
+            logger.error('Impossible! A user must exist with a session with authentication middleware');
+            throw new Error('An error occurred');
+        }
+        await userController.updatePassword({
+            newPassword: req.body.newPassword,
+            oldPassword: req.body.oldPassword,
+            id: user.id
+        });
+        next(httpResponse.Ok('Password updated!'));
+    }));
+
+router.put('/update-forgotton-password',
+    validate(updateForgottonPasswordValidation),
+    asyncHandler(async (req: RederlyExpressRequest<UpdateForgottonPasswordRequest.params, unknown, UpdateForgottonPasswordRequest.body, UpdateForgottonPasswordRequest.query>, res: Response, next: NextFunction) => {
+        await userController.updateForgottonPassword({
+            newPassword: req.body.newPassword,
+            email: req.body.email,
+            forgotPasswordToken: req.body.forgotPasswordToken
+        });
+        next(httpResponse.Ok('Forgot password request successful!'));
+    }));
 
 router.get('/verify',
     validate(verifyValidation),
@@ -87,7 +132,7 @@ router.post('/logout',
     authenticationMiddleware,
     validate(logoutValidation),
     asyncHandler(async (req: RederlyExpressRequest<LogoutRequest.params, unknown, LogoutRequest.body, LogoutRequest.query>, res: Response, next: NextFunction) => {
-        if(_.isNil(req.session)) {
+        if (_.isNil(req.session)) {
             throw new Error('Session is nil even after authentication middleware');
         }
         await userController.logout(req.session.dataValues.uuid);

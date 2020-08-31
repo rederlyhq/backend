@@ -498,13 +498,7 @@ router.post('/question/:id',
 
             let data = proxyResData.toString('utf8');
             try {
-                data = JSON.parse(data, (k,v) => {
-                  if (typeof v === 'string' && v.match(/\u0000/)) {
-                    return v.split('\u0000');
-                  } else {
-                    return v;
-                  }
-                });
+                data = JSON.parse(data);
             } catch (e) {
                 throw new WrappedError('Error parsing data response from renderer', e);
             }

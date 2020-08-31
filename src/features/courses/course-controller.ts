@@ -903,26 +903,26 @@ class CourseController {
             studentGrade.firstAttempts = options.score;
         }
         studentGrade.latestAttempts = options.score;
-        
+
         try {
             return await appSequelize.transaction(async (): Promise<SubmitAnswerResult> => {
                 await studentGrade.save();
-    
+
                 const studentWorkbook = await StudentWorkbook.create({
                     studentGradeId: studentGrade.id,
                     userId: options.userId,
                     courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
                     randomSeed: studentGrade.randomSeed,
-                    submitted: JSON.stringify(options.submitted),
+                    submitted: options.submitted,
                     result: options.score,
                     time: new Date()
                 });
-        
+
                 return {
                     studentGrade,
                     studentWorkbook
-                };    
-            });    
+                };
+            });
         } catch (e) {
             if (e instanceof RederlyExtendedError === false) {
                 throw new WrappedError(e.message, e);

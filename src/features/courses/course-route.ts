@@ -192,7 +192,7 @@ router.get('/questions',
                 const user = await req.session.getUser();
                 if (user.roleId === Role.STUDENT) {
                     next(Boom.badRequest(`The topic "${topic.name}" has not started yet.`));
-                    return;    
+                    return;
                 }
             }
         }
@@ -498,7 +498,13 @@ router.post('/question/:id',
 
             let data = proxyResData.toString('utf8');
             try {
-                data = JSON.parse(data);
+                data = JSON.parse(data, (k,v) => {
+                  if (typeof v === 'string' && v.match(/\u0000/)) {
+                    return v.split('\u0000');
+                  } else {
+                    return v;
+                  }
+                });
             } catch (e) {
                 throw new WrappedError('Error parsing data response from renderer', e);
             }

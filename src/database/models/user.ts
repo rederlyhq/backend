@@ -10,7 +10,7 @@ export default class User extends Model {
   public lastName!: string;
   public email!: string;
   public password!: string;
-  public verifyToken?: string;
+  public verifyToken?: string | null;
   public verifyTokenExpiresAt!: Date;
   public verified!: boolean;
   public actuallyVerified!: boolean;

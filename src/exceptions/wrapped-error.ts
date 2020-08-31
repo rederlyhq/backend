@@ -1,6 +1,7 @@
 import * as _ from 'lodash';
+import RederlyError from './rederly-error';
 
-export default class WrappedError extends Error {
+export default class WrappedError extends RederlyError {
     private cause?: Error;
     private msg: string;
     private _stack?: string;

@@ -836,7 +836,7 @@ class CourseController {
             if (_.isNil(topic)) {
                 topic = await this.getTopicById(courseQuestion.courseTopicContentId);
             }
-            showSolutions = moment(topic.deadDate).add(1, 'days').isBefore(moment());
+            showSolutions = moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days').isBefore(moment());
         }
         return {
             outputformat: rendererHelper.getOutputFormatForRole(role),

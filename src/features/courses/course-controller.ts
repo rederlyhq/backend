@@ -880,7 +880,7 @@ class CourseController {
     }
 
     async submitAnswer(options: SubmitAnswerOptions): Promise<SubmitAnswerResult> {
-        const studentGrade = await StudentGrade.findOne({
+        const studentGrade: StudentGrade | null = await StudentGrade.findOne({
             where: {
                 userId: options.userId,
                 courseWWTopicQuestionId: options.questionId
@@ -893,21 +893,52 @@ class CourseController {
                 studentWorkbook: null
             };
         }
+        const question: CourseWWTopicQuestion = await studentGrade.getQuestion();
+        const topic: CourseTopicContent = await question.getTopic();
 
-        const bestScore = Math.max(studentGrade.overallBestScore, options.score);
+        const overallBestScore = Math.max(studentGrade.overallBestScore, options.score);
 
-        studentGrade.bestScore = bestScore;
-        studentGrade.overallBestScore = bestScore;
-        studentGrade.numAttempts++;
-        if (studentGrade.numAttempts === 1) {
-            studentGrade.firstAttempts = options.score;
+        // TODO make solutions config
+        if (moment().isBefore(moment(topic.deadDate).add(1, 'days'))) {
+            studentGrade.overallBestScore = overallBestScore;
+            // TODO if the max number of attempts is 0 then this will update every time
+            if (studentGrade.numAttempts === 0) {
+                studentGrade.firstAttempts = options.score;
+            }
+            studentGrade.latestAttempts = options.score;
+
+            if (
+                !studentGrade.locked && // The grade was not locked
+                studentGrade.effectiveScore !== 1 && // The student has not mastered the question already
+                (
+                    question.maxAttempts < 0 || // There is no limit to the number of attempts
+                    studentGrade.numAttempts < question.maxAttempts // They still have attempts left to use
+                )
+            ) {
+                studentGrade.numAttempts++;
+
+                if (moment().isBefore(moment(topic.endDate))) {
+                    // Full credit.
+                    studentGrade.bestScore = overallBestScore;
+                    studentGrade.legalScore = overallBestScore;
+                    studentGrade.partialCreditBestScore = overallBestScore;
+                    // if it was overwritten to be better use that max value
+                    studentGrade.effectiveScore = Math.max(overallBestScore, studentGrade.effectiveScore);
+                } else if (moment().isBefore(moment(topic.deadDate))) {
+                    // Partial credit
+                    const partialCreditScalar = 0.5;
+                    const partialCreditScore = ((options.score - studentGrade.legalScore) * partialCreditScalar) + studentGrade.legalScore;
+                    studentGrade.partialCreditBestScore = Math.max(partialCreditScore, studentGrade.partialCreditBestScore);
+                    studentGrade.bestScore = studentGrade.partialCreditBestScore;
+                    studentGrade.effectiveScore = Math.max(partialCreditScore, studentGrade.effectiveScore);
+                }
+            }
         }
-        studentGrade.latestAttempts = options.score;
-        
+
         try {
             return await appSequelize.transaction(async (): Promise<SubmitAnswerResult> => {
                 await studentGrade.save();
-    
+
                 const studentWorkbook = await StudentWorkbook.create({
                     studentGradeId: studentGrade.id,
                     userId: options.userId,
@@ -917,12 +948,12 @@ class CourseController {
                     result: options.score,
                     time: new Date()
                 });
-        
+
                 return {
                     studentGrade,
                     studentWorkbook
-                };    
-            });    
+                };
+            });
         } catch (e) {
             if (e instanceof RederlyExtendedError === false) {
                 throw new WrappedError(e.message, e);

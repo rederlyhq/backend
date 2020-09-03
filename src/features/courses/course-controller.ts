@@ -893,6 +893,15 @@ class CourseController {
                 studentWorkbook: null
             };
         }
+
+        // Should this go up a level?
+        if(_.isNil(options.submitted.form_data.submitAnswers)) {
+            return {
+                studentGrade,
+                studentWorkbook: null
+            };    
+        }
+
         const question: CourseWWTopicQuestion = await studentGrade.getQuestion();
         const topic: CourseTopicContent = await question.getTopic();
 

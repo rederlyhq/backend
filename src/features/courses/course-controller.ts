@@ -896,10 +896,8 @@ class CourseController {
         const question: CourseWWTopicQuestion = await studentGrade.getQuestion();
         const topic: CourseTopicContent = await question.getTopic();
 
-        const overallBestScore = Math.max(studentGrade.overallBestScore, options.score);
-
-        // TODO make solutions config
-        if (moment().isBefore(moment(topic.deadDate).add(1, 'days'))) {
+        if (moment().isBefore(moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days')) && studentGrade.overallBestScore !== 1) {
+            const overallBestScore = Math.max(studentGrade.overallBestScore, options.score);
             studentGrade.overallBestScore = overallBestScore;
             // TODO if the max number of attempts is 0 then this will update every time
             if (studentGrade.numAttempts === 0) {
@@ -909,9 +907,8 @@ class CourseController {
 
             if (
                 !studentGrade.locked && // The grade was not locked
-                studentGrade.effectiveScore !== 1 && // The student has not mastered the question already
                 (
-                    question.maxAttempts < 0 || // There is no limit to the number of attempts
+                    question.maxAttempts <= Constants.Course.INFINITE_ATTEMPT_NUMBER || // There is no limit to the number of attempts
                     studentGrade.numAttempts < question.maxAttempts // They still have attempts left to use
                 )
             ) {
@@ -933,34 +930,37 @@ class CourseController {
                     studentGrade.effectiveScore = Math.max(partialCreditScore, studentGrade.effectiveScore);
                 }
             }
-        }
-
-        try {
-            return await appSequelize.transaction(async (): Promise<SubmitAnswerResult> => {
-                await studentGrade.save();
-
-                const studentWorkbook = await StudentWorkbook.create({
-                    studentGradeId: studentGrade.id,
-                    userId: options.userId,
-                    courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
-                    randomSeed: studentGrade.randomSeed,
-                    submitted: JSON.stringify(options.submitted),
-                    result: options.score,
-                    time: new Date()
+            try {
+                return await appSequelize.transaction(async (): Promise<SubmitAnswerResult> => {
+                    await studentGrade.save();
+    
+                    const studentWorkbook = await StudentWorkbook.create({
+                        studentGradeId: studentGrade.id,
+                        userId: options.userId,
+                        courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
+                        randomSeed: studentGrade.randomSeed,
+                        submitted: JSON.stringify(options.submitted),
+                        result: options.score,
+                        time: new Date()
+                    });
+    
+                    return {
+                        studentGrade,
+                        studentWorkbook
+                    };
                 });
-
-                return {
-                    studentGrade,
-                    studentWorkbook
-                };
-            });
-        } catch (e) {
-            if (e instanceof RederlyExtendedError === false) {
-                throw new WrappedError(e.message, e);
-            } else {
-                throw e;
+            } catch (e) {
+                if (e instanceof RederlyExtendedError === false) {
+                    throw new WrappedError(e.message, e);
+                } else {
+                    throw e;
+                }
             }
         }
+        return {
+            studentGrade,
+            studentWorkbook: null
+        };
     }
 
     getCourseByCode(code: string): Promise<Course> {

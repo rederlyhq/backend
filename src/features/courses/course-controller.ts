@@ -895,13 +895,12 @@ class CourseController {
         }
 
         // Should this go up a level?
-        if(_.isNil(options.submitted.form_data.submitAnswers)) {
+        if (_.isNil(options.submitted.form_data.submitAnswers)) {
             return {
                 studentGrade,
                 studentWorkbook: null
-            };    
+            };
         }
-
         const question: CourseWWTopicQuestion = await studentGrade.getQuestion();
         const topic: CourseTopicContent = await question.getTopic();
 
@@ -942,17 +941,17 @@ class CourseController {
             try {
                 return await appSequelize.transaction(async (): Promise<SubmitAnswerResult> => {
                     await studentGrade.save();
-    
+
                     const studentWorkbook = await StudentWorkbook.create({
                         studentGradeId: studentGrade.id,
                         userId: options.userId,
                         courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
                         randomSeed: studentGrade.randomSeed,
-                        submitted: JSON.stringify(options.submitted),
+                        submitted: options.submitted,
                         result: options.score,
                         time: new Date()
                     });
-    
+
                     return {
                         studentGrade,
                         studentWorkbook

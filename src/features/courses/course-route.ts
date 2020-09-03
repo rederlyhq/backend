@@ -192,7 +192,7 @@ router.get('/questions',
                 const user = await req.session.getUser();
                 if (user.roleId === Role.STUDENT) {
                     next(Boom.badRequest(`The topic "${topic.name}" has not started yet.`));
-                    return;    
+                    return;
                 }
             }
         }

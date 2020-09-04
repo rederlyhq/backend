@@ -836,7 +836,7 @@ class CourseController {
             if (_.isNil(topic)) {
                 topic = await this.getTopicById(courseQuestion.courseTopicContentId);
             }
-            showSolutions = moment(topic.deadDate).add(1, 'days').isBefore(moment());
+            showSolutions = moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days').isBefore(moment());
         }
         return {
             outputformat: rendererHelper.getOutputFormatForRole(role),
@@ -880,7 +880,7 @@ class CourseController {
     }
 
     async submitAnswer(options: SubmitAnswerOptions): Promise<SubmitAnswerResult> {
-        const studentGrade = await StudentGrade.findOne({
+        const studentGrade: StudentGrade | null = await StudentGrade.findOne({
             where: {
                 userId: options.userId,
                 courseWWTopicQuestionId: options.questionId
@@ -894,42 +894,81 @@ class CourseController {
             };
         }
 
-        const bestScore = Math.max(studentGrade.overallBestScore, options.score);
-
-        studentGrade.bestScore = bestScore;
-        studentGrade.overallBestScore = bestScore;
-        studentGrade.numAttempts++;
-        if (studentGrade.numAttempts === 1) {
-            studentGrade.firstAttempts = options.score;
+        // Should this go up a level?
+        if (_.isNil(options.submitted.form_data.submitAnswers)) {
+            return {
+                studentGrade,
+                studentWorkbook: null
+            };
         }
-        studentGrade.latestAttempts = options.score;
+        const question: CourseWWTopicQuestion = await studentGrade.getQuestion();
+        const topic: CourseTopicContent = await question.getTopic();
 
-        try {
-            return await appSequelize.transaction(async (): Promise<SubmitAnswerResult> => {
-                await studentGrade.save();
+        if (moment().isBefore(moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days')) && studentGrade.overallBestScore !== 1) {
+            const overallBestScore = Math.max(studentGrade.overallBestScore, options.score);
+            studentGrade.overallBestScore = overallBestScore;
+            // TODO if the max number of attempts is 0 then this will update every time
+            if (studentGrade.numAttempts === 0) {
+                studentGrade.firstAttempts = options.score;
+            }
+            studentGrade.latestAttempts = options.score;
 
-                const studentWorkbook = await StudentWorkbook.create({
-                    studentGradeId: studentGrade.id,
-                    userId: options.userId,
-                    courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
-                    randomSeed: studentGrade.randomSeed,
-                    submitted: options.submitted,
-                    result: options.score,
-                    time: new Date()
+            if (
+                !studentGrade.locked && // The grade was not locked
+                (
+                    question.maxAttempts <= Constants.Course.INFINITE_ATTEMPT_NUMBER || // There is no limit to the number of attempts
+                    studentGrade.numAttempts < question.maxAttempts // They still have attempts left to use
+                )
+            ) {
+                studentGrade.numAttempts++;
+
+                if (moment().isBefore(moment(topic.endDate))) {
+                    // Full credit.
+                    studentGrade.bestScore = overallBestScore;
+                    studentGrade.legalScore = overallBestScore;
+                    studentGrade.partialCreditBestScore = overallBestScore;
+                    // if it was overwritten to be better use that max value
+                    studentGrade.effectiveScore = Math.max(overallBestScore, studentGrade.effectiveScore);
+                } else if (moment().isBefore(moment(topic.deadDate))) {
+                    // Partial credit
+                    const partialCreditScalar = 0.5;
+                    const partialCreditScore = ((options.score - studentGrade.legalScore) * partialCreditScalar) + studentGrade.legalScore;
+                    studentGrade.partialCreditBestScore = Math.max(partialCreditScore, studentGrade.partialCreditBestScore);
+                    studentGrade.bestScore = studentGrade.partialCreditBestScore;
+                    studentGrade.effectiveScore = Math.max(partialCreditScore, studentGrade.effectiveScore);
+                }
+            }
+            try {
+                return await appSequelize.transaction(async (): Promise<SubmitAnswerResult> => {
+                    await studentGrade.save();
+
+                    const studentWorkbook = await StudentWorkbook.create({
+                        studentGradeId: studentGrade.id,
+                        userId: options.userId,
+                        courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
+                        randomSeed: studentGrade.randomSeed,
+                        submitted: options.submitted,
+                        result: options.score,
+                        time: new Date()
+                    });
+
+                    return {
+                        studentGrade,
+                        studentWorkbook
+                    };
                 });
-
-                return {
-                    studentGrade,
-                    studentWorkbook
-                };
-            });
-        } catch (e) {
-            if (e instanceof RederlyExtendedError === false) {
-                throw new WrappedError(e.message, e);
-            } else {
-                throw e;
+            } catch (e) {
+                if (e instanceof RederlyExtendedError === false) {
+                    throw new WrappedError(e.message, e);
+                } else {
+                    throw e;
+                }
             }
         }
+        return {
+            studentGrade,
+            studentWorkbook: null
+        };
     }
 
     getCourseByCode(code: string): Promise<Course> {

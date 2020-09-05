@@ -35,7 +35,8 @@ router.get('/statistics/units',
                 where: {
                     courseId: req.query.courseId,
                     userId: req.query.userId,
-                }
+                },
+                followQuestionRules: !_.isNil(req.query.userId)
             });
             next(httpResponse.Ok('Fetched successfully', stats));
         } catch (e) {
@@ -53,7 +54,8 @@ router.get('/statistics/topics',
                     courseUnitContentId: req.query.courseUnitContentId,
                     courseId: req.query.courseId,
                     userId: req.query.userId,
-                }
+                },
+                followQuestionRules: !_.isNil(req.query.userId)
             });
             next(httpResponse.Ok('Fetched successfully', stats));
         } catch (e) {
@@ -71,7 +73,8 @@ router.get('/statistics/questions',
                     courseTopicContentId: req.query.courseTopicContentId,
                     courseId: req.query.courseId,
                     userId: req.query.userId,
-                }
+                },
+                followQuestionRules: !_.isNil(req.query.userId)
             });
             next(httpResponse.Ok('Fetched successfully', stats));
         } catch (e) {

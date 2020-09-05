@@ -1229,14 +1229,23 @@ class CourseController {
                 model: CourseTopicContent,
                 as: 'topics',
                 attributes: [],
+                where: {
+                    active: true
+                },
                 include: [{
                     model: CourseWWTopicQuestion,
                     as: 'questions',
                     attributes: [],
+                    where: {
+                        active: true
+                    },
                     include: [{
                         model: StudentGrade,
                         as: 'grades',
-                        attributes: []
+                        attributes: [],
+                        where: {
+                            active: true
+                        }
                     }]
                 }]
             }],
@@ -1266,10 +1275,16 @@ class CourseController {
             model: CourseWWTopicQuestion,
             as: 'questions',
             attributes: [],
+            where: {
+                active: true
+            },
             include: [{
                 model: StudentGrade,
                 as: 'grades',
-                attributes: []
+                attributes: [],
+                where: {
+                    active: true
+                }
             }]
         }];
 
@@ -1277,7 +1292,10 @@ class CourseController {
             include.push({
                 model: CourseUnitContent,
                 as: 'unit',
-                attributes: []
+                attributes: [],
+                where: {
+                    active: true
+                }
             });
         }
 
@@ -1319,7 +1337,10 @@ class CourseController {
         const include: sequelize.IncludeOptions[] = [{
             model: StudentGrade,
             as: 'grades',
-            attributes: []
+            attributes: [],
+            where: {
+                active: true
+            }
         }];
 
         if (!_.isNil(courseId)) {
@@ -1327,10 +1348,16 @@ class CourseController {
                 model: CourseTopicContent,
                 as: 'topic',
                 attributes: [],
+                where: {
+                    active: true
+                },
                 include: [{
                     model: CourseUnitContent,
                     as: 'unit',
-                    attributes: []
+                    attributes: [],
+                    where: {
+                        active: true
+                    }
                 }]
             });
         }

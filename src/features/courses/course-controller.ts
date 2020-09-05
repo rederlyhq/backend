@@ -1126,7 +1126,7 @@ class CourseController {
 
         const totalProblemCountCalculationString = `COUNT(question.${CourseWWTopicQuestion.rawAttributes.id.field})`;
         const pendingProblemCountCalculationString = `COUNT(CASE WHEN ${StudentGrade.rawAttributes.numAttempts.field} = 0 THEN ${StudentGrade.rawAttributes.numAttempts.field} END)`;
-        const masteredProblemCountCalculationString = `COUNT(CASE WHEN ${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN ${StudentGrade.rawAttributes.bestScore.field} END)`;
+        const masteredProblemCountCalculationString = `COUNT(CASE WHEN ${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN ${StudentGrade.rawAttributes.overallBestScore.field} END)`;
         const inProgressProblemCountCalculationString = `${totalProblemCountCalculationString} - ${pendingProblemCountCalculationString} - ${masteredProblemCountCalculationString}`;
 
         // Include cannot be null or undefined, coerce to empty array
@@ -1178,14 +1178,20 @@ class CourseController {
         if (_.isNil(questionId) === false) {
             attributes = [
                 'id',
-                'bestScore',
+                'effectiveScore',
                 'numAttempts'
             ];
             // This should already be the case but let's guarentee it
             group = undefined;
         } else {
+            // Not follow the rules version
+            // const averageScoreAttribute = sequelize.fn('avg', sequelize.col(`${StudentGrade.rawAttributes.overallBestScore.field}`));
+            const pointsEarned = `SUM(${StudentGrade.rawAttributes.effectiveScore.field} * "question".${CourseWWTopicQuestion.rawAttributes.weight.field})`;
+            const pointsAvailable = `SUM(CASE WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE THEN "question".${CourseWWTopicQuestion.rawAttributes.weight.field} ELSE 0 END)`;
+            const averageScoreAttribute = sequelize.literal(`${pointsEarned}/${pointsAvailable}`);
+
             attributes = [
-                [sequelize.fn('avg', sequelize.col(`${StudentGrade.rawAttributes.bestScore.field}`)), 'average'],
+                [averageScoreAttribute, 'average'],
                 [sequelize.literal(pendingProblemCountCalculationString), 'pendingProblemCount'],
                 [sequelize.literal(masteredProblemCountCalculationString), 'masteredProblemCount'],
                 [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
@@ -1207,7 +1213,8 @@ class CourseController {
                 as: 'question',
                 attributes: [],
                 where: {
-                    active: true
+                    active: true,
+                    hidden: false
                 },
                 include: questionInclude || [],
             }],

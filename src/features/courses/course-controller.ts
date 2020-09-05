@@ -1223,6 +1223,8 @@ class CourseController {
             userId,
         } = options.where;
 
+        const { followQuestionRules } = options;
+
         // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
         const where: sequelize.WhereOptions = _({
             active: true,
@@ -1230,13 +1232,22 @@ class CourseController {
             [`$topics.questions.grades.${StudentGrade.rawAttributes.userId.field}$`]: userId,
         }).omitBy(_.isNil).value() as sequelize.WhereOptions;
 
+        let averageScoreAttribute;
+        if (followQuestionRules) {
+            const pointsEarned = `SUM("topics->questions->grades".${StudentGrade.rawAttributes.effectiveScore.field} * "topics->questions".${CourseWWTopicQuestion.rawAttributes.weight.field})`;
+            const pointsAvailable = `SUM(CASE WHEN "topics->questions".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE THEN "topics->questions".${CourseWWTopicQuestion.rawAttributes.weight.field} ELSE 0 END)`;
+            averageScoreAttribute = sequelize.literal(`${pointsEarned}/${pointsAvailable}`);
+        } else {
+            averageScoreAttribute = sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
+        }
+
         return CourseUnitContent.findAll({
             where,
             attributes: [
                 'id',
                 'name',
                 [sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
-                [sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.bestScore.field}`)), 'averageScore'],
+                [averageScoreAttribute, 'averageScore'],
                 [sequelize.fn('count', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
                 [sequelize.literal(`count(CASE WHEN "topics->questions->grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "topics->questions->grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
                 [sequelize.literal(`CASE WHEN COUNT("topics->questions->grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN count(CASE WHEN "topics->questions->grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "topics->questions->grades".${StudentGrade.rawAttributes.id.field} END)::FLOAT / count("topics->questions->grades".${StudentGrade.rawAttributes.id.field}) ELSE NULL END`), 'completionPercent'],
@@ -1253,14 +1264,15 @@ class CourseController {
                     as: 'questions',
                     attributes: [],
                     where: {
-                        active: true
+                        active: true,
+                        hidden: false
                     },
                     include: [{
                         model: StudentGrade,
                         as: 'grades',
                         attributes: [],
                         where: {
-                            active: true
+                            active: true,
                         }
                     }]
                 }]

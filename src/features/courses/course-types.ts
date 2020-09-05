@@ -140,6 +140,7 @@ export interface GetStatisticsOnUnitsOptions {
         courseId?: number;
         userId?: number;
     };
+    followQuestionRules: boolean;
 }
 
 export interface GetStatisticsOnTopicsOptions {
@@ -148,6 +149,7 @@ export interface GetStatisticsOnTopicsOptions {
         courseId?: number;
         userId?: number;
     };
+    followQuestionRules: boolean;
 }
 
 export interface GetStatisticsOnQuestionsOptions {
@@ -156,6 +158,7 @@ export interface GetStatisticsOnQuestionsOptions {
         courseId?: number;
         userId?: number;
     };
+    followQuestionRules: boolean;
 }
 
 export interface GetTopicsOptions {

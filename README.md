@@ -54,8 +54,22 @@
 | --- | --- | --- |
 | AUTH_SESSION_LIFE | The number of hours a session token is good for | 24 |
 | AUTH_COST_FACTOR | The cost factor for bcrypt to hash the password (this is important for preventing brute force attacks as it makes the hash take time to calculate) | 8 |
+| AUTH_TOKEN_LIFE | The default value for all other auth tokens | 1440 |
+| AUTH_FORGOT_PASSWORD_TOKEN_LIFE | The amount of time you have to claim forgot password token | AUTH_TOKEN_LIFE=1440 |
+| AUTH_VERIFY_INSTUTIONAL_EMAIL_TOKEN_LIFE | The amount of time you have to claim email verification | AUTH_TOKEN_LIFE=1440 |
 
 #### Renderer
 | Environment variable | Description | Default value |
 | --- | --- | --- |
 | RENDERER_URL | The base url for the renderer | http://localhost:3000 |
+
+#### Jira
+| Environment variable | Description | Default value |
+| --- | --- | --- |
+| JIRA_EMAIL | The email used to authenticate with jira | |
+| JIRA_API_KEY | The api key used to authenticate with jira | |
+| JIRA_HOST | Where jira is hosted (currently cloud) | rederly.atlassian.net |
+| JIRA_PROTOCOL | Protocol to use | https |
+| JIRA_STRICT_SSL | Enforce ssl | true |
+| JIRA_API_VERSION | API version | 2 |
+| JIRA_PROJECT_KEY | The project to add tickets to (currently `Rederly Support`)| RS |

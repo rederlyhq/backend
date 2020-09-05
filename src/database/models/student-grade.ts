@@ -18,7 +18,7 @@ export default class StudentGrade extends Model {
   public locked!: boolean;
 
   public getUser!: BelongsToGetAssociationMixin<User>;
-  public getCourseWWTopicQuestion!: BelongsToGetAssociationMixin<CourseWWTopicQuestion>;
+  public getQuestion!: BelongsToGetAssociationMixin<CourseWWTopicQuestion>;
 
   public user!: User;
   public courseWWTopicQuestion!: CourseWWTopicQuestion;

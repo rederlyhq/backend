@@ -16,6 +16,11 @@ const fromIntValue = (value: string | undefined, defaultValue: number): number =
     return result;
 };
 
+// Defaults to 1 day
+const tokenLife = fromIntValue(process.env.AUTH_TOKEN_LIFE, 1440);
+const forgotPasswordTokenLife = fromIntValue(process.env.AUTH_FORGOT_PASSWORD_TOKEN_LIFE, tokenLife);
+const verifyInstutionalEmailTokenLife = fromIntValue(process.env.AUTH_VERIFY_INSTUTIONAL_EMAIL_TOKEN_LIFE, tokenLife);
+
 export default {
     server: {
         port: _.defaultTo(process.env.SERVER_PORT, '3000'),
@@ -41,7 +46,12 @@ export default {
     auth: {
         // in hours
         sessionLife: fromIntValue(process.env.AUTH_SESSION_LIFE, 24),
-        costFactor: fromIntValue(process.env.AUTH_COST_FACTOR, 8)
+        costFactor: fromIntValue(process.env.AUTH_COST_FACTOR, 8),
+        // in minutes
+        // these are specified above because token life is a convenience fallback
+        tokenLife,
+        forgotPasswordTokenLife,
+        verifyInstutionalEmailTokenLife
     },
     renderer: {
         url: _.defaultTo(process.env.RENDERER_URL, 'http://localhost:3000'),

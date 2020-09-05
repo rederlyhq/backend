@@ -9,4 +9,10 @@ export namespace Constants {
         export const MIN_INTEGER_VALUE = -2147483648;
         export const MAX_INTEGER_VALUE = 2147483647;
     }
+    export namespace Course {
+        // TODO this should be configurable by professor, however currently that is not support
+        // By using this constant we can delete it when implemented and then all points in which it was used become exposed
+        export const SHOW_SOLUTIONS_DELAY_IN_DAYS = 1;
+        export const INFINITE_ATTEMPT_NUMBER = 0;
+    }
 };

@@ -35,7 +35,8 @@ router.get('/statistics/units',
                 where: {
                     courseId: req.query.courseId,
                     userId: req.query.userId,
-                }
+                },
+                followQuestionRules: !_.isNil(req.query.userId)
             });
             next(httpResponse.Ok('Fetched successfully', stats));
         } catch (e) {
@@ -53,7 +54,8 @@ router.get('/statistics/topics',
                     courseUnitContentId: req.query.courseUnitContentId,
                     courseId: req.query.courseId,
                     userId: req.query.userId,
-                }
+                },
+                followQuestionRules: !_.isNil(req.query.userId)
             });
             next(httpResponse.Ok('Fetched successfully', stats));
         } catch (e) {
@@ -71,7 +73,8 @@ router.get('/statistics/questions',
                     courseTopicContentId: req.query.courseTopicContentId,
                     courseId: req.query.courseId,
                     userId: req.query.userId,
-                }
+                },
+                followQuestionRules: !_.isNil(req.query.userId)
             });
             next(httpResponse.Ok('Fetched successfully', stats));
         } catch (e) {
@@ -491,7 +494,9 @@ router.post('/question/:id',
             };
             return `${RENDERER_ENDPOINT}?${qs.stringify(params)}`;
         },
-        userResDecorator: async (_proxyRes, proxyResData, userReq: RederlyExpressRequest) => {
+        // Can't use unknown due to restrictions on the type from express
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        userResDecorator: async (_proxyRes, proxyResData, userReq: RederlyExpressRequest<any, unknown, unknown, unknown, { rendererParams: GetCalculatedRendererParamsResponse; studentGrade?: StudentGrade | null }>) => {
             if (_.isNil(userReq.session)) {
                 throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
             }
@@ -500,7 +505,7 @@ router.post('/question/:id',
             try {
                 data = JSON.parse(data);
             } catch (e) {
-                throw new WrappedError('Error parsing data response from renderer', e);
+                throw new WrappedError(`Error parsing data response from renderer on question ${userReq.meta?.studentGrade?.courseWWTopicQuestionId} for grade ${userReq.meta?.studentGrade?.id}`, e);
             }
 
             const params = userReq.params as unknown as {

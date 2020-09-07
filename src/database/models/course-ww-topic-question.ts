@@ -1,6 +1,6 @@
 // TODO rename file
 
-import { Model, DataTypes } from 'sequelize';
+import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
 export default class CourseWWTopicQuestion extends Model {
@@ -14,6 +14,8 @@ export default class CourseWWTopicQuestion extends Model {
     public active!: boolean;
     public optional!: boolean;
     public curriculumQuestionId!: number;
+    
+    public getTopic!: BelongsToGetAssociationMixin<CourseTopicContent>;
 
     // timestamps!
     public readonly createdAt!: Date;

@@ -836,7 +836,7 @@ class CourseController {
             if (_.isNil(topic)) {
                 topic = await this.getTopicById(courseQuestion.courseTopicContentId);
             }
-            showSolutions = moment(topic.deadDate).add(1, 'days').isBefore(moment());
+            showSolutions = moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days').isBefore(moment());
         }
         return {
             outputformat: rendererHelper.getOutputFormatForRole(role),
@@ -880,7 +880,7 @@ class CourseController {
     }
 
     async submitAnswer(options: SubmitAnswerOptions): Promise<SubmitAnswerResult> {
-        const studentGrade = await StudentGrade.findOne({
+        const studentGrade: StudentGrade | null = await StudentGrade.findOne({
             where: {
                 userId: options.userId,
                 courseWWTopicQuestionId: options.questionId
@@ -894,42 +894,81 @@ class CourseController {
             };
         }
 
-        const bestScore = Math.max(studentGrade.overallBestScore, options.score);
-
-        studentGrade.bestScore = bestScore;
-        studentGrade.overallBestScore = bestScore;
-        studentGrade.numAttempts++;
-        if (studentGrade.numAttempts === 1) {
-            studentGrade.firstAttempts = options.score;
+        // Should this go up a level?
+        if (_.isNil(options.submitted.form_data.submitAnswers)) {
+            return {
+                studentGrade,
+                studentWorkbook: null
+            };
         }
-        studentGrade.latestAttempts = options.score;
+        const question: CourseWWTopicQuestion = await studentGrade.getQuestion();
+        const topic: CourseTopicContent = await question.getTopic();
 
-        try {
-            return await appSequelize.transaction(async (): Promise<SubmitAnswerResult> => {
-                await studentGrade.save();
+        if (moment().isBefore(moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days')) && studentGrade.overallBestScore !== 1) {
+            const overallBestScore = Math.max(studentGrade.overallBestScore, options.score);
+            studentGrade.overallBestScore = overallBestScore;
+            // TODO if the max number of attempts is 0 then this will update every time
+            if (studentGrade.numAttempts === 0) {
+                studentGrade.firstAttempts = options.score;
+            }
+            studentGrade.latestAttempts = options.score;
 
-                const studentWorkbook = await StudentWorkbook.create({
-                    studentGradeId: studentGrade.id,
-                    userId: options.userId,
-                    courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
-                    randomSeed: studentGrade.randomSeed,
-                    submitted: options.submitted,
-                    result: options.score,
-                    time: new Date()
+            if (
+                !studentGrade.locked && // The grade was not locked
+                (
+                    question.maxAttempts <= Constants.Course.INFINITE_ATTEMPT_NUMBER || // There is no limit to the number of attempts
+                    studentGrade.numAttempts < question.maxAttempts // They still have attempts left to use
+                )
+            ) {
+                studentGrade.numAttempts++;
+
+                if (moment().isBefore(moment(topic.endDate))) {
+                    // Full credit.
+                    studentGrade.bestScore = overallBestScore;
+                    studentGrade.legalScore = overallBestScore;
+                    studentGrade.partialCreditBestScore = overallBestScore;
+                    // if it was overwritten to be better use that max value
+                    studentGrade.effectiveScore = Math.max(overallBestScore, studentGrade.effectiveScore);
+                } else if (moment().isBefore(moment(topic.deadDate))) {
+                    // Partial credit
+                    const partialCreditScalar = 0.5;
+                    const partialCreditScore = ((options.score - studentGrade.legalScore) * partialCreditScalar) + studentGrade.legalScore;
+                    studentGrade.partialCreditBestScore = Math.max(partialCreditScore, studentGrade.partialCreditBestScore);
+                    studentGrade.bestScore = studentGrade.partialCreditBestScore;
+                    studentGrade.effectiveScore = Math.max(partialCreditScore, studentGrade.effectiveScore);
+                }
+            }
+            try {
+                return await appSequelize.transaction(async (): Promise<SubmitAnswerResult> => {
+                    await studentGrade.save();
+
+                    const studentWorkbook = await StudentWorkbook.create({
+                        studentGradeId: studentGrade.id,
+                        userId: options.userId,
+                        courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
+                        randomSeed: studentGrade.randomSeed,
+                        submitted: options.submitted,
+                        result: options.score,
+                        time: new Date()
+                    });
+
+                    return {
+                        studentGrade,
+                        studentWorkbook
+                    };
                 });
-
-                return {
-                    studentGrade,
-                    studentWorkbook
-                };
-            });
-        } catch (e) {
-            if (e instanceof RederlyExtendedError === false) {
-                throw new WrappedError(e.message, e);
-            } else {
-                throw e;
+            } catch (e) {
+                if (e instanceof RederlyExtendedError === false) {
+                    throw new WrappedError(e.message, e);
+                } else {
+                    throw e;
+                }
             }
         }
+        return {
+            studentGrade,
+            studentWorkbook: null
+        };
     }
 
     getCourseByCode(code: string): Promise<Course> {
@@ -1082,11 +1121,12 @@ class CourseController {
             [`$question.topic.${CourseTopicContent.rawAttributes.id.field}$`]: topicId,
             [`$question.${CourseWWTopicQuestion.rawAttributes.id.field}$`]: questionId,
             [`$user.${User.rawAttributes.id.field}$`]: userId,
+            active: true
         }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
 
         const totalProblemCountCalculationString = `COUNT(question.${CourseWWTopicQuestion.rawAttributes.id.field})`;
         const pendingProblemCountCalculationString = `COUNT(CASE WHEN ${StudentGrade.rawAttributes.numAttempts.field} = 0 THEN ${StudentGrade.rawAttributes.numAttempts.field} END)`;
-        const masteredProblemCountCalculationString = `COUNT(CASE WHEN ${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN ${StudentGrade.rawAttributes.bestScore.field} END)`;
+        const masteredProblemCountCalculationString = `COUNT(CASE WHEN ${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN ${StudentGrade.rawAttributes.overallBestScore.field} END)`;
         const inProgressProblemCountCalculationString = `${totalProblemCountCalculationString} - ${pendingProblemCountCalculationString} - ${masteredProblemCountCalculationString}`;
 
         // Include cannot be null or undefined, coerce to empty array
@@ -1098,6 +1138,9 @@ class CourseController {
                 model: Course,
                 as: 'course',
                 attributes: [],
+                where: {
+                    active: true
+                },
             }];
         }
 
@@ -1108,6 +1151,9 @@ class CourseController {
                 model: CourseUnitContent,
                 as: 'unit',
                 attributes: [],
+                where: {
+                    active: true
+                },
                 include: unitInclude || [],
             }];
         }
@@ -1119,6 +1165,9 @@ class CourseController {
                 model: CourseTopicContent,
                 as: 'topic',
                 attributes: [],
+                where: {
+                    active: true
+                },
                 include: topicInclude || [],
             }];
         }
@@ -1129,14 +1178,20 @@ class CourseController {
         if (_.isNil(questionId) === false) {
             attributes = [
                 'id',
-                'bestScore',
+                'effectiveScore',
                 'numAttempts'
             ];
             // This should already be the case but let's guarentee it
             group = undefined;
         } else {
+            // Not follow the rules version
+            // const averageScoreAttribute = sequelize.fn('avg', sequelize.col(`${StudentGrade.rawAttributes.overallBestScore.field}`));
+            const pointsEarned = `SUM(${StudentGrade.rawAttributes.effectiveScore.field} * "question".${CourseWWTopicQuestion.rawAttributes.weight.field})`;
+            const pointsAvailable = `SUM(CASE WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE THEN "question".${CourseWWTopicQuestion.rawAttributes.weight.field} ELSE 0 END)`;
+            const averageScoreAttribute = sequelize.literal(`${pointsEarned}/${pointsAvailable}`);
+
             attributes = [
-                [sequelize.fn('avg', sequelize.col(`${StudentGrade.rawAttributes.bestScore.field}`)), 'average'],
+                [averageScoreAttribute, 'average'],
                 [sequelize.literal(pendingProblemCountCalculationString), 'pendingProblemCount'],
                 [sequelize.literal(masteredProblemCountCalculationString), 'masteredProblemCount'],
                 [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
@@ -1149,11 +1204,18 @@ class CourseController {
             include: [{
                 model: User,
                 as: 'user',
-                attributes: ['id', 'firstName', 'lastName']
+                attributes: ['id', 'firstName', 'lastName'],
+                where: {
+                    active: true
+                }
             }, {
                 model: CourseWWTopicQuestion,
                 as: 'question',
                 attributes: [],
+                where: {
+                    active: true,
+                    hidden: false
+                },
                 include: questionInclude || [],
             }],
             attributes,
@@ -1168,6 +1230,8 @@ class CourseController {
             userId,
         } = options.where;
 
+        const { followQuestionRules } = options;
+
         // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
         const where: sequelize.WhereOptions = _({
             active: true,
@@ -1175,29 +1239,48 @@ class CourseController {
             [`$topics.questions.grades.${StudentGrade.rawAttributes.userId.field}$`]: userId,
         }).omitBy(_.isNil).value() as sequelize.WhereOptions;
 
+        let averageScoreAttribute;
+        if (followQuestionRules) {
+            const pointsEarned = `SUM("topics->questions->grades".${StudentGrade.rawAttributes.effectiveScore.field} * "topics->questions".${CourseWWTopicQuestion.rawAttributes.weight.field})`;
+            const pointsAvailable = `SUM(CASE WHEN "topics->questions".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE THEN "topics->questions".${CourseWWTopicQuestion.rawAttributes.weight.field} ELSE 0 END)`;
+            averageScoreAttribute = sequelize.literal(`${pointsEarned}/${pointsAvailable}`);
+        } else {
+            averageScoreAttribute = sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
+        }
+
         return CourseUnitContent.findAll({
             where,
             attributes: [
                 'id',
                 'name',
                 [sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
-                [sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.bestScore.field}`)), 'averageScore'],
+                [averageScoreAttribute, 'averageScore'],
                 [sequelize.fn('count', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
-                [sequelize.literal(`count(CASE WHEN "topics->questions->grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "topics->questions->grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
-                [sequelize.literal(`CASE WHEN COUNT("topics->questions->grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN count(CASE WHEN "topics->questions->grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "topics->questions->grades".${StudentGrade.rawAttributes.id.field} END)::FLOAT / count("topics->questions->grades".${StudentGrade.rawAttributes.id.field}) ELSE NULL END`), 'completionPercent'],
+                [sequelize.literal(`count(CASE WHEN "topics->questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN "topics->questions->grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
+                [sequelize.literal(`CASE WHEN COUNT("topics->questions->grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN count(CASE WHEN "topics->questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN "topics->questions->grades".${StudentGrade.rawAttributes.id.field} END)::FLOAT / count("topics->questions->grades".${StudentGrade.rawAttributes.id.field}) ELSE NULL END`), 'completionPercent'],
             ],
             include: [{
                 model: CourseTopicContent,
                 as: 'topics',
                 attributes: [],
+                where: {
+                    active: true
+                },
                 include: [{
                     model: CourseWWTopicQuestion,
                     as: 'questions',
                     attributes: [],
+                    where: {
+                        active: true,
+                        hidden: false
+                    },
                     include: [{
                         model: StudentGrade,
                         as: 'grades',
-                        attributes: []
+                        attributes: [],
+                        where: {
+                            active: true,
+                        }
                     }]
                 }]
             }],
@@ -1215,6 +1298,8 @@ class CourseController {
             userId,
         } = options.where;
 
+        const { followQuestionRules } = options;
+
         // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
         const where: sequelize.WhereOptions = _({
             active: true,
@@ -1227,10 +1312,17 @@ class CourseController {
             model: CourseWWTopicQuestion,
             as: 'questions',
             attributes: [],
+            where: {
+                active: true,
+                hidden: false
+            },
             include: [{
                 model: StudentGrade,
                 as: 'grades',
-                attributes: []
+                attributes: [],
+                where: {
+                    active: true
+                }
             }]
         }];
 
@@ -1238,10 +1330,21 @@ class CourseController {
             include.push({
                 model: CourseUnitContent,
                 as: 'unit',
-                attributes: []
+                attributes: [],
+                where: {
+                    active: true
+                }
             });
         }
 
+        let averageScoreAttribute;
+        if (followQuestionRules) {
+            const pointsEarned = `SUM("questions->grades".${StudentGrade.rawAttributes.effectiveScore.field} * "questions".${CourseWWTopicQuestion.rawAttributes.weight.field})`;
+            const pointsAvailable = `SUM(CASE WHEN "questions".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE THEN "questions".${CourseWWTopicQuestion.rawAttributes.weight.field} ELSE 0 END)`;
+            averageScoreAttribute = sequelize.literal(`${pointsEarned}/${pointsAvailable}`);
+        } else {
+            averageScoreAttribute = sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
+        }
 
         return CourseTopicContent.findAll({
             where,
@@ -1249,10 +1352,10 @@ class CourseController {
                 'id',
                 'name',
                 [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
-                [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.bestScore.field}`)), 'averageScore'],
+                [averageScoreAttribute, 'averageScore'],
                 [sequelize.fn('count', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
-                [sequelize.literal(`count(CASE WHEN "questions->grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "questions->grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
-                [sequelize.literal(`CASE WHEN COUNT("questions->grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN count(CASE WHEN "questions->grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "questions->grades".${StudentGrade.rawAttributes.id.field} END)::FLOAT / count("questions->grades".${StudentGrade.rawAttributes.id.field}) ELSE NULL END`), 'completionPercent'],
+                [sequelize.literal(`count(CASE WHEN "questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN "questions->grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
+                [sequelize.literal(`CASE WHEN COUNT("questions->grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN count(CASE WHEN "questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN "questions->grades".${StudentGrade.rawAttributes.id.field} END)::FLOAT / count("questions->grades".${StudentGrade.rawAttributes.id.field}) ELSE NULL END`), 'completionPercent'],
             ],
             include,
             group: [`${CourseTopicContent.name}.${CourseTopicContent.rawAttributes.id.field}`, `${CourseTopicContent.name}.${CourseTopicContent.rawAttributes.name.field}`],
@@ -1280,7 +1383,10 @@ class CourseController {
         const include: sequelize.IncludeOptions[] = [{
             model: StudentGrade,
             as: 'grades',
-            attributes: []
+            attributes: [],
+            where: {
+                active: true
+            }
         }];
 
         if (!_.isNil(courseId)) {
@@ -1288,10 +1394,16 @@ class CourseController {
                 model: CourseTopicContent,
                 as: 'topic',
                 attributes: [],
+                where: {
+                    active: true
+                },
                 include: [{
                     model: CourseUnitContent,
                     as: 'unit',
-                    attributes: []
+                    attributes: [],
+                    where: {
+                        active: true
+                    }
                 }]
             });
         }

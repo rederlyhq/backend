@@ -347,7 +347,7 @@ class UserController {
 
         if(refreshVerifyToken) {
             user.verifyToken = uuidv4();
-            user.verifyTokenExpiresAt = moment().add(1, 'days').toDate();
+            user.verifyTokenExpiresAt = moment().add(configurations.auth.verifyInstutionalEmailTokenLife, 'minutes').toDate();
             await user.save();
         }
 
@@ -398,7 +398,7 @@ class UserController {
 
         userObject.universityId = university.id;
         userObject.verifyToken = uuidv4();
-        userObject.verifyTokenExpiresAt = moment().add(1,'days').toDate();
+        userObject.verifyTokenExpiresAt = moment().add(configurations.auth.verifyInstutionalEmailTokenLife, 'minutes').toDate();
         userObject.password = await hashPassword(userObject.password);    
         const newUser = await this.createUser(userObject);
         const emailSent = await this.setupUserVerification({
@@ -444,8 +444,7 @@ class UserController {
         const result = await userRepository.updateUser({
             updates: {
                 forgotPasswordToken: uuidv4(),
-                // TODO make configurable
-                forgotPasswordTokenExpiresAt: moment().add(1, 'days').toDate()    
+                forgotPasswordTokenExpiresAt: moment().add(configurations.auth.forgotPasswordTokenLife, 'minutes').toDate()
             },
             where: {
                 email

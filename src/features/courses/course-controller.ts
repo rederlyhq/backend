@@ -1051,7 +1051,12 @@ class CourseController {
                                 include: [{
                                     model: StudentGrade,
                                     as: 'grades',
-                                    required: false
+                                    required: false,
+                                    where: {
+                                        userId: {
+                                            [Sequelize.Op.eq]: sequelize.literal('"courseEnrollments".user_id')
+                                        }
+                                    }
                                 }]
                             }]
                         }]
@@ -1061,7 +1066,7 @@ class CourseController {
             where: {
                 [`$courseEnrollments.course.units.topics.questions.grades.${StudentGrade.rawAttributes.id.field}$`]: {
                     [Sequelize.Op.eq]: null
-                }
+                },
             }
         });
 

@@ -38,22 +38,22 @@ export interface GetProblemParameters {
 /* eslint-disable @typescript-eslint/camelcase */
 export const rendererResponseValidationScheme = Joi.object({
     answers: Joi.object().pattern(/\w+/, Joi.object({
-        _filter_name: Joi.string().optional(), // REQUIRED BUT I SAW AN EXISTING PROBLEM WHERE AnSwEr0002 only had a name
+        _filter_name: Joi.string().optional(), // Should be required, but we've seen problem source mess with the object with and drop the field
+        correct_ans: Joi.any().optional(), // I have seen string and number // REQUIRED BUT I SAW AN EXISTING PROBLEM WHERE AnSwEr0002 only had a name
+        original_student_ans: Joi.string().allow('').optional(), // TODO more validation with form data? // Should be required, but we've seen problem source mess with the object with and drop the field
+        preview_latex_string: Joi.string().allow('').allow(null).optional(), // TODO has special characters that seem to block string // Should be required, but we've seen problem source mess with the object with and drop the field
+        score: Joi.number().min(0).max(1).optional(), // Should be required, but we've seen problem source mess with the object with and drop the field
+        student_ans: Joi.string().allow('').optional(), // Should be required, but we've seen problem source mess with the object with and drop the field
+        correct_ans_latex_string: Joi.string().optional(), // TODO I don't see this in the object
+        entry_type: Joi.string().allow(null).optional(),
         // ans_label: Joi.string().required(), // DOCUMENT SAYS DO NOT KEEP
         // ans_message: Joi.string().required(), // DOCUMENT SAYS DO NOT KEEP
         // ans_name: Joi.string().required(), // DOCUMENT SAYS DO NOT KEEP
-        correct_ans: Joi.any().optional(), // I have seen string and number // REQUIRED BUT I SAW AN EXISTING PROBLEM WHERE AnSwEr0002 only had a name
+        // preview_text_string: Joi.string().required(), // DOCUMENT STATES AS INCONSISTENT
+        // type: Joi.string().required(), // DOCUMENT SAYS DO NOT KEEP
         // done: Joi.any(), // Was null don't know what type it is
         // error_flag: Joi.any(), // Was null don't know what type it is // DOCUMENT NOT SURE, OMITTING
         // error_message: Joi.string().required(), // Was empty string when not set // DOCUMENT NOT SURE, OMITTING 
-        original_student_ans: Joi.string().allow('').optional(), // TODO more validation with form data? // REQUIRED BUT I SAW AN EXISTING PROBLEM WHERE AnSwEr0002 only had a name
-        preview_latex_string: Joi.any().optional(), // TODO has special characters that seem to block string // REQUIRED BUT I SAW AN EXISTING PROBLEM WHERE AnSwEr0002 only had a name
-        // preview_text_string: Joi.string().required(), // DOCUMENT STATES AS INCONSISTENT
-        score: Joi.number().min(0).max(1).optional(), // REQUIRED BUT I SAW AN EXISTING PROBLEM WHERE AnSwEr0002 only had a name
-        student_ans: Joi.string().allow('').optional(), // REQUIRED BUT I SAW AN EXISTING PROBLEM WHERE AnSwEr0002 only had a name
-        // type: Joi.string().required(), // DOCUMENT SAYS DO NOT KEEP
-        correct_ans_latex_string: Joi.string().optional(), // TODO I don't see this in the object
-        entry_type: Joi.string().allow(null).optional(),
         // extra: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
         // firstElement: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
         // ignoreInfinity: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
@@ -80,25 +80,27 @@ export const rendererResponseValidationScheme = Joi.object({
     })).required(),
     debug: Joi.object({
         // TODO are these required or optional
-        debug: Joi.any(),
-        internal: Joi.any(),
-        perl_warn: Joi.any(),
-        pg_warn: Joi.any(),
-        render_warn : Joi.any(),
-    }).optional(), // TODO I don't see this field
+        debug: Joi.array().items(Joi.string()).required(),
+        internal: Joi.array().items(Joi.string()).required(),
+        perl_warn: Joi.string().allow('').required(),
+        pg_warn: Joi.array().items(Joi.string()).required(),
+        render_warn : Joi.array().items(Joi.string()).optional(), // THIS FIELD IS NEW, replace with required 
+        // TODO add renderer version when implemented
+        // TODO add problem version when implemented
+    }).optional(), // THIS FIELD IS NEW, replace with required
     flags: Joi.object({
         // comment: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
-        // hintExists: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
         // PROBLEM_GRADER_TO_USE: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
         // recordSubmittedAnswers: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
         // refreshCachedImages: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
         // showpartialCorrectAnswers: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
         // showHint: Joi.any(), // DOCUMENT NOT SURE, OMITTING
-        ANSWER_ENTRY_ORDER: Joi.array().items(Joi.string().required()).required(),
-        KEPT_EXTRA_ANSWERS : Joi.array().items(Joi.string().required()).required(),
+        ANSWER_ENTRY_ORDER: Joi.array().items(Joi.string()).required(),
+        KEPT_EXTRA_ANSWERS : Joi.array().items(Joi.string()).required(),
         showHintLimit: Joi.number().required(),
-        showPartialCorrectAnswers : Joi.number().min(0).max(1).required(),
-        solutionExists : Joi.number().min(0).max(1),
+        showPartialCorrectAnswers : Joi.number().min(0).max(1).optional(),
+        solutionExists : Joi.number().min(0).max(1).required(),
+        hintExists: Joi.number().min(0).max(1).required(),
     }).required(),
     form_data: Joi.any().required(),
     problem_result: Joi.object({
@@ -158,6 +160,7 @@ class RendererHelper {
             }, onValidationComplete);
         });
 
+        // TODO remove, this is for past stuff and should not be used for future stuff
         const formData = (result.form_data as any);
         if (typeof(formData.submitAnswers) === 'string') {
             formData.submitAnswers = formData.submitAnswers.substring(0, formData.submitAnswers.indexOf('\0'));

@@ -2,6 +2,8 @@ import axios from 'axios';
 import configurations from '../configurations';
 import Role from '../features/permissions/roles';
 import * as _ from 'lodash';
+import * as Joi from '@hapi/joi';
+import 'joi-extract-type';
 
 const rendererAxios = axios.create({
     baseURL: configurations.renderer.url,
@@ -33,6 +35,84 @@ export interface GetProblemParameters {
     processAnswers?: boolean;
 }
 
+/* eslint-disable @typescript-eslint/camelcase */
+export const rendererResponseValidationScheme = Joi.object({
+    answers: Joi.object().pattern(/\w+/, Joi.object({
+        _filter_name: Joi.string().optional(), // REQUIRED BUT I SAW AN EXISTING PROBLEM WHERE AnSwEr0002 only had a name
+        // ans_label: Joi.string().required(), // DOCUMENT SAYS DO NOT KEEP
+        // ans_message: Joi.string().required(), // DOCUMENT SAYS DO NOT KEEP
+        // ans_name: Joi.string().required(), // DOCUMENT SAYS DO NOT KEEP
+        correct_ans: Joi.any().optional(), // I have seen string and number // REQUIRED BUT I SAW AN EXISTING PROBLEM WHERE AnSwEr0002 only had a name
+        // done: Joi.any(), // Was null don't know what type it is
+        // error_flag: Joi.any(), // Was null don't know what type it is // DOCUMENT NOT SURE, OMITTING
+        // error_message: Joi.string().required(), // Was empty string when not set // DOCUMENT NOT SURE, OMITTING 
+        original_student_ans: Joi.string().allow('').optional(), // TODO more validation with form data? // REQUIRED BUT I SAW AN EXISTING PROBLEM WHERE AnSwEr0002 only had a name
+        preview_latex_string: Joi.any().optional(), // TODO has special characters that seem to block string // REQUIRED BUT I SAW AN EXISTING PROBLEM WHERE AnSwEr0002 only had a name
+        // preview_text_string: Joi.string().required(), // DOCUMENT STATES AS INCONSISTENT
+        score: Joi.number().min(0).max(1).optional(), // REQUIRED BUT I SAW AN EXISTING PROBLEM WHERE AnSwEr0002 only had a name
+        student_ans: Joi.string().allow('').optional(), // REQUIRED BUT I SAW AN EXISTING PROBLEM WHERE AnSwEr0002 only had a name
+        // type: Joi.string().required(), // DOCUMENT SAYS DO NOT KEEP
+        correct_ans_latex_string: Joi.string().optional(), // TODO I don't see this in the object
+        entry_type: Joi.string().allow(null).optional(),
+        // extra: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+        // firstElement: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+        // ignoreInfinity: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+        // ignoreStrings: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+        // implicitList: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+        // isPreview: Joi.any().required(), // DOCUMENT SAYS DO NOT KEEP
+        // list_type: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+        // ordered: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+        // partialCredit: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+        // removeParens: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+        // requireParenMatch: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+        // short_type: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+        // showCoordinateHints: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+        // showEqualErrors: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+        // showHints: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+        // showLengthHints: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+        // showParenHints: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+        // showTypeWarnings: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+        // showUnionReduceWarnings: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+        // student_formula: Joi.any().optional(), // DOCUMENT NOT SURE, OMITTING
+        // student_value: Joi.any().optional(), // DOCUMENT NOT SURE, OMITTING
+        // studentsMustReduceUnions: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+        // typeMatch: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+    })).required(),
+    debug: Joi.object({
+        // TODO are these required or optional
+        debug: Joi.any(),
+        internal: Joi.any(),
+        perl_warn: Joi.any(),
+        pg_warn: Joi.any(),
+        render_warn : Joi.any(),
+    }).optional(), // TODO I don't see this field
+    flags: Joi.object({
+        // comment: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+        // hintExists: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+        // PROBLEM_GRADER_TO_USE: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
+        // recordSubmittedAnswers: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
+        // refreshCachedImages: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
+        // showpartialCorrectAnswers: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
+        // showHint: Joi.any(), // DOCUMENT NOT SURE, OMITTING
+        ANSWER_ENTRY_ORDER: Joi.array().items(Joi.string().required()).required(),
+        KEPT_EXTRA_ANSWERS : Joi.array().items(Joi.string().required()).required(),
+        showHintLimit: Joi.number().required(),
+        showPartialCorrectAnswers : Joi.number().min(0).max(1).required(),
+        solutionExists : Joi.number().min(0).max(1),
+    }).required(),
+    form_data: Joi.any().required(),
+    problem_result: Joi.object({
+        errors: Joi.string().allow('').required(),
+        msg: Joi.string().allow('').required(),
+        score: Joi.number().min(0).max(1).required(),
+        type: Joi.string().required(),
+    }).required(),
+    // problem_state: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
+    renderedHTML: Joi.string().optional(), // We need to parse this out and delete before saving in the database
+}).required();
+/* eslint-enable @typescript-eslint/camelcase */
+export type RendererResponse = Joi.extractType<typeof rendererResponseValidationScheme>;
+
 class RendererHelper {
     getOutputFormatForPermission = (permissionLevel: number): OutputFormat => {
         if (permissionLevel < 10) {
@@ -56,6 +136,37 @@ class RendererHelper {
     }
 
     getOutputFormatForRole = (role: Role): OutputFormat => this.getOutputFormatForPermission(this.getPermissionForRole(role));
+
+    cleanSubmitResponseDate = async (resp: string | object): Promise<RendererResponse> => {
+        if(typeof(resp) === 'string') {
+            resp = JSON.parse(resp);
+        }
+        resp = resp as object;
+        const result = await new Promise<RendererResponse>((resolve, reject) => {
+            const onValidationComplete = (err: Joi.ValidationError, validated: any): void => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                resolve(validated);
+            };
+    
+            Joi.validate(resp, rendererResponseValidationScheme, {
+                abortEarly: true,
+                allowUnknown: true,
+                stripUnknown: true,
+            }, onValidationComplete);
+        });
+
+        const formData = (result.form_data as any);
+        if (typeof(formData.submitAnswers) === 'string') {
+            formData.submitAnswers = formData.submitAnswers.substring(0, formData.submitAnswers.indexOf('\0'));
+        }
+        if (typeof(formData.format) === 'string') {
+            formData.format = formData.format.substring(0, formData.format.indexOf('\0'));
+        }
+        return result;
+    };
 
 
     async getProblem({

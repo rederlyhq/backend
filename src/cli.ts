@@ -30,30 +30,22 @@ const cleanupWorkbooks = async (): Promise<void> => {
         const workbooks = await StudentWorkbook.findAll();
         logger.info(`Workbook count: ${workbooks.length}`);
         await workbooks.asyncForEach(async (workbook: StudentWorkbook) => {
-            try {
-                workbook.submitted = await rendererHelper.cleanSubmitResponseDate(workbook.submitted);
-                
-                // Form data can be anything, furthermore this is temporary since it is just for cleanup purposes, cleaning up some null bytes from an old version of the renderer
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const formData = (workbook.submitted.form_data as any);
-                if (typeof(formData.submitAnswers) === 'string') {
-                    formData.submitAnswers = formData.submitAnswers.substring(0, formData.submitAnswers.indexOf('\0'));
-                }
-                if (typeof(formData.format) === 'string') {
-                    formData.format = formData.format.substring(0, formData.format.indexOf('\0'));
-                }
-
-                delete workbook.submitted.renderedHTML;
-
-                await workbook.save();
-            } catch (e) {
-                // Right now if there is an error we need to check it out
-                debugger;
-                throw e;
+            workbook.submitted = await rendererHelper.cleanSubmitResponseDate(workbook.submitted);
+            
+            // Form data can be anything, furthermore this is temporary since it is just for cleanup purposes, cleaning up some null bytes from an old version of the renderer
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const formData = (workbook.submitted.form_data as any);
+            if (typeof(formData.submitAnswers) === 'string') {
+                formData.submitAnswers = formData.submitAnswers.substring(0, formData.submitAnswers.indexOf('\0'));
             }
+            if (typeof(formData.format) === 'string') {
+                formData.format = formData.format.substring(0, formData.format.indexOf('\0'));
+            }
+
+            delete workbook.submitted.renderedHTML;
+
+            await workbook.save();
         });
-        // This error is just to make sure the transaction does not commit
-        throw new Error('success');
     });
 };
 

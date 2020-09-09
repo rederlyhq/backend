@@ -160,14 +160,6 @@ class RendererHelper {
             }, onValidationComplete);
         });
 
-        // TODO remove, this is for past stuff and should not be used for future stuff
-        const formData = (result.form_data as any);
-        if (typeof(formData.submitAnswers) === 'string') {
-            formData.submitAnswers = formData.submitAnswers.substring(0, formData.submitAnswers.indexOf('\0'));
-        }
-        if (typeof(formData.format) === 'string') {
-            formData.format = formData.format.substring(0, formData.format.indexOf('\0'));
-        }
         return result;
     };
 

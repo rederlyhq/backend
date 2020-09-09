@@ -15,6 +15,9 @@ if (configurations.email.enabled) {
 
 import { sync } from './database';
 import courseController from './features/courses/course-controller';
+import appSequelize from './database/app-sequelize';
+import StudentWorkbook from './database/models/student-workbook';
+import rendererHelper from './utilities/renderer-helper';
 
 const syncMissingGrades = async (): Promise<void> => {
     logger.info('Performing missing grade sync');
@@ -22,8 +25,41 @@ const syncMissingGrades = async (): Promise<void> => {
     logger.info('done');
 };
 
+const cleanupWorkbooks = async (): Promise<void> => {
+    await appSequelize.transaction(async () => {
+        const workbooks = await StudentWorkbook.findAll();
+        logger.info(`Workbook count: ${workbooks.length}`);
+        await workbooks.asyncForEach(async (workbook: StudentWorkbook) => {
+            try {
+                workbook.submitted = await rendererHelper.cleanSubmitResponseDate(workbook.submitted);
+                
+                // Form data can be anything, furthermore this is temporary since it is just for cleanup purposes, cleaning up some null bytes from an old version of the renderer
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const formData = (workbook.submitted.form_data as any);
+                if (typeof(formData.submitAnswers) === 'string') {
+                    formData.submitAnswers = formData.submitAnswers.substring(0, formData.submitAnswers.indexOf('\0'));
+                }
+                if (typeof(formData.format) === 'string') {
+                    formData.format = formData.format.substring(0, formData.format.indexOf('\0'));
+                }
+
+                delete workbook.submitted.renderedHTML;
+
+                await workbook.save();
+            } catch (e) {
+                // Right now if there is an error we need to check it out
+                debugger;
+                throw e;
+            }
+        });
+        // This error is just to make sure the transaction does not commit
+        throw new Error('success');
+    });
+};
+
 const commandLookup: {[key: string]: () => unknown} = {
-    ['sync-missing-grades']: syncMissingGrades
+    ['sync-missing-grades']: syncMissingGrades,
+    ['cleanup-workbooks']: cleanupWorkbooks
 };
 
 (async (): Promise<void> => {

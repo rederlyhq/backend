@@ -13,27 +13,10 @@ if (configurations.email.enabled) {
 }
 
 import { sync } from './database';
-import rendererHelper from './utilities/renderer-helper';
-import appSequelize from './database/app-sequelize';
-import StudentWorkbook from './database/models/student-workbook';
 
 (async (): Promise<void> => {
     await sync();
 
     logger.info('Playground start');
-    await appSequelize.transaction(async () => {
-        const workbooks = await StudentWorkbook.findAll();
-        console.log(`TOMTOM workbook count: ${workbooks.length}`);
-        await workbooks.asyncForEach(async (workbook: StudentWorkbook) => {
-            try {
-                workbook.submitted = await rendererHelper.cleanSubmitResponseDate(workbook.submitted);
-                await workbook.save();
-            } catch (e) {
-                debugger;
-                throw e;
-            }
-        });
-        throw new Error('success');
-    });
     logger.info('Playground done');
 })();

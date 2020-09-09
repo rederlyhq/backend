@@ -20,7 +20,7 @@ import { Constants } from '../../constants';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import Role from '../permissions/roles';
 import { GetCalculatedRendererParamsResponse } from './course-types';
-import { RENDERER_ENDPOINT, GetProblemParameters } from '../../utilities/renderer-helper';
+import rendererHelper, { RENDERER_ENDPOINT, GetProblemParameters } from '../../utilities/renderer-helper';
 import StudentGrade from '../../database/models/student-grade';
 import bodyParser = require('body-parser');
 
@@ -503,7 +503,7 @@ router.post('/question/:id',
 
             let data = proxyResData.toString('utf8');
             try {
-                data = JSON.parse(data);
+                data = await rendererHelper.cleanSubmitResponseData(data);
             } catch (e) {
                 throw new WrappedError(`Error parsing data response from renderer on question ${userReq.meta?.studentGrade?.courseWWTopicQuestionId} for grade ${userReq.meta?.studentGrade?.id}`, e);
             }

@@ -30,7 +30,7 @@ const cleanupWorkbooks = async (): Promise<void> => {
         const workbooks = await StudentWorkbook.findAll();
         logger.info(`Workbook count: ${workbooks.length}`);
         await workbooks.asyncForEach(async (workbook: StudentWorkbook) => {
-            workbook.submitted = await rendererHelper.cleanSubmitResponseDate(workbook.submitted);
+            workbook.submitted = await rendererHelper.cleanSubmitResponseData(workbook.submitted);
             
             // Form data can be anything, furthermore this is temporary since it is just for cleanup purposes, cleaning up some null bytes from an old version of the renderer
             // eslint-disable-next-line @typescript-eslint/no-explicit-any

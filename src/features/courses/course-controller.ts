@@ -942,12 +942,14 @@ class CourseController {
                 return await appSequelize.transaction(async (): Promise<SubmitAnswerResult> => {
                     await studentGrade.save();
 
+                    const submitted = _.cloneDeep(options.submitted);
+                    delete submitted.renderedHTML;
                     const studentWorkbook = await StudentWorkbook.create({
                         studentGradeId: studentGrade.id,
                         userId: options.userId,
                         courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
                         randomSeed: studentGrade.randomSeed,
-                        submitted: options.submitted,
+                        submitted,
                         result: options.score,
                         time: new Date()
                     });

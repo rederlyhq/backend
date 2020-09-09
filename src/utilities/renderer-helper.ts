@@ -139,7 +139,7 @@ class RendererHelper {
 
     getOutputFormatForRole = (role: Role): OutputFormat => this.getOutputFormatForPermission(this.getPermissionForRole(role));
 
-    cleanSubmitResponseDate = async (resp: string | object): Promise<RendererResponse> => {
+    cleanSubmitResponseData = async (resp: string | object): Promise<RendererResponse> => {
         if(typeof(resp) === 'string') {
             resp = JSON.parse(resp);
         }

@@ -422,7 +422,9 @@ router.get('/question/:id',
                 questionId: params.id,
                 userId: session.userId,
                 formURL: req.originalUrl,
-                role: user.roleId
+                role: user.roleId,
+                readonly: req.query.readonly,
+                workbookId: req.query.workbookId,
             });
             next(httpResponse.Ok('Fetched question successfully', question));
 

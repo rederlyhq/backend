@@ -7,7 +7,7 @@ import NotFoundError from '../../exceptions/not-found-error';
 import CourseUnitContent from '../../database/models/course-unit-content';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
-import rendererHelper from '../../utilities/renderer-helper';
+import rendererHelper, { OutputFormat } from '../../utilities/renderer-helper';
 import StudentWorkbook from '../../database/models/student-workbook';
 import StudentGrade from '../../database/models/student-grade';
 import User from '../../database/models/user';
@@ -859,10 +859,17 @@ class CourseController {
             }
         });
 
-        const latestWorkbook = await studentGrade?.getWorkbooks({
-            limit: 1,
-            order: [ [ 'createdAt', 'DESC' ]]
-        });
+        let workbook: StudentWorkbook | null = null;
+        if(_.isNil(options.workbookId)) {
+            const workbooks = await studentGrade?.getWorkbooks({
+                limit: 1,
+                order: [ [ 'createdAt', 'DESC' ]]
+            });
+            workbook = workbooks?.[0] || null;
+        } else {
+            workbook = await courseRepository.getWorkbookById(options.workbookId);
+        }
+
 
         const randomSeed = _.isNil(studentGrade) ? 666 : studentGrade.randomSeed;
 
@@ -871,12 +878,16 @@ class CourseController {
             role: options.role,
         });
 
+        if (options.readonly) {
+            calculatedRendererParameters.outputformat = OutputFormat.STATIC;
+        }
+
         const rendererData = await rendererHelper.getProblem({
             sourceFilePath: courseQuestion.webworkQuestionPath,
             problemSeed: randomSeed,
             formURL: options.formURL,
             numIncorrect: studentGrade?.numAttempts,
-            formData: latestWorkbook?.[0]?.submitted.form_data,
+            formData: workbook?.submitted.form_data,
             ...calculatedRendererParameters
         });
         return {
@@ -927,7 +938,6 @@ class CourseController {
                 )
             ) {
                 studentGrade.numAttempts++;
-
                 if (moment().isBefore(moment(topic.endDate))) {
                     // Full credit.
                     studentGrade.bestScore = overallBestScore;

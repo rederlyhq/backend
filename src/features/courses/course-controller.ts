@@ -859,6 +859,11 @@ class CourseController {
             }
         });
 
+        const latestWorkbook = await studentGrade?.getWorkbooks({
+            limit: 1,
+            order: [ [ 'createdAt', 'DESC' ]]
+        });
+
         const randomSeed = _.isNil(studentGrade) ? 666 : studentGrade.randomSeed;
 
         const calculatedRendererParameters = await this.getCalculatedRendererParams({
@@ -871,6 +876,7 @@ class CourseController {
             problemSeed: randomSeed,
             formURL: options.formURL,
             numIncorrect: studentGrade?.numAttempts,
+            formData: latestWorkbook?.[0]?.submitted.form_data,
             ...calculatedRendererParameters
         });
         return {

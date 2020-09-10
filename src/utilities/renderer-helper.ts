@@ -15,7 +15,8 @@ export const RENDERER_ENDPOINT = '/rendered';
 
 export enum OutputFormat {
     SINGLE = 'single',
-    SIMPLE = 'simple'
+    SIMPLE = 'simple',
+    STATIC = 'static',
 }
 
 export interface GetProblemParameters {

@@ -1,4 +1,4 @@
-import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
+import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
 export default class StudentGrade extends Model {
@@ -19,10 +19,11 @@ export default class StudentGrade extends Model {
 
   public getUser!: BelongsToGetAssociationMixin<User>;
   public getQuestion!: BelongsToGetAssociationMixin<CourseWWTopicQuestion>;
+  public getWorkbooks!: HasManyGetAssociationsMixin<StudentWorkbook>;
 
   public user!: User;
   public courseWWTopicQuestion!: CourseWWTopicQuestion;
-
+  public workbooks?: Array<StudentWorkbook>;
 
   // timestamps!
   public readonly createdAt!: Date;

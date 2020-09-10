@@ -157,24 +157,16 @@ class RendererHelper {
             'renderedHTML'
         ]);
     }
+
+    parseRendererResponse = async (resp: string | object): Promise<RendererResponse> => {
         if (typeof (resp) === 'string') {
             resp = JSON.parse(resp);
         }
         resp = resp as object;
-        const result = await new Promise<RendererResponse>((resolve, reject) => {
-            const onValidationComplete = (err: Joi.ValidationError, validated: any): void => {
-                if (err) {
-                    reject(err);
-                    return;
-                }
-                resolve(validated);
-            };
-
-            Joi.validate(resp, rendererResponseValidationScheme, {
-                abortEarly: true,
-                allowUnknown: true,
-                stripUnknown: true,
-            }, onValidationComplete);
+        const result = await rendererResponseValidationScheme.validate<RendererResponse>(resp as RendererResponse, {
+            abortEarly: true,
+            allowUnknown: true,
+            stripUnknown: false, // we will use this for typing the response, however for the database we will have a different scheme
         });
 
         return result;

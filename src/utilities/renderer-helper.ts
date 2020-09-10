@@ -5,7 +5,6 @@ import * as _ from 'lodash';
 import * as Joi from '@hapi/joi';
 import 'joi-extract-type';
 import * as FormData from 'form-data';
-import * as qs from 'qs';
 
 const rendererAxios = axios.create({
     baseURL: configurations.renderer.url,
@@ -113,10 +112,11 @@ export const rendererResponseValidationScheme = Joi.object({
         type: Joi.string().required(),
     }).required(),
     // problem_state: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
-    renderedHTML: Joi.string().optional(), // We need to parse this out and delete before saving in the database
+    renderedHTML: Joi.string().required(),
 }).required();
 /* eslint-enable @typescript-eslint/camelcase */
 export type RendererResponse = Joi.extractType<typeof rendererResponseValidationScheme>;
+
 
 class RendererHelper {
     getOutputFormatForPermission = (permissionLevel: number): OutputFormat => {

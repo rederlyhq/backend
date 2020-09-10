@@ -12,6 +12,7 @@ import { UpdateUnitOptions } from '../curriculum/curriculum-types';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import Course from '../../database/models/course';
 import logger from '../../utilities/logger';
+import StudentWorkbook from '../../database/models/student-workbook';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -435,6 +436,14 @@ class CourseRepository {
             result = Constants.Database.MIN_INTEGER_VALUE;
         }
         return result + 1;
+    }
+
+    async getWorkbookById(id: number): Promise<StudentWorkbook | null> {
+        return StudentWorkbook.findOne({
+            where: {
+                id
+            }
+        });
     }
 }
 

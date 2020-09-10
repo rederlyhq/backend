@@ -146,7 +146,8 @@ class RendererHelper {
         // I don't know if this method could be used if we needed nested keys
         // I'm back and forth between using _.pick and joi validation
         return _.pick(resp, [
-            'form_data'
+            'form_data',
+            'debug'
         ]);
     }
 
@@ -162,7 +163,7 @@ class RendererHelper {
         if (typeof (resp) === 'string') {
             resp = JSON.parse(resp);
         }
-        resp = resp as object;
+
         const result = await rendererResponseValidationScheme.validate<RendererResponse>(resp as RendererResponse, {
             abortEarly: true,
             allowUnknown: true,

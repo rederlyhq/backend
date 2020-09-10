@@ -36,6 +36,7 @@ export interface GetProblemParameters {
     numIncorrect?: number;
     processAnswers?: boolean;
     formData?: { [key: string]: unknown };
+    showCorrectAnswers?: boolean;
 }
 
 /* eslint-disable @typescript-eslint/camelcase */
@@ -191,7 +192,8 @@ class RendererHelper {
         numIncorrect,
         processAnswers,
         format = 'json',
-        formData
+        formData,
+        showCorrectAnswers = false
     }: GetProblemParameters): Promise<unknown> {
         const params = {
             sourceFilePath,
@@ -209,6 +211,7 @@ class RendererHelper {
             numCorrect,
             numIncorrect,
             processAnswers,
+            showCorrectAnswers: showCorrectAnswers ? 'true' : undefined
         };
 
         // Use the passed in form data but overwrite with params

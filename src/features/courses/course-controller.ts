@@ -882,12 +882,18 @@ class CourseController {
             calculatedRendererParameters.outputformat = OutputFormat.STATIC;
         }
 
+        let showCorrectAnswers = false;
+        if (options.role === Role.PROFESSOR && !_.isNil(workbook)) {
+            showCorrectAnswers = true;
+        }
+
         const rendererData = await rendererHelper.getProblem({
             sourceFilePath: courseQuestion.webworkQuestionPath,
             problemSeed: randomSeed,
             formURL: options.formURL,
             numIncorrect: studentGrade?.numAttempts,
             formData: workbook?.submitted.form_data,
+            showCorrectAnswers,
             ...calculatedRendererParameters
         });
         return {

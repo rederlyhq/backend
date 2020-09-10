@@ -190,7 +190,10 @@ export const getQuestionValidation = {
     params: {
         id: Joi.number().required()
     },
-    query: {},
+    query: {
+        workbookId: Joi.number().optional(),
+        readonly: Joi.boolean().optional()
+    },
     body: {}
 };
 

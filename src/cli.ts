@@ -17,7 +17,6 @@ import { sync } from './database';
 import courseController from './features/courses/course-controller';
 import appSequelize from './database/app-sequelize';
 import StudentWorkbook from './database/models/student-workbook';
-import * as Joi from '@hapi/joi';
 import rendererHelper from './utilities/renderer-helper';
 
 const syncMissingGrades = async (): Promise<void> => {

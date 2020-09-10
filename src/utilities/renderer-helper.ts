@@ -4,6 +4,8 @@ import Role from '../features/permissions/roles';
 import * as _ from 'lodash';
 import * as Joi from '@hapi/joi';
 import 'joi-extract-type';
+import * as FormData from 'form-data';
+import * as qs from 'qs';
 
 const rendererAxios = axios.create({
     baseURL: configurations.renderer.url,
@@ -33,6 +35,7 @@ export interface GetProblemParameters {
     numCorrect?: number;
     numIncorrect?: number;
     processAnswers?: boolean;
+    formData?: any;
 }
 
 /* eslint-disable @typescript-eslint/camelcase */
@@ -84,7 +87,7 @@ export const rendererResponseValidationScheme = Joi.object({
         internal: Joi.array().items(Joi.string()).required(),
         perl_warn: Joi.string().allow('').required(),
         pg_warn: Joi.array().items(Joi.string()).required(),
-        render_warn : Joi.array().items(Joi.string()).optional(), // THIS FIELD IS NEW, replace with required 
+        render_warn: Joi.array().items(Joi.string()).optional(), // THIS FIELD IS NEW, replace with required 
         // TODO add renderer version when implemented
         // TODO add problem version when implemented
     }).optional(), // THIS FIELD IS NEW, replace with required
@@ -96,10 +99,10 @@ export const rendererResponseValidationScheme = Joi.object({
         // showpartialCorrectAnswers: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
         // showHint: Joi.any(), // DOCUMENT NOT SURE, OMITTING
         ANSWER_ENTRY_ORDER: Joi.array().items(Joi.string()).required(),
-        KEPT_EXTRA_ANSWERS : Joi.array().items(Joi.string()).required(),
+        KEPT_EXTRA_ANSWERS: Joi.array().items(Joi.string()).required(),
         showHintLimit: Joi.number().required(),
-        showPartialCorrectAnswers : Joi.number().min(0).max(1).optional(),
-        solutionExists : Joi.number().min(0).max(1).required(),
+        showPartialCorrectAnswers: Joi.number().min(0).max(1).optional(),
+        solutionExists: Joi.number().min(0).max(1).required(),
         hintExists: Joi.number().min(0).max(1).required(),
     }).required(),
     form_data: Joi.any().required(),
@@ -125,7 +128,7 @@ class RendererHelper {
     };
 
     getPermissionForRole = (role: Role): number => {
-        switch(role) {
+        switch (role) {
             case Role.STUDENT:
                 return 0;
             case Role.PROFESSOR:
@@ -140,7 +143,7 @@ class RendererHelper {
     getOutputFormatForRole = (role: Role): OutputFormat => this.getOutputFormatForPermission(this.getPermissionForRole(role));
 
     cleanSubmitResponseData = async (resp: string | object): Promise<RendererResponse> => {
-        if(typeof(resp) === 'string') {
+        if (typeof (resp) === 'string') {
             resp = JSON.parse(resp);
         }
         resp = resp as object;
@@ -152,7 +155,7 @@ class RendererHelper {
                 }
                 resolve(validated);
             };
-    
+
             Joi.validate(resp, rendererResponseValidationScheme, {
                 abortEarly: true,
                 allowUnknown: true,
@@ -180,29 +183,82 @@ class RendererHelper {
         numIncorrect,
         processAnswers,
         format = 'json',
-        
+        formData
     }: GetProblemParameters): Promise<unknown> {
-        const resp = await rendererAxios.get(RENDERER_ENDPOINT, {
-            params: {
-                sourceFilePath,
-                problemSource,
-                problemSeed,
-                formURL,
-                baseURL,
-                outputformat,
-                format,
-                lanugage,
-                showHints: _.isNil(showHints) ? undefined : Number(showHints),
-                showSolutions: Number(showSolutions),
-                permissionLevel,
-                problemNumber,
-                numCorrect,
-                numIncorrect,
-                processAnswers,
-            },
-        });
+        let resultFormData: FormData | null = null;
+        const params = {
+            sourceFilePath,
+            problemSource,
+            problemSeed,
+            formURL,
+            baseURL,
+            outputformat,
+            format,
+            lanugage,
+            showHints: _.isNil(showHints) ? undefined : Number(showHints),
+            showSolutions: Number(showSolutions),
+            permissionLevel,
+            problemNumber,
+            numCorrect,
+            numIncorrect,
+            processAnswers,
+        };
+        formData = {
+            ...formData,
+            ...params
+        };
+        if (!_.isNil(formData)) {
+            resultFormData = new FormData();
 
-        return resp.data;
+            for (const key in formData) {
+                // append throws error if value is null
+                if (_.isNil(formData[key])) {
+                    continue;
+                }
+
+                if (_.isArray(formData[key])) {
+                    formData[key].forEach((data: any) => {
+                        resultFormData?.append(key, data);
+                    });
+                } else {
+                    resultFormData?.append(key, formData[key]);
+                }
+                // resultFormData.append(formData[key], key);
+            }
+        }
+        try {
+            const submitParams = {
+                body: formData,
+                method: 'post',
+            };
+
+            // const resp = await fetch(`${configurations.renderer.url}/${RENDERER_ENDPOINT}?${qs.stringify(_({
+            //     sourceFilePath,
+            //     problemSource,
+            //     problemSeed,
+            //     formURL,
+            //     baseURL,
+            //     outputformat,
+            //     format,
+            //     lanugage,
+            //     showHints: _.isNil(showHints) ? undefined : Number(showHints),
+            //     showSolutions: Number(showSolutions),
+            //     permissionLevel,
+            //     problemNumber,
+            //     numCorrect,
+            //     numIncorrect,
+            //     processAnswers,
+            // }).omitBy(_.isUndefined).value())}`, submitParams);
+
+            // const resp = await rendererAxios.get(RENDERER_ENDPOINT, {
+            const resp = await rendererAxios.post(RENDERER_ENDPOINT, resultFormData?.getBuffer(), {
+                headers: resultFormData?.getHeaders()
+            });
+
+            return resp.data;
+        } catch (e) {
+            throw e;
+        }
     }
 }
 

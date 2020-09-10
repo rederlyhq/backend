@@ -264,7 +264,7 @@ class UserController {
                     throw new AlreadyExistsError(`A user with the email ${userObject.email} already exists`);
                 }
             } else {
-                logger.error('This should not happen ')
+                logger.error('This should not happen, email should have been caught above');
                 throw new IllegalArgumentException('Email is required to create a user!');
             }
             return await User.create(userObject);

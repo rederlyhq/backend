@@ -7,7 +7,7 @@ import NotFoundError from '../../exceptions/not-found-error';
 import CourseUnitContent from '../../database/models/course-unit-content';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
-import rendererHelper, { OutputFormat } from '../../utilities/renderer-helper';
+import rendererHelper from '../../utilities/renderer-helper';
 import StudentWorkbook from '../../database/models/student-workbook';
 import StudentGrade from '../../database/models/student-grade';
 import User from '../../database/models/user';

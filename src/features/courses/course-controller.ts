@@ -831,7 +831,7 @@ class CourseController {
         courseQuestion
     }: GetCalculatedRendererParamsOptions): Promise<GetCalculatedRendererParamsResponse> {
         let showSolutions = role !== Role.STUDENT;
-        // Currently we only need this fetch for student, small optimizatino to not call the db for
+        // Currently we only need this fetch for student, small optimization to not call the db again
         if (!showSolutions) {
             if (_.isNil(topic)) {
                 topic = await this.getTopicById(courseQuestion.courseTopicContentId);

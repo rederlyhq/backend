@@ -142,7 +142,21 @@ class RendererHelper {
 
     getOutputFormatForRole = (role: Role): OutputFormat => this.getOutputFormatForPermission(this.getPermissionForRole(role));
 
-    cleanSubmitResponseData = async (resp: string | object): Promise<RendererResponse> => {
+    cleanRendererResponseForTheDatabase = (resp: RendererResponse): Partial<RendererResponse> => {
+        // I don't know if this method could be used if we needed nested keys
+        // I'm back and forth between using _.pick and joi validation
+        return _.pick(resp, [
+            'form_data'
+        ]);
+    }
+
+    cleanRendererResponseForTheResponse = (resp: RendererResponse): Partial<RendererResponse> => {
+        // I don't know if this method could be used if we needed nested keys
+        // I'm back and forth between using _.pick and joi validation
+        return _.pick(resp, [
+            'renderedHTML'
+        ]);
+    }
         if (typeof (resp) === 'string') {
             resp = JSON.parse(resp);
         }

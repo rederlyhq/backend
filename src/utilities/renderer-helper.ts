@@ -34,7 +34,7 @@ export interface GetProblemParameters {
     numCorrect?: number;
     numIncorrect?: number;
     processAnswers?: boolean;
-    formData?: any;
+    formData?: { [key: string]: unknown };
 }
 
 /* eslint-disable @typescript-eslint/camelcase */
@@ -191,7 +191,6 @@ class RendererHelper {
         format = 'json',
         formData
     }: GetProblemParameters): Promise<unknown> {
-        let resultFormData: FormData | null = null;
         const params = {
             sourceFilePath,
             problemSource,
@@ -209,54 +208,35 @@ class RendererHelper {
             numIncorrect,
             processAnswers,
         };
+
+        // Use the passed in form data but overwrite with params
         formData = {
+            // formData can be null or undefined but spread handles this
             ...formData,
             ...params
         };
-        if (!_.isNil(formData)) {
-            resultFormData = new FormData();
 
-            for (const key in formData) {
-                // append throws error if value is null
-                if (_.isNil(formData[key])) {
-                    continue;
-                }
+        const resultFormData = new FormData();
+        for (const key in formData) {
+            const value = formData[key] as unknown;
+            // append throws error if value is null
+            // We thought about stripping this with lodash above but decided not to
+            // This implementation let's use put a breakpoint and debug
+            // As well as the fact that it is minorly more efficient
+            if (_.isNil(value)) {
+                continue;
+            }
 
-                if (_.isArray(formData[key])) {
-                    formData[key].forEach((data: any) => {
-                        resultFormData?.append(key, data);
-                    });
-                } else {
-                    resultFormData?.append(key, formData[key]);
-                }
-                // resultFormData.append(formData[key], key);
+            if (_.isArray(value)) {
+                value.forEach((data: unknown) => {
+                    resultFormData?.append(key, data);
+                });
+            } else {
+                resultFormData?.append(key, value);
             }
         }
+
         try {
-            const submitParams = {
-                body: formData,
-                method: 'post',
-            };
-
-            // const resp = await fetch(`${configurations.renderer.url}/${RENDERER_ENDPOINT}?${qs.stringify(_({
-            //     sourceFilePath,
-            //     problemSource,
-            //     problemSeed,
-            //     formURL,
-            //     baseURL,
-            //     outputformat,
-            //     format,
-            //     lanugage,
-            //     showHints: _.isNil(showHints) ? undefined : Number(showHints),
-            //     showSolutions: Number(showSolutions),
-            //     permissionLevel,
-            //     problemNumber,
-            //     numCorrect,
-            //     numIncorrect,
-            //     processAnswers,
-            // }).omitBy(_.isUndefined).value())}`, submitParams);
-
-            // const resp = await rendererAxios.get(RENDERER_ENDPOINT, {
             const resp = await rendererAxios.post(RENDERER_ENDPOINT, resultFormData?.getBuffer(), {
                 headers: resultFormData?.getHeaders()
             });

@@ -831,7 +831,7 @@ class CourseController {
         courseQuestion
     }: GetCalculatedRendererParamsOptions): Promise<GetCalculatedRendererParamsResponse> {
         let showSolutions = role !== Role.STUDENT;
-        // Currently we only need this fetch for student, small optimizatino to not call the db for
+        // Currently we only need this fetch for student, small optimization to not call the db again
         if (!showSolutions) {
             if (_.isNil(topic)) {
                 topic = await this.getTopicById(courseQuestion.courseTopicContentId);
@@ -859,6 +859,18 @@ class CourseController {
             }
         });
 
+        let workbook: StudentWorkbook | null = null;
+        if(_.isNil(options.workbookId)) {
+            const workbooks = await studentGrade?.getWorkbooks({
+                limit: 1,
+                order: [ [ 'createdAt', 'DESC' ]]
+            });
+            workbook = workbooks?.[0] || null;
+        } else {
+            workbook = await courseRepository.getWorkbookById(options.workbookId);
+        }
+
+
         const randomSeed = _.isNil(studentGrade) ? 666 : studentGrade.randomSeed;
 
         const calculatedRendererParameters = await this.getCalculatedRendererParams({
@@ -866,11 +878,22 @@ class CourseController {
             role: options.role,
         });
 
+        if (options.readonly) {
+            calculatedRendererParameters.outputformat = OutputFormat.STATIC;
+        }
+
+        let showCorrectAnswers = false;
+        if (options.role === Role.PROFESSOR && !_.isNil(workbook)) {
+            showCorrectAnswers = true;
+        }
+
         const rendererData = await rendererHelper.getProblem({
             sourceFilePath: courseQuestion.webworkQuestionPath,
             problemSeed: randomSeed,
             formURL: options.formURL,
             numIncorrect: studentGrade?.numAttempts,
+            formData: workbook?.submitted.form_data,
+            showCorrectAnswers,
             ...calculatedRendererParameters
         });
         return {
@@ -921,7 +944,6 @@ class CourseController {
                 )
             ) {
                 studentGrade.numAttempts++;
-
                 if (moment().isBefore(moment(topic.endDate))) {
                     // Full credit.
                     studentGrade.bestScore = overallBestScore;
@@ -942,12 +964,14 @@ class CourseController {
                 return await appSequelize.transaction(async (): Promise<SubmitAnswerResult> => {
                     await studentGrade.save();
 
+                    const submitted = _.cloneDeep(options.submitted);
+                    delete submitted.renderedHTML;
                     const studentWorkbook = await StudentWorkbook.create({
                         studentGradeId: studentGrade.id,
                         userId: options.userId,
                         courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
                         randomSeed: studentGrade.randomSeed,
-                        submitted: options.submitted,
+                        submitted,
                         result: options.score,
                         time: new Date()
                     });
@@ -1051,7 +1075,12 @@ class CourseController {
                                 include: [{
                                     model: StudentGrade,
                                     as: 'grades',
-                                    required: false
+                                    required: false,
+                                    where: {
+                                        userId: {
+                                            [Sequelize.Op.eq]: sequelize.literal('"courseEnrollments".user_id')
+                                        }
+                                    }
                                 }]
                             }]
                         }]
@@ -1061,7 +1090,7 @@ class CourseController {
             where: {
                 [`$courseEnrollments.course.units.topics.questions.grades.${StudentGrade.rawAttributes.id.field}$`]: {
                     [Sequelize.Op.eq]: null
-                }
+                },
             }
         });
 

@@ -172,6 +172,8 @@ export interface GetQuestionOptions {
     formURL: string;
     role: Role;
     topic?: CourseTopicContent;
+    workbookId?: number;
+    readonly?: boolean;
 };
 
 export interface GetQuestionResult {

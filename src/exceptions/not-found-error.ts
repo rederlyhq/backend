@@ -1,4 +1,4 @@
-import RederlyExtendedError from "./rederly-extended-error";
+import RederlyExtendedError from './rederly-extended-error';
 
 export default class NotFoundError extends RederlyExtendedError {
     public name: string;

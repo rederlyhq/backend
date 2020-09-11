@@ -20,7 +20,7 @@ import { Constants } from '../../constants';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import Role from '../permissions/roles';
 import { GetCalculatedRendererParamsResponse } from './course-types';
-import { RENDERER_ENDPOINT, GetProblemParameters } from '../../utilities/renderer-helper';
+import rendererHelper, { RENDERER_ENDPOINT, GetProblemParameters, RendererResponse } from '../../utilities/renderer-helper';
 import StudentGrade from '../../database/models/student-grade';
 import bodyParser = require('body-parser');
 
@@ -422,7 +422,9 @@ router.get('/question/:id',
                 questionId: params.id,
                 userId: session.userId,
                 formURL: req.originalUrl,
-                role: user.roleId
+                role: user.roleId,
+                readonly: req.query.readonly,
+                workbookId: req.query.workbookId,
             });
             next(httpResponse.Ok('Fetched question successfully', question));
 
@@ -501,9 +503,9 @@ router.post('/question/:id',
                 throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
             }
 
-            let data = proxyResData.toString('utf8');
+            let rendererResponse: RendererResponse | null = null;
             try {
-                data = JSON.parse(data);
+                rendererResponse = await rendererHelper.parseRendererResponse(proxyResData.toString('utf8'));
             } catch (e) {
                 throw new WrappedError(`Error parsing data response from renderer on question ${userReq.meta?.studentGrade?.courseWWTopicQuestionId} for grade ${userReq.meta?.studentGrade?.id}`, e);
             }
@@ -515,14 +517,14 @@ router.post('/question/:id',
             const result = await courseController.submitAnswer({
                 userId: userReq.session.userId,
                 questionId: params.id as number,
-                score: data.problem_result.score,
-                submitted: data,
+                score: rendererResponse.problem_result.score,
+                submitted: rendererResponse,
             });
 
             // There is no way to get next callback, however anything thrown will get sent to next
             // Using the below line will responde with a 201 the way we do in our routes
             throw httpResponse.Ok('Answer submitted for question', {
-                rendererData: data,
+                rendererData: rendererHelper.cleanRendererResponseForTheResponse(rendererResponse),
                 ...result
             });
 

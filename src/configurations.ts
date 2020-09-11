@@ -28,7 +28,8 @@ export default {
         limiter: {
             windowLength: fromIntValue(process.env.SERVER_LIMITER_WINDOW_LENGTH, 60000),
             maxRequests: fromIntValue(process.env.SERVER_LIMITER_MAX_REQUESTS, 100),
-        }
+        },
+        logAccess: _.defaultTo(fromBooleanField(process.env.SERVER_LOG_ACCESS), true),
     },
     db: {
         host: _.defaultTo(process.env.DB_HOST, 'localhost'),

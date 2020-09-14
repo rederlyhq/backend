@@ -103,6 +103,13 @@ export interface UpdateQuestionOptions {
     updates: Partial<CourseWWTopicQuestion>;
 }
 
+export interface UpdateGradeOptions {
+    where: {
+        id: number;
+    };
+    updates: Partial<StudentGrade>;
+}
+
 export interface UpdateQuestionsOptions {
     where: WhereOptions;
     // Updates can take any form, i.e. I can have problemNumber: { [sequelize.OP.gte]: 0 } or sequelize.literal

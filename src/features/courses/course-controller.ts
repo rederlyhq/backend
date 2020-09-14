@@ -875,7 +875,7 @@ class CourseController {
         }
 
 
-        const randomSeed = _.isNil(studentGrade) ? 666 : studentGrade.randomSeed;
+        const randomSeed = _.isNil(studentGrade) ? null : studentGrade.randomSeed;
 
         const calculatedRendererParameters = await this.getCalculatedRendererParams({
             courseQuestion,

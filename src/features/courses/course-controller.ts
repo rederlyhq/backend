@@ -1071,6 +1071,10 @@ class CourseController {
             if (_.isNull(enrollment)) {
                 throw new NotFoundError(`Could not find Student ${deEnrollment.userId} to remove from Course ${deEnrollment.courseId}`);
             }
+            
+            if (enrollment.dropDate) {
+                throw new NotFoundError(`Student ${deEnrollment.userId} has already been dropped from Course ${deEnrollment.courseId}`);
+            }
 
             enrollment.dropDate = new Date();
             return await enrollment.save();

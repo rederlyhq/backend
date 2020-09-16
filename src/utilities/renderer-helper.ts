@@ -21,7 +21,7 @@ export enum OutputFormat {
 
 export interface GetProblemParameters {
     sourceFilePath?: string;
-    problemSeed?: number;
+    problemSeed?: number | null;
     formURL: string;
     baseURL?: string;
     outputformat?: OutputFormat;
@@ -179,7 +179,7 @@ class RendererHelper {
     async getProblem({
         sourceFilePath,
         problemSource,
-        problemSeed,
+        problemSeed = 666,
         formURL,
         baseURL = '/',
         outputformat,
@@ -217,8 +217,8 @@ class RendererHelper {
         // Use the passed in form data but overwrite with params
         formData = {
             // formData can be null or undefined but spread handles this
-            ...formData,
-            ...params
+            ..._(formData).omitBy(_.isNil).value(),
+            ..._(params).omitBy(_.isNil).value()
         };
 
         const resultFormData = new FormData();

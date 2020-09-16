@@ -77,6 +77,12 @@ export namespace UpdateCourseTopicQuestionRequest {
     export type body = Joi.extractType<typeof validations.updateCourseTopicQuestionValidation.body>;
 };
 
+export namespace UpdateGradeRequest {
+    export type params = Joi.extractType<typeof validations.updateGradeValidation.params>;
+    export type query = Joi.extractType<typeof validations.updateGradeValidation.query>;
+    export type body = Joi.extractType<typeof validations.updateGradeValidation.body>;
+};
+
 export namespace CreateCourseTopicQuestionRequest {
     export type params = Joi.extractType<typeof validations.createCourseTopicQuestionValidation.params>;
     export type query = Joi.extractType<typeof validations.createCourseTopicQuestionValidation.query>;

@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import WrappedError from '../../exceptions/wrapped-error';
 import { Constants } from '../../constants';
-import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions } from './course-types';
+import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions } from './course-types';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 import NotFoundError from '../../exceptions/not-found-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
@@ -13,6 +13,7 @@ import CourseTopicContent from '../../database/models/course-topic-content';
 import Course from '../../database/models/course';
 import logger from '../../utilities/logger';
 import StudentWorkbook from '../../database/models/student-workbook';
+import StudentGrade from '../../database/models/student-grade';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -444,6 +445,25 @@ class CourseRepository {
                 id
             }
         });
+    }
+
+    async updateGrade(options: UpdateGradeOptions): Promise<UpdateResult<StudentGrade>> {
+        try {
+            const updates = await StudentGrade.update(options.updates, {
+                where: {
+                    ...options.where,
+                    active: true
+                },
+                returning: true,
+            });
+            return {
+                updatedCount: updates[0],
+                updatedRecords: updates[1],
+            };
+        } catch (e) {
+            // this.checkGradeError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
+        }
     }
 }
 

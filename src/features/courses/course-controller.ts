@@ -16,7 +16,7 @@ import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import appSequelize from '../../database/app-sequelize';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -780,6 +780,10 @@ class CourseController {
         });
     }
 
+    updateGrade(options: UpdateGradeOptions): Promise<UpdateResult<StudentGrade>> {
+        return courseRepository.updateGrade(options);
+    }
+
     async createQuestion(question: Partial<CourseWWTopicQuestion>): Promise<CourseWWTopicQuestion> {
         if (_.isNil(question.problemNumber)) {
             if (_.isNil(question.courseTopicContentId)) {
@@ -831,7 +835,7 @@ class CourseController {
         courseQuestion
     }: GetCalculatedRendererParamsOptions): Promise<GetCalculatedRendererParamsResponse> {
         let showSolutions = role !== Role.STUDENT;
-        // Currently we only need this fetch for student, small optimizatino to not call the db for
+        // Currently we only need this fetch for student, small optimization to not call the db again
         if (!showSolutions) {
             if (_.isNil(topic)) {
                 topic = await this.getTopicById(courseQuestion.courseTopicContentId);
@@ -859,18 +863,41 @@ class CourseController {
             }
         });
 
-        const randomSeed = _.isNil(studentGrade) ? 666 : studentGrade.randomSeed;
+        let workbook: StudentWorkbook | null = null;
+        if(_.isNil(options.workbookId)) {
+            const workbooks = await studentGrade?.getWorkbooks({
+                limit: 1,
+                order: [ [ 'createdAt', 'DESC' ]]
+            });
+            workbook = workbooks?.[0] || null;
+        } else {
+            workbook = await courseRepository.getWorkbookById(options.workbookId);
+        }
+
+
+        const randomSeed = _.isNil(studentGrade) ? null : studentGrade.randomSeed;
 
         const calculatedRendererParameters = await this.getCalculatedRendererParams({
             courseQuestion,
             role: options.role,
         });
 
+        if (options.readonly) {
+            calculatedRendererParameters.outputformat = OutputFormat.STATIC;
+        }
+
+        let showCorrectAnswers = false;
+        if (options.role === Role.PROFESSOR && !_.isNil(workbook)) {
+            showCorrectAnswers = true;
+        }
+
         const rendererData = await rendererHelper.getProblem({
             sourceFilePath: courseQuestion.webworkQuestionPath,
             problemSeed: randomSeed,
             formURL: options.formURL,
             numIncorrect: studentGrade?.numAttempts,
+            formData: workbook?.submitted.form_data,
+            showCorrectAnswers,
             ...calculatedRendererParameters
         });
         return {
@@ -921,7 +948,6 @@ class CourseController {
                 )
             ) {
                 studentGrade.numAttempts++;
-
                 if (moment().isBefore(moment(topic.endDate))) {
                     // Full credit.
                     studentGrade.bestScore = overallBestScore;
@@ -942,12 +968,14 @@ class CourseController {
                 return await appSequelize.transaction(async (): Promise<SubmitAnswerResult> => {
                     await studentGrade.save();
 
+                    const submitted = _.cloneDeep(options.submitted);
+                    delete submitted.renderedHTML;
                     const studentWorkbook = await StudentWorkbook.create({
                         studentGradeId: studentGrade.id,
                         userId: options.userId,
                         courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
                         randomSeed: studentGrade.randomSeed,
-                        submitted: options.submitted,
+                        submitted,
                         result: options.score,
                         time: new Date()
                     });
@@ -1051,7 +1079,12 @@ class CourseController {
                                 include: [{
                                     model: StudentGrade,
                                     as: 'grades',
-                                    required: false
+                                    required: false,
+                                    where: {
+                                        userId: {
+                                            [Sequelize.Op.eq]: sequelize.literal('"courseEnrollments".user_id')
+                                        }
+                                    }
                                 }]
                             }]
                         }]
@@ -1061,7 +1094,7 @@ class CourseController {
             where: {
                 [`$courseEnrollments.course.units.topics.questions.grades.${StudentGrade.rawAttributes.id.field}$`]: {
                     [Sequelize.Op.eq]: null
-                }
+                },
             }
         });
 
@@ -1372,6 +1405,8 @@ class CourseController {
             userId,
         } = options.where;
 
+        const { followQuestionRules } = options;
+
         // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
         const where: sequelize.WhereOptions = _({
             active: true,
@@ -1383,7 +1418,8 @@ class CourseController {
         const include: sequelize.IncludeOptions[] = [{
             model: StudentGrade,
             as: 'grades',
-            attributes: [],
+            // only send the student grade down if we are listing for a user
+            attributes: _.isNil(userId) ? [] : undefined,
             where: {
                 active: true
             }
@@ -1407,6 +1443,17 @@ class CourseController {
                 }]
             });
         }
+        
+        let scoreField: sequelize.Utils.Col = sequelize.col(`grades.${StudentGrade.rawAttributes.overallBestScore.field}`);
+        if (followQuestionRules) {
+            scoreField = sequelize.col(`grades.${StudentGrade.rawAttributes.effectiveScore.field}`);
+        }
+
+        const group = [`${CourseWWTopicQuestion.name}.${CourseWWTopicQuestion.rawAttributes.id.field}`];
+        // required to send down the user grade, which we only need when fetching for a user
+        if (!_.isNil(userId)) {
+            group.push(`grades.${StudentGrade.rawAttributes.id.field}`);
+        }
 
         return CourseWWTopicQuestion.findAll({
             where,
@@ -1414,13 +1461,13 @@ class CourseController {
                 'id',
                 [sequelize.literal(`'Problem ' || "${CourseWWTopicQuestion.name}".${CourseWWTopicQuestion.rawAttributes.problemNumber.field}`), 'name'],
                 [sequelize.fn('avg', sequelize.col(`grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
-                [sequelize.fn('avg', sequelize.col(`grades.${StudentGrade.rawAttributes.bestScore.field}`)), 'averageScore'],
+                [sequelize.fn('avg', scoreField), 'averageScore'],
                 [sequelize.fn('count', sequelize.col(`grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
                 [sequelize.literal(`count(CASE WHEN "grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
                 [sequelize.literal(`CASE WHEN COUNT("grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN count(CASE WHEN "grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "grades".${StudentGrade.rawAttributes.id.field} END)::FLOAT / count("grades".${StudentGrade.rawAttributes.id.field}) ELSE NULL END`), 'completionPercent'],
             ],
             include,
-            group: [`${CourseWWTopicQuestion.name}.${CourseWWTopicQuestion.rawAttributes.id.field}`],
+            group,
             order: [
                 ['problemNumber', 'asc']
             ],

@@ -5,7 +5,7 @@ import validate from '../../middleware/joi-validator';
 import { authenticationMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
-import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation } from './course-route-validation';
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation } from './course-route-validation';
 import NotFoundError from '../../exceptions/not-found-error';
 import multer = require('multer');
 import * as proxy from 'express-http-proxy';
@@ -14,13 +14,13 @@ import * as _ from 'lodash';
 import configurations from '../../configurations';
 import WrappedError from '../../exceptions/wrapped-error';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
-import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest } from './course-route-request-types';
+import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest } from './course-route-request-types';
 import Boom = require('boom');
 import { Constants } from '../../constants';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import Role from '../permissions/roles';
 import { GetCalculatedRendererParamsResponse } from './course-types';
-import { RENDERER_ENDPOINT, GetProblemParameters } from '../../utilities/renderer-helper';
+import rendererHelper, { RENDERER_ENDPOINT, GetProblemParameters, RendererResponse } from '../../utilities/renderer-helper';
 import StudentGrade from '../../database/models/student-grade';
 import bodyParser = require('body-parser');
 
@@ -340,6 +340,27 @@ router.put('/unit/:id',
         }
     }));
 
+router.put('/question/grade/:id',
+    authenticationMiddleware,
+    validate(updateGradeValidation),
+    // This is to work around "extractMap" error
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateGradeRequest.body, UpdateGradeRequest.query>, _res: Response, next: NextFunction) => {
+        const params = req.params as UpdateCourseTopicQuestionRequest.params;
+        const updatesResult = await courseController.updateGrade({
+            where: {
+                id: params.id
+            },
+            updates: {
+                ...req.body
+            }
+        });
+        next(httpResponse.Ok('Updated grade successfully', {
+            updatesResult,
+            updatesCount: updatesResult.updatedCount
+        }));
+    }));
+
 router.put('/question/:id',
     authenticationMiddleware,
     validate(updateCourseTopicQuestionValidation),
@@ -422,7 +443,9 @@ router.get('/question/:id',
                 questionId: params.id,
                 userId: session.userId,
                 formURL: req.originalUrl,
-                role: user.roleId
+                role: user.roleId,
+                readonly: req.query.readonly,
+                workbookId: req.query.workbookId,
             });
             next(httpResponse.Ok('Fetched question successfully', question));
 
@@ -501,9 +524,9 @@ router.post('/question/:id',
                 throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
             }
 
-            let data = proxyResData.toString('utf8');
+            let rendererResponse: RendererResponse | null = null;
             try {
-                data = JSON.parse(data);
+                rendererResponse = await rendererHelper.parseRendererResponse(proxyResData.toString('utf8'));
             } catch (e) {
                 throw new WrappedError(`Error parsing data response from renderer on question ${userReq.meta?.studentGrade?.courseWWTopicQuestionId} for grade ${userReq.meta?.studentGrade?.id}`, e);
             }
@@ -515,14 +538,14 @@ router.post('/question/:id',
             const result = await courseController.submitAnswer({
                 userId: userReq.session.userId,
                 questionId: params.id as number,
-                score: data.problem_result.score,
-                submitted: data,
+                score: rendererResponse.problem_result.score,
+                submitted: rendererResponse,
             });
 
             // There is no way to get next callback, however anything thrown will get sent to next
             // Using the below line will responde with a 201 the way we do in our routes
             throw httpResponse.Ok('Answer submitted for question', {
-                rendererData: data,
+                rendererData: rendererHelper.cleanRendererResponseForTheResponse(rendererResponse),
                 ...result
             });
 

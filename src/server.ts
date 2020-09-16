@@ -33,13 +33,16 @@ const {
 } = configurations.server.limiter;
 
 const app = express();
-app.use(morgan('dev', {
-    stream: {
-        write: (message): void => {
-            logger.info(message);
+
+if (configurations.server.logAccess) {
+    app.use(morgan('dev', {
+        stream: {
+            write: (message): void => {
+                logger.info(message);
+            }
         }
-    }
-}));
+    }));    
+}
 
 const limiter = rateLimit({
     windowMs: windowLength,

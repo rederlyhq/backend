@@ -169,6 +169,19 @@ export const updateCourseTopicQuestionValidation = {
     query: {},
 };
 
+export const updateGradeValidation = {
+    params: {
+        id: Joi.number().required()
+    },
+    body: {
+        locked: Joi.boolean().optional(),
+        effectiveScore: Joi.number().optional()
+        // Deletes are one directional and soft
+        // active: Joi.boolean().optional(),
+    },
+    query: {},
+};
+
 export const createCourseTopicQuestionValidation = {
     params: {},
     body: {
@@ -190,7 +203,10 @@ export const getQuestionValidation = {
     params: {
         id: Joi.number().required()
     },
-    query: {},
+    query: {
+        workbookId: Joi.number().optional(),
+        readonly: Joi.boolean().optional()
+    },
     body: {}
 };
 

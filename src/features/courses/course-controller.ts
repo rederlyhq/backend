@@ -1418,7 +1418,6 @@ class CourseController {
         const include: sequelize.IncludeOptions[] = [{
             model: StudentGrade,
             as: 'grades',
-            attributes: [],
             where: {
                 active: true
             }
@@ -1460,7 +1459,7 @@ class CourseController {
                 [sequelize.literal(`CASE WHEN COUNT("grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN count(CASE WHEN "grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "grades".${StudentGrade.rawAttributes.id.field} END)::FLOAT / count("grades".${StudentGrade.rawAttributes.id.field}) ELSE NULL END`), 'completionPercent'],
             ],
             include,
-            group: [`${CourseWWTopicQuestion.name}.${CourseWWTopicQuestion.rawAttributes.id.field}`],
+            group: [`${CourseWWTopicQuestion.name}.${CourseWWTopicQuestion.rawAttributes.id.field}`, `grades.${StudentGrade.rawAttributes.id.field}`],
             order: [
                 ['problemNumber', 'asc']
             ],

@@ -1418,6 +1418,8 @@ class CourseController {
         const include: sequelize.IncludeOptions[] = [{
             model: StudentGrade,
             as: 'grades',
+            // only send the student grade down if we are listing for a user
+            attributes: _.isNil(userId) ? [] : undefined,
             where: {
                 active: true
             }
@@ -1447,6 +1449,12 @@ class CourseController {
             scoreField = sequelize.col(`grades.${StudentGrade.rawAttributes.effectiveScore.field}`);
         }
 
+        const group = [`${CourseWWTopicQuestion.name}.${CourseWWTopicQuestion.rawAttributes.id.field}`];
+        // required to send down the user grade, which we only need when fetching for a user
+        if (!_.isNil(userId)) {
+            group.push(`grades.${StudentGrade.rawAttributes.id.field}`);
+        }
+
         return CourseWWTopicQuestion.findAll({
             where,
             attributes: [
@@ -1459,7 +1467,7 @@ class CourseController {
                 [sequelize.literal(`CASE WHEN COUNT("grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN count(CASE WHEN "grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "grades".${StudentGrade.rawAttributes.id.field} END)::FLOAT / count("grades".${StudentGrade.rawAttributes.id.field}) ELSE NULL END`), 'completionPercent'],
             ],
             include,
-            group: [`${CourseWWTopicQuestion.name}.${CourseWWTopicQuestion.rawAttributes.id.field}`, `grades.${StudentGrade.rawAttributes.id.field}`],
+            group,
             order: [
                 ['problemNumber', 'asc']
             ],

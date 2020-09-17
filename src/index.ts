@@ -1,6 +1,5 @@
-require('dotenv').config();
-import './extensions';
 import configurations from './configurations';
+import './extensions';
 import logger from './utilities/logger';
 const enableddMarker = new Array(20).join('*');
 const disableddMarker = new Array(20).join('#');

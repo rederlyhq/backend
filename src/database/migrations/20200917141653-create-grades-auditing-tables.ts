@@ -94,6 +94,7 @@ export default {
       /* *************** *************** */
       /* * New auditing / debug fields * */
       /* *************** *************** */
+      // Modifiers!
       await queryInterface.addColumn('student_workbook', 'student_workbook_was_late', {
         type: DataTypes.BOOLEAN,
         allowNull: false,
@@ -123,6 +124,17 @@ export default {
         allowNull: false,
         defaultValue: false
       }),
+      // Number of attempts!
+      await queryInterface.addColumn('student_grade', 'student_grade_num_legal_attempts', {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+      });
+      await queryInterface.addColumn('student_grade', 'student_grade_num_extended_attempts', {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+      });
 
 
       /* *************** *************** */
@@ -148,11 +160,16 @@ export default {
       /* *************** *************** */
       /* * New auditing / debug fields * */
       /* *************** *************** */
+      // Modifiers!
       await queryInterface.removeColumn('student_workbook', 'student_workbook_was_late');
       await queryInterface.removeColumn('student_workbook', 'student_workbook_was_expired');
       await queryInterface.removeColumn('student_workbook', 'student_workbook_was_after_attempt_limit');
       await queryInterface.removeColumn('student_workbook', 'student_workbook_was_auto_submitted');
       await queryInterface.removeColumn('student_workbook', 'student_workbook_was_locked');
+
+      // Num attempts!
+      await queryInterface.removeColumn('student_grade', 'student_grade_num_legal_attempts');
+      await queryInterface.removeColumn('student_grade', 'student_grade_num_extended_attempts');
 
       /* *************** *************** */
       /* **** New submission fields **** */

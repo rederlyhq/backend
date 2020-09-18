@@ -9,6 +9,8 @@ export default class StudentGrade extends Model {
   public randomSeed!: number;
   public bestScore!: number;
   public numAttempts!: number;
+  public numLegalAttempts!: number;
+  public numExtendedAttempts!: number;
   public firstAttempts!: number;
   public latestAttempts!: number;
   public overallBestScore!: number;
@@ -110,6 +112,18 @@ StudentGrade.init({
   },
   numAttempts: {
     field: 'student_grade_num_attempts',
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0
+  },
+  numLegalAttempts: {
+    field: 'student_grade_num_legal_attempts',
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0
+  },
+  numExtendedAttempts: {
+    field: 'student_grade_num_extended_attempts',
     type: DataTypes.INTEGER,
     allowNull: false,
     defaultValue: 0

@@ -45,7 +45,7 @@ export default {
           allowNull: false,
         },
       });
-  
+
       await queryInterface.createTable('student_grade_lock_action', {
         id: {
           field: 'student_grade_lock_action_id',
@@ -87,6 +87,30 @@ export default {
           allowNull: false,
         },
       });
+
+      await queryInterface.addColumn('student_workbook', 'student_workbook_was_late', {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+      });
+
+      await queryInterface.addColumn('student_workbook', 'student_workbook_was_expired', {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+      });
+
+      await queryInterface.addColumn('student_workbook', 'student_workbook_was_after_attempt_limit', {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+      });
+
+      await queryInterface.addColumn('student_workbook', 'student_workbook_was_auto_submitted', {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+      });
     });
     // This is a hack to add the associations later to avoid cyclic dependencies
     /* eslint-disable @typescript-eslint/no-use-before-define */
@@ -96,6 +120,10 @@ export default {
     await queryInterface.sequelize.transaction(async () => {
       await queryInterface.dropTable('student_grade_override');
       await queryInterface.dropTable('student_grade_lock_action');
+      await queryInterface.removeColumn('student_workbook', 'student_workbook_was_late');
+      await queryInterface.removeColumn('student_workbook', 'student_workbook_was_expired');
+      await queryInterface.removeColumn('student_workbook', 'student_workbook_was_after_attempt_limit');
+      await queryInterface.removeColumn('student_workbook', 'student_workbook_was_auto_submitted');
     });
   }
 };

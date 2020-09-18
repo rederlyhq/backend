@@ -16,6 +16,10 @@ export default class StudentWorkbook extends Model {
     public submitted!: any;
     public result!: number
     public time!: Date;
+    public wasLate!: boolean;
+    public wasExpired!: boolean;
+    public wasAfterAttemptLimit!: boolean;
+    public wasAutoSubmitted!: boolean;
 
     public getStudentGrade!: BelongsToGetAssociationMixin<StudentGrade>;
     public getUser!: BelongsToGetAssociationMixin<User>;
@@ -78,6 +82,31 @@ StudentWorkbook.init({
         type: DataTypes.DATE,
         allowNull: false,
     },
+    wasLate: {
+        field: 'student_workbook_was_late',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+    },
+    wasExpired: {
+        field: 'student_workbook_was_expired',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+    },
+    wasAfterAttemptLimit: {
+        field: 'student_workbook_was_after_attempt_limit',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+    },
+    wasAutoSubmitted: {
+        field: 'student_workbook_was_auto_submitted',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+    },
+
 }, {
     tableName: 'student_workbook',
     sequelize: appSequelize, // this bit is important

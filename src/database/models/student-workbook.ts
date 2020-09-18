@@ -19,6 +19,7 @@ export default class StudentWorkbook extends Model {
     public wasLate!: boolean;
     public wasExpired!: boolean;
     public wasAfterAttemptLimit!: boolean;
+    public wasLocked!: boolean;
     public wasAutoSubmitted!: boolean;
 
     public getStudentGrade!: BelongsToGetAssociationMixin<StudentGrade>;
@@ -106,7 +107,12 @@ StudentWorkbook.init({
         allowNull: false,
         defaultValue: false
     },
-
+    wasLocked: {
+        field: 'student_workbook_was_locked',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+    },
 }, {
     tableName: 'student_workbook',
     sequelize: appSequelize, // this bit is important

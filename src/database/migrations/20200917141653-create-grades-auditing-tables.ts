@@ -118,6 +118,13 @@ export default {
         defaultValue: false
       });
 
+      await queryInterface.addColumn('student_workbook', 'student_workbook_was_locked', {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+      }),
+
+
       /* *************** *************** */
       /* **** New submission fields **** */
       /* *************** *************** */
@@ -145,6 +152,7 @@ export default {
       await queryInterface.removeColumn('student_workbook', 'student_workbook_was_expired');
       await queryInterface.removeColumn('student_workbook', 'student_workbook_was_after_attempt_limit');
       await queryInterface.removeColumn('student_workbook', 'student_workbook_was_auto_submitted');
+      await queryInterface.removeColumn('student_workbook', 'student_workbook_was_locked');
 
       /* *************** *************** */
       /* **** New submission fields **** */

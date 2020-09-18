@@ -4,6 +4,9 @@ export default {
   up: async (queryInterface: QueryInterface): Promise<void> => {
     // Transactions are automatically use because a namespace is injected into sequelize when fetching configurations
     await queryInterface.sequelize.transaction(async () => {
+      /* *************** *************** */
+      /* ***** New Auditing Tables ***** */
+      /* *************** *************** */
       await queryInterface.createTable('student_grade_override', {
         id: {
           field: 'student_grade_override_id',
@@ -88,6 +91,9 @@ export default {
         },
       });
 
+      /* *************** *************** */
+      /* * New auditing / debug fields * */
+      /* *************** *************** */
       await queryInterface.addColumn('student_workbook', 'student_workbook_was_late', {
         type: DataTypes.BOOLEAN,
         allowNull: false,
@@ -111,6 +117,14 @@ export default {
         allowNull: false,
         defaultValue: false
       });
+
+      /* *************** *************** */
+      /* **** New submission fields **** */
+      /* *************** *************** */
+      await queryInterface.addColumn('student_grade', 'student_grade_current_problem_state', {
+        type: DataTypes.JSONB,
+        allowNull: true,
+      });
     });
     // This is a hack to add the associations later to avoid cyclic dependencies
     /* eslint-disable @typescript-eslint/no-use-before-define */
@@ -118,12 +132,24 @@ export default {
   down: async (queryInterface: QueryInterface): Promise<void> => {
     // Transactions are automatically use because a namespace is injected into sequelize when fetching configurations
     await queryInterface.sequelize.transaction(async () => {
+      /* *************** *************** */
+      /* ***** New Auditing Tables ***** */
+      /* *************** *************** */
       await queryInterface.dropTable('student_grade_override');
       await queryInterface.dropTable('student_grade_lock_action');
+      
+      /* *************** *************** */
+      /* * New auditing / debug fields * */
+      /* *************** *************** */
       await queryInterface.removeColumn('student_workbook', 'student_workbook_was_late');
       await queryInterface.removeColumn('student_workbook', 'student_workbook_was_expired');
       await queryInterface.removeColumn('student_workbook', 'student_workbook_was_after_attempt_limit');
       await queryInterface.removeColumn('student_workbook', 'student_workbook_was_auto_submitted');
+
+      /* *************** *************** */
+      /* **** New submission fields **** */
+      /* *************** *************** */
+      await queryInterface.removeColumn('student_grade', 'student_grade_current_problem_state');
     });
   }
 };

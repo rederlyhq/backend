@@ -92,7 +92,10 @@ export default {
     /* eslint-disable @typescript-eslint/no-use-before-define */
   },
   down: async (queryInterface: QueryInterface): Promise<void> => {
-    await queryInterface.dropTable('student_grade_override');
-    await queryInterface.dropTable('student_grade_lock_action');
+    // Transactions are automatically use because a namespace is injected into sequelize when fetching configurations
+    await queryInterface.sequelize.transaction(async () => {
+      await queryInterface.dropTable('student_grade_override');
+      await queryInterface.dropTable('student_grade_lock_action');
+    });
   }
 };

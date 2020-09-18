@@ -212,7 +212,6 @@ class CourseController {
         return courseRepository.createUnit(courseUnitContent);
     }
 
-
     async createTopic(courseTopicContent: CourseTopicContent): Promise<CourseTopicContent> {
         if (_.isNil(courseTopicContent.startDate) || _.isNil(courseTopicContent.endDate) || _.isNil(courseTopicContent.deadDate)) {
             if (_.isNil(courseTopicContent.courseUnitContentId)) {
@@ -1252,17 +1251,38 @@ class CourseController {
                 [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
             ];
             // TODO This group needs to match the alias below, I'd like to find a better way to do this
-            group = [`user.${User.rawAttributes.id.field}`, `user.${User.rawAttributes.firstName.field}`, `user.${User.rawAttributes.lastName.field}`];
+            group = [`user.${User.rawAttributes.id.field}`, 
+                `user.${User.rawAttributes.firstName.field}`, 
+                `user.${User.rawAttributes.lastName.field}`
+            ];
         }
 
+        // Filter all grades to only be included if the student has not been dropped.
+        const studentGradeInclude = [{
+                model: StudentEnrollment,
+                as: 'courseEnrollments',
+                required: true,
+                attributes: [],
+                where: {
+                    courseId: {
+                        [Sequelize.Op.eq]: sequelize.literal(`"user->courseEnrollments".${Course.rawAttributes.id.field}`)
+                    },
+                    dropDate: null
+                }
+            }];
+
         return StudentGrade.findAll({
+            // This query must be run raw, otherwise the deduplication logic in Sequelize will force-add the primary key
+            // resulting in a group-by error. For more information: https://github.com/sequelize/sequelize/issues/3920
+            raw: true,
             include: [{
                 model: User,
                 as: 'user',
                 attributes: ['id', 'firstName', 'lastName'],
                 where: {
                     active: true
-                }
+                },
+                include: studentGradeInclude || []
             }, {
                 model: CourseWWTopicQuestion,
                 as: 'question',

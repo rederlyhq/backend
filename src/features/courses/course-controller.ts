@@ -16,7 +16,7 @@ import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import appSequelize from '../../database/app-sequelize';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -211,7 +211,6 @@ class CourseController {
         }
         return courseRepository.createUnit(courseUnitContent);
     }
-
 
     async createTopic(courseTopicContent: CourseTopicContent): Promise<CourseTopicContent> {
         if (_.isNil(courseTopicContent.startDate) || _.isNil(courseTopicContent.endDate) || _.isNil(courseTopicContent.deadDate)) {
@@ -1059,6 +1058,28 @@ class CourseController {
         });
     }
 
+    // Returns true is successfully deleted the enrollment.
+    async softDeleteEnrollment(deEnrollment: DeleteUserEnrollmentOptions): Promise<boolean> {
+        return await appSequelize.transaction(async () => {
+            const enrollment = await StudentEnrollment.findOne({
+                where: {
+                    ...deEnrollment
+                }
+            });
+
+            if (_.isNull(enrollment)) {
+                throw new NotFoundError(`Could not find Student ${deEnrollment.userId} to remove from Course ${deEnrollment.courseId}`);
+            }
+            
+            if (enrollment.dropDate) {
+                throw new NotFoundError(`Student ${deEnrollment.userId} has already been dropped from Course ${deEnrollment.courseId}`);
+            }
+
+            enrollment.dropDate = new Date();
+            return await enrollment.save();
+        });
+    }
+
     async findMissingGrades(): Promise<FindMissingGradesResult[]> {
         const result = await User.findAll({
             include: [{
@@ -1230,17 +1251,38 @@ class CourseController {
                 [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
             ];
             // TODO This group needs to match the alias below, I'd like to find a better way to do this
-            group = [`user.${User.rawAttributes.id.field}`, `user.${User.rawAttributes.firstName.field}`, `user.${User.rawAttributes.lastName.field}`];
+            group = [`user.${User.rawAttributes.id.field}`, 
+                `user.${User.rawAttributes.firstName.field}`, 
+                `user.${User.rawAttributes.lastName.field}`
+            ];
         }
 
+        // Filter all grades to only be included if the student has not been dropped.
+        const studentGradeInclude = [{
+                model: StudentEnrollment,
+                as: 'courseEnrollments',
+                required: true,
+                attributes: [],
+                where: {
+                    courseId: {
+                        [Sequelize.Op.eq]: sequelize.literal(`"user->courseEnrollments".${Course.rawAttributes.id.field}`)
+                    },
+                    dropDate: null
+                }
+            }];
+
         return StudentGrade.findAll({
+            // This query must be run raw, otherwise the deduplication logic in Sequelize will force-add the primary key
+            // resulting in a group-by error. For more information: https://github.com/sequelize/sequelize/issues/3920
+            raw: true,
             include: [{
                 model: User,
                 as: 'user',
                 attributes: ['id', 'firstName', 'lastName'],
                 where: {
                     active: true
-                }
+                },
+                include: studentGradeInclude || []
             }, {
                 model: CourseWWTopicQuestion,
                 as: 'question',

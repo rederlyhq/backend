@@ -28,6 +28,7 @@ export default class StudentWorkbook extends Model {
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
+    file_path: any;
 }
 
 StudentWorkbook.init({
@@ -78,6 +79,11 @@ StudentWorkbook.init({
         type: DataTypes.DATE,
         allowNull: false,
     },
+    file_path:{
+        field:'student_workbook_file_path',
+        type: DataTypes.TEXT,
+        allowNull: true,
+    }
 }, {
     tableName: 'student_workbook',
     sequelize: appSequelize, // this bit is important

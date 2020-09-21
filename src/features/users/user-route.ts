@@ -10,13 +10,9 @@ import passport = require('passport');
 import { authenticationMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
-import NoAssociatedUniversityError from '../../exceptions/no-associated-university-error';
-import AlreadyExistsError from '../../exceptions/already-exists-error';
-import WrappedError from '../../exceptions/wrapped-error';
 import IncludeGradeOptions from './include-grade-options';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
 import logger from '../../utilities/logger';
-import RederlyError from '../../exceptions/rederly-error';
 
 router.post('/login',
     validate(loginValidation),

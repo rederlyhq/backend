@@ -5,6 +5,10 @@ import * as _ from 'lodash';
 import * as Joi from '@hapi/joi';
 import 'joi-extract-type';
 import * as FormData from 'form-data';
+import { isAxiosError } from './axios-helper';
+import logger from './logger';
+import NotFoundError from '../exceptions/not-found-error';
+import WrappedError from '../exceptions/wrapped-error';
 import { RederlyExtendedJoi } from '../extensions/rederly-extended-joi';
 
 const rendererAxios = axios.create({
@@ -249,7 +253,17 @@ class RendererHelper {
 
             return resp.data;
         } catch (e) {
-            throw e;
+            const errorMessagePrefix = 'Get problem from renderer error';
+            if(isAxiosError(e)) {
+                if (e.response?.status === 404) {
+                    logger.error(`Question path ${sourceFilePath} not found by the renderer`);
+                    throw new NotFoundError('Problem path not found');
+                }
+                // TODO cleanup error handling, data might be lengthy
+                throw new WrappedError(`${errorMessagePrefix}; response: ${e.response?.data}`, e);
+            }
+            // Some application error occurred
+            throw new WrappedError(errorMessagePrefix, e);
         }
     }
 }

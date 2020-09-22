@@ -184,7 +184,7 @@ class RendererHelper {
     async getProblem({
         sourceFilePath,
         problemSource,
-        problemSeed = 666,
+        problemSeed,
         formURL,
         baseURL = '/',
         outputformat,

@@ -1296,6 +1296,18 @@ class CourseController {
             averageScoreAttribute = sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
         }
 
+        const completitionPercentAttribute = sequelize.literal(`
+        CASE WHEN COUNT("topics->questions->grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN
+            count(
+                CASE WHEN "topics->questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN
+                    "topics->questions->grades".${StudentGrade.rawAttributes.id.field}
+                END
+            )::FLOAT / count("topics->questions->grades".${StudentGrade.rawAttributes.id.field})
+        ELSE
+            NULL
+        END`);
+
+
         return CourseUnitContent.findAll({
             where,
             attributes: [
@@ -1305,7 +1317,7 @@ class CourseController {
                 [averageScoreAttribute, 'averageScore'],
                 [sequelize.fn('count', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
                 [sequelize.literal(`count(CASE WHEN "topics->questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN "topics->questions->grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
-                [sequelize.literal(`CASE WHEN COUNT("topics->questions->grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN count(CASE WHEN "topics->questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN "topics->questions->grades".${StudentGrade.rawAttributes.id.field} END)::FLOAT / count("topics->questions->grades".${StudentGrade.rawAttributes.id.field}) ELSE NULL END`), 'completionPercent'],
+                [completitionPercentAttribute, 'completionPercent'],
             ],
             include: [{
                 model: CourseTopicContent,
@@ -1394,6 +1406,16 @@ class CourseController {
             averageScoreAttribute = sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
         }
 
+        const completitionPercentAttribute = sequelize.literal(`
+        CASE WHEN COUNT("questions->grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN
+            count(
+                CASE WHEN "questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN
+                    "questions->grades".${StudentGrade.rawAttributes.id.field}
+                END
+            )::FLOAT / count("questions->grades".${StudentGrade.rawAttributes.id.field})
+        ELSE
+            NULL
+        END`);
         return CourseTopicContent.findAll({
             where,
             attributes: [
@@ -1403,7 +1425,7 @@ class CourseController {
                 [averageScoreAttribute, 'averageScore'],
                 [sequelize.fn('count', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
                 [sequelize.literal(`count(CASE WHEN "questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN "questions->grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
-                [sequelize.literal(`CASE WHEN COUNT("questions->grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN count(CASE WHEN "questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN "questions->grades".${StudentGrade.rawAttributes.id.field} END)::FLOAT / count("questions->grades".${StudentGrade.rawAttributes.id.field}) ELSE NULL END`), 'completionPercent'],
+                [completitionPercentAttribute, 'completionPercent'],
             ],
             include,
             group: [`${CourseTopicContent.name}.${CourseTopicContent.rawAttributes.id.field}`, `${CourseTopicContent.name}.${CourseTopicContent.rawAttributes.name.field}`],
@@ -1470,6 +1492,18 @@ class CourseController {
             group.push(`grades.${StudentGrade.rawAttributes.id.field}`);
         }
 
+        // When using this for a single students grade, it's either 100% for completed or 0% for anything else, it doesn't really make sense
+        const completitionPercentAttribute = sequelize.literal(`
+        CASE WHEN COUNT("grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN
+            count(
+                CASE WHEN "grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN
+                    "grades".${StudentGrade.rawAttributes.id.field}
+                END
+            )::FLOAT / count("grades".${StudentGrade.rawAttributes.id.field})
+        ELSE
+            NULL
+        END`);
+
         return CourseWWTopicQuestion.findAll({
             where,
             attributes: [
@@ -1479,7 +1513,7 @@ class CourseController {
                 [sequelize.fn('avg', scoreField), 'averageScore'],
                 [sequelize.fn('count', sequelize.col(`grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
                 [sequelize.literal(`count(CASE WHEN "grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
-                [sequelize.literal(`CASE WHEN COUNT("grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN count(CASE WHEN "grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "grades".${StudentGrade.rawAttributes.id.field} END)::FLOAT / count("grades".${StudentGrade.rawAttributes.id.field}) ELSE NULL END`), 'completionPercent'],
+                [completitionPercentAttribute, 'completionPercent'],
             ],
             include,
             group,

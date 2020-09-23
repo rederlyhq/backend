@@ -5,6 +5,11 @@ import * as _ from 'lodash';
 import * as Joi from '@hapi/joi';
 import 'joi-extract-type';
 import * as FormData from 'form-data';
+import { isAxiosError } from './axios-helper';
+import logger from './logger';
+import NotFoundError from '../exceptions/not-found-error';
+import WrappedError from '../exceptions/wrapped-error';
+import { RederlyExtendedJoi } from '../extensions/rederly-extended-joi';
 
 const rendererAxios = axios.create({
     baseURL: configurations.renderer.url,
@@ -42,14 +47,14 @@ export interface GetProblemParameters {
 /* eslint-disable @typescript-eslint/camelcase */
 export const rendererResponseValidationScheme = Joi.object({
     answers: Joi.object().pattern(/\w+/, Joi.object({
-        _filter_name: Joi.string().optional(), // Should be required, but we've seen problem source mess with the object with and drop the field
+        _filter_name: RederlyExtendedJoi.toStringedString().optional(), // Should be required, but we've seen problem source mess with the object with and drop the field
         correct_ans: Joi.any().optional(), // I have seen string and number // REQUIRED BUT I SAW AN EXISTING PROBLEM WHERE AnSwEr0002 only had a name
-        original_student_ans: Joi.string().allow('').optional(), // TODO more validation with form data? // Should be required, but we've seen problem source mess with the object with and drop the field
-        preview_latex_string: Joi.string().allow('').allow(null).optional(), // TODO has special characters that seem to block string // Should be required, but we've seen problem source mess with the object with and drop the field
+        original_student_ans: RederlyExtendedJoi.toStringedString().allow('').optional(), // TODO more validation with form data? // Should be required, but we've seen problem source mess with the object with and drop the field
+        preview_latex_string: RederlyExtendedJoi.toStringedString().allow('').allow(null).optional(), // TODO has special characters that seem to block string // Should be required, but we've seen problem source mess with the object with and drop the field
         score: Joi.number().min(0).max(1).optional(), // Should be required, but we've seen problem source mess with the object with and drop the field
-        student_ans: Joi.string().allow('').optional(), // Should be required, but we've seen problem source mess with the object with and drop the field
-        correct_ans_latex_string: Joi.string().optional(), // TODO I don't see this in the object
-        entry_type: Joi.string().allow(null).optional(),
+        student_ans: RederlyExtendedJoi.toStringedString().allow('').optional(), // Should be required, but we've seen problem source mess with the object with and drop the field
+        correct_ans_latex_string: RederlyExtendedJoi.toStringedString().optional(), // TODO I don't see this in the object
+        entry_type: RederlyExtendedJoi.toStringedString().allow(null).optional(),
         // ans_label: Joi.string().required(), // DOCUMENT SAYS DO NOT KEEP
         // ans_message: Joi.string().required(), // DOCUMENT SAYS DO NOT KEEP
         // ans_name: Joi.string().required(), // DOCUMENT SAYS DO NOT KEEP
@@ -179,7 +184,7 @@ class RendererHelper {
     async getProblem({
         sourceFilePath,
         problemSource,
-        problemSeed = 666,
+        problemSeed,
         formURL,
         baseURL = '/',
         outputformat,
@@ -248,7 +253,17 @@ class RendererHelper {
 
             return resp.data;
         } catch (e) {
-            throw e;
+            const errorMessagePrefix = 'Get problem from renderer error';
+            if(isAxiosError(e)) {
+                if (e.response?.status === 404) {
+                    logger.error(`Question path ${sourceFilePath} not found by the renderer`);
+                    throw new NotFoundError('Problem path not found');
+                }
+                // TODO cleanup error handling, data might be lengthy
+                throw new WrappedError(`${errorMessagePrefix}; response: ${e.response?.data}`, e);
+            }
+            // Some application error occurred
+            throw new WrappedError(errorMessagePrefix, e);
         }
     }
 }

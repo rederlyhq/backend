@@ -1406,16 +1406,17 @@ class CourseController {
             averageScoreAttribute = sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
         }
 
-        const completitionPercentAttribute = sequelize.literal(`
-        CASE WHEN COUNT("questions->grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN
-            count(
-                CASE WHEN "questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN
-                    "questions->grades".${StudentGrade.rawAttributes.id.field}
-                END
-            )::FLOAT / count("questions->grades".${StudentGrade.rawAttributes.id.field})
-        ELSE
-            NULL
-        END`);
+        // const completitionPercentAttribute = sequelize.literal(`
+        // CASE WHEN COUNT("questions->grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN
+        //     count(
+        //         CASE WHEN "questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN
+        //             "questions->grades".${StudentGrade.rawAttributes.id.field}
+        //         END
+        //     )::FLOAT / count("questions->grades".${StudentGrade.rawAttributes.id.field})
+        // ELSE
+        //     NULL
+        // END`);
+        const completitionPercentAttribute = sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
         return CourseTopicContent.findAll({
             where,
             attributes: [

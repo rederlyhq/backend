@@ -1492,17 +1492,18 @@ class CourseController {
             group.push(`grades.${StudentGrade.rawAttributes.id.field}`);
         }
 
-        // When using this for a single students grade, it's either 100% for completed or 0% for anything else, it doesn't really make sense
-        const completitionPercentAttribute = sequelize.literal(`
-        CASE WHEN COUNT("grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN
-            count(
-                CASE WHEN "grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN
-                    "grades".${StudentGrade.rawAttributes.id.field}
-                END
-            )::FLOAT / count("grades".${StudentGrade.rawAttributes.id.field})
-        ELSE
-            NULL
-        END`);
+        // // When using this for a single students grade, it's either 100% for completed or 0% for anything else, it doesn't really make sense
+        // const completitionPercentAttribute = sequelize.literal(`
+        // CASE WHEN COUNT("grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN
+        //     count(
+        //         CASE WHEN "grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN
+        //             "grades".${StudentGrade.rawAttributes.id.field}
+        //         END
+        //     )::FLOAT / count("grades".${StudentGrade.rawAttributes.id.field})
+        // ELSE
+        //     NULL
+        // END`);
+        const completitionPercentAttribute = sequelize.fn('avg', sequelize.col(`grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
 
         return CourseWWTopicQuestion.findAll({
             where,

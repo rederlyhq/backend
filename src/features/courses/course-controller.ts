@@ -856,22 +856,37 @@ class CourseController {
             throw new NotFoundError('Could not find the question in the database');
         }
 
-        const studentGrade: StudentGrade | null = await StudentGrade.findOne({
-            where: {
-                userId: options.userId,
-                courseWWTopicQuestionId: options.questionId
-            }
-        });
-
         let workbook: StudentWorkbook | null = null;
-        if(_.isNil(options.workbookId)) {
+        if(!_.isNil(options.workbookId)) {
+            workbook = await courseRepository.getWorkbookById(options.workbookId);
+            // if you requested a workbook then a workbook must be found
+            if(_.isNil(workbook)) {
+                throw new NotFoundError('Could not find the specified workbook');
+            }
+        }
+
+        let studentGrade: StudentGrade | null = null;
+        if(_.isNil(workbook)) {
+            studentGrade = await StudentGrade.findOne({
+                where: {
+                    userId: options.userId,
+                    courseWWTopicQuestionId: options.questionId
+                }
+            });
+        } else {
+            studentGrade = await workbook.getStudentGrade();
+            if (studentGrade.courseWWTopicQuestionId !== options.questionId) {
+                throw new NotFoundError('The grade you have requested does not belong to the question provided');
+            }
+        }
+        
+
+        if(_.isNil(workbook)) {
             const workbooks = await studentGrade?.getWorkbooks({
                 limit: 1,
                 order: [ [ 'createdAt', 'DESC' ]]
             });
             workbook = workbooks?.[0] || null;
-        } else {
-            workbook = await courseRepository.getWorkbookById(options.workbookId);
         }
 
 

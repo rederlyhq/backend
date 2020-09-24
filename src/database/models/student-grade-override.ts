@@ -59,7 +59,7 @@ GradeOverride.init({
   },
   newValue: {
     field: 'student_grade_override_new_value',
-    type: DataTypes.INTEGER,
+    type: DataTypes.FLOAT,
     allowNull: false
   },
 }, {

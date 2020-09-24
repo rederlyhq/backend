@@ -25,6 +25,10 @@ export default class StudentGrade extends Model {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public currentProblemState!: any;
 
+  public lastInfluencingLegalAttemptId!: number;
+  public lastInfluencingCreditedAttemptId!: number;
+  public lastInfluencingAttemptId!: number;
+
   public getUser!: BelongsToGetAssociationMixin<User>;
   public getQuestion!: BelongsToGetAssociationMixin<CourseWWTopicQuestion>;
   public getWorkbooks!: HasManyGetAssociationsMixin<StudentWorkbook>;
@@ -64,6 +68,27 @@ export default class StudentGrade extends Model {
       sourceKey: 'id',
       as: 'workbooks'
     });
+
+    StudentGrade.belongsTo(StudentWorkbook, {
+      foreignKey: 'lastInfluencingLegalAttemptId',
+      targetKey: 'id',
+      as: 'lastInfluencingLegalAttempt',
+      constraints: false
+    });
+
+    StudentGrade.belongsTo(StudentWorkbook, {
+      foreignKey: 'lastInfluencingCreditedAttemptId',
+      targetKey: 'id',
+      as: 'lastInfluencingCreditedAttempt',
+      constraints: false
+    });
+
+    StudentGrade.belongsTo(StudentWorkbook, {
+      foreignKey: 'lastInfluencingAttemptId',
+      targetKey: 'id',
+      as: 'lastInfluencingAttempt',
+      constraints: false
+    });
     /* eslint-enable @typescript-eslint/no-use-before-define */
   }
 
@@ -91,6 +116,21 @@ StudentGrade.init({
     field: 'course_topic_question_id',
     type: DataTypes.INTEGER,
     allowNull: false,
+  },
+  lastInfluencingLegalAttemptId: {
+    field: 'last_influencing_legal_attempt_workbook_id',
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
+  lastInfluencingCreditedAttemptId: {
+    field: 'last_influencing_credited_attempt_workbook_id',
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
+  lastInfluencingAttemptId: {
+    field: 'last_influencing_attempt_workbook_id',
+    type: DataTypes.INTEGER,
+    allowNull: true,
   },
   randomSeed: {
     field: 'student_grade_random_seed',

@@ -34,7 +34,7 @@ export default {
         },
         newValue: {
           field: 'student_grade_override_new_value',
-          type: DataTypes.INTEGER,
+          type: DataTypes.FLOAT,
           allowNull: false
         },
         updatedAt: {
@@ -46,6 +46,12 @@ export default {
           field: 'created_at',
           type: DataTypes.DATE,
           allowNull: false,
+        },
+        active: {
+          field: 'student_grade_override_active',
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+          defaultValue: true
         },
       });
 
@@ -88,6 +94,12 @@ export default {
           field: 'created_at',
           type: DataTypes.DATE,
           allowNull: false,
+        },
+        active: {
+          field: 'student_grade_lock_action_active',
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+          defaultValue: true
         },
       });
 
@@ -136,6 +148,20 @@ export default {
         defaultValue: 0
       });
 
+      // Could add foreign key in migration however startup causes issues
+      // for now sequelize is handling instead of the database
+      await queryInterface.addColumn('student_grade', 'last_influencing_legal_attempt_workbook_id', {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      });
+      await queryInterface.addColumn('student_grade', 'last_influencing_credited_attempt_workbook_id', {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      });
+      await queryInterface.addColumn('student_grade', 'last_influencing_attempt_workbook_id', {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      });
 
       /* *************** *************** */
       /* **** New submission fields **** */
@@ -170,6 +196,11 @@ export default {
       // Num attempts!
       await queryInterface.removeColumn('student_grade', 'student_grade_num_legal_attempts');
       await queryInterface.removeColumn('student_grade', 'student_grade_num_extended_attempts');
+
+      // Workbook loopback
+      await queryInterface.removeColumn('student_grade', 'last_influencing_legal_attempt_workbook_id');
+      await queryInterface.removeColumn('student_grade', 'last_influencing_credited_attempt_workbook_id');
+      await queryInterface.removeColumn('student_grade', 'last_influencing_attempt_workbook_id');
 
       /* *************** *************** */
       /* **** New submission fields **** */

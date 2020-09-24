@@ -14,6 +14,8 @@ import Course from '../../database/models/course';
 import logger from '../../utilities/logger';
 import StudentWorkbook from '../../database/models/student-workbook';
 import StudentGrade from '../../database/models/student-grade';
+import StudentTopicOverride from '../../database/models/student-topic-override';
+import StudentTopicQuestionOverride from '../../database/models/student-topic-question-override';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -463,6 +465,22 @@ class CourseRepository {
         } catch (e) {
             // this.checkGradeError(e);
             throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
+        }
+    }
+
+    async createStudentTopicOverride(obj: Partial<StudentTopicOverride>): Promise<StudentTopicOverride> {
+        try {
+            return await StudentTopicOverride.create(obj);
+        } catch (e) {
+            throw new WrappedError('Could not create StudentTopicOverride', e);
+        }
+    }
+
+    async createStudentTopicQuestionOverride(obj: Partial<StudentTopicQuestionOverride>): Promise<StudentTopicQuestionOverride> {
+        try {
+            return await StudentTopicQuestionOverride.create(obj);
+        } catch (e) {
+            throw new WrappedError('Could not create StudentTopicQuestionOverride', e);
         }
     }
 }

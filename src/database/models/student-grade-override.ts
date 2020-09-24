@@ -2,7 +2,7 @@ import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
 // TODO move this interface into module so other modules can use it
-export interface GradeOverrideInterface {
+export interface StudentGradeOverrideInterface {
   id: number;
   gradeId: number;
   initiatingUserId: number;
@@ -12,7 +12,7 @@ export interface GradeOverrideInterface {
   updatedAt: Date;
 }
 
-export default class GradeOverride extends Model implements GradeOverrideInterface {
+export default class StudentGradeOverride extends Model implements StudentGradeOverrideInterface {
   public id!: number;
   public gradeId!: number;
   public initiatingUserId!: number;
@@ -27,13 +27,13 @@ export default class GradeOverride extends Model implements GradeOverrideInterfa
   static createAssociations(): void {
     // This is a hack to add the associations later to avoid cyclic dependencies
     /* eslint-disable @typescript-eslint/no-use-before-define */
-    GradeOverride.belongsTo(StudentGrade, {
+    StudentGradeOverride.belongsTo(StudentGrade, {
       foreignKey: 'studentGradeId',
       targetKey: 'id',
       as: 'grade'
     });
 
-    GradeOverride.belongsTo(User, {
+    StudentGradeOverride.belongsTo(User, {
       foreignKey: 'initiatingUserId',
       targetKey: 'id',
       as: 'initiatingUser'
@@ -42,7 +42,7 @@ export default class GradeOverride extends Model implements GradeOverrideInterfa
   }
 }
 
-GradeOverride.init({
+StudentGradeOverride.init({
   id: {
     field: 'student_grade_override_id',
     type: DataTypes.INTEGER,

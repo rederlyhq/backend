@@ -227,6 +227,11 @@ export interface CreateGradesForUserEnrollmentOptions {
     userId: number;
 }
 
+export interface DeleteUserEnrollmentOptions {
+    courseId: number;
+    userId: number;
+}
+
 export interface CreateGradesForQuestionOptions {
     questionId: number;
 }

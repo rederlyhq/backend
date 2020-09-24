@@ -254,6 +254,15 @@ export const enrollInCourseByCodeValidation = {
     body: {}
 };
 
+export const deleteEnrollmentValidation = {
+    params: {},
+    query: {},
+    body: {
+        courseId: Joi.number().required(),
+        userId: Joi.number().required()
+    }
+};
+
 export const listCoursesValidation = {
     params: {},
     query: {

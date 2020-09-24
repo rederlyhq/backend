@@ -125,6 +125,12 @@ export namespace EnrollInCourseByCodeRequest {
     export type body = Joi.extractType<typeof validations.enrollInCourseByCodeValidation.body>;
 };
 
+export namespace DeleteEnrollmentRequest {
+    export type params = Joi.extractType<typeof validations.deleteEnrollmentValidation.params>;
+    export type query = Joi.extractType<typeof validations.deleteEnrollmentValidation.query>;
+    export type body = Joi.extractType<typeof validations.deleteEnrollmentValidation.body>;
+};
+
 export namespace ListCoursesRequest {
     export type params = Joi.extractType<typeof validations.listCoursesValidation.params>;
     export type query = Joi.extractType<typeof validations.listCoursesValidation.query>;

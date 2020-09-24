@@ -2,7 +2,7 @@ import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize';
 import CourseWWTopicQuestion from './course-ww-topic-question';
 
-interface StudentTopicOverrideInterface {
+interface StudentTopicQuestionOverrideInterface {
     id: number;
     courseTopicQuestionId: number;
     userId: number;
@@ -10,7 +10,7 @@ interface StudentTopicOverrideInterface {
     active: boolean;
 }
 
-export default class StudentTopicOverride extends Model implements StudentTopicOverrideInterface {
+export default class StudentTopicQuestionOverride extends Model implements StudentTopicQuestionOverrideInterface {
     public id!: number;
     public courseTopicQuestionId!: number;
     public userId!: number;
@@ -32,13 +32,13 @@ export default class StudentTopicOverride extends Model implements StudentTopicO
     static createAssociations(): void {
         // This is a hack to add the associations later to avoid cyclic dependencies
         /* eslint-disable @typescript-eslint/no-use-before-define */
-        StudentTopicOverride.belongsTo(CourseWWTopicQuestion, {
+        StudentTopicQuestionOverride.belongsTo(CourseWWTopicQuestion, {
             foreignKey: 'courseTopicQuestionId',
             targetKey: 'id',
             as: 'studentGrade'
         });
 
-        StudentTopicOverride.belongsTo(User, {
+        StudentTopicQuestionOverride.belongsTo(User, {
             foreignKey: 'userId',
             targetKey: 'id',
             as: 'user'
@@ -52,7 +52,7 @@ export default class StudentTopicOverride extends Model implements StudentTopicO
     }
 }
 
-StudentTopicOverride.init({
+StudentTopicQuestionOverride.init({
     id: {
       field: 'student_topic_question_override_id',
       type: DataTypes.INTEGER,

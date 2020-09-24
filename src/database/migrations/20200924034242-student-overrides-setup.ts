@@ -48,6 +48,16 @@ export default {
           allowNull: false,
           defaultValue: true
         },
+        updatedAt: {
+          field: 'updated_at',
+          type: DataTypes.DATE,
+          allowNull: false,
+        },
+        createdAt: {
+          field: 'created_at',
+          type: DataTypes.DATE,
+          allowNull: false,
+        },
       });
 
       /**
@@ -81,6 +91,16 @@ export default {
           type: DataTypes.BOOLEAN,
           allowNull: false,
           defaultValue: true
+        },
+        updatedAt: {
+          field: 'updated_at',
+          type: DataTypes.DATE,
+          allowNull: false,
+        },
+        createdAt: {
+          field: 'created_at',
+          type: DataTypes.DATE,
+          allowNull: false,
         },
       });
     });

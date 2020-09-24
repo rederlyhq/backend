@@ -17,12 +17,26 @@ export default {
         courseTopicContentId: {
           field: 'course_topic_content_id',
           type: DataTypes.INTEGER,
-          allowNull: false
+          allowNull: false,
+          // Defaults to cascade when generating the db, no action on migrations
+          onUpdate: 'CASCADE',
+          // Different from sequelize model, on models I do this with associations so I can use types
+          references: {
+            model: 'course_topic_content',
+            key: 'course_topic_content_id',
+          },
         },
         userId: {
           field: 'user_id',
           type: DataTypes.INTEGER,
-          allowNull: false
+          allowNull: false,
+          // Defaults to cascade when generating the db, no action on migrations
+          onUpdate: 'CASCADE',
+          // Different from sequelize model, on models I do this with associations so I can use types
+          references: {
+            model: 'users',
+            key: 'user_id',
+          },
         },
         endDate: {
           field: 'student_topic_override_end_date',
@@ -73,12 +87,26 @@ export default {
         courseTopicQuestionId: {
           field: 'course_topic_question_id',
           type: DataTypes.INTEGER,
-          allowNull: false
+          allowNull: false,
+          // Defaults to cascade when generating the db, no action on migrations
+          onUpdate: 'CASCADE',
+          // Different from sequelize model, on models I do this with associations so I can use types
+          references: {
+            model: 'course_topic_question',
+            key: 'course_topic_question_id',
+          },
         },
         userId: {
           field: 'user_id',
           type: DataTypes.INTEGER,
-          allowNull: false
+          allowNull: false,
+          // Defaults to cascade when generating the db, no action on migrations
+          onUpdate: 'CASCADE',
+          // Different from sequelize model, on models I do this with associations so I can use types
+          references: {
+            model: 'users',
+            key: 'user_id',
+          },
         },
         maxAttempts: {
           field: 'student_topic_question_override_max_attempts',

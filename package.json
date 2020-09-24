@@ -85,8 +85,11 @@
     "generate-route-types:debug:watch": "nodemon -x npm run generate-route-types:debug",
     "build": "tsc",
     "build:run": "npm run build && node ts-built/index.js",
-    "sequelize": "sequelize",
-    "lint": "eslint src/ --ext .ts"
+    "sequelize": "npm run build && sequelize",
+    "sequelize:migrations": "npm run sequelize -- db:migrate",
+    "sequelize:migrations:devundo": "npm run sequelize -- db:migrate:undo:all",
+    "lint": "eslint src/ --ext .ts",
+    "clean": "rm -r ts-built"
   },
   "nodemonConfig": {
     "ignore": [

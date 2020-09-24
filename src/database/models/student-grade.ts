@@ -9,6 +9,8 @@ export default class StudentGrade extends Model {
   public randomSeed!: number;
   public bestScore!: number;
   public numAttempts!: number;
+  public numLegalAttempts!: number;
+  public numExtendedAttempts!: number;
   public firstAttempts!: number;
   public latestAttempts!: number;
   public overallBestScore!: number;
@@ -16,6 +18,16 @@ export default class StudentGrade extends Model {
   public partialCreditBestScore!: number;
   public legalScore!: number;
   public locked!: boolean;
+  // This is a jsonb field so it could be any (from db)
+  // Submitted in workbook used any so I'm going to keep it consistent here
+  // If this is used for form data we will never know any info about what keys are available
+  // Might make sense to make this an unknown type since I don't think we will ever access the types
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public currentProblemState!: any;
+
+  public lastInfluencingLegalAttemptId!: number;
+  public lastInfluencingCreditedAttemptId!: number;
+  public lastInfluencingAttemptId!: number;
 
   public getUser!: BelongsToGetAssociationMixin<User>;
   public getQuestion!: BelongsToGetAssociationMixin<CourseWWTopicQuestion>;
@@ -56,6 +68,27 @@ export default class StudentGrade extends Model {
       sourceKey: 'id',
       as: 'workbooks'
     });
+
+    StudentGrade.belongsTo(StudentWorkbook, {
+      foreignKey: 'lastInfluencingLegalAttemptId',
+      targetKey: 'id',
+      as: 'lastInfluencingLegalAttempt',
+      constraints: false
+    });
+
+    StudentGrade.belongsTo(StudentWorkbook, {
+      foreignKey: 'lastInfluencingCreditedAttemptId',
+      targetKey: 'id',
+      as: 'lastInfluencingCreditedAttempt',
+      constraints: false
+    });
+
+    StudentGrade.belongsTo(StudentWorkbook, {
+      foreignKey: 'lastInfluencingAttemptId',
+      targetKey: 'id',
+      as: 'lastInfluencingAttempt',
+      constraints: false
+    });
     /* eslint-enable @typescript-eslint/no-use-before-define */
   }
 
@@ -84,6 +117,21 @@ StudentGrade.init({
     type: DataTypes.INTEGER,
     allowNull: false,
   },
+  lastInfluencingLegalAttemptId: {
+    field: 'last_influencing_legal_attempt_workbook_id',
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
+  lastInfluencingCreditedAttemptId: {
+    field: 'last_influencing_credited_attempt_workbook_id',
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
+  lastInfluencingAttemptId: {
+    field: 'last_influencing_attempt_workbook_id',
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
   randomSeed: {
     field: 'student_grade_random_seed',
     type: DataTypes.INTEGER,
@@ -104,6 +152,18 @@ StudentGrade.init({
   },
   numAttempts: {
     field: 'student_grade_num_attempts',
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0
+  },
+  numLegalAttempts: {
+    field: 'student_grade_num_legal_attempts',
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0
+  },
+  numExtendedAttempts: {
+    field: 'student_grade_num_extended_attempts',
     type: DataTypes.INTEGER,
     allowNull: false,
     defaultValue: 0
@@ -143,6 +203,11 @@ StudentGrade.init({
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: false
+  },
+  currentProblemState: {
+    field: 'student_grade_current_problem_state',
+    type: DataTypes.JSONB,
+    allowNull: true,
   },
 }, {
   tableName: 'student_grade',

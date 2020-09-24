@@ -17,6 +17,8 @@ export default class GradeOverride extends Model implements GradeOverrideInterfa
   public gradeId!: number;
   public initiatingUserId!: number;
   public newValue!: number;
+  public active!: boolean;
+
 
   // timestamps!
   public readonly createdAt!: Date;
@@ -61,6 +63,12 @@ GradeOverride.init({
     field: 'student_grade_override_new_value',
     type: DataTypes.FLOAT,
     allowNull: false
+  },
+  active: {
+    field: 'student_grade_override_active',
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true
   },
 }, {
   tableName: 'student_grade_override',

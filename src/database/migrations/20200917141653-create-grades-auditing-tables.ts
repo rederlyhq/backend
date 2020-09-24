@@ -47,6 +47,12 @@ export default {
           type: DataTypes.DATE,
           allowNull: false,
         },
+        active: {
+          field: 'student_grade_override_active',
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+          defaultValue: true
+        },
       });
 
       await queryInterface.createTable('student_grade_lock_action', {
@@ -88,6 +94,12 @@ export default {
           field: 'created_at',
           type: DataTypes.DATE,
           allowNull: false,
+        },
+        active: {
+          field: 'student_grade_lock_action_active',
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+          defaultValue: true
         },
       });
 

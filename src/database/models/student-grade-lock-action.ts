@@ -17,6 +17,7 @@ export default class StudentGradeLockAction extends Model implements StudentGrad
   public gradeId!: number;
   public initiatingUserId!: number;
   public newValue!: number;
+  public active!: boolean;
 
   // timestamps!
   public readonly createdAt!: Date;
@@ -61,6 +62,12 @@ StudentGradeLockAction.init({
     field: 'student_grade_lock_action_new_value',
     type: DataTypes.BOOLEAN,
     allowNull: false
+  },
+  active: {
+    field: 'student_grade_lock_action_active',
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true
   },
 }, {
   tableName: 'student_grade_lock_action',

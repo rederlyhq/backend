@@ -184,8 +184,6 @@ export default {
         allowNull: true,
       });
     });
-    // This is a hack to add the associations later to avoid cyclic dependencies
-    /* eslint-disable @typescript-eslint/no-use-before-define */
   },
   down: async (queryInterface: QueryInterface): Promise<void> => {
     // Transactions are automatically use because a namespace is injected into sequelize when fetching configurations

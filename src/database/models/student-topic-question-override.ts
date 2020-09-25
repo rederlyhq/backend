@@ -6,7 +6,7 @@ interface StudentTopicQuestionOverrideInterface {
     id: number;
     courseTopicQuestionId: number;
     userId: number;
-    maxAttempts: number;
+    maxAttempts: number | null;
     active: boolean;
 }
 
@@ -14,7 +14,7 @@ export default class StudentTopicQuestionOverride extends Model implements Stude
     public id!: number;
     public courseTopicQuestionId!: number;
     public userId!: number;
-    public maxAttempts!: number;
+    public maxAttempts!: number | null;
     public active!: boolean;
 
 

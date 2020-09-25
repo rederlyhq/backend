@@ -6,8 +6,9 @@ interface StudentTopicOverrideInterface {
     id: number;
     courseTopicContentId: number;
     userId: number;
-    endDate: Date;
-    deadDate: Date;
+    startDate: Date | null;
+    endDate: Date | null;
+    deadDate: Date | null;
     active: boolean;
 }
 
@@ -15,8 +16,9 @@ export default class StudentTopicOverride extends Model implements StudentTopicO
     public id!: number;
     public courseTopicContentId!: number;
     public userId!: number;
-    public endDate!: Date;
-    public deadDate!: Date;
+    public startDate!: Date | null;
+    public endDate!: Date | null;
+    public deadDate!: Date | null;
     public active!: boolean;
 
 
@@ -70,6 +72,11 @@ StudentTopicOverride.init({
         field: 'user_id',
         type: DataTypes.INTEGER,
         allowNull: false
+    },
+    startDate: {
+        field: 'student_topic_override_start_date',
+        type: DataTypes.DATE,
+        allowNull: true,
     },
     endDate: {
         field: 'student_topic_override_end_date',

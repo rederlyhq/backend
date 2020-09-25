@@ -38,6 +38,11 @@ export default {
             key: 'user_id',
           },
         },
+        startDate: {
+          field: 'student_topic_override_start_date',
+          type: DataTypes.DATE,
+          allowNull: true,
+        },
         endDate: {
           field: 'student_topic_override_end_date',
           type: DataTypes.DATE,
@@ -123,7 +128,6 @@ export default {
         },
       });
     });
-    /* eslint-disable @typescript-eslint/no-use-before-define */
   },
   down: async (queryInterface: QueryInterface): Promise<void> => {
     // Transactions are automatically use because a namespace is injected into sequelize when fetching configurations

@@ -779,8 +779,30 @@ class CourseController {
         });
     }
 
-    updateGrade(options: UpdateGradeOptions): Promise<UpdateResult<StudentGrade>> {
-        return courseRepository.updateGrade(options);
+    async updateGrade(options: UpdateGradeOptions): Promise<UpdateResult<StudentGrade>> {
+        return appSequelize.transaction(async (): Promise<UpdateResult<StudentGrade>> => {
+            if (!_.isNil(options.updates.effectiveScore)) {
+                await courseRepository.createStudentGradeOverride({
+                    studentGradeId: options.where.id,
+                    initiatingUserId: options.initiatingUserId,
+                    newValue: options.updates.effectiveScore,
+                });    
+            }
+    
+            if (!_.isNil(options.updates.locked)) {
+                await courseRepository.createStudentGradeLockAction({
+                    studentGradeId: options.where.id,
+                    initiatingUserId: options.initiatingUserId,
+                    newValue: options.updates.locked
+                });    
+            }
+    
+            try {
+                return await courseRepository.updateGrade(options);
+            } catch (e) {
+                throw new WrappedError('Could not update the grade', e);
+            }    
+        });
     }
 
     async createQuestion(question: Partial<CourseWWTopicQuestion>): Promise<CourseWWTopicQuestion> {

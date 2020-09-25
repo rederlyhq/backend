@@ -108,6 +108,7 @@ export interface UpdateGradeOptions {
         id: number;
     };
     updates: Partial<StudentGrade>;
+    initiatingUserId: number;
 }
 
 export interface UpdateQuestionsOptions {

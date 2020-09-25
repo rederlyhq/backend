@@ -346,6 +346,10 @@ router.put('/question/grade/:id',
     // This is to work around "extractMap" error
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateGradeRequest.body, UpdateGradeRequest.query>, _res: Response, next: NextFunction) => {
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+        
         const params = req.params as UpdateCourseTopicQuestionRequest.params;
         const updatesResult = await courseController.updateGrade({
             where: {
@@ -353,7 +357,8 @@ router.put('/question/grade/:id',
             },
             updates: {
                 ...req.body
-            }
+            },
+            initiatingUserId: req.session.userId
         });
         next(httpResponse.Ok('Updated grade successfully', {
             updatesResult,

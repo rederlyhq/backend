@@ -4,9 +4,9 @@ import appSequelize from '../app-sequelize';
 // TODO move this interface into module so other modules can use it
 export interface StudentGradeLockActionInterface {
   id: number;
-  gradeId: number;
+  studentGradeId: number;
   initiatingUserId: number;
-  newValue: number;
+  newValue: boolean;
 
   createdAt: Date;
   updatedAt: Date;
@@ -14,9 +14,9 @@ export interface StudentGradeLockActionInterface {
 
 export default class StudentGradeLockAction extends Model implements StudentGradeLockActionInterface {
   public id!: number;
-  public gradeId!: number;
+  public studentGradeId!: number;
   public initiatingUserId!: number;
-  public newValue!: number;
+  public newValue!: boolean;
   public active!: boolean;
 
   // timestamps!

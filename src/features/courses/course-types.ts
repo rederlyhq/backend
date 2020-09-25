@@ -65,6 +65,18 @@ export interface UpdateCourseTopicsOptions {
     updates: Partial<CourseTopicContent> | any;
 }
 
+export interface ExtendTopicForUserOptions {
+    where: {
+        courseTopicContentId: number;
+        userId: number;
+    };
+    updates: {
+        startDate?: Date;
+        endDate?: Date;
+        deadDate?: Date;
+    };
+}
+
 export interface UpdateUnitOptions {
     where: {
         id: number;

@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import WrappedError from '../../exceptions/wrapped-error';
 import { Constants } from '../../constants';
-import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions } from './course-types';
+import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, ExtendTopicForUserOptions } from './course-types';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 import NotFoundError from '../../exceptions/not-found-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
@@ -250,6 +250,34 @@ class CourseRepository {
                 where: {
                     ...options.where,
                     active: true,
+                },
+                returning: true,
+            });
+            return {
+                updatedCount: updates[0],
+                updatedRecords: updates[1],
+            };
+        } catch (e) {
+            this.checkCourseTopicError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
+        }
+    }
+
+    async extendTopicByUser(options: ExtendTopicForUserOptions): Promise<UpdateResult<StudentTopicOverride>> {
+        try {
+            const found = await StudentTopicOverride.findOne({where: {...options.where, active: true}});
+            if (!found) {
+                const newExtension = await StudentTopicOverride.create({...options.where, ...options.updates}, {validate: true});
+                console.log('New Extension created:', newExtension);
+                return {
+                    updatedCount: 1,
+                    updatedRecords: [],
+                };
+            }
+            const updates = await StudentTopicOverride.update(options.updates, {
+                where: {
+                    ...options.where,
+                    active: true
                 },
                 returning: true,
             });

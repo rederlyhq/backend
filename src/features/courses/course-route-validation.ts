@@ -85,6 +85,19 @@ export const updateCourseTopicValidation = {
     query: {},
 };
 
+export const extendCourseTopicForUserValidation = {
+    params: {},
+    body: {
+        startDate: Joi.date().optional(),
+        endDate: Joi.date().optional(),
+        deadDate: Joi.date().optional()
+    },
+    query: {
+        courseTopicContentId: Joi.number().required(),
+        userId: Joi.number().required()
+    },
+};
+
 export const deleteCourseUnitValidation = {
     params: {
         id: Joi.number().required()

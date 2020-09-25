@@ -279,76 +279,6 @@ export default {
       });
 
       /**
-       * student_topic_override
-       */
-      await queryInterface.createTable('student_topic_override', {
-        id: {
-          field: 'student_topic_override_id',
-          type: DataTypes.INTEGER,
-          autoIncrement: true,
-          primaryKey: true,
-        },
-        courseTopicContentId: {
-          field: 'course_topic_content_id',
-          type: DataTypes.INTEGER,
-          allowNull: false,
-          // Defaults to cascade when generating the db, no action on migrations
-          onUpdate: 'CASCADE',
-          // Different from sequelize model, on models I do this with associations so I can use types
-          references: {
-            model: 'course_topic_content',
-            key: 'course_topic_content_id',
-          },
-        },
-        userId: {
-          field: 'user_id',
-          type: DataTypes.INTEGER,
-          allowNull: false,
-          // Defaults to cascade when generating the db, no action on migrations
-          onUpdate: 'CASCADE',
-          // Different from sequelize model, on models I do this with associations so I can use types
-          references: {
-            model: 'users',
-            key: 'user_id',
-          },
-        },
-        endDate: {
-          field: 'student_topic_override_end_date',
-          type: DataTypes.DATE,
-          allowNull: false,
-          // Incorrect type on sequelize
-          // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-          // @ts-ignore
-          defaultValue: queryInterface.sequelize.literal('NOW()')
-        },
-        deadDate: {
-          field: 'student_topic_override_dead_date',
-          type: DataTypes.DATE,
-          allowNull: false,
-          // Incorrect type on sequelize
-          // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-          // @ts-ignore
-          defaultValue: queryInterface.sequelize.literal('NOW()')
-        },
-        active: {
-          field: 'student_topic_override_active',
-          type: DataTypes.BOOLEAN,
-          allowNull: false,
-          defaultValue: true
-        },
-        updatedAt: {
-          field: 'updated_at',
-          type: DataTypes.DATE,
-          allowNull: false,
-        },
-        createdAt: {
-          field: 'created_at',
-          type: DataTypes.DATE,
-          allowNull: false,
-        },
-      });
-
-      /**
        * topic_assessment_info
        */
       await queryInterface.createTable('topic_assessment_info', {
@@ -448,7 +378,6 @@ export default {
         },
       });
     });
-    /* eslint-disable @typescript-eslint/no-use-before-define */
   },
   down: async (queryInterface: QueryInterface): Promise<void> => {
     // Transactions are automatically use because a namespace is injected into sequelize when fetching configurations
@@ -457,7 +386,6 @@ export default {
       await queryInterface.dropTable('student_grade_instance');
       await queryInterface.dropTable('student_topic_assessment_info');
       await queryInterface.dropTable('student_topic_assessment_override');
-      await queryInterface.dropTable('student_topic_override');
       await queryInterface.dropTable('topic_assessment_info');
     });
   }

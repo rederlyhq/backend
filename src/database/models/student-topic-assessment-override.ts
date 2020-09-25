@@ -6,10 +6,10 @@ interface StudentTopicAssessmentOverrideInterface {
     id: number;
     courseTopicContentId: number;
     userId: number;
-    duration: number;
-    maxGradedAttemptsPerRandomization: number;
-    maxReRandomizations: number;
-    randomizationDelay: number;
+    duration: number | null;
+    maxGradedAttemptsPerRandomization: number | null;
+    maxReRandomizations: number | null;
+    randomizationDelay: number | null;
     active: boolean;
 }
 
@@ -17,10 +17,10 @@ export default class StudentTopicAssessmentOverride extends Model implements Stu
     public id!: number;
     public courseTopicContentId!: number;
     public userId!: number;
-    public duration!: number;
-    public maxGradedAttemptsPerRandomization!: number;
-    public maxReRandomizations!: number;
-    public randomizationDelay!: number;
+    public duration!: number | null;
+    public maxGradedAttemptsPerRandomization!: number | null;
+    public maxReRandomizations!: number | null;
+    public randomizationDelay!: number | null;
     public active!: boolean;
 
     // public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
@@ -77,26 +77,22 @@ StudentTopicAssessmentOverride.init({
     duration: {
         field: 'student_topic_assessment_override_duration',
         type: DataTypes.INTEGER,
-        allowNull: false,
-        defaultValue: 0
+        allowNull: true,
     },
     maxGradedAttemptsPerRandomization: {
         field: 'student_topic_assessment_override_max_graded_attempts_per_randomization',
         type: DataTypes.INTEGER,
-        allowNull: false,
-        defaultValue: 0
+        allowNull: true,
     },
     maxReRandomizations: {
         field: 'student_topic_assessment_override_max_re_randomizations',
         type: DataTypes.INTEGER,
-        allowNull: false,
-        defaultValue: 0
+        allowNull: true,
     },
     randomizationDelay: {
         field: 'student_topic_assessment_override_randomization_delay',
         type: DataTypes.INTEGER,
-        allowNull: false,
-        defaultValue: 0
+        allowNull: true,
     },
     active: {
         field: 'student_topic_assessment_override_active',

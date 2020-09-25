@@ -243,26 +243,22 @@ export default {
         duration: {
           field: 'student_topic_assessment_override_duration',
           type: DataTypes.INTEGER,
-          allowNull: false,
-          defaultValue: 0
+          allowNull: true,
         },
         maxGradedAttemptsPerRandomization: {
           field: 'student_topic_assessment_override_max_graded_attempts_per_randomization',
           type: DataTypes.INTEGER,
-          allowNull: false,
-          defaultValue: 0
+          allowNull: true,
         },
         maxReRandomizations: {
           field: 'student_topic_assessment_override_max_re_randomizations',
           type: DataTypes.INTEGER,
-          allowNull: false,
-          defaultValue: 0
+          allowNull: true,
         },
         randomizationDelay: {
           field: 'student_topic_assessment_override_randomization_delay',
           type: DataTypes.INTEGER,
-          allowNull: false,
-          defaultValue: 0
+          allowNull: true,
         },
         active: {
           field: 'student_topic_assessment_override_active',

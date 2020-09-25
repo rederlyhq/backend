@@ -175,7 +175,8 @@ export const updateGradeValidation = {
     },
     body: {
         locked: Joi.boolean().optional(),
-        effectiveScore: Joi.number().optional()
+        effectiveScore: Joi.number().optional(),
+        currentProblemState: Joi.any().optional()
         // Deletes are one directional and soft
         // active: Joi.boolean().optional(),
     },

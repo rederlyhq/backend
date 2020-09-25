@@ -849,6 +849,9 @@ class CourseController {
     }
 
     async getQuestion(options: GetQuestionOptions): Promise<GetQuestionResult> {
+        // grades/statistics may send workbookID => show problem with workbookID.form_data
+        // (not enrolled) problem page will send questionID without userID => show problem with no form_data
+        // (enrolled) will send questionID with userID => show problem with grades.currentProblemState
         const courseQuestion = await this.getQuestionRecord(options.questionId);
 
         if (_.isNil(courseQuestion)) {
@@ -865,6 +868,8 @@ class CourseController {
         }
 
         let studentGrade: StudentGrade | null = null;
+        // get studentGrade from workbook if workbookID, 
+        // otherwise studentGrade from userID + questionID | null
         if(_.isNil(workbook)) {
             studentGrade = await StudentGrade.findOne({
                 where: {
@@ -875,20 +880,32 @@ class CourseController {
         } else {
             studentGrade = await workbook.getStudentGrade();
             if (studentGrade.courseWWTopicQuestionId !== options.questionId) {
-                throw new NotFoundError('The grade you have requested does not belong to the question provided');
+                throw new NotFoundError('The workbook you have requested does not belong to the question provided');
             }
         }
-        
 
-        if(_.isNil(workbook)) {
-            const workbooks = await studentGrade?.getWorkbooks({
-                limit: 1,
-                order: [ [ 'createdAt', 'DESC' ]]
-            });
-            workbook = workbooks?.[0] || null;
+        // if no workbookID, get the most recent workbook -- come back and delete this?
+        // if not enrolled, we don't even want to have workbooks
+        // if enrolled, workbooks are requested by ID for grades/statistics
+        // if enrolled, studentGrade holds currentProblemState
+        // if(_.isNil(workbook)) {
+        //     const workbooks = await studentGrade?.getWorkbooks({
+        //         limit: 1,
+        //         order: [ [ 'createdAt', 'DESC' ]]
+        //     });
+        //     workbook = workbooks?.[0] || null;
+        // }
+
+        // it may be undefined (user not enrolled)
+        // GetProblemParameters requires undefined over null
+        let formData: {[key: string]: unknown} | undefined = studentGrade?.currentProblemState;
+        // at this point, we only have a workbook if a valid workbookID was provided
+        // set the formData to match the contents of the workbook
+        if(!_.isNil(workbook)) {
+            formData = workbook.submitted.form_data;
         }
 
-
+        // studentGrade is the source of truth
         const randomSeed = _.isNil(studentGrade) ? null : studentGrade.randomSeed;
 
         const calculatedRendererParameters = await this.getCalculatedRendererParams({
@@ -910,7 +927,7 @@ class CourseController {
             problemSeed: randomSeed,
             formURL: options.formURL,
             numIncorrect: studentGrade?.numAttempts,
-            formData: workbook?.submitted.form_data,
+            formData: formData,
             showCorrectAnswers,
             ...calculatedRendererParameters
         });

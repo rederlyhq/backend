@@ -8,6 +8,8 @@ import CourseUnitContent from '../../database/models/course-unit-content';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import Role from '../permissions/roles';
 import { OutputFormat } from '../../utilities/renderer-helper';
+import { Moment } from 'moment';
+import { DetermineGradingRationaleResult } from '../../utilities/grading-helper';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -272,4 +274,22 @@ export interface GetCalculatedRendererParamsResponse {
     outputformat: OutputFormat;
     permissionLevel: number;
     showSolutions: number;
+}
+
+export interface GradeOptions {
+    studentGrade: StudentGrade;
+    topic: CourseTopicContent;
+    question: CourseWWTopicQuestion;
+
+    solutionDate: moment.Moment;
+
+    newScore: number;
+
+    submitted: unknown;
+}
+
+export interface GradeResult {
+    gradingPolicy: DetermineGradingRationaleResult;
+    gradeUpdates: Partial<StudentGrade>;
+    score: number;
 }

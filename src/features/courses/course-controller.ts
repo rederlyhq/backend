@@ -7,7 +7,7 @@ import NotFoundError from '../../exceptions/not-found-error';
 import CourseUnitContent from '../../database/models/course-unit-content';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
-import rendererHelper, { OutputFormat } from '../../utilities/renderer-helper';
+import rendererHelper, { OutputFormat, RendererResponse } from '../../utilities/renderer-helper';
 import StudentWorkbook from '../../database/models/student-workbook';
 import StudentGrade from '../../database/models/student-grade';
 import User from '../../database/models/user';
@@ -16,7 +16,7 @@ import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import appSequelize from '../../database/app-sequelize';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, GradeOptions, GradeResult, DeleteUserEnrollmentOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -29,6 +29,7 @@ import { nameof } from '../../utilities/typescript-helpers';
 import Role from '../permissions/roles';
 import moment = require('moment');
 import RederlyExtendedError from '../../exceptions/rederly-extended-error';
+import { calculateGrade, WillTrackAttemptReason } from '../../utilities/grading-helper';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -959,6 +960,126 @@ class CourseController {
         };
     }
 
+
+
+    /**
+     * This function takes the grade results and merges it into the databse objects and save thems
+     * @param param0 
+     */
+    setGradeFromSubmission = async ({
+        studentGrade,
+        workbook,
+        gradeResult,
+        submitted,
+    }: {
+        studentGrade: StudentGrade;
+        workbook?: StudentWorkbook;
+        gradeResult: GradeResult;
+        submitted: unknown;
+    }): Promise<StudentWorkbook | undefined> => {
+        return appSequelize.transaction(async (): Promise<StudentWorkbook | undefined> => {
+            if (gradeResult.gradingPolicy.willTrackAttemptReason === WillTrackAttemptReason.YES) {
+                if(studentGrade.numAttempts === 0) {
+                    studentGrade.firstAttempts = gradeResult.score;
+                } 
+                studentGrade.latestAttempts = gradeResult.score;
+                studentGrade.numAttempts++;
+                if (gradeResult.gradingPolicy.isOnTime && !gradeResult.gradingPolicy.isLocked) {
+                    studentGrade.numLegalAttempts++;
+                }
+                if (!gradeResult.gradingPolicy.isExpired && !gradeResult.gradingPolicy.isLocked) {
+                    studentGrade.numExtendedAttempts++;
+                }
+
+                if (_.isNil(workbook)) {
+                    workbook = await StudentWorkbook.create({
+                        studentGradeId: studentGrade.id,
+                        userId: studentGrade.userId,
+                        courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
+                        randomSeed: studentGrade.randomSeed,
+                        submitted: rendererHelper.cleanRendererResponseForTheDatabase(submitted as RendererResponse),
+                        result: gradeResult.score,
+                        time: new Date(),
+                        wasLate: gradeResult.gradingPolicy.isLate,
+                        wasExpired: gradeResult.gradingPolicy.isExpired,
+                        wasAfterAttemptLimit: !gradeResult.gradingPolicy.isWithinAttemptLimit,
+                        wasLocked: gradeResult.gradingPolicy.isLocked,
+                        wasAutoSubmitted: false // TODO
+                    });
+                } else {
+                    _.assign(workbook, {
+                        wasLate: gradeResult.gradingPolicy.isLate,
+                        wasExpired: gradeResult.gradingPolicy.isExpired,
+                        wasAfterAttemptLimit: !gradeResult.gradingPolicy.isWithinAttemptLimit,
+                        wasLocked: gradeResult.gradingPolicy.isLocked,
+                    });
+                    await workbook.save();
+                }
+    
+                if (!_.isNil(gradeResult.gradeUpdates.overallBestScore)) {
+                    studentGrade.overallBestScore = gradeResult.gradeUpdates.overallBestScore;
+                    studentGrade.lastInfluencingAttemptId = workbook.id;
+                }
+    
+                // TODO do we need to track "best score"
+                if (!_.isNil(gradeResult.gradeUpdates.bestScore)) {
+                    studentGrade.bestScore = gradeResult.gradeUpdates.bestScore;
+                    studentGrade.lastInfluencingAttemptId = workbook.id;
+                }
+    
+                if (!_.isNil(gradeResult.gradeUpdates.legalScore)) {
+                    studentGrade.legalScore = gradeResult.gradeUpdates.legalScore;
+                    studentGrade.lastInfluencingLegalAttemptId = workbook.id;
+                }
+    
+                if (!_.isNil(gradeResult.gradeUpdates.partialCreditBestScore)) {
+                    studentGrade.partialCreditBestScore = gradeResult.gradeUpdates.partialCreditBestScore;
+                    studentGrade.lastInfluencingCreditedAttemptId = workbook.id;
+                }
+    
+                if (!_.isNil(gradeResult.gradeUpdates.effectiveScore)) {
+                    studentGrade.effectiveScore = gradeResult.gradeUpdates.effectiveScore;
+                    // We don't track the effective grade that altered the effective score, in part because it could be updated externally
+                }
+            }
+            await studentGrade.save();
+            // If nil coming in and the attempt was tracked this will result in the new workbook
+            return workbook;
+        });
+    }
+
+    /**
+     * This function is in charge of getting the grade updates and passing it along to be updated
+     * @param param0 
+     */
+    gradeSubmission = async ({
+        studentGrade,
+        newScore,
+        question,
+        solutionDate,
+        topic,
+        submitted
+    }: GradeOptions): Promise<void> => {
+        const gradeResult = calculateGrade({
+            newScore,
+            question,
+            solutionDate,
+            studentGrade,
+            topic
+        });
+        await this.setGradeFromSubmission({
+            gradeResult,
+            studentGrade,
+            submitted,
+            // workbook
+        });
+    };
+
+    /**
+     * This function is to be called after submission
+     * It handles aggregating some data and calling to get the db objects updated
+     * @param options
+     */
     async submitAnswer(options: SubmitAnswerOptions): Promise<SubmitAnswerResult> {
         const studentGrade: StudentGrade | null = await StudentGrade.findOne({
             where: {
@@ -984,72 +1105,31 @@ class CourseController {
         const question: CourseWWTopicQuestion = await studentGrade.getQuestion();
         const topic: CourseTopicContent = await question.getTopic();
 
-        if (moment().isBefore(moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days')) && studentGrade.overallBestScore !== 1) {
-            const overallBestScore = Math.max(studentGrade.overallBestScore, options.score);
-            studentGrade.overallBestScore = overallBestScore;
-            // TODO if the max number of attempts is 0 then this will update every time
-            if (studentGrade.numAttempts === 0) {
-                studentGrade.firstAttempts = options.score;
-            }
-            studentGrade.latestAttempts = options.score;
+        const solutionDate = moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days');
 
-            if (
-                !studentGrade.locked && // The grade was not locked
-                (
-                    question.maxAttempts <= Constants.Course.INFINITE_ATTEMPT_NUMBER || // There is no limit to the number of attempts
-                    studentGrade.numAttempts < question.maxAttempts // They still have attempts left to use
-                )
-            ) {
-                studentGrade.numAttempts++;
-                if (moment().isBefore(moment(topic.endDate))) {
-                    // Full credit.
-                    studentGrade.bestScore = overallBestScore;
-                    studentGrade.legalScore = overallBestScore;
-                    studentGrade.partialCreditBestScore = overallBestScore;
-                    // if it was overwritten to be better use that max value
-                    studentGrade.effectiveScore = Math.max(overallBestScore, studentGrade.effectiveScore);
-                } else if (moment().isBefore(moment(topic.deadDate))) {
-                    // Partial credit
-                    const partialCreditScalar = 0.5;
-                    const partialCreditScore = ((options.score - studentGrade.legalScore) * partialCreditScalar) + studentGrade.legalScore;
-                    studentGrade.partialCreditBestScore = Math.max(partialCreditScore, studentGrade.partialCreditBestScore);
-                    studentGrade.bestScore = studentGrade.partialCreditBestScore;
-                    studentGrade.effectiveScore = Math.max(partialCreditScore, studentGrade.effectiveScore);
-                }
-            }
-            try {
-                return await appSequelize.transaction(async (): Promise<SubmitAnswerResult> => {
-                    await studentGrade.save();
-
-                    const submitted = _.cloneDeep(options.submitted);
-                    delete submitted.renderedHTML;
-                    const studentWorkbook = await StudentWorkbook.create({
-                        studentGradeId: studentGrade.id,
-                        userId: options.userId,
-                        courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
-                        randomSeed: studentGrade.randomSeed,
-                        submitted,
-                        result: options.score,
-                        time: new Date()
-                    });
-
-                    return {
-                        studentGrade,
-                        studentWorkbook
-                    };
+        try {
+            return await appSequelize.transaction(async (): Promise<SubmitAnswerResult> => {
+                await this.gradeSubmission({
+                    newScore: options.score,
+                    question,
+                    solutionDate,
+                    studentGrade,
+                    submitted: options.submitted,
+                    topic
                 });
-            } catch (e) {
-                if (e instanceof RederlyExtendedError === false) {
-                    throw new WrappedError(e.message, e);
-                } else {
-                    throw e;
-                }
+
+                return {
+                    studentGrade,
+                    studentWorkbook: null // TODO
+                };
+            });
+        } catch (e) {
+            if (e instanceof RederlyExtendedError === false) {
+                throw new WrappedError(e.message, e);
+            } else {
+                throw e;
             }
         }
-        return {
-            studentGrade,
-            studentWorkbook: null
-        };
     }
 
     getCourseByCode(code: string): Promise<Course> {
@@ -1564,7 +1644,7 @@ class CourseController {
                 }]
             });
         }
-        
+
         let scoreField: sequelize.Utils.Col = sequelize.col(`grades.${StudentGrade.rawAttributes.overallBestScore.field}`);
         if (followQuestionRules) {
             scoreField = sequelize.col(`grades.${StudentGrade.rawAttributes.effectiveScore.field}`);

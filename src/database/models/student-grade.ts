@@ -25,9 +25,9 @@ export default class StudentGrade extends Model {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public currentProblemState!: any;
 
-  public lastInfluencingLegalAttemptId!: number;
-  public lastInfluencingCreditedAttemptId!: number;
-  public lastInfluencingAttemptId!: number;
+  public lastInfluencingLegalAttemptId!: number | null;
+  public lastInfluencingCreditedAttemptId!: number | null;
+  public lastInfluencingAttemptId!: number | null;
 
   public getUser!: BelongsToGetAssociationMixin<User>;
   public getQuestion!: BelongsToGetAssociationMixin<CourseWWTopicQuestion>;

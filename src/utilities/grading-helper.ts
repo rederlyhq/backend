@@ -6,21 +6,21 @@ import CourseTopicContent from '../database/models/course-topic-content';
 import CourseWWTopicQuestion from '../database/models/course-ww-topic-question';
 
 export enum WillTrackAttemptReason {
-    NO_IS_AFTER_SOLUTIONS_DATE,
-    NO_ALREADY_COMPLETED,
-    YES,
-    UNKNOWN
+    NO_IS_AFTER_SOLUTIONS_DATE='NO_IS_AFTER_SOLUTIONS_DATE',
+    NO_ALREADY_COMPLETED='NO_ALREADY_COMPLETED',
+    YES='YES',
+    UNKNOWN='UNKNOWN'
 };
 
 export enum WillGetCreditReason {
-    NO_GRADE_LOCKED,
-    NO_ATTEMPTS_EXCEEDED,
-    NO_ATTEMPT_NOT_RECORDED,
-    NO_EXPIRED,
-    NO_SOLUTIONS_AVAILABLE,
-    YES_BUT_PARTIAL_CREDIT,
-    YES,
-    UNKNOWN
+    NO_GRADE_LOCKED='NO_GRADE_LOCKED',
+    NO_ATTEMPTS_EXCEEDED='NO_ATTEMPTS_EXCEEDED',
+    NO_ATTEMPT_NOT_RECORDED='NO_ATTEMPT_NOT_RECORDED',
+    NO_EXPIRED='NO_EXPIRED',
+    NO_SOLUTIONS_AVAILABLE='NO_SOLUTIONS_AVAILABLE',
+    YES_BUT_PARTIAL_CREDIT='YES_BUT_PARTIAL_CREDIT',
+    YES='YES',
+    UNKNOWN='UNKNOWN'
 };
 
 interface DetermineGradingRationaleOptions {
@@ -34,6 +34,8 @@ interface DetermineGradingRationaleOptions {
     maxAttempts: number;
 
     solutionDate: moment.Moment;
+
+    timeOfSubmission: Date;
 }
 
 export interface DetermineGradingRationaleResult {
@@ -56,6 +58,8 @@ export interface CalculateGradeOptions {
     solutionDate: moment.Moment;
 
     newScore: number;
+
+    timeOfSubmission: Date;
 }
 
 export interface CalculateGradeResult {
@@ -78,11 +82,13 @@ export const determineGradingRationale = ({
 
     maxAttempts,
 
-    solutionDate
+    solutionDate,
+
+    timeOfSubmission
 }: DetermineGradingRationaleOptions): DetermineGradingRationaleResult => {
     // use the same time for everything
     // also if there was a case in which we were retroing we could take an option param and swap this out
-    const theMoment = moment();
+    const theMoment = moment(timeOfSubmission);
 
     const isCompleted = overallBestScore >= 1;
     const isExpired = theMoment.isBefore(moment(solutionDate)) && theMoment.isSameOrAfter(moment(deadDate));
@@ -166,6 +172,8 @@ export const calculateGrade = ({
 
     solutionDate,
     newScore,
+
+    timeOfSubmission
 }: CalculateGradeOptions): CalculateGradeResult => {
     const gradingPolicy: DetermineGradingRationaleResult = determineGradingRationale({
         deadDate: topic.deadDate,
@@ -175,7 +183,9 @@ export const calculateGrade = ({
         maxAttempts: question.maxAttempts,
         numAttempts: studentGrade.numAttempts,
         overallBestScore: studentGrade.overallBestScore,
-        solutionDate
+        solutionDate,
+
+        timeOfSubmission
     });
 
     const result: CalculateGradeResult = {

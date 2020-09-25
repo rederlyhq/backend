@@ -357,6 +357,12 @@ class CourseController {
                 .keyBy('id')
                 .values()
                 .value();
+
+            if (updateCourseTopicResult.updatedCount > 0 && (!_.isNil(options.updates.endDate) || !_.isNil(options.updates.deadDate))) {
+                await this.reGradeTopic({
+                    topic: updateCourseTopicResult.updatedRecords[0]
+                });
+            }
             return resultantUpdates;
         });
     }
@@ -776,6 +782,12 @@ class CourseController {
                 .keyBy('id')
                 .values()
                 .value();
+
+            if (updateQuestionResult.updatedCount > 0 && (!_.isNil(options.updates.maxAttempts))) {
+                await this.reGradeQuestion({
+                    question: updateQuestionResult.updatedRecords[0]
+                });
+            }
             return resultantUpdates;
         });
     }
@@ -971,81 +983,176 @@ class CourseController {
         workbook,
         gradeResult,
         submitted,
+        timeOfSubmission
     }: {
         studentGrade: StudentGrade;
         workbook?: StudentWorkbook;
         gradeResult: GradeResult;
         submitted: unknown;
+        timeOfSubmission? : Date;
     }): Promise<StudentWorkbook | undefined> => {
-        return appSequelize.transaction(async (): Promise<StudentWorkbook | undefined> => {
-            if (gradeResult.gradingPolicy.willTrackAttemptReason === WillTrackAttemptReason.YES) {
-                if(studentGrade.numAttempts === 0) {
-                    studentGrade.firstAttempts = gradeResult.score;
-                } 
-                studentGrade.latestAttempts = gradeResult.score;
-                studentGrade.numAttempts++;
-                if (gradeResult.gradingPolicy.isOnTime && !gradeResult.gradingPolicy.isLocked && gradeResult.gradingPolicy.isWithinAttemptLimit) {
-                    studentGrade.numLegalAttempts++;
-                }
-                if (!gradeResult.gradingPolicy.isExpired && !gradeResult.gradingPolicy.isLocked && gradeResult.gradingPolicy.isWithinAttemptLimit) {
-                    studentGrade.numExtendedAttempts++;
-                }
-
-                if (_.isNil(workbook)) {
-                    workbook = await StudentWorkbook.create({
-                        studentGradeId: studentGrade.id,
-                        userId: studentGrade.userId,
-                        courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
-                        randomSeed: studentGrade.randomSeed,
-                        submitted: rendererHelper.cleanRendererResponseForTheDatabase(submitted as RendererResponse),
-                        result: gradeResult.score,
-                        time: new Date(),
-                        wasLate: gradeResult.gradingPolicy.isLate,
-                        wasExpired: gradeResult.gradingPolicy.isExpired,
-                        wasAfterAttemptLimit: !gradeResult.gradingPolicy.isWithinAttemptLimit,
-                        wasLocked: gradeResult.gradingPolicy.isLocked,
-                        wasAutoSubmitted: false // TODO
-                    });
-                } else {
-                    _.assign(workbook, {
-                        wasLate: gradeResult.gradingPolicy.isLate,
-                        wasExpired: gradeResult.gradingPolicy.isExpired,
-                        wasAfterAttemptLimit: !gradeResult.gradingPolicy.isWithinAttemptLimit,
-                        wasLocked: gradeResult.gradingPolicy.isLocked,
-                    });
-                    await workbook.save();
-                }
-    
-                if (!_.isNil(gradeResult.gradeUpdates.overallBestScore)) {
-                    studentGrade.overallBestScore = gradeResult.gradeUpdates.overallBestScore;
-                    studentGrade.lastInfluencingAttemptId = workbook.id;
-                }
-    
-                // TODO do we need to track "best score"
-                if (!_.isNil(gradeResult.gradeUpdates.bestScore)) {
-                    studentGrade.bestScore = gradeResult.gradeUpdates.bestScore;
-                    studentGrade.lastInfluencingAttemptId = workbook.id;
-                }
-    
-                if (!_.isNil(gradeResult.gradeUpdates.legalScore)) {
-                    studentGrade.legalScore = gradeResult.gradeUpdates.legalScore;
-                    studentGrade.lastInfluencingLegalAttemptId = workbook.id;
-                }
-    
-                if (!_.isNil(gradeResult.gradeUpdates.partialCreditBestScore)) {
-                    studentGrade.partialCreditBestScore = gradeResult.gradeUpdates.partialCreditBestScore;
-                    studentGrade.lastInfluencingCreditedAttemptId = workbook.id;
-                }
-    
-                if (!_.isNil(gradeResult.gradeUpdates.effectiveScore)) {
-                    studentGrade.effectiveScore = gradeResult.gradeUpdates.effectiveScore;
-                    // We don't track the effective grade that altered the effective score, in part because it could be updated externally
-                }
+        if (gradeResult.gradingPolicy.willTrackAttemptReason === WillTrackAttemptReason.YES) {
+            if(studentGrade.numAttempts === 0) {
+                studentGrade.firstAttempts = gradeResult.score;
+            } 
+            studentGrade.latestAttempts = gradeResult.score;
+            studentGrade.numAttempts++;
+            if (gradeResult.gradingPolicy.isOnTime && !gradeResult.gradingPolicy.isLocked && gradeResult.gradingPolicy.isWithinAttemptLimit) {
+                studentGrade.numLegalAttempts++;
             }
-            await studentGrade.save();
-            // If nil coming in and the attempt was tracked this will result in the new workbook
-            return workbook;
+            if (!gradeResult.gradingPolicy.isExpired && !gradeResult.gradingPolicy.isLocked && gradeResult.gradingPolicy.isWithinAttemptLimit) {
+                studentGrade.numExtendedAttempts++;
+            }
+
+            if (_.isNil(workbook)) {
+                workbook = await StudentWorkbook.create({
+                    studentGradeId: studentGrade.id,
+                    userId: studentGrade.userId,
+                    courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
+                    randomSeed: studentGrade.randomSeed,
+                    submitted: rendererHelper.cleanRendererResponseForTheDatabase(submitted as RendererResponse),
+                    result: gradeResult.score,
+                    time: timeOfSubmission ?? new Date(),
+                    wasLate: gradeResult.gradingPolicy.isLate,
+                    wasExpired: gradeResult.gradingPolicy.isExpired,
+                    wasAfterAttemptLimit: !gradeResult.gradingPolicy.isWithinAttemptLimit,
+                    wasLocked: gradeResult.gradingPolicy.isLocked,
+                    wasAutoSubmitted: false // TODO
+                });
+            } else {
+                _.assign(workbook, {
+                    wasLate: gradeResult.gradingPolicy.isLate,
+                    wasExpired: gradeResult.gradingPolicy.isExpired,
+                    wasAfterAttemptLimit: !gradeResult.gradingPolicy.isWithinAttemptLimit,
+                    wasLocked: gradeResult.gradingPolicy.isLocked,
+                });
+                await workbook.save();
+            }
+
+            if (!_.isNil(gradeResult.gradeUpdates.overallBestScore)) {
+                studentGrade.overallBestScore = gradeResult.gradeUpdates.overallBestScore;
+                studentGrade.lastInfluencingAttemptId = workbook.id;
+            }
+
+            // TODO do we need to track "best score"
+            if (!_.isNil(gradeResult.gradeUpdates.bestScore)) {
+                studentGrade.bestScore = gradeResult.gradeUpdates.bestScore;
+                studentGrade.lastInfluencingAttemptId = workbook.id;
+            }
+
+            if (!_.isNil(gradeResult.gradeUpdates.legalScore)) {
+                studentGrade.legalScore = gradeResult.gradeUpdates.legalScore;
+                studentGrade.lastInfluencingLegalAttemptId = workbook.id;
+            }
+
+            if (!_.isNil(gradeResult.gradeUpdates.partialCreditBestScore)) {
+                studentGrade.partialCreditBestScore = gradeResult.gradeUpdates.partialCreditBestScore;
+                studentGrade.lastInfluencingCreditedAttemptId = workbook.id;
+            }
+
+            if (!_.isNil(gradeResult.gradeUpdates.effectiveScore)) {
+                studentGrade.effectiveScore = gradeResult.gradeUpdates.effectiveScore;
+                // We don't track the effective grade that altered the effective score, in part because it could be updated externally
+            }
+        } else {
+            logger.debug('Not keeping a workbook');
+        }
+        await studentGrade.save();
+        // If nil coming in and the attempt was tracked this will result in the new workbook
+        return workbook;
+    }
+
+    reGradeTopic = async ({
+        topic
+    }: {
+        topic: CourseTopicContent;
+    }): Promise<void> => {
+        // TODO optional transaction with too many transactions it deadlocks
+        const questions = await topic.getQuestions();
+        questions.asyncForEach(async (question: CourseWWTopicQuestion) => {
+            await this.reGradeQuestion({
+                topic,
+                question
+            });
         });
+    }
+
+    reGradeQuestion = async ({
+        question,
+        topic
+    }: {
+        question: CourseWWTopicQuestion;
+        topic?: CourseTopicContent;
+    }): Promise<void> => {
+        // TODO optional transaction with too many transactions it deadlocks
+        const grades = await question.getGrades();
+        topic = topic ?? await question.getTopic();
+
+        grades.asyncForEach(async (studentGrade: StudentGrade) => {
+            await this.reGradeStudentGrade({
+                studentGrade,
+                question,
+                topic
+            });
+        });
+    }
+
+    reGradeStudentGrade = async ({
+        studentGrade,
+        topic,
+        question
+    }: {
+        studentGrade: StudentGrade;
+        topic?: CourseTopicContent;
+        question?: CourseWWTopicQuestion;
+    }): Promise<void> => {
+        // TODO optional transaction with too many transactions it deadlocks
+        const workbooks = await studentGrade.getWorkbooks({
+            order: ['id']
+        });
+        question = question ?? await studentGrade.getQuestion();
+        topic = topic ?? await question.getTopic();
+        const solutionDate = moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days');
+
+        // reset student grade before submitting
+        studentGrade.bestScore = 0;
+        studentGrade.overallBestScore = 0;
+        studentGrade.partialCreditBestScore = 0;
+        // studentGrade.effectiveScore // Don't touch this
+        studentGrade.legalScore = 0;
+        studentGrade.numAttempts = 0;
+        studentGrade.numLegalAttempts = 0;
+        studentGrade.numExtendedAttempts = 0;
+        studentGrade.lastInfluencingAttemptId = null;
+        studentGrade.lastInfluencingCreditedAttemptId = null;
+        studentGrade.lastInfluencingLegalAttemptId = null;
+        studentGrade.firstAttempts = 0;
+        studentGrade.latestAttempts = 0;
+        
+        await studentGrade.save();
+        // Order is extremely important here, our async for each does not wait for one to be done before starting another
+        for (let i = 0; i < workbooks.length; i++) {
+            const workbook = workbooks[i];
+            if(_.isNil(question) || _.isNil(topic)) {
+                throw new Error('This cannot be undefined, strict is confused because of transaction callback');
+            }
+
+            const gradeResult = calculateGrade({
+                newScore: workbook.result,
+                question,
+                solutionDate,
+                studentGrade,
+                topic,
+
+                timeOfSubmission: workbook.time
+            });
+            await this.setGradeFromSubmission({
+                gradeResult,
+                studentGrade,
+                submitted: null,
+                workbook
+            });
+        }
     }
 
     /**
@@ -1058,19 +1165,22 @@ class CourseController {
         question,
         solutionDate,
         topic,
-        submitted
-    }: GradeOptions): Promise<void> => {
+        submitted,
+        timeOfSubmission
+    }: GradeOptions): Promise<StudentWorkbook | undefined> => {
         const gradeResult = calculateGrade({
             newScore,
             question,
             solutionDate,
             studentGrade,
-            topic
+            topic,
+            timeOfSubmission
         });
-        await this.setGradeFromSubmission({
+        return await this.setGradeFromSubmission({
             gradeResult,
             studentGrade,
             submitted,
+            timeOfSubmission
             // workbook
         });
     };
@@ -1109,18 +1219,19 @@ class CourseController {
 
         try {
             return await appSequelize.transaction(async (): Promise<SubmitAnswerResult> => {
-                await this.gradeSubmission({
+                const workbook = await this.gradeSubmission({
                     newScore: options.score,
                     question,
                     solutionDate,
                     studentGrade,
                     submitted: options.submitted,
-                    topic
+                    topic,
+                    timeOfSubmission: options.timeOfSubmission ?? new Date()
                 });
 
                 return {
                     studentGrade,
-                    studentWorkbook: null // TODO
+                    studentWorkbook: workbook ?? null
                 };
             });
         } catch (e) {

@@ -48,7 +48,7 @@ export interface UpdateTopicOptions {
     // Updates can take any form, i.e. I can have problemNumber: { [sequelize.OP.gte]: 0 } or sequelize.literal
     // TODO further investigation if there is any way for the suggested type to show but allow other values
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    updates: Partial<CourseTopicContent> | any;
+    updates: Partial<CourseTopicContent>;
 }
 
 export interface UpdateCourseUnitsOptions {
@@ -199,6 +199,9 @@ export interface SubmitAnswerOptions {
     // This is coming from the renderer right now
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     submitted: any;
+    // Use this field to be programmatically submit answers
+    // Used for testing as of now
+    timeOfSubmission?: Date;
 }
 
 export interface SubmitAnswerResult {
@@ -286,6 +289,8 @@ export interface GradeOptions {
     newScore: number;
 
     submitted: unknown;
+
+    timeOfSubmission: Date;
 }
 
 export interface GradeResult {

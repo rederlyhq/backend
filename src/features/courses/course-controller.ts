@@ -984,10 +984,10 @@ class CourseController {
                 } 
                 studentGrade.latestAttempts = gradeResult.score;
                 studentGrade.numAttempts++;
-                if (gradeResult.gradingPolicy.isOnTime && !gradeResult.gradingPolicy.isLocked) {
+                if (gradeResult.gradingPolicy.isOnTime && !gradeResult.gradingPolicy.isLocked && gradeResult.gradingPolicy.isWithinAttemptLimit) {
                     studentGrade.numLegalAttempts++;
                 }
-                if (!gradeResult.gradingPolicy.isExpired && !gradeResult.gradingPolicy.isLocked) {
+                if (!gradeResult.gradingPolicy.isExpired && !gradeResult.gradingPolicy.isLocked && gradeResult.gradingPolicy.isWithinAttemptLimit) {
                     studentGrade.numExtendedAttempts++;
                 }
 

@@ -71,9 +71,8 @@ StudentTopicQuestionOverride.init({
     },
     maxAttempts: {
       field: 'student_topic_question_override_max_attempts',
-      type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: 0
+      type: DataTypes.INTEGER,
+      allowNull: true,
     },
     active: {
       field: 'student_topic_question_override_active',

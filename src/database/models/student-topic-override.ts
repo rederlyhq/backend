@@ -74,14 +74,12 @@ StudentTopicOverride.init({
     endDate: {
         field: 'student_topic_override_end_date',
         type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: appSequelize.literal('NOW()')
+        allowNull: true,
     },
     deadDate: {
         field: 'student_topic_override_dead_date',
         type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: appSequelize.literal('NOW()')
+        allowNull: true,
     },
     active: {
         field: 'student_topic_override_active',

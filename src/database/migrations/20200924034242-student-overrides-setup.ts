@@ -41,20 +41,12 @@ export default {
         endDate: {
           field: 'student_topic_override_end_date',
           type: DataTypes.DATE,
-          allowNull: false,
-          // Incorrect type on sequelize
-          // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-          // @ts-ignore
-          defaultValue: queryInterface.sequelize.literal('NOW()')
+          allowNull: true,
         },
         deadDate: {
           field: 'student_topic_override_dead_date',
           type: DataTypes.DATE,
-          allowNull: false,
-          // Incorrect type on sequelize
-          // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-          // @ts-ignore
-          defaultValue: queryInterface.sequelize.literal('NOW()')
+          allowNull: true,
         },
         active: {
           field: 'student_topic_override_active',
@@ -110,9 +102,8 @@ export default {
         },
         maxAttempts: {
           field: 'student_topic_question_override_max_attempts',
-          type: DataTypes.DATE,
-          allowNull: false,
-          defaultValue: 0
+          type: DataTypes.INTEGER,
+          allowNull: true,
         },
         active: {
           field: 'student_topic_question_override_active',

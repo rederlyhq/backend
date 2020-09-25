@@ -18,6 +18,9 @@ export default {
           field: 'student_grade_id',
           type: DataTypes.INTEGER,
           allowNull: false,
+          // Defaults to cascade when generating the db, no action on migrations
+          onUpdate: 'CASCADE',
+          // Different from sequelize model, on models I do this with associations so I can use types
           references: {
             model: 'student_grade',
             key: 'student_grade_id',
@@ -27,6 +30,9 @@ export default {
           field: 'initiating_user_id',
           type: DataTypes.INTEGER,
           allowNull: false,
+          // Defaults to cascade when generating the db, no action on migrations
+          onUpdate: 'CASCADE',
+          // Different from sequelize model, on models I do this with associations so I can use types
           references: {
             model: 'users',
             key: 'user_id',
@@ -66,15 +72,22 @@ export default {
           field: 'student_grade_id',
           type: DataTypes.INTEGER,
           allowNull: false,
+          // Defaults to cascade when generating the db, no action on migrations
+          onUpdate: 'CASCADE',
+          // Different from sequelize model, on models I do this with associations so I can use types
           references: {
             model: 'student_grade',
             key: 'student_grade_id',
+
           },
         },
         initiatingUserId: {
           field: 'initiating_user_id',
           type: DataTypes.INTEGER,
           allowNull: false,
+          // Defaults to cascade when generating the db, no action on migrations
+          onUpdate: 'CASCADE',
+          // Different from sequelize model, on models I do this with associations so I can use types
           references: {
             model: 'users',
             key: 'user_id',
@@ -171,8 +184,6 @@ export default {
         allowNull: true,
       });
     });
-    // This is a hack to add the associations later to avoid cyclic dependencies
-    /* eslint-disable @typescript-eslint/no-use-before-define */
   },
   down: async (queryInterface: QueryInterface): Promise<void> => {
     // Transactions are automatically use because a namespace is injected into sequelize when fetching configurations

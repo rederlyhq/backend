@@ -83,13 +83,13 @@
     "generate-route-types": "ts-node src/generate-route-types.ts",
     "generate-route-types:debug": "node --inspect=5860 -r ts-node/register ./src/generate-route-types.ts",
     "generate-route-types:debug:watch": "nodemon -x npm run generate-route-types:debug",
-    "build": "tsc",
+    "build": "npm run clean && tsc",
     "build:run": "npm run build && node ts-built/index.js",
     "sequelize": "npm run build && sequelize",
     "sequelize:migrations": "npm run sequelize -- db:migrate",
     "sequelize:migrations:devundo": "npm run sequelize -- db:migrate:undo:all",
     "lint": "eslint src/ --ext .ts",
-    "clean": "rm -r ts-built"
+    "clean": "if [ -d ts-built ]; then rm -r ts-built; fi;"
   },
   "nodemonConfig": {
     "ignore": [

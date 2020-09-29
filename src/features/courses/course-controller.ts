@@ -73,11 +73,26 @@ class CourseController {
         });
     }
 
-    getTopicById(id: number): Promise<CourseTopicContent> {
+    getTopicById(id: number, userId: number | undefined = undefined): Promise<CourseTopicContent> {
+        const include = [];
+        if (userId !== undefined) {
+            include.push({
+                model: StudentTopicOverride,
+                as: 'studentTopicOverride',
+                attributes: ['userId', 'startDate', 'endDate', 'deadDate'],
+                required: false,
+                where: {
+                    active: true,
+                    userId: userId
+                }
+            });
+        }
+
         return CourseTopicContent.findOne({
             where: {
                 id,
             },
+            include
         });
     }
 

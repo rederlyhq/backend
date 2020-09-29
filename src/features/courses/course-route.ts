@@ -5,7 +5,7 @@ import validate from '../../middleware/joi-validator';
 import { authenticationMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
-import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation, deleteEnrollmentValidation, extendCourseTopicForUserValidation } from './course-route-validation';
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation, deleteEnrollmentValidation, extendCourseTopicForUserValidation, getTopicValidation } from './course-route-validation';
 import NotFoundError from '../../exceptions/not-found-error';
 import multer = require('multer');
 import * as proxy from 'express-http-proxy';
@@ -14,7 +14,7 @@ import * as _ from 'lodash';
 import configurations from '../../configurations';
 import WrappedError from '../../exceptions/wrapped-error';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
-import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest } from './course-route-request-types';
+import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest } from './course-route-request-types';
 import Boom = require('boom');
 import { Constants } from '../../constants';
 import CourseTopicContent from '../../database/models/course-topic-content';
@@ -597,6 +597,21 @@ router.get('/',
                 }
             });
             next(httpResponse.Ok('Fetched successfully', courses));
+        } catch (e) {
+            next(e);
+        }
+    }));
+
+// This returns information about a specific topic. Currently, it only 
+// returns extension information if a specific user is passed.
+router.get('/topic/:id', 
+    authenticationMiddleware,
+    validate(getTopicValidation),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetTopicRequest.body, GetTopicRequest.query, unknown>, _res: Response, next: NextFunction) => {
+        try {
+            const result = await courseController.getTopicById(req.params.id, req.query.userId);
+            next(httpResponse.Ok('Fetched successfully', result));
         } catch (e) {
             next(e);
         }

@@ -32,6 +32,8 @@ export interface GetQuestionRepositoryOptions {
 
 export interface GetCourseTopicRepositoryOptions {
     id: number;
+    // For overrides
+    userId?: number;
 }
 
 // TODO make generic interface

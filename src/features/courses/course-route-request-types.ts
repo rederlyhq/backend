@@ -113,6 +113,12 @@ export namespace GetCourseRequest {
     export type body = Joi.extractType<typeof validations.getCourseValidation.body>;
 };
 
+export namespace GetTopicRequest {
+    export type params = Joi.extractType<typeof validations.getTopicValidation.params>;
+    export type query = Joi.extractType<typeof validations.getTopicValidation.query>;
+    export type body = Joi.extractType<typeof validations.getTopicValidation.body>;
+};
+
 export namespace GetTopicsRequest {
     export type params = Joi.extractType<typeof validations.getTopicsValidation.params>;
     export type query = Joi.extractType<typeof validations.getTopicsValidation.query>;

@@ -242,6 +242,16 @@ export const getCourseValidation = {
     query: {}
 };
 
+export const getTopicValidation = {
+    params: {
+        id: Joi.number().required(),
+    },
+    query: {
+        userId: Joi.number().optional()
+    },
+    body: {},
+};
+
 export const getTopicsValidation = {
     params: {},
     query: {

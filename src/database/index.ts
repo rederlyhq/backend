@@ -16,6 +16,7 @@ import CourseTopicContent from './models/course-topic-content';
 import TopicType from './models/topic-type';
 import CourseWWTopicQuestion from './models/course-ww-topic-question';
 import StudentGrade from './models/student-grade';
+import StudentGradeInstance from './models/student-grade-instance';
 import StudentWorkbook from './models/student-workbook';
 import Curriculum from './models/curriculum';
 import StudentGradeLockAction from './models/student-grade-lock-action';
@@ -49,6 +50,7 @@ const models = [
     TopicType,
     CourseWWTopicQuestion,
     StudentGrade,
+    StudentGradeInstance,
     StudentWorkbook,
     StudentGradeLockAction,
     StudentGradeOverride,

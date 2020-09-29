@@ -8,6 +8,8 @@ import CourseUnitContent from '../../database/models/course-unit-content';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import Role from '../permissions/roles';
 import { OutputFormat } from '../../utilities/renderer-helper';
+import { Moment } from 'moment';
+import { DetermineGradingRationaleResult } from '../../utilities/grading-helper';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -46,7 +48,7 @@ export interface UpdateTopicOptions {
     // Updates can take any form, i.e. I can have problemNumber: { [sequelize.OP.gte]: 0 } or sequelize.literal
     // TODO further investigation if there is any way for the suggested type to show but allow other values
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    updates: Partial<CourseTopicContent> | any;
+    updates: Partial<CourseTopicContent>;
 }
 
 export interface UpdateCourseUnitsOptions {
@@ -108,6 +110,7 @@ export interface UpdateGradeOptions {
         id: number;
     };
     updates: Partial<StudentGrade>;
+    initiatingUserId: number;
 }
 
 export interface UpdateQuestionsOptions {
@@ -196,6 +199,9 @@ export interface SubmitAnswerOptions {
     // This is coming from the renderer right now
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     submitted: any;
+    // Use this field to be programmatically submit answers
+    // Used for testing as of now
+    timeOfSubmission?: Date;
 }
 
 export interface SubmitAnswerResult {
@@ -271,4 +277,24 @@ export interface GetCalculatedRendererParamsResponse {
     outputformat: OutputFormat;
     permissionLevel: number;
     showSolutions: number;
+}
+
+export interface GradeOptions {
+    studentGrade: StudentGrade;
+    topic: CourseTopicContent;
+    question: CourseWWTopicQuestion;
+
+    solutionDate: moment.Moment;
+
+    newScore: number;
+
+    submitted: unknown;
+
+    timeOfSubmission: Date;
+}
+
+export interface GradeResult {
+    gradingPolicy: DetermineGradingRationaleResult;
+    gradeUpdates: Partial<StudentGrade>;
+    score: number;
 }

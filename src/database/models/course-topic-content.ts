@@ -62,6 +62,12 @@ export default class CourseTopicContent extends Model {
             sourceKey: 'id',
             as: 'questions'
         });
+
+        CourseTopicContent.hasMany(StudentTopicOverride, {
+            foreignKey: 'courseTopicContentId',
+            sourceKey: 'id',
+            as: 'studentTopicOverride'
+        });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }
@@ -151,4 +157,5 @@ CourseTopicContent.init({
 import CurriculumTopicContent from './curriculum-topic-content';
 import TopicType from './topic-type';
 import CourseUnitContent from './course-unit-content';
-import CourseWWTopicQuestion from './course-ww-topic-question';
+import CourseWWTopicQuestion from './course-ww-topic-question';import StudentTopicOverride from './student-topic-override';
+

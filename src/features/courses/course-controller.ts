@@ -92,19 +92,49 @@ class CourseController {
                 model: CourseUnitContent,
                 as: 'unit',
                 attributes: []
+            },
+            {
+                model: StudentTopicOverride,
+                as: 'studentTopicOverride',
+                attributes: ['userId', 'startDate', 'endDate', 'deadDate'],
+                required: false
             });
             where[`$unit.${CourseUnitContent.rawAttributes.courseId.field}$`] = courseId;
+            // where[`$studentTopicOverride.${StudentTopicOverride.rawAttributes.courseTopicContentId.field}$`] = `$${CourseTopicContent.rawAttributes.id.field}`;
         }
-
+        
         if (isOpen) {
             const date = new Date();
-            where.startDate = {
-                [Sequelize.Op.lte]: date
-            };
-
-            where.deadDate = {
-                [Sequelize.Op.gte]: date
-            };
+            where[Sequelize.Op.and] = [
+                {
+                    [Sequelize.Op.or]: [
+                        {
+                            startDate: {
+                                [Sequelize.Op.lte]: date
+                            }
+                        },
+                        {
+                            [`$studentTopicOverride.${StudentTopicOverride.rawAttributes.startDate.field}$`]: {
+                                [Sequelize.Op.lte]: date
+                            }
+                        }
+                    ]
+                },
+                {
+                    [Sequelize.Op.or]: [
+                        {
+                            deadDate: {
+                                [Sequelize.Op.gte]: date
+                            }
+                        },
+                        {
+                            [`$studentTopicOverride.${StudentTopicOverride.rawAttributes.deadDate.field}$`]: {
+                                [Sequelize.Op.gte]: date
+                            }
+                        }
+                    ]
+                }
+            ];
         }
         return CourseTopicContent.findAll({
             where,

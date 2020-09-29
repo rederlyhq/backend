@@ -10,13 +10,14 @@ import CourseWWTopicQuestion from '../../database/models/course-ww-topic-questio
 import rendererHelper, { OutputFormat, RendererResponse } from '../../utilities/renderer-helper';
 import StudentWorkbook from '../../database/models/student-workbook';
 import StudentGrade from '../../database/models/student-grade';
+import StudentGradeInstance from '../../database/models/student-grade-instance';
 import User from '../../database/models/user';
 import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import appSequelize from '../../database/app-sequelize';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, GradeOptions, GradeResult, DeleteUserEnrollmentOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, GetQuestionsForThisAssessmentOptions, CreateGradeInstancesForAssessmentOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, GradeOptions, GradeResult, DeleteUserEnrollmentOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -2005,6 +2006,67 @@ class CourseController {
         } catch (e) {
             throw new WrappedError('Could not create new student grade', e);
         }
+    }
+
+    async getQuestionsForThisAssessment(options: GetQuestionsForThisAssessmentOptions): Promise<CourseWWTopicQuestion[]> {
+        const { topicId } = options;
+        try {
+            return await CourseWWTopicQuestion.findAll({
+                // attributes: [
+                //     'id',
+                // ],
+                where: {
+                    courseTopicContentId: topicId,
+                },
+            });
+        } catch (e) {
+            throw new WrappedError('Could not retrieve questions for this assessment', e);
+        }
+    };
+    
+    async createGradeInstancesForAssessment(options: CreateGradeInstancesForAssessmentOptions): Promise<number> {
+        const { topicId, userId } = options;
+        const results = await this.getQuestionsForThisAssessment({
+            topicId
+        });
+        await results.asyncForEach(async (result) => {
+            await this.createNewStudentGradeInstance({
+                courseTopicQuestionId: result.id,
+                userId: userId,
+            });
+        });
+        return results.length;
+    }
+
+   async createNewStudentGradeInstance(options: CreateNewStudentGradeOptions): Promise<StudentGradeInstance> {
+        const {
+            userId,
+            courseTopicQuestionId
+        } = options;
+        try {
+            return await StudentGradeInstance.create({
+                userId: userId,
+                courseWWTopicQuestionId: courseTopicQuestionId,
+                // TODO: what do we do with problem path?
+                // TODO: replace this call with generateLimitedRandomSeed()
+                randomSeed: this.generateRandomSeed(),
+                bestScore: 0,
+                overallBestScore: 0,
+                numAttempts: 0,
+                firstAttempts: 0,
+                latestAttempts: 0,
+            });
+        } catch (e) {
+            throw new WrappedError('Could not create new student grade instance', e);
+        }
+    }
+
+    getGradeInstance(id: number): Promise<StudentGradeInstance> {
+        return StudentGradeInstance.findOne({
+            where: {
+                id,
+            }
+        });
     }
 }
 

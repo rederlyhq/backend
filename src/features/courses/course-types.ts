@@ -247,6 +247,15 @@ export interface CreateNewStudentGradeOptions {
     courseTopicQuestionId: number;
 }
 
+export interface GetQuestionsForThisAssessmentOptions {
+    topicId: number;
+}
+
+export interface CreateGradeInstancesForAssessmentOptions {
+    userId: number;
+    topicId: number;
+}
+
 export interface CreateQuestionsForTopicFromDefFileContentOptions {
     webworkDefFileContent: string;
     courseTopicId: number;

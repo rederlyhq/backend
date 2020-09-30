@@ -3,7 +3,8 @@ import { Transaction } from 'sequelize/types';
 import appSequelize from '../database/app-sequelize';
 import logger from './logger';
 import cls = require('cls-hooked');
-const namespace = cls.getNamespace('rederly-backend-api');
+import { Constants } from '../constants';
+const namespace = cls.getNamespace(Constants.Application.REDERLY_CLS_NAMESPACE_NAME);
 
 /**
  * This function will run the given function in a new transaction

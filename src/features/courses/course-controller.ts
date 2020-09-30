@@ -1274,7 +1274,13 @@ class CourseController {
             // const averageScoreAttribute = sequelize.fn('avg', sequelize.col(`${StudentGrade.rawAttributes.overallBestScore.field}`));
             const pointsEarned = `SUM(${StudentGrade.rawAttributes.effectiveScore.field} * "question".${CourseWWTopicQuestion.rawAttributes.weight.field})`;
             const pointsAvailable = `SUM(CASE WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE THEN "question".${CourseWWTopicQuestion.rawAttributes.weight.field} ELSE 0 END)`;
-            const averageScoreAttribute = sequelize.literal(`${pointsEarned}/${pointsAvailable}`);
+            const averageScoreAttribute = sequelize.literal(`
+                CASE WHEN ${pointsAvailable} = 0 THEN
+                    NULL
+                ELSE
+                    ${pointsEarned} / ${pointsAvailable}
+                END
+            `);
 
             attributes = [
                 [averageScoreAttribute, 'average'],
@@ -1350,7 +1356,13 @@ class CourseController {
         if (followQuestionRules) {
             const pointsEarned = `SUM("topics->questions->grades".${StudentGrade.rawAttributes.effectiveScore.field} * "topics->questions".${CourseWWTopicQuestion.rawAttributes.weight.field})`;
             const pointsAvailable = `SUM(CASE WHEN "topics->questions".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE THEN "topics->questions".${CourseWWTopicQuestion.rawAttributes.weight.field} ELSE 0 END)`;
-            averageScoreAttribute = sequelize.literal(`${pointsEarned}/${pointsAvailable}`);
+            averageScoreAttribute = sequelize.literal(`
+                CASE WHEN ${pointsAvailable} = 0 THEN
+                    NULL
+                ELSE
+                    ${pointsEarned} / ${pointsAvailable}
+                END
+            `);
         } else {
             averageScoreAttribute = sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
         }
@@ -1461,7 +1473,13 @@ class CourseController {
         if (followQuestionRules) {
             const pointsEarned = `SUM("questions->grades".${StudentGrade.rawAttributes.effectiveScore.field} * "questions".${CourseWWTopicQuestion.rawAttributes.weight.field})`;
             const pointsAvailable = `SUM(CASE WHEN "questions".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE THEN "questions".${CourseWWTopicQuestion.rawAttributes.weight.field} ELSE 0 END)`;
-            averageScoreAttribute = sequelize.literal(`${pointsEarned}/${pointsAvailable}`);
+            averageScoreAttribute = sequelize.literal(`
+                CASE WHEN ${pointsAvailable} = 0 THEN
+                    NULL
+                ELSE
+                    ${pointsEarned} / ${pointsAvailable}
+                END
+            `);
         } else {
             averageScoreAttribute = sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
         }

@@ -95,6 +95,12 @@ export namespace CreateCourseTopicQuestionRequest {
     export type body = Joi.extractType<typeof validations.createCourseTopicQuestionValidation.body>;
 };
 
+export namespace ExtendCourseTopicQuestionRequest {
+    export type params = Joi.extractType<typeof validations.extendCourseTopicQuestionValidation.params>;
+    export type query = Joi.extractType<typeof validations.extendCourseTopicQuestionValidation.query>;
+    export type body = Joi.extractType<typeof validations.extendCourseTopicQuestionValidation.body>;
+};
+
 export namespace GetQuestionRequest {
     export type params = Joi.extractType<typeof validations.getQuestionValidation.params>;
     export type query = Joi.extractType<typeof validations.getQuestionValidation.query>;

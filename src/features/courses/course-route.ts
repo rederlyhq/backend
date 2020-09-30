@@ -5,7 +5,7 @@ import validate from '../../middleware/joi-validator';
 import { authenticationMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
-import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation, deleteEnrollmentValidation, extendCourseTopicForUserValidation, getTopicValidation } from './course-route-validation';
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation, deleteEnrollmentValidation, extendCourseTopicForUserValidation, getTopicValidation, extendCourseTopicQuestionValidation } from './course-route-validation';
 import NotFoundError from '../../exceptions/not-found-error';
 import multer = require('multer');
 import * as proxy from 'express-http-proxy';
@@ -14,7 +14,7 @@ import * as _ from 'lodash';
 import configurations from '../../configurations';
 import WrappedError from '../../exceptions/wrapped-error';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
-import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest } from './course-route-request-types';
+import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest, ExtendCourseTopicQuestionRequest } from './course-route-request-types';
 import Boom = require('boom');
 import { Constants } from '../../constants';
 import CourseTopicContent from '../../database/models/course-topic-content';
@@ -388,6 +388,32 @@ router.put('/question/grade/:id',
         }));
     }));
 
+
+router.put('/question/extend',
+authenticationMiddleware,
+validate(extendCourseTopicQuestionValidation),
+asyncHandler(async (req: RederlyExpressRequest<any, ExtendCourseTopicQuestionRequest.body, unknown, any, unknown>, _res: Response, next: NextFunction) => {
+    const query = req.query as ExtendCourseTopicQuestionRequest.query;
+    const body = req.body as ExtendCourseTopicQuestionRequest.body;
+    try {
+        const extensions = await courseController.extendQuestionForUser({
+            where: {
+                ...query
+            },
+            updates: {
+                ...body
+            }
+        });
+        next(httpResponse.Ok('Extended topic successfully', {
+            extensions,
+            updatesCount: extensions.length
+        }));
+    } catch (e) {
+        next(e);
+    }
+}));
+
+
 router.put('/question/:id',
     authenticationMiddleware,
     validate(updateCourseTopicQuestionValidation),
@@ -465,15 +491,24 @@ router.get('/question/:id',
 
         const params = req.params as GetQuestionRequest.params;
         try {
-            // TODO handle not found case
-            const question = await courseController.getQuestion({
-                questionId: params.id,
-                userId: session.userId,
-                formURL: req.originalUrl,
-                role: user.roleId,
-                readonly: req.query.readonly,
-                workbookId: req.query.workbookId,
-            });
+            let question;
+            if (req.query.userId) {
+                question = await courseController.getQuestionWithoutRenderer({
+                    id: params.id,
+                    userId: req.query.userId,
+                });
+            } else {
+                // TODO handle not found case
+                question = await courseController.getQuestion({
+                    questionId: params.id,
+                    // TODO: Is there a better way to handle the authentication for this?
+                    userId: session.userId,
+                    formURL: req.originalUrl,
+                    role: user.roleId,
+                    readonly: req.query.readonly,
+                    workbookId: req.query.workbookId,
+                });
+            }
             next(httpResponse.Ok('Fetched question successfully', question));
 
             // If testing renderer integration from the browser without the front end simply return the rendered html

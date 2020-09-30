@@ -28,6 +28,7 @@ export interface GetQuestionOptions {
 
 export interface GetQuestionRepositoryOptions {
     id: number;
+    userId?: number;
 }
 
 export interface GetCourseTopicRepositoryOptions {
@@ -65,6 +66,16 @@ export interface UpdateCourseTopicsOptions {
     // TODO further investigation if there is any way for the suggested type to show but allow other values
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updates: Partial<CourseTopicContent> | any;
+}
+
+export interface ExtendTopicQuestionForUserOptions {
+    where: {
+        courseTopicQuestionId: number;
+        userId: number;
+    };
+    updates: {
+        maxAttempts?: number;
+    };
 }
 
 export interface ExtendTopicForUserOptions {

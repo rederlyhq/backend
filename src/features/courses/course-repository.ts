@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import WrappedError from '../../exceptions/wrapped-error';
 import { Constants } from '../../constants';
-import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, ExtendTopicForUserOptions } from './course-types';
+import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, ExtendTopicForUserOptions, ExtendTopicQuestionForUserOptions } from './course-types';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 import NotFoundError from '../../exceptions/not-found-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
@@ -351,12 +351,28 @@ class CourseRepository {
     /* ******************** Questions ******************** */
     /* ************************* ************************* */
     async getQuestion(options: GetQuestionRepositoryOptions): Promise<CourseWWTopicQuestion> {
+        const include = [];
+        if (options.userId) {
+            include.push({
+                model: StudentTopicQuestionOverride,
+                as: 'studentTopicQuestionOverride',
+                attributes: ['userId', 'maxAttempts'],
+                required: false,
+                where: {
+                    active: true,
+                    userId: options.userId
+                }
+            });
+        }
+
         const result = await CourseWWTopicQuestion.findOne({
             where: {
                 id: options.id,
                 active: true
             },
+            include
         });
+
         if (_.isNil(result)) {
             throw new NotFoundError('The requested question does not exist');
         }
@@ -511,6 +527,36 @@ class CourseRepository {
             throw new WrappedError('Could not create StudentTopicQuestionOverride', e);
         }
     }
+
+    async extendTopicQuestionByUser(options: ExtendTopicQuestionForUserOptions): Promise<UpdateResult<StudentTopicQuestionOverride>> {
+        try {
+            console.log(options);
+            const found = await StudentTopicQuestionOverride.findOne({where: {...options.where, active: true}});
+            if (!found) {
+                const newExtension = await StudentTopicQuestionOverride.create({...options.where, ...options.updates}, {validate: true});
+                console.log('New Extension created:', newExtension);
+                return {
+                    updatedCount: 1,
+                    updatedRecords: [],
+                };
+            }
+            const updates = await StudentTopicQuestionOverride.update(options.updates, {
+                where: {
+                    ...options.where,
+                    active: true
+                },
+                returning: true,
+            });
+            return {
+                updatedCount: updates[0],
+                updatedRecords: updates[1],
+            };
+        } catch (e) {
+            this.checkCourseTopicError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
+        }
+    }
+
 }
 
 const courseRepository = new CourseRepository();

@@ -213,13 +213,29 @@ export const createCourseTopicQuestionValidation = {
     query: {}
 };
 
+export const extendCourseTopicQuestionValidation = {
+    params: {
+    },
+    body: {
+        maxAttempts: Joi.number().optional(),
+        // weight: Joi.number().optional().default(1),
+        // hidden: Joi.boolean().optional().default(false),
+        // optional: Joi.boolean().optional().default(false),
+    },
+    query: {
+        courseTopicQuestionId: Joi.number().required(),
+        userId: Joi.number().required()
+    },
+};
+
 export const getQuestionValidation = {
     params: {
         id: Joi.number().required()
     },
     query: {
         workbookId: Joi.number().optional(),
-        readonly: Joi.boolean().optional()
+        readonly: Joi.boolean().optional(),
+        userId: Joi.number().optional(),
     },
     body: {}
 };

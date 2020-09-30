@@ -35,7 +35,7 @@ export default class StudentTopicQuestionOverride extends Model implements Stude
         StudentTopicQuestionOverride.belongsTo(CourseWWTopicQuestion, {
             foreignKey: 'courseTopicQuestionId',
             targetKey: 'id',
-            as: 'studentGrade'
+            as: 'studentTopicQuestionOverride'
         });
 
         StudentTopicQuestionOverride.belongsTo(User, {
@@ -43,6 +43,7 @@ export default class StudentTopicQuestionOverride extends Model implements Stude
             targetKey: 'id',
             as: 'user'
         });
+
         // CourseTopicContent.hasMany(CourseWWTopicQuestion, {
         //     foreignKey: 'courseTopicContentId',
         //     sourceKey: 'id',

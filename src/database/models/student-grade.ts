@@ -1,7 +1,28 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
-export default class StudentGrade extends Model {
+export interface StudentGradeInterface {
+  id: number;
+  active: boolean;
+  userId: number;
+  courseWWTopicQuestionId: number;
+  randomSeed: number;
+  bestScore: number;
+  numAttempts: number;
+  numLegalAttempts: number;
+  numExtendedAttempts: number;
+  firstAttempts: number;
+  latestAttempts: number;
+  overallBestScore: number;
+  effectiveScore: number;
+  partialCreditBestScore: number;
+  legalScore: number;
+  locked: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export default class StudentGrade extends Model implements StudentGradeInterface {
   public id!: number; // Note that the `null assertion` `!` is required in strict mode.
   public active!: boolean;
   public userId!: number;

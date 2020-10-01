@@ -3,7 +3,22 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
-export default class CourseWWTopicQuestion extends Model {
+export interface CourseWWTopicQuestionInterface {
+    id: number;
+    courseTopicContentId: number;
+    problemNumber: number;
+    webworkQuestionPath: string;
+    weight: number;
+    maxAttempts: number;
+    hidden: boolean;
+    active: boolean;
+    optional: boolean;
+    curriculumQuestionId: number;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export default class CourseWWTopicQuestion extends Model implements CourseWWTopicQuestionInterface {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
     public courseTopicContentId!: number;
     public problemNumber!: number;

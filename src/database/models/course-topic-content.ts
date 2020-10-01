@@ -1,7 +1,23 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
-export default class CourseTopicContent extends Model {
+export interface CourseTopicContentInterface {
+    id: number;
+    curriculumTopicContentId: number;
+    courseUnitContentId: number;
+    topicTypeId: number;
+    name: string;
+    active: boolean;
+    contentOrder: number;
+    startDate: Date;
+    endDate: Date;
+    deadDate: Date;
+    partialExtend: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export default class CourseTopicContent extends Model implements CourseTopicContentInterface {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
     public curriculumTopicContentId!: number;
     public courseUnitContentId!: number;

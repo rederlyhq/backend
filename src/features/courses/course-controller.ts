@@ -15,7 +15,6 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import appSequelize from '../../database/app-sequelize';
 import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, GradeOptions, GradeResult, DeleteUserEnrollmentOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
@@ -30,6 +29,7 @@ import Role from '../permissions/roles';
 import moment = require('moment');
 import RederlyExtendedError from '../../exceptions/rederly-extended-error';
 import { calculateGrade, WillTrackAttemptReason } from '../../utilities/grading-helper';
+import { useDatabaseTransaction } from '../../utilities/database-helper';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -136,7 +136,7 @@ class CourseController {
 
     async createCourse(options: CreateCourseOptions): Promise<Course> {
         if (options.options.useCurriculum) {
-            return appSequelize.transaction(async () => {
+            return useDatabaseTransaction(async () => {
                 // I didn't want this in the transaction, however use strict throws errors if not
                 if (_.isNil(options.object.curriculumId)) {
                     throw new NotFoundError('Cannot useCurriculum if curriculumId is not given');
@@ -320,7 +320,7 @@ class CourseController {
     }
 
     async updateTopic(options: UpdateTopicOptions): Promise<CourseTopicContent[]> {
-        return appSequelize.transaction(async () => {
+        return useDatabaseTransaction(async () => {
             // This is a set of all update results as they come in, since there are 5 updates that occur this will have 5 elements
             let updatesResults: UpdateResult<CourseTopicContent>[] = [];
             if (!_.isNil(options.updates.contentOrder) || !_.isNil(options.updates.courseUnitContentId)) {
@@ -431,7 +431,7 @@ class CourseController {
 
     async softDeleteQuestions(options: DeleteQuestionsOptions): Promise<UpdateResult<CourseWWTopicQuestion>> {
         let courseTopicContentId = options.courseTopicContentId;
-        return appSequelize.transaction(async (): Promise<UpdateResult<CourseWWTopicQuestion>> => {
+        return useDatabaseTransaction(async (): Promise<UpdateResult<CourseWWTopicQuestion>> => {
             const where: sequelize.WhereOptions = _({
                 id: options.id,
                 courseTopicContentId,
@@ -492,7 +492,7 @@ class CourseController {
 
     async softDeleteTopics(options: DeleteTopicsOptions): Promise<UpdateResult<CourseTopicContent>> {
         let courseUnitContentId = options.courseUnitContentId;
-        return appSequelize.transaction(async (): Promise<UpdateResult<CourseTopicContent>> => {
+        return useDatabaseTransaction(async (): Promise<UpdateResult<CourseTopicContent>> => {
             const results: CourseTopicContent[] = [];
             let updatedCount = 0;
             const where: sequelize.WhereOptions = _({
@@ -577,7 +577,7 @@ class CourseController {
     }
 
     async softDeleteUnits(options: DeleteUnitsOptions): Promise<UpdateResult<CourseUnitContent>> {
-        return appSequelize.transaction(async (): Promise<UpdateResult<CourseUnitContent>> => {
+        return useDatabaseTransaction(async (): Promise<UpdateResult<CourseUnitContent>> => {
             const results: CourseUnitContent[] = [];
             let updatedCount = 0;
             const where: sequelize.WhereOptions = _({
@@ -648,7 +648,7 @@ class CourseController {
     }
 
     async updateCourseUnit(options: UpdateUnitOptions): Promise<CourseUnitContent[]> {
-        return appSequelize.transaction(async () => {
+        return useDatabaseTransaction(async () => {
             // This is a set of all update results as they come in, since there are 5 updates that occur this will have 5 elements
             let updatesResults: UpdateResult<CourseUnitContent>[] = [];
             if (!_.isNil(options.updates.contentOrder)) {
@@ -749,7 +749,7 @@ class CourseController {
     }
 
     updateQuestion(options: UpdateQuestionOptions): Promise<CourseWWTopicQuestion[]> {
-        return appSequelize.transaction(async () => {
+        return useDatabaseTransaction(async () => {
             // This is a set of all update results as they come in, since there are 5 updates that occur this will have 5 elements
             let updatesResults: UpdateResult<CourseWWTopicQuestion>[] = [];
             if (!_.isNil(options.updates.problemNumber)) {
@@ -793,7 +793,7 @@ class CourseController {
     }
 
     async updateGrade(options: UpdateGradeOptions): Promise<UpdateResult<StudentGrade>> {
-        return appSequelize.transaction(async (): Promise<UpdateResult<StudentGrade>> => {
+        return useDatabaseTransaction(async (): Promise<UpdateResult<StudentGrade>> => {
             if (!_.isNil(options.updates.effectiveScore)) {
                 await courseRepository.createStudentGradeOverride({
                     studentGradeId: options.where.id,
@@ -831,7 +831,9 @@ class CourseController {
     async createQuestionsForTopicFromDefFileContent(options: CreateQuestionsForTopicFromDefFileContentOptions): Promise<CourseWWTopicQuestion[]> {
         const parsedWebworkDef = new WebWorkDef(options.webworkDefFileContent);
         let lastProblemNumber = await courseRepository.getLatestProblemNumberForTopic(options.courseTopicId) || 0;
-        return appSequelize.transaction(() => {
+        // TODO fix typings - remove any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return useDatabaseTransaction<any>((): Promise<any> => {
             return parsedWebworkDef.problems.asyncForEach(async (problem: Problem) => {
                 return this.addQuestion({
                     // active: true,
@@ -848,7 +850,7 @@ class CourseController {
     }
 
     async addQuestion(question: Partial<CourseWWTopicQuestion>): Promise<CourseWWTopicQuestion> {
-        return await appSequelize.transaction(async () => {
+        return await useDatabaseTransaction(async () => {
             const result = await this.createQuestion(question);
             await this.createGradesForQuestion({
                 questionId: result.id
@@ -1218,7 +1220,7 @@ class CourseController {
         const solutionDate = moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days');
 
         try {
-            return await appSequelize.transaction(async (): Promise<SubmitAnswerResult> => {
+            return await useDatabaseTransaction(async (): Promise<SubmitAnswerResult> => {
                 const workbook = await this.gradeSubmission({
                     newScore: options.score,
                     question,
@@ -1279,7 +1281,7 @@ class CourseController {
     }
 
     async enroll(enrollment: CreateGradesForUserEnrollmentOptions): Promise<StudentEnrollment> {
-        return await appSequelize.transaction(async () => {
+        return await useDatabaseTransaction(async () => {
             const result = await this.createStudentEnrollment({
                 ...enrollment,
                 enrollDate: new Date()
@@ -1303,9 +1305,12 @@ class CourseController {
         });
     }
 
+    // TODO fix return type, transactions were returning any so type checking was suspended
     // Returns true is successfully deleted the enrollment.
     async softDeleteEnrollment(deEnrollment: DeleteUserEnrollmentOptions): Promise<boolean> {
-        return await appSequelize.transaction(async () => {
+        // TODO fix typings - remove any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return await useDatabaseTransaction<any>(async (): Promise<any> => {
             const enrollment = await StudentEnrollment.findOne({
                 where: {
                     ...deEnrollment

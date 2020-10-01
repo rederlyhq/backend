@@ -11,7 +11,7 @@ const logger = winston.createLogger({
   ),
   transports: [
     new winston.transports.File({
-      level: 'info',
+      level: 'warn',
       filename: './logs/all-logs.log',
       handleExceptions: true,
       // json:             true,
@@ -20,6 +20,7 @@ const logger = winston.createLogger({
       // colorize:         false
     }),
     new winston.transports.Console({
+      level: 'debug',
       format: format.combine(
         winston.format.colorize(),
         winston.format.timestamp(),

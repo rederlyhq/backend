@@ -7,18 +7,15 @@ export default class StudentGradeInstance extends Model {
   public userId!: number;
   public studentGradeId!: number;
   public courseWWTopicQuestionId!: number;
+  public studentTopicAssessmentInfoId!: number;
+  public webworkQuestionPath!: string;
   public randomSeed!: number;
-  public bestScore!: number;
-  public numAttempts!: number;
-  public numLegalAttempts!: number;
-  public numExtendedAttempts!: number;
-  public firstAttempts!: number;
-  public latestAttempts!: number;
-  public overallBestScore!: number;
+  public bestIndividualScore!: number;
+  public bestVersionScore!: number;
   public effectiveScore!: number;
-  public partialCreditBestScore!: number;
-  public legalScore!: number;
-  public locked!: boolean;
+  public numAttempts!: number;
+  public overallBestScore!: number;
+  public locked!: boolean; // drop?
   // This is a jsonb field so it could be any (from db)
   // Submitted in workbook used any so I'm going to keep it consistent here
   // If this is used for form data we will never know any info about what keys are available
@@ -26,19 +23,20 @@ export default class StudentGradeInstance extends Model {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public currentProblemState!: any;
 
-  public lastInfluencingLegalAttemptId!: number;
-  public lastInfluencingCreditedAttemptId!: number;
-  public lastInfluencingAttemptId!: number;
+  public bestIndividualAttemptId!: number;
+  public bestVersionAttemptId!: number;
 
   public getUser!: BelongsToGetAssociationMixin<User>;
   public getQuestion!: BelongsToGetAssociationMixin<CourseWWTopicQuestion>;
   public getGrade!: BelongsToGetAssociationMixin<StudentGrade>;
   public getWorkbooks!: HasManyGetAssociationsMixin<StudentWorkbook>;
+  public getStudentAssessmentInfo!: BelongsToGetAssociationMixin<StudentTopicAssessmentInfo>;
 
   public user!: User;
   public studentGrade!: StudentGrade;
   public courseWWTopicQuestion!: CourseWWTopicQuestion;
   public workbooks?: Array<StudentWorkbook>;
+  public StudentTopicAssessmentInfo!: StudentTopicAssessmentInfo;
 
   // timestamps!
   public readonly createdAt!: Date;
@@ -72,6 +70,12 @@ export default class StudentGradeInstance extends Model {
       as: 'grade'
     });
 
+    StudentGradeInstance.belongsTo(StudentTopicAssessmentInfo, {
+      foreignKey: 'studentTopicAssessmentInfoId',
+      targetKey: 'id',
+      as: 'info'
+    });
+
     StudentGradeInstance.hasMany(StudentWorkbook, {
       foreignKey: 'studentGradeId',
       sourceKey: 'id',
@@ -79,25 +83,19 @@ export default class StudentGradeInstance extends Model {
     });
 
     StudentGradeInstance.belongsTo(StudentWorkbook, {
-      foreignKey: 'lastInfluencingLegalAttemptId',
+      foreignKey: 'bestIndividualAttemptId',
       targetKey: 'id',
-      as: 'lastInfluencingLegalAttempt',
+      as: 'bestIndividualAttempt',
       constraints: false
     });
 
     StudentGradeInstance.belongsTo(StudentWorkbook, {
-      foreignKey: 'lastInfluencingCreditedAttemptId',
+      foreignKey: 'bestVersionAttemptId',
       targetKey: 'id',
-      as: 'lastInfluencingCreditedAttempt',
+      as: 'bestVersionAttempt',
       constraints: false
     });
 
-    StudentGradeInstance.belongsTo(StudentWorkbook, {
-      foreignKey: 'lastInfluencingAttemptId',
-      targetKey: 'id',
-      as: 'lastInfluencingAttempt',
-      constraints: false
-    });
     /* eslint-enable @typescript-eslint/no-use-before-define */
   }
 
@@ -126,23 +124,28 @@ StudentGradeInstance.init({
     type: DataTypes.INTEGER,
     allowNull: false,
   },
+  studentTopicAssessmentInfoId: {
+    field: 'student_topic_assessment_info_id',
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
+  webworkQuestionPath: {
+    field: 'course_topic_question_webwork_question_ww_path',
+    type: DataTypes.TEXT,
+    allowNull: false,
+  },
   studentGradeId: {
     field: 'student_grade_id',
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  lastInfluencingLegalAttemptId: {
-    field: 'last_influencing_legal_attempt_workbook_id',
+  bestIndividualAttemptId: {
+    field: 'best_individual_attempt_id',
     type: DataTypes.INTEGER,
     allowNull: true,
   },
-  lastInfluencingCreditedAttemptId: {
-    field: 'last_influencing_credited_attempt_workbook_id',
-    type: DataTypes.INTEGER,
-    allowNull: true,
-  },
-  lastInfluencingAttemptId: {
-    field: 'last_influencing_attempt_workbook_id',
+  bestVersionAttemptId: {
+    field: 'best_version_attempt_id',
     type: DataTypes.INTEGER,
     allowNull: true,
   },
@@ -152,13 +155,13 @@ StudentGradeInstance.init({
     allowNull: false,
     defaultValue: 666
   },
-  bestScore: {
+  bestIndividualScore: {
     field: 'student_grade_best_score',
     type: DataTypes.FLOAT,
     allowNull: false,
     defaultValue: 0
   },
-  overallBestScore: {
+  bestVersionScore: {
     field: 'student_grade_overall_best_score',
     type: DataTypes.FLOAT,
     allowNull: false,
@@ -170,44 +173,8 @@ StudentGradeInstance.init({
     allowNull: false,
     defaultValue: 0
   },
-  numLegalAttempts: {
-    field: 'student_grade_num_legal_attempts',
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    defaultValue: 0
-  },
-  numExtendedAttempts: {
-    field: 'student_grade_num_extended_attempts',
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    defaultValue: 0
-  },
-  firstAttempts: {
-    field: 'student_grade_first_attempt',
-    type: DataTypes.FLOAT,
-    allowNull: false,
-    defaultValue: 0
-  },
-  latestAttempts: {
-    field: 'student_grade_latest_attempt',
-    type: DataTypes.FLOAT,
-    allowNull: false,
-    defaultValue: 0
-  },
   effectiveScore: {
     field: 'student_grade_effective_score',
-    type: DataTypes.FLOAT,
-    allowNull: false,
-    defaultValue: 0
-  },
-  partialCreditBestScore: {
-    field: 'student_grade_partial_best_score',
-    type: DataTypes.FLOAT,
-    allowNull: false,
-    defaultValue: 0
-  },
-  legalScore: {
-    field: 'student_grade_legal_score',
     type: DataTypes.FLOAT,
     allowNull: false,
     defaultValue: 0
@@ -241,3 +208,4 @@ import CourseWWTopicQuestion from './course-ww-topic-question';
 import User from './user';
 import StudentWorkbook from './student-workbook';
 import StudentGrade from './student-grade';
+import StudentTopicAssessmentInfo from './student-topic-assessment-info';

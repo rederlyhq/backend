@@ -7,9 +7,9 @@ export default {
       /**
        * student_topic_override
        */
-      await queryInterface.createTable('student_grade_instance', {
+      await queryInterface.createTable('student_topic_assessment_info', {
         id: {
-          field: 'student_topic_override_id',
+          field: 'student_topic_assessment_info_id',
           type: DataTypes.INTEGER,
           autoIncrement: true,
           primaryKey: true,
@@ -22,7 +22,65 @@ export default {
           onUpdate: 'CASCADE',
           // Different from sequelize model, on models I do this with associations so I can use types
           references: {
-            model: 'user',
+            model: 'users',
+            key: 'user_id',
+          },
+        },
+        courseTopicContentId: {
+          field: 'course_topic_content_id',
+          type: DataTypes.INTEGER,
+          allowNull: false,
+          // Defaults to cascade when generating the db, no action on migrations
+          onUpdate: 'CASCADE',
+          // Different from sequelize model, on models I do this with associations so I can use types
+          references: {
+            model: 'course_topic_content',
+            key: 'course_topic_content_id',
+          },
+        },
+        active: {
+          field: 'student_topic_assessment_info_active',
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+          defaultValue: true
+        },
+        startedAt: {
+          field: 'started_at',
+          type: DataTypes.DATE,
+          allowNull: false,
+        },
+        endsAt: {
+          field: 'started_at',
+          type: DataTypes.DATE,
+          allowNull: false,
+        },
+        numAttempts: {
+          field: 'num_attempts',
+          type: DataTypes.INTEGER,
+          allowNull: false,
+          defaultValue: 0
+        },
+
+      });
+      /**
+       * student_topic_override
+       */
+      await queryInterface.createTable('student_grade_instance', {
+        id: {
+          field: 'student_grade_instance_id',
+          type: DataTypes.INTEGER,
+          autoIncrement: true,
+          primaryKey: true,
+        },
+        userId: {
+          field: 'user_id',
+          type: DataTypes.INTEGER,
+          allowNull: false,
+          // Defaults to cascade when generating the db, no action on migrations
+          onUpdate: 'CASCADE',
+          // Different from sequelize model, on models I do this with associations so I can use types
+          references: {
+            model: 'users',
             key: 'user_id',
           },
         },
@@ -50,24 +108,46 @@ export default {
             key: 'student_grade_id',
           },
         },
+        studentTopicAssessmentInfoId: {
+          field: 'student_topic_assessment_info_id',
+          type: DataTypes.INTEGER,
+          allowNull: false,
+          // Defaults to cascade when generating the db, no action on migrations
+          onUpdate: 'CASCADE',
+          // Different from sequelize model, on models I do this with associations so I can use types
+          references: {
+            model: 'student_topic_assessment_info',
+            key: 'student_topic_assessment_info_id',
+          },
+        },
         active: {
           field: 'student_grade_instance_active',
           type: DataTypes.BOOLEAN,
           allowNull: false,
           defaultValue: true
         },
-        lastInfluencingLegalAttemptId: {
-          field: 'last_influencing_legal_attempt_workbook_id',
+        webworkQuestionPath: {
+          field: 'course_topic_question_webwork_problem_ww_path',
+          type: DataTypes.STRING,
+          allowNull: false,
+        },
+        startedAt: {
+          field: 'started_at',
+          type: DataTypes.DATE,
+          allowNull: false,
+        },
+        endsAt: {
+          field: 'started_at',
+          type: DataTypes.DATE,
+          allowNull: false,
+        },
+        bestIndividualAttemptId: {
+          field: 'best_individual_attempt_id',
           type: DataTypes.INTEGER,
           allowNull: true,
         },
-        lastInfluencingCreditedAttemptId: {
-          field: 'last_influencing_credited_attempt_workbook_id',
-          type: DataTypes.INTEGER,
-          allowNull: true,
-        },
-        lastInfluencingAttemptId: {
-          field: 'last_influencing_attempt_workbook_id',
+        bestVersionAttemptId: {
+          field: 'best_version_attempt_id',
           type: DataTypes.INTEGER,
           allowNull: true,
         },
@@ -77,14 +157,14 @@ export default {
           allowNull: false,
           defaultValue: 666
         },
-        bestScore: {
-          field: 'student_grade_best_score',
+        bestIndividualScore: {
+          field: 'student_grade_instance_best_individual_score',
           type: DataTypes.FLOAT,
           allowNull: false,
           defaultValue: 0
         },
-        overallBestScore: {
-          field: 'student_grade_overall_best_score',
+        bestVersionScore: {
+          field: 'student_grade_instance_best_version_score',
           type: DataTypes.FLOAT,
           allowNull: false,
           defaultValue: 0
@@ -95,44 +175,8 @@ export default {
           allowNull: false,
           defaultValue: 0
         },
-        numLegalAttempts: {
-          field: 'student_grade_num_legal_attempts',
-          type: DataTypes.INTEGER,
-          allowNull: false,
-          defaultValue: 0
-        },
-        numExtendedAttempts: {
-          field: 'student_grade_num_extended_attempts',
-          type: DataTypes.INTEGER,
-          allowNull: false,
-          defaultValue: 0
-        },
-        firstAttempts: {
-          field: 'student_grade_first_attempt',
-          type: DataTypes.FLOAT,
-          allowNull: false,
-          defaultValue: 0
-        },
-        latestAttempts: {
-          field: 'student_grade_latest_attempt',
-          type: DataTypes.FLOAT,
-          allowNull: false,
-          defaultValue: 0
-        },
         effectiveScore: {
           field: 'student_grade_effective_score',
-          type: DataTypes.FLOAT,
-          allowNull: false,
-          defaultValue: 0
-        },
-        partialCreditBestScore: {
-          field: 'student_grade_partial_best_score',
-          type: DataTypes.FLOAT,
-          allowNull: false,
-          defaultValue: 0
-        },
-        legalScore: {
-          field: 'student_grade_legal_score',
           type: DataTypes.FLOAT,
           allowNull: false,
           defaultValue: 0
@@ -154,6 +198,7 @@ export default {
   down: async (queryInterface: QueryInterface): Promise<void> => {
     // Transactions are automatically use because a namespace is injected into sequelize when fetching configurations
     await queryInterface.sequelize.transaction(async () => {
+      await queryInterface.dropTable('student_topic_assessment_info');
       await queryInterface.dropTable('student_grade_instance');
     });
   }

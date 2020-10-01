@@ -1024,8 +1024,46 @@ class CourseController {
                 studentWorkbook: null
             };
         }
-        const question: CourseWWTopicQuestion = await studentGrade.getQuestion();
-        const topic: CourseTopicContent = await question.getTopic();
+        const question: (CourseWWTopicQuestion) = await studentGrade.getQuestion(
+            {
+                include: [{
+                        model: StudentTopicQuestionOverride,
+                        as: 'studentTopicQuestionOverride',
+                        attributes: ['userId', 'maxAttempts'],
+                        required: false,
+                        where: {
+                            active: true,
+                            userId: options.userId
+                        }
+                }]
+            }
+        );
+        
+        
+        const topic: CourseTopicContent = await question.getTopic(            {
+            include: [{
+                model: StudentTopicOverride,
+                as: 'studentTopicOverride',
+                attributes: ['userId', 'startDate', 'endDate', 'deadDate'],
+                required: false,
+                where: {
+                    active: true,
+                    userId: options.userId
+                }
+            }]
+        });
+        
+        if ((topic as any)?.studentTopicOverride?.length === 1) {
+            // TODO: Fix typing here
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            _.assign(topic, (topic as any).studentTopicOverride[0]);
+        }
+        
+        if ((question as any).studentTopicQuestionOverride.length === 1) {
+            // TODO: Fix typing here
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            _.assign(question, (question as any).studentTopicQuestionOverride[0]);
+        }
 
         if (moment().isBefore(moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days')) && studentGrade.overallBestScore !== 1) {
             const overallBestScore = Math.max(studentGrade.overallBestScore, options.score);
@@ -1665,6 +1703,16 @@ class CourseController {
                     as: 'grades',
                     required: false,
                     where: {
+                        userId: userId
+                    }
+                });
+                include.push({
+                    model: StudentTopicQuestionOverride,
+                    as: 'studentTopicQuestionOverride',
+                    attributes: ['userId', 'maxAttempts'],
+                    required: false,
+                    where: {
+                        active: true,
                         userId: userId
                     }
                 });

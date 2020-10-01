@@ -188,18 +188,6 @@ router.get('/questions',
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        let topic: CourseTopicContent | null = null;
-        if(!_.isNil(req.query.courseTopicContentId)) {
-            topic = await courseController.getTopicById(req.query.courseTopicContentId);
-            if (new Date().getTime() < topic.startDate.getTime()) {
-                const user = await req.session.getUser();
-                if (user.roleId === Role.STUDENT) {
-                    next(Boom.badRequest(`The topic "${topic.name}" has not started yet.`));
-                    return;
-                }
-            }
-        }
-
         const userIdInput = req.query.userId;
         let userId: number | undefined;
         if (typeof userIdInput === 'string') {
@@ -212,6 +200,18 @@ router.get('/questions',
             }
         } else if (typeof userIdInput === 'number') {
             userId = userIdInput;
+        }
+
+        let topic: CourseTopicContent | null = null;
+        if(!_.isNil(req.query.courseTopicContentId)) {
+            topic = await courseController.getTopicById(req.query.courseTopicContentId, userId);
+            if (new Date().getTime() < topic.startDate.getTime()) {
+                const user = await req.session.getUser();
+                if (user.roleId === Role.STUDENT) {
+                    next(Boom.badRequest(`The topic "${topic.name}" has not started yet.`));
+                    return;
+                }
+            }
         }
 
         const questions = await courseController.getQuestions({
@@ -388,7 +388,6 @@ router.put('/question/grade/:id',
         }));
     }));
 
-
 router.put('/question/extend',
 authenticationMiddleware,
 validate(extendCourseTopicQuestionValidation),
@@ -412,7 +411,6 @@ asyncHandler(async (req: RederlyExpressRequest<any, ExtendCourseTopicQuestionReq
         next(e);
     }
 }));
-
 
 router.put('/question/:id',
     authenticationMiddleware,

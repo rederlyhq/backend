@@ -19,10 +19,11 @@ import Boom = require('boom');
 import { Constants } from '../../constants';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import Role from '../permissions/roles';
-import { GetCalculatedRendererParamsResponse } from './course-types';
+import { GetCalculatedRendererParamsResponse, PostQuestionMeta } from './course-types';
 import rendererHelper, { RENDERER_ENDPOINT, GetProblemParameters, RendererResponse } from '../../utilities/renderer-helper';
 import StudentGrade from '../../database/models/student-grade';
 import bodyParser = require('body-parser');
+import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 
 const fileUpload = multer();
 
@@ -468,7 +469,7 @@ router.post('/question/:id',
     }),
     // Can't use unknown due to restrictions on the type from express
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, unknown, unknown, { rendererParams: GetCalculatedRendererParamsResponse; studentGrade?: StudentGrade | null }>, _res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, unknown, unknown, PostQuestionMeta>, _res: Response, next: NextFunction) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -497,14 +498,15 @@ router.post('/question/:id',
             rendererParams,
             // TODO investigate why having full sequelize model causes proxy to hang
             // maybe meta is a reserved field?
-            studentGrade: studentGrade?.get({ plain: true}) as StudentGrade
+            studentGrade: studentGrade?.get({ plain: true}) as StudentGrade,
+            courseQuestion: question
         };
         next();
     }),
     proxy(configurations.renderer.url, {
         // Can't use unknown due to restrictions on the type from express
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        proxyReqPathResolver: (req: RederlyExpressRequest<any, unknown, unknown, unknown, { rendererParams: GetCalculatedRendererParamsResponse; studentGrade?: StudentGrade | null }>) => {
+        proxyReqPathResolver: (req: RederlyExpressRequest<any, unknown, unknown, unknown, PostQuestionMeta>) => {
             if(_.isNil(req.meta)) {
                 throw new Error('Previously fetched metadata is nil');
             }
@@ -519,14 +521,22 @@ router.post('/question/:id',
         },
         // Can't use unknown due to restrictions on the type from express
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        userResDecorator: async (_proxyRes, proxyResData, userReq: RederlyExpressRequest<any, unknown, unknown, unknown, { rendererParams: GetCalculatedRendererParamsResponse; studentGrade?: StudentGrade | null }>) => {
+        userResDecorator: async (_proxyRes, proxyResData, userReq: RederlyExpressRequest<any, unknown, unknown, unknown, PostQuestionMeta>) => {
             if (_.isNil(userReq.session)) {
                 throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
             }
 
+            if(_.isNil(userReq.meta)) {
+                throw new Error('Previously fetched metadata is nil');
+            }
+
+
             let rendererResponse: RendererResponse | null = null;
             try {
-                rendererResponse = await rendererHelper.parseRendererResponse(proxyResData.toString('utf8'));
+                rendererResponse = await rendererHelper.parseRendererResponse(proxyResData.toString('utf8'), {
+                    questionPath: userReq.meta.courseQuestion.webworkQuestionPath,
+                    questionRandomSeed: userReq.meta.studentGrade?.randomSeed
+                });
             } catch (e) {
                 throw new WrappedError(`Error parsing data response from renderer on question ${userReq.meta?.studentGrade?.courseWWTopicQuestionId} for grade ${userReq.meta?.studentGrade?.id}`, e);
             }

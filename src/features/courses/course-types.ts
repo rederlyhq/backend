@@ -272,3 +272,9 @@ export interface GetCalculatedRendererParamsResponse {
     permissionLevel: number;
     showSolutions: number;
 }
+
+export interface PostQuestionMeta {
+    rendererParams: GetCalculatedRendererParamsResponse;
+    studentGrade?: StudentGrade | null;
+    courseQuestion: CourseWWTopicQuestion;
+}

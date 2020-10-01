@@ -1069,12 +1069,13 @@ class CourseController {
     }: {
         topic: CourseTopicContent;
     }): Promise<void> => {
-        // TODO optional transaction with too many transactions it deadlocks
-        const questions = await topic.getQuestions();
-        questions.asyncForEach(async (question: CourseWWTopicQuestion) => {
-            await this.reGradeQuestion({
-                topic,
-                question
+        return useDatabaseTransaction(async () => {
+            const questions = await topic.getQuestions();
+            await questions.asyncForEach(async (question: CourseWWTopicQuestion) => {
+                await this.reGradeQuestion({
+                    topic,
+                    question
+                });
             });
         });
     }
@@ -1086,15 +1087,16 @@ class CourseController {
         question: CourseWWTopicQuestion;
         topic?: CourseTopicContent;
     }): Promise<void> => {
-        // TODO optional transaction with too many transactions it deadlocks
-        const grades = await question.getGrades();
-        topic = topic ?? await question.getTopic();
+        return useDatabaseTransaction(async () => {
+            const grades = await question.getGrades();
+            topic = topic ?? await question.getTopic();
 
-        grades.asyncForEach(async (studentGrade: StudentGrade) => {
-            await this.reGradeStudentGrade({
-                studentGrade,
-                question,
-                topic
+            await grades.asyncForEach(async (studentGrade: StudentGrade) => {
+                await this.reGradeStudentGrade({
+                    studentGrade,
+                    question,
+                    topic
+                });
             });
         });
     }
@@ -1108,53 +1110,54 @@ class CourseController {
         topic?: CourseTopicContent;
         question?: CourseWWTopicQuestion;
     }): Promise<void> => {
-        // TODO optional transaction with too many transactions it deadlocks
-        const workbooks = await studentGrade.getWorkbooks({
-            order: ['id']
-        });
-        question = question ?? await studentGrade.getQuestion();
-        topic = topic ?? await question.getTopic();
-        const solutionDate = moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days');
+        return useDatabaseTransaction(async () => {
+            const workbooks = await studentGrade.getWorkbooks({
+                order: ['id']
+            });
+            question = question ?? await studentGrade.getQuestion();
+            topic = topic ?? await question.getTopic();
+            const solutionDate = moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days');
 
-        // reset student grade before submitting
-        studentGrade.bestScore = 0;
-        studentGrade.overallBestScore = 0;
-        studentGrade.partialCreditBestScore = 0;
-        // studentGrade.effectiveScore // Don't touch this
-        studentGrade.legalScore = 0;
-        studentGrade.numAttempts = 0;
-        studentGrade.numLegalAttempts = 0;
-        studentGrade.numExtendedAttempts = 0;
-        studentGrade.lastInfluencingAttemptId = null;
-        studentGrade.lastInfluencingCreditedAttemptId = null;
-        studentGrade.lastInfluencingLegalAttemptId = null;
-        studentGrade.firstAttempts = 0;
-        studentGrade.latestAttempts = 0;
-        
-        await studentGrade.save();
-        // Order is extremely important here, our async for each does not wait for one to be done before starting another
-        for (let i = 0; i < workbooks.length; i++) {
-            const workbook = workbooks[i];
-            if(_.isNil(question) || _.isNil(topic)) {
-                throw new Error('This cannot be undefined, strict is confused because of transaction callback');
+            // reset student grade before submitting
+            studentGrade.bestScore = 0;
+            studentGrade.overallBestScore = 0;
+            studentGrade.partialCreditBestScore = 0;
+            // studentGrade.effectiveScore // Don't touch this
+            studentGrade.legalScore = 0;
+            studentGrade.numAttempts = 0;
+            studentGrade.numLegalAttempts = 0;
+            studentGrade.numExtendedAttempts = 0;
+            studentGrade.lastInfluencingAttemptId = null;
+            studentGrade.lastInfluencingCreditedAttemptId = null;
+            studentGrade.lastInfluencingLegalAttemptId = null;
+            studentGrade.firstAttempts = 0;
+            studentGrade.latestAttempts = 0;
+            
+            await studentGrade.save();
+            // Order is extremely important here, our async for each does not wait for one to be done before starting another
+            for (let i = 0; i < workbooks.length; i++) {
+                const workbook = workbooks[i];
+                if(_.isNil(question) || _.isNil(topic)) {
+                    throw new Error('This cannot be undefined, strict is confused because of transaction callback');
+                }
+
+                const gradeResult = calculateGrade({
+                    newScore: workbook.result,
+                    question,
+                    solutionDate,
+                    studentGrade,
+                    topic,
+
+                    timeOfSubmission: workbook.time
+                });
+                await this.setGradeFromSubmission({
+                    gradeResult,
+                    studentGrade,
+                    submitted: null,
+                    workbook
+                });
             }
-
-            const gradeResult = calculateGrade({
-                newScore: workbook.result,
-                question,
-                solutionDate,
-                studentGrade,
-                topic,
-
-                timeOfSubmission: workbook.time
-            });
-            await this.setGradeFromSubmission({
-                gradeResult,
-                studentGrade,
-                submitted: null,
-                workbook
-            });
-        }
+        });
     }
 
     /**

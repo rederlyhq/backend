@@ -19,12 +19,11 @@ import Boom = require('boom');
 import { Constants } from '../../constants';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import Role from '../permissions/roles';
-import { GetCalculatedRendererParamsResponse, PostQuestionMeta } from './course-types';
+import { PostQuestionMeta } from './course-types';
 import rendererHelper, { RENDERER_ENDPOINT, GetProblemParameters, RendererResponse } from '../../utilities/renderer-helper';
 import StudentGrade from '../../database/models/student-grade';
 import bodyParser = require('body-parser');
 import moment = require('moment');
-import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 
 const fileUpload = multer();
 

@@ -16,10 +16,10 @@ import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import appSequelize from '../../database/app-sequelize';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
-import { UpdateResult } from '../../generic-interfaces/sequelize-generic-interfaces';
+import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
 import curriculumRepository from '../curriculum/curriculum-repository';
 import CurriculumUnitContent from '../../database/models/curriculum-unit-content';
 import CurriculumTopicContent from '../../database/models/curriculum-topic-content';
@@ -29,6 +29,8 @@ import { nameof } from '../../utilities/typescript-helpers';
 import Role from '../permissions/roles';
 import moment = require('moment');
 import RederlyExtendedError from '../../exceptions/rederly-extended-error';
+import StudentTopicOverride from '../../database/models/student-topic-override';
+import StudentTopicQuestionOverride from '../../database/models/student-topic-question-override';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -72,11 +74,26 @@ class CourseController {
         });
     }
 
-    getTopicById(id: number): Promise<CourseTopicContent> {
+    getTopicById(id: number, userId?: number): Promise<CourseTopicContent> {
+        const include = [];
+        if (!_.isNil(userId)) {
+            include.push({
+                model: StudentTopicOverride,
+                as: 'studentTopicOverride',
+                attributes: ['userId', 'startDate', 'endDate', 'deadDate'],
+                required: false,
+                where: {
+                    active: true,
+                    userId: userId
+                }
+            });
+        }
+
         return CourseTopicContent.findOne({
             where: {
                 id,
             },
+            include
         });
     }
 
@@ -91,19 +108,49 @@ class CourseController {
                 model: CourseUnitContent,
                 as: 'unit',
                 attributes: []
+            },
+            {
+                model: StudentTopicOverride,
+                as: 'studentTopicOverride',
+                attributes: ['userId', 'startDate', 'endDate', 'deadDate'],
+                required: false
             });
             where[`$unit.${CourseUnitContent.rawAttributes.courseId.field}$`] = courseId;
+            // where[`$studentTopicOverride.${StudentTopicOverride.rawAttributes.courseTopicContentId.field}$`] = `$${CourseTopicContent.rawAttributes.id.field}`;
         }
-
+        
         if (isOpen) {
             const date = new Date();
-            where.startDate = {
-                [Sequelize.Op.lte]: date
-            };
-
-            where.deadDate = {
-                [Sequelize.Op.gte]: date
-            };
+            where[Sequelize.Op.and] = [
+                {
+                    [Sequelize.Op.or]: [
+                        {
+                            startDate: {
+                                [Sequelize.Op.lte]: date
+                            }
+                        },
+                        {
+                            [`$studentTopicOverride.${StudentTopicOverride.rawAttributes.startDate.field}$`]: {
+                                [Sequelize.Op.lte]: date
+                            }
+                        }
+                    ]
+                },
+                {
+                    [Sequelize.Op.or]: [
+                        {
+                            deadDate: {
+                                [Sequelize.Op.gte]: date
+                            }
+                        },
+                        {
+                            [`$studentTopicOverride.${StudentTopicOverride.rawAttributes.deadDate.field}$`]: {
+                                [Sequelize.Op.gte]: date
+                            }
+                        }
+                    ]
+                }
+            ];
         }
         return CourseTopicContent.findAll({
             where,
@@ -357,6 +404,12 @@ class CourseController {
                 .values()
                 .value();
             return resultantUpdates;
+        });
+    }
+
+    async extendTopicForUser(options: ExtendTopicForUserOptions): Promise<UpsertResult<StudentTopicOverride>> {
+        return appSequelize.transaction(() =>  {
+            return courseRepository.extendTopicByUser(options);
         });
     }
 
@@ -848,6 +901,16 @@ class CourseController {
         };
     }
 
+    async extendQuestionForUser(options: ExtendTopicQuestionForUserOptions): Promise<UpsertResult<StudentTopicQuestionOverride>> {
+        return appSequelize.transaction(() =>  {
+            return courseRepository.extendTopicQuestionByUser(options);
+        });
+    }
+
+    async getQuestionWithoutRenderer(options: GetQuestionRepositoryOptions): Promise<CourseWWTopicQuestion> {
+        return await courseRepository.getQuestion(options);
+    }
+
     async getQuestion(options: GetQuestionOptions): Promise<GetQuestionResult> {
         // grades/statistics may send workbookID => show problem with workbookID.form_data
         // (not enrolled) problem page will send questionID without userID => show problem with no form_data
@@ -959,8 +1022,46 @@ class CourseController {
                 studentWorkbook: null
             };
         }
-        const question: CourseWWTopicQuestion = await studentGrade.getQuestion();
-        const topic: CourseTopicContent = await question.getTopic();
+        const question: CourseWWTopicQuestion = await studentGrade.getQuestion(
+            {
+                include: [{
+                        model: StudentTopicQuestionOverride,
+                        as: 'studentTopicQuestionOverride',
+                        attributes: ['userId', 'maxAttempts'],
+                        required: false,
+                        where: {
+                            active: true,
+                            userId: options.userId
+                        }
+                }]
+            }
+        );
+        
+        
+        const topic: CourseTopicContent = await question.getTopic({
+            include: [{
+                model: StudentTopicOverride,
+                as: 'studentTopicOverride',
+                attributes: ['userId', 'startDate', 'endDate', 'deadDate'],
+                required: false,
+                where: {
+                    active: true,
+                    userId: options.userId
+                }
+            }]
+        });
+        
+        if (topic.studentTopicOverride?.length === 1) {
+            // TODO: Fix typing here
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            _.assign(topic, (topic as any).studentTopicOverride[0]);
+        }
+        
+        if (question.studentTopicQuestionOverride?.length === 1) {
+            // TODO: Fix typing here
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            _.assign(question, (question as any).studentTopicQuestionOverride[0]);
+        }
 
         if (moment().isBefore(moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days')) && studentGrade.overallBestScore !== 1) {
             const overallBestScore = Math.max(studentGrade.overallBestScore, options.score);
@@ -1618,6 +1719,16 @@ class CourseController {
                     as: 'grades',
                     required: false,
                     where: {
+                        userId: userId
+                    }
+                });
+                include.push({
+                    model: StudentTopicQuestionOverride,
+                    as: 'studentTopicQuestionOverride',
+                    attributes: ['userId', 'maxAttempts'],
+                    required: false,
+                    where: {
+                        active: true,
                         userId: userId
                     }
                 });

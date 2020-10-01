@@ -16,6 +16,7 @@ export default class CourseWWTopicQuestion extends Model {
     public curriculumQuestionId!: number;
     
     public getTopic!: BelongsToGetAssociationMixin<CourseTopicContent>;
+    public studentTopicQuestionOverride?: StudentTopicQuestionOverride[];
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -47,6 +48,13 @@ export default class CourseWWTopicQuestion extends Model {
             sourceKey: 'id',
             as: 'grades'
         });
+
+        CourseWWTopicQuestion.hasMany(StudentTopicQuestionOverride, {
+            foreignKey: 'courseTopicQuestionId',
+            sourceKey: 'id',
+            as: 'studentTopicQuestionOverride'
+        });
+        
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }
@@ -122,3 +130,4 @@ CourseWWTopicQuestion.init({
 import CourseTopicContent from './course-topic-content';
 import StudentGrade from './student-grade';
 import CurriculumWWTopicQuestion from './curriculum-ww-topic-question';
+import StudentTopicQuestionOverride from './student-topic-question-override';

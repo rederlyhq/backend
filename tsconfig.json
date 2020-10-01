@@ -1,4 +1,3 @@
-
 {
     "compilerOptions": {
         "module": "commonjs",
@@ -12,5 +11,5 @@
         "sourceMap": true,
         
         "strict": true
-    },
+    }
 }

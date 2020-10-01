@@ -32,7 +32,6 @@ import { calculateGrade, WillTrackAttemptReason } from '../../utilities/grading-
 import { useDatabaseTransaction } from '../../utilities/database-helper';
 import StudentTopicOverride from '../../database/models/student-topic-override';
 import StudentTopicQuestionOverride from '../../database/models/student-topic-question-override';
-import appSequelize from '../../database/app-sequelize';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -416,7 +415,7 @@ class CourseController {
     }
 
     async extendTopicForUser(options: ExtendTopicForUserOptions): Promise<UpsertResult<StudentTopicOverride>> {
-        return appSequelize.transaction(() =>  {
+        return useDatabaseTransaction(() =>  {
             return courseRepository.extendTopicByUser(options);
         });
     }
@@ -940,7 +939,7 @@ class CourseController {
     }
 
     async extendQuestionForUser(options: ExtendTopicQuestionForUserOptions): Promise<UpsertResult<StudentTopicQuestionOverride>> {
-        return appSequelize.transaction(() =>  {
+        return useDatabaseTransaction(() =>  {
             return courseRepository.extendTopicQuestionByUser(options);
         });
     }

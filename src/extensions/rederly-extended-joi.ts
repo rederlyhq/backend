@@ -6,22 +6,25 @@ export const JoiToStringedStringConvertible = (joi: typeof Joi): unknown => {
     return {
         base: joi.string(),
         name: 'toStringedString',
-        // Joi check for an arity of 3
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        coerce(value: unknown, _state: unknown, _option: unknown): unknown {
-            if (typeof(value) === 'string') {
+        // value was not a string so we need to coerce it, this any is to check if it has toString
+        // TODO typing for state and options
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        coerce(value: any, state: any, options: any): unknown {
+            if (typeof (value) === 'string') {
                 return value;
             }
-            // value was not a string so we need to coerce it, this any is to check if it has toString
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            else if (typeof((value as any)?.toString) === 'function') {
-                logger.error(`Non string value ${value} provided to toStringedString, calling toString`);
-                // value was not a string so we need to coerce it
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                return (value as any).toString();
+            else if (typeof (value?.toString) === 'function') {
+                logger.warn(JSON.stringify({
+                    value,
+                    responsePath: state?.path?.join('.'),
+                    message: 'Non string value passed to toStringedString, calling toString',
+                    debug: options?.context?.debug
+                }));
+                return value.toString();
             }
             return value;
-        }
+        },
     };
 };
 

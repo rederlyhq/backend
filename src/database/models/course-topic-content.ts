@@ -16,7 +16,6 @@ export default class CourseTopicContent extends Model {
     public partialExtend!: boolean;
 
 
-
     public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
     public getTopicType!: BelongsToGetAssociationMixin<TopicType>;
     public getQuestions!: HasManyGetAssociationsMixin<CourseWWTopicQuestion>;
@@ -24,6 +23,7 @@ export default class CourseTopicContent extends Model {
     public readonly curriculumTopicContent!: CurriculumTopicContent;
     public readonly topicType!: TopicType;
     public readonly questions?: CourseWWTopicQuestion[];
+    public readonly studentTopicOverride?: StudentTopicOverride[];
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -62,6 +62,12 @@ export default class CourseTopicContent extends Model {
             foreignKey: 'courseTopicContentId',
             sourceKey: 'id',
             as: 'questions'
+        });
+
+        CourseTopicContent.hasMany(StudentTopicOverride, {
+            foreignKey: 'courseTopicContentId',
+            sourceKey: 'id',
+            as: 'studentTopicOverride'
         });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
@@ -153,3 +159,4 @@ import CurriculumTopicContent from './curriculum-topic-content';
 import TopicType from './topic-type';
 import CourseUnitContent from './course-unit-content';
 import CourseWWTopicQuestion from './course-ww-topic-question';
+import StudentTopicOverride from './student-topic-override';

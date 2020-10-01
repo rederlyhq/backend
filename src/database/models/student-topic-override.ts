@@ -39,7 +39,7 @@ export default class StudentTopicOverride extends Model implements StudentTopicO
         StudentTopicOverride.belongsTo(CourseTopicContent, {
             foreignKey: 'courseTopicContentId',
             targetKey: 'id',
-            as: 'studentGrade'
+            as: 'studentTopicOverride'
         });
 
         StudentTopicOverride.belongsTo(User, {

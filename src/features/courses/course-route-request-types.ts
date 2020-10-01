@@ -41,6 +41,12 @@ export namespace UpdateCourseTopicRequest {
     export type body = Joi.extractType<typeof validations.updateCourseTopicValidation.body>;
 };
 
+export namespace ExtendCourseTopicForUserRequest {
+    export type params = Joi.extractType<typeof validations.extendCourseTopicForUserValidation.params>;
+    export type query = Joi.extractType<typeof validations.extendCourseTopicForUserValidation.query>;
+    export type body = Joi.extractType<typeof validations.extendCourseTopicForUserValidation.body>;
+};
+
 export namespace DeleteCourseUnitRequest {
     export type params = Joi.extractType<typeof validations.deleteCourseUnitValidation.params>;
     export type query = Joi.extractType<typeof validations.deleteCourseUnitValidation.query>;
@@ -89,6 +95,12 @@ export namespace CreateCourseTopicQuestionRequest {
     export type body = Joi.extractType<typeof validations.createCourseTopicQuestionValidation.body>;
 };
 
+export namespace ExtendCourseTopicQuestionRequest {
+    export type params = Joi.extractType<typeof validations.extendCourseTopicQuestionValidation.params>;
+    export type query = Joi.extractType<typeof validations.extendCourseTopicQuestionValidation.query>;
+    export type body = Joi.extractType<typeof validations.extendCourseTopicQuestionValidation.body>;
+};
+
 export namespace GetQuestionRequest {
     export type params = Joi.extractType<typeof validations.getQuestionValidation.params>;
     export type query = Joi.extractType<typeof validations.getQuestionValidation.query>;
@@ -105,6 +117,12 @@ export namespace GetCourseRequest {
     export type params = Joi.extractType<typeof validations.getCourseValidation.params>;
     export type query = Joi.extractType<typeof validations.getCourseValidation.query>;
     export type body = Joi.extractType<typeof validations.getCourseValidation.body>;
+};
+
+export namespace GetTopicRequest {
+    export type params = Joi.extractType<typeof validations.getTopicValidation.params>;
+    export type query = Joi.extractType<typeof validations.getTopicValidation.query>;
+    export type body = Joi.extractType<typeof validations.getTopicValidation.body>;
 };
 
 export namespace GetTopicsRequest {

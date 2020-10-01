@@ -136,6 +136,11 @@ export default {
           type: DataTypes.STRING,
           allowNull: false,
         },
+        problemNumber: {
+          field: 'student_grade_instance_problem_number',
+          type: DataTypes.INTEGER,
+          allowNull: false,
+        },
         startedAt: {
           field: 'started_at',
           type: DataTypes.DATE,

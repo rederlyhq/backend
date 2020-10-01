@@ -2058,11 +2058,15 @@ class CourseController {
         const nextVersionCanStartAfter = moment(startedAt).add(24, 'hours');
         // CHECK: does the student have another randomization available?
         // CHECK: has the student waited long enough since their last randomization?
-        await results.asyncForEach(async (result) => {
+        const problemOrder = Array(results.length);
+        // CHECK: should the problems be shuffled? (problemOrder should not remain const)
+        // problemOrder = shuffle(problemOrder);
+        await results.asyncForEach(async (result, index) => {
             await this.createNewStudentGradeInstance({
                 courseTopicQuestionId: result.id,
                 webworkQuestionPath: result.webworkQuestionPath,
                 userId: userId,
+                problemNumber: problemOrder[index],
             });
         });
         await this.createStudentTopicAssessmentInfo({

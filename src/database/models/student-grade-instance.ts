@@ -9,6 +9,7 @@ export default class StudentGradeInstance extends Model {
   public courseWWTopicQuestionId!: number;
   public studentTopicAssessmentInfoId!: number;
   public webworkQuestionPath!: string;
+  public problemNumber!: number;
   public randomSeed!: number;
   public bestIndividualScore!: number;
   public bestVersionScore!: number;
@@ -132,6 +133,11 @@ StudentGradeInstance.init({
   webworkQuestionPath: {
     field: 'course_topic_question_webwork_question_ww_path',
     type: DataTypes.TEXT,
+    allowNull: false,
+  },
+  problemNumber: {
+    field: 'student_grade_instance_problem_number',
+    type: DataTypes.INTEGER,
     allowNull: false,
   },
   studentGradeId: {

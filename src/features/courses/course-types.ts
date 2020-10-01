@@ -260,6 +260,7 @@ export interface CreateNewStudentGradeInstanceOptions {
     userId: number;
     courseTopicQuestionId: number;
     webworkQuestionPath: string;
+    problemNumber: number;
 }
 
 export interface CreateNewStudentTopicAssessmentInfoOptions {

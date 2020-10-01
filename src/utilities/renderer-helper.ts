@@ -166,7 +166,7 @@ class RendererHelper {
         ]);
     }
 
-    parseRendererResponse = async (resp: string | object): Promise<RendererResponse> => {
+    parseRendererResponse = async (resp: string | object, debug?: unknown): Promise<RendererResponse> => {
         if (typeof (resp) === 'string') {
             resp = JSON.parse(resp);
         }
@@ -175,6 +175,9 @@ class RendererHelper {
             abortEarly: true,
             allowUnknown: true,
             stripUnknown: false, // we will use this for typing the response, however for the database we will have a different scheme
+            context: {
+                debug
+            }
         });
 
         return result;

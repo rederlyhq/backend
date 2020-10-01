@@ -19,7 +19,7 @@ import appSequelize from '../../database/app-sequelize';
 import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
-import { UpdateResult } from '../../generic-interfaces/sequelize-generic-interfaces';
+import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
 import curriculumRepository from '../curriculum/curriculum-repository';
 import CurriculumUnitContent from '../../database/models/curriculum-unit-content';
 import CurriculumTopicContent from '../../database/models/curriculum-topic-content';
@@ -407,10 +407,9 @@ class CourseController {
         });
     }
 
-    async extendTopicForUser(options: ExtendTopicForUserOptions): Promise<StudentTopicOverride[]> {
+    async extendTopicForUser(options: ExtendTopicForUserOptions): Promise<UpsertResult<StudentTopicOverride>> {
         return appSequelize.transaction(async () =>  {
-            const success = await courseRepository.extendTopicByUser(options);
-            return [];
+            return await courseRepository.extendTopicByUser(options);
         });
     }
 
@@ -902,10 +901,9 @@ class CourseController {
         };
     }
 
-    async extendQuestionForUser(options: ExtendTopicQuestionForUserOptions): Promise<StudentTopicQuestionOverride[]> {
+    async extendQuestionForUser(options: ExtendTopicQuestionForUserOptions): Promise<UpsertResult<StudentTopicQuestionOverride>> {
         return appSequelize.transaction(async () =>  {
-            await courseRepository.extendTopicQuestionByUser(options);
-            return [];
+            return courseRepository.extendTopicQuestionByUser(options);
         });
     }
 

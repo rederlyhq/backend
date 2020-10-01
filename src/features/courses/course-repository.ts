@@ -6,7 +6,7 @@ import CourseWWTopicQuestion from '../../database/models/course-ww-topic-questio
 import NotFoundError from '../../exceptions/not-found-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import { BaseError } from 'sequelize';
-import { UpdateResult } from '../../generic-interfaces/sequelize-generic-interfaces';
+import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
 import CourseUnitContent from '../../database/models/course-unit-content';
 import { UpdateUnitOptions } from '../curriculum/curriculum-types';
 import CourseTopicContent from '../../database/models/course-topic-content';
@@ -263,15 +263,16 @@ class CourseRepository {
         }
     }
 
-    async extendTopicByUser(options: ExtendTopicForUserOptions): Promise<UpdateResult<StudentTopicOverride>> {
+    async extendTopicByUser(options: ExtendTopicForUserOptions): Promise<UpsertResult<StudentTopicOverride>> {
         try {
             const found = await StudentTopicOverride.findOne({where: {...options.where, active: true}});
             if (!found) {
                 const newExtension = await StudentTopicOverride.create({...options.where, ...options.updates}, {validate: true});
-                console.log('New Extension created:', newExtension);
+
                 return {
+                    createdNewEntry: true,
                     updatedCount: 1,
-                    updatedRecords: [],
+                    updatedRecords: [newExtension],
                 };
             }
             const updates = await StudentTopicOverride.update(options.updates, {
@@ -282,6 +283,7 @@ class CourseRepository {
                 returning: true,
             });
             return {
+                createdNewEntry: false,
                 updatedCount: updates[0],
                 updatedRecords: updates[1],
             };
@@ -528,16 +530,17 @@ class CourseRepository {
         }
     }
 
-    async extendTopicQuestionByUser(options: ExtendTopicQuestionForUserOptions): Promise<UpdateResult<StudentTopicQuestionOverride>> {
+    async extendTopicQuestionByUser(options: ExtendTopicQuestionForUserOptions): Promise<UpsertResult<StudentTopicQuestionOverride>> {
         try {
             console.log(options);
             const found = await StudentTopicQuestionOverride.findOne({where: {...options.where, active: true}});
             if (!found) {
                 const newExtension = await StudentTopicQuestionOverride.create({...options.where, ...options.updates}, {validate: true});
-                console.log('New Extension created:', newExtension);
+
                 return {
+                    createdNewEntry: true,
                     updatedCount: 1,
-                    updatedRecords: [],
+                    updatedRecords: [newExtension],
                 };
             }
             const updates = await StudentTopicQuestionOverride.update(options.updates, {
@@ -548,6 +551,7 @@ class CourseRepository {
                 returning: true,
             });
             return {
+                createdNewEntry: false,
                 updatedCount: updates[0],
                 updatedRecords: updates[1],
             };

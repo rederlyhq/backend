@@ -243,10 +243,7 @@ router.put('/topic/extend',
                 }
             });
             // TODO handle not found case
-            next(httpResponse.Ok('Extended topic successfully', {
-                updatesResult,
-                updatesCount: updatesResult.length
-            }));
+            next(httpResponse.Ok('Extended topic successfully', updatesResult));
         } catch (e) {
             next(e);
         }
@@ -403,10 +400,7 @@ asyncHandler(async (req: RederlyExpressRequest<any, ExtendCourseTopicQuestionReq
                 ...body
             }
         });
-        next(httpResponse.Ok('Extended topic successfully', {
-            extensions,
-            updatesCount: extensions.length
-        }));
+        next(httpResponse.Ok('Extended topic successfully', extensions));
     } catch (e) {
         next(e);
     }

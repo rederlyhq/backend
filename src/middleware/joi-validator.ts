@@ -1,4 +1,4 @@
-import * as Joi from 'joi';
+import * as Joi from '@hapi/joi';
 import Boom = require('boom');
 import Extend = require('extend');
 import { NextFunction, Response } from 'express';

@@ -8,6 +8,7 @@ export default class StudentTopicAssessmentInfo extends Model {
   public courseTopicContentId!: number;
   public startedAt!: Date;
   public endsAt!: Date;
+  public nextVersionCanStartAfter!: Date;
   public numAttempts!: number;
 
   public getUser!: BelongsToGetAssociationMixin<User>;
@@ -79,6 +80,11 @@ StudentTopicAssessmentInfo.init({
     field: 'started_at',
     type: DataTypes.DATE,
     allowNull: false,
+  },
+  nextVersionCanStartAfter: {
+    field: 'next_version_can_start_after',
+    type: DataTypes.DATE,
+    allowNull: true,
   },
   numAttempts: {
     field: 'num_attempts',

@@ -54,6 +54,11 @@ export default {
           type: DataTypes.DATE,
           allowNull: false,
         },
+        nextVersionCanStartAfter: {
+          field: 'next_version_can_start_after',
+          type: DataTypes.DATE,
+          allowNull: true,
+        },
         numAttempts: {
           field: 'num_attempts',
           type: DataTypes.INTEGER,

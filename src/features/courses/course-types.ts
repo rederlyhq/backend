@@ -10,6 +10,7 @@ import Role from '../permissions/roles';
 import { OutputFormat } from '../../utilities/renderer-helper';
 import { Moment } from 'moment';
 import { DetermineGradingRationaleResult } from '../../utilities/grading-helper';
+import StudentGradeInstance from '../../database/models/student-grade-instance';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -110,6 +111,14 @@ export interface UpdateGradeOptions {
         id: number;
     };
     updates: Partial<StudentGrade>;
+    initiatingUserId: number;
+}
+
+export interface UpdateGradeInstanceOptions {
+    where: {
+        id: number;
+    };
+    updates: Partial<StudentGradeInstance>;
     initiatingUserId: number;
 }
 
@@ -247,6 +256,19 @@ export interface CreateNewStudentGradeOptions {
     courseTopicQuestionId: number;
 }
 
+export interface CreateNewStudentGradeInstanceOptions {
+    userId: number;
+    courseTopicQuestionId: number;
+    webworkQuestionPath: string;
+}
+
+export interface CreateNewStudentTopicAssessmentInfoOptions {
+    courseTopicContentId: number;
+    startedAt: moment.Moment;
+    endsAt: moment.Moment;
+    nextVersionCanStartAfter: moment.Moment;
+}
+
 export interface GetQuestionsForThisAssessmentOptions {
     topicId: number;
 }
@@ -254,6 +276,7 @@ export interface GetQuestionsForThisAssessmentOptions {
 export interface CreateGradeInstancesForAssessmentOptions {
     userId: number;
     topicId: number;
+    webworkQuestionPath: string;
 }
 
 export interface CreateQuestionsForTopicFromDefFileContentOptions {

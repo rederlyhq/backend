@@ -183,6 +183,19 @@ export const updateGradeValidation = {
     query: {},
 };
 
+export const updateGradeInstanceValidation = {
+    params: {
+        id: Joi.number().required()
+    },
+    body: {
+        locked: Joi.boolean().optional(), // removable?
+        currentProblemState: Joi.any().optional()
+        // Deletes are one directional and soft
+        // active: Joi.boolean().optional(),
+    },
+    query: {},
+};
+
 export const createCourseTopicQuestionValidation = {
     params: {},
     body: {

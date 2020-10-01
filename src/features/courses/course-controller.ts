@@ -17,7 +17,7 @@ import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import appSequelize from '../../database/app-sequelize';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, GetQuestionsForThisAssessmentOptions, CreateGradeInstancesForAssessmentOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, GradeOptions, GradeResult, DeleteUserEnrollmentOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, CreateNewStudentGradeInstanceOptions, GetQuestionsForThisAssessmentOptions, CreateGradeInstancesForAssessmentOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, UpdateGradeInstanceOptions, GradeOptions, GradeResult, DeleteUserEnrollmentOptions, CreateNewStudentTopicAssessmentInfoOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -31,6 +31,7 @@ import Role from '../permissions/roles';
 import moment = require('moment');
 import RederlyExtendedError from '../../exceptions/rederly-extended-error';
 import { calculateGrade, WillTrackAttemptReason } from '../../utilities/grading-helper';
+import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -2024,30 +2025,67 @@ class CourseController {
         }
     };
     
+    // does this actually belong in course-repository?
+    async createStudentTopicAssessmentInfo(options: CreateNewStudentTopicAssessmentInfoOptions): Promise<StudentTopicAssessmentInfo> {
+        const { 
+            courseTopicContentId,
+            startedAt,
+            endsAt,
+            nextVersionCanStartAfter,
+        } = options;
+        try {
+            return await StudentTopicAssessmentInfo.create({
+                courseTopicContentId,
+                startedAt,
+                endsAt,
+                nextVersionCanStartAfter,
+            });
+        } catch (e) {
+            throw new WrappedError('Could not create new Student Topic Assessment info for this topic', e);
+        }
+    }
+
+    // change this to return a StudentTopicAssessmentInfo - we will want TIMES
     async createGradeInstancesForAssessment(options: CreateGradeInstancesForAssessmentOptions): Promise<number> {
         const { topicId, userId } = options;
         const results = await this.getQuestionsForThisAssessment({
             topicId
         });
+        const startedAt = moment().add(1,'minute'); // cover our bases for any delay in creating records before a student may begin
+        // TODO: make a call to topic_assessment_info (or student_topic_assessment_overrides) and grab the duration
+        const endsAt = moment(startedAt).add(2, 'hours');
+        // TODO: also grab the randomizationDelay
+        const nextVersionCanStartAfter = moment(startedAt).add(24, 'hours');
+        // CHECK: does the student have another randomization available?
+        // CHECK: has the student waited long enough since their last randomization?
         await results.asyncForEach(async (result) => {
             await this.createNewStudentGradeInstance({
                 courseTopicQuestionId: result.id,
+                webworkQuestionPath: result.webworkQuestionPath,
                 userId: userId,
             });
+        });
+        await this.createStudentTopicAssessmentInfo({
+            courseTopicContentId: topicId,
+            startedAt,
+            endsAt,
+            nextVersionCanStartAfter,
         });
         return results.length;
     }
 
-   async createNewStudentGradeInstance(options: CreateNewStudentGradeOptions): Promise<StudentGradeInstance> {
+   async createNewStudentGradeInstance(options: CreateNewStudentGradeInstanceOptions): Promise<StudentGradeInstance> {
         const {
             userId,
-            courseTopicQuestionId
+            courseTopicQuestionId,
+            webworkQuestionPath,
         } = options;
         try {
             return await StudentGradeInstance.create({
                 userId: userId,
                 courseWWTopicQuestionId: courseTopicQuestionId,
-                // TODO: what do we do with problem path?
+                // TODO: replace this with randomized question path
+                webworkQuestionPath,
                 // TODO: replace this call with generateLimitedRandomSeed()
                 randomSeed: this.generateRandomSeed(),
                 bestScore: 0,
@@ -2068,6 +2106,27 @@ class CourseController {
             }
         });
     }
+
+    // is this necessary? Does every request need to pass through the controller level to the repository?
+    async updateGradeInstance(options: UpdateGradeInstanceOptions): Promise<UpdateResult<StudentGradeInstance>> {
+        return appSequelize.transaction(async (): Promise<UpdateResult<StudentGradeInstance>> => {
+            // is there any reason why a grade instance might be locked?
+            // if (!_.isNil(options.updates.locked)) {
+            //     await courseRepository.createStudentGradeLockAction({
+            //         studentGradeId: options.where.id,
+            //         initiatingUserId: options.initiatingUserId,
+            //         newValue: options.updates.locked
+            //     });    
+            // }
+    
+            try {
+                return await courseRepository.updateGradeInstance(options);
+            } catch (e) {
+                throw new WrappedError('Could not update the grade instance', e);
+            }    
+        });
+    }
+
 }
 
 export const courseController = new CourseController();

@@ -2,14 +2,14 @@ import * as Joi from '@hapi/joi';
 import logger from '../utilities/logger';
 
 // https://github.com/sideway/joi/issues/1442#issuecomment-574915234
-export const JoiToStringedStringConvertible = (joi: typeof Joi): unknown => {
+export const JoiToStringedStringConvertible: Joi.Extension = (joi: typeof Joi): unknown => {
     return {
         base: joi.string(),
         name: 'toStringedString',
         // value was not a string so we need to coerce it, this any is to check if it has toString
-        // TODO typing for state and options
+        // value is defined as any in Joi's Extension interface
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        coerce(value: any, state: any, options: any): unknown {
+        coerce(value: any, state: Joi.State, options: Joi.ValidationOptions): unknown {
             if (typeof (value) === 'string') {
                 return value;
             }
@@ -17,7 +17,7 @@ export const JoiToStringedStringConvertible = (joi: typeof Joi): unknown => {
             else if (typeof (value?.toString) === 'function') {
                 logger.warn(JSON.stringify({
                     value,
-                    responsePath: state?.path?.join('.'),
+                    responsePath: state.path,
                     message: 'Non string value passed to toStringedString, calling toString',
                     debug: options?.context?.debug
                 }));

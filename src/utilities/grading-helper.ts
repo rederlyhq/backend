@@ -1,9 +1,9 @@
 import { Constants } from '../constants';
 import * as moment from 'moment';
 import logger from './logger';
-import StudentGrade from '../database/models/student-grade';
-import CourseTopicContent from '../database/models/course-topic-content';
-import CourseWWTopicQuestion from '../database/models/course-ww-topic-question';
+import StudentGrade, { StudentGradeInterface } from '../database/models/student-grade';
+import { CourseTopicContentInterface } from '../database/models/course-topic-content';
+import { CourseWWTopicQuestionInterface } from '../database/models/course-ww-topic-question';
 
 export enum WillTrackAttemptReason {
     NO_IS_AFTER_SOLUTIONS_DATE='NO_IS_AFTER_SOLUTIONS_DATE',
@@ -51,9 +51,9 @@ export interface DetermineGradingRationaleResult {
 }
 
 export interface CalculateGradeOptions {
-    studentGrade: StudentGrade;
-    topic: CourseTopicContent;
-    question: CourseWWTopicQuestion;
+    studentGrade: StudentGradeInterface;
+    topic: CourseTopicContentInterface;
+    question: CourseWWTopicQuestionInterface;
 
     solutionDate: moment.Moment;
 

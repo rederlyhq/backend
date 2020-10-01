@@ -23,6 +23,7 @@ import { GetCalculatedRendererParamsResponse } from './course-types';
 import rendererHelper, { RENDERER_ENDPOINT, GetProblemParameters, RendererResponse } from '../../utilities/renderer-helper';
 import StudentGrade from '../../database/models/student-grade';
 import bodyParser = require('body-parser');
+import moment = require('moment');
 
 const fileUpload = multer();
 
@@ -205,7 +206,7 @@ router.get('/questions',
         let topic: CourseTopicContent | null = null;
         if(!_.isNil(req.query.courseTopicContentId)) {
             topic = await courseController.getTopicById(req.query.courseTopicContentId, userId);
-            if (new Date().getTime() < topic.startDate.getTime()) {
+            if (moment().isBefore(topic.startDate)) {
                 const user = await req.session.getUser();
                 if (user.roleId === Role.STUDENT) {
                     next(Boom.badRequest(`The topic "${topic.name}" has not started yet.`));
@@ -228,25 +229,21 @@ router.get('/questions',
 router.put('/topic/extend',
     authenticationMiddleware,
     validate(extendCourseTopicForUserValidation),
-    // This is due to a typescript issue where the type mismatches extractMap
     asyncHandler(
         async (req: RederlyExpressRequest<ExtendCourseTopicForUserRequest.params, ExtendCourseTopicForUserRequest.body, ExtendCourseTopicForUserRequest.query, unknown>, _res: Response, next: NextFunction) => {
         const query = req.query as ExtendCourseTopicForUserRequest.query;
         const body = req.body as ExtendCourseTopicForUserRequest.body;
-        try {
-            const updatesResult = await courseController.extendTopicForUser({
-                where: {
-                    ...query,
-                },
-                updates: {
-                    ...body
-                }
-            });
-            // TODO handle not found case
-            next(httpResponse.Ok('Extended topic successfully', updatesResult));
-        } catch (e) {
-            next(e);
-        }
+
+        const updatesResult = await courseController.extendTopicForUser({
+            where: {
+                ...query,
+            },
+            updates: {
+                ...body
+            }
+        });
+        // TODO handle not found case
+        next(httpResponse.Ok('Extended topic successfully', updatesResult));
     }));
 
 router.put('/topic/:id',
@@ -388,22 +385,21 @@ router.put('/question/grade/:id',
 router.put('/question/extend',
 authenticationMiddleware,
 validate(extendCourseTopicQuestionValidation),
+// This is due to a typescript issue where the type mismatches extractMap
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 asyncHandler(async (req: RederlyExpressRequest<any, ExtendCourseTopicQuestionRequest.body, unknown, any, unknown>, _res: Response, next: NextFunction) => {
     const query = req.query as ExtendCourseTopicQuestionRequest.query;
     const body = req.body as ExtendCourseTopicQuestionRequest.body;
-    try {
-        const extensions = await courseController.extendQuestionForUser({
-            where: {
-                ...query
-            },
-            updates: {
-                ...body
-            }
-        });
-        next(httpResponse.Ok('Extended topic successfully', extensions));
-    } catch (e) {
-        next(e);
-    }
+    
+    const extensions = await courseController.extendQuestionForUser({
+        where: {
+            ...query
+        },
+        updates: {
+            ...body
+        }
+    });
+    next(httpResponse.Ok('Extended topic successfully', extensions));
 }));
 
 router.put('/question/:id',
@@ -493,7 +489,6 @@ router.get('/question/:id',
                 // TODO handle not found case
                 question = await courseController.getQuestion({
                     questionId: params.id,
-                    // TODO: Is there a better way to handle the authentication for this?
                     userId: session.userId,
                     formURL: req.originalUrl,
                     role: user.roleId,
@@ -634,14 +629,11 @@ router.get('/',
 router.get('/topic/:id', 
     authenticationMiddleware,
     validate(getTopicValidation),
+    // This is due to a typescript issue where the type mismatches extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetTopicRequest.body, GetTopicRequest.query, unknown>, _res: Response, next: NextFunction) => {
-        try {
-            const result = await courseController.getTopicById(req.params.id, req.query.userId);
-            next(httpResponse.Ok('Fetched successfully', result));
-        } catch (e) {
-            next(e);
-        }
+        const result = await courseController.getTopicById(req.params.id, req.query.userId);
+        next(httpResponse.Ok('Fetched successfully', result));
     }));
 
 router.get('/topics',

@@ -74,9 +74,9 @@ class CourseController {
         });
     }
 
-    getTopicById(id: number, userId: number | undefined = undefined): Promise<CourseTopicContent> {
+    getTopicById(id: number, userId?: number): Promise<CourseTopicContent> {
         const include = [];
-        if (userId !== undefined) {
+        if (!_.isNil(userId)) {
             include.push({
                 model: StudentTopicOverride,
                 as: 'studentTopicOverride',
@@ -408,8 +408,8 @@ class CourseController {
     }
 
     async extendTopicForUser(options: ExtendTopicForUserOptions): Promise<UpsertResult<StudentTopicOverride>> {
-        return appSequelize.transaction(async () =>  {
-            return await courseRepository.extendTopicByUser(options);
+        return appSequelize.transaction(() =>  {
+            return courseRepository.extendTopicByUser(options);
         });
     }
 
@@ -902,7 +902,7 @@ class CourseController {
     }
 
     async extendQuestionForUser(options: ExtendTopicQuestionForUserOptions): Promise<UpsertResult<StudentTopicQuestionOverride>> {
-        return appSequelize.transaction(async () =>  {
+        return appSequelize.transaction(() =>  {
             return courseRepository.extendTopicQuestionByUser(options);
         });
     }
@@ -1022,7 +1022,7 @@ class CourseController {
                 studentWorkbook: null
             };
         }
-        const question: (CourseWWTopicQuestion) = await studentGrade.getQuestion(
+        const question: CourseWWTopicQuestion = await studentGrade.getQuestion(
             {
                 include: [{
                         model: StudentTopicQuestionOverride,
@@ -1038,7 +1038,7 @@ class CourseController {
         );
         
         
-        const topic: CourseTopicContent = await question.getTopic(            {
+        const topic: CourseTopicContent = await question.getTopic({
             include: [{
                 model: StudentTopicOverride,
                 as: 'studentTopicOverride',
@@ -1051,13 +1051,13 @@ class CourseController {
             }]
         });
         
-        if ((topic as any)?.studentTopicOverride?.length === 1) {
+        if (topic.studentTopicOverride?.length === 1) {
             // TODO: Fix typing here
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             _.assign(topic, (topic as any).studentTopicOverride[0]);
         }
         
-        if ((question as any).studentTopicQuestionOverride.length === 1) {
+        if (question.studentTopicQuestionOverride?.length === 1) {
             // TODO: Fix typing here
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             _.assign(question, (question as any).studentTopicQuestionOverride[0]);

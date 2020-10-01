@@ -16,13 +16,13 @@ export default class CourseTopicContent extends Model {
     public partialExtend!: boolean;
 
 
-
     public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
     public getTopicType!: BelongsToGetAssociationMixin<TopicType>;
 
     public readonly curriculumTopicContent!: CurriculumTopicContent;
     public readonly topicType!: TopicType;
     public readonly questions?: CourseWWTopicQuestion[];
+    public readonly studentTopicOverride?: StudentTopicOverride[];
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -157,5 +157,5 @@ CourseTopicContent.init({
 import CurriculumTopicContent from './curriculum-topic-content';
 import TopicType from './topic-type';
 import CourseUnitContent from './course-unit-content';
-import CourseWWTopicQuestion from './course-ww-topic-question';import StudentTopicOverride from './student-topic-override';
-
+import CourseWWTopicQuestion from './course-ww-topic-question';
+import StudentTopicOverride from './student-topic-override';

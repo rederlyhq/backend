@@ -16,6 +16,7 @@ export default class CourseWWTopicQuestion extends Model {
     public curriculumQuestionId!: number;
     
     public getTopic!: BelongsToGetAssociationMixin<CourseTopicContent>;
+    public studentTopicQuestionOverride?: StudentTopicQuestionOverride[];
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -128,5 +129,5 @@ CourseWWTopicQuestion.init({
 
 import CourseTopicContent from './course-topic-content';
 import StudentGrade from './student-grade';
-import CurriculumWWTopicQuestion from './curriculum-ww-topic-question';import StudentTopicQuestionOverride from './student-topic-question-override';
-
+import CurriculumWWTopicQuestion from './curriculum-ww-topic-question';
+import StudentTopicQuestionOverride from './student-topic-question-override';

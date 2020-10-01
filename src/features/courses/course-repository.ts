@@ -266,6 +266,7 @@ class CourseRepository {
     async extendTopicByUser(options: ExtendTopicForUserOptions): Promise<UpsertResult<StudentTopicOverride>> {
         try {
             const found = await StudentTopicOverride.findOne({where: {...options.where, active: true}});
+
             if (!found) {
                 const newExtension = await StudentTopicOverride.create({...options.where, ...options.updates}, {validate: true});
 
@@ -274,22 +275,23 @@ class CourseRepository {
                     updatedCount: 1,
                     updatedRecords: [newExtension],
                 };
+            } else {
+                const updates = await StudentTopicOverride.update(options.updates, {
+                    where: {
+                        ...options.where,
+                        active: true
+                    },
+                    returning: true,
+                });
+
+                return {
+                    createdNewEntry: false,
+                    updatedCount: updates[0],
+                    updatedRecords: updates[1],
+                };
             }
-            const updates = await StudentTopicOverride.update(options.updates, {
-                where: {
-                    ...options.where,
-                    active: true
-                },
-                returning: true,
-            });
-            return {
-                createdNewEntry: false,
-                updatedCount: updates[0],
-                updatedRecords: updates[1],
-            };
         } catch (e) {
-            this.checkCourseTopicError(e);
-            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
+            throw new WrappedError(`Could not extend topic for ${options.where}`, e);
         }
     }
 
@@ -532,7 +534,6 @@ class CourseRepository {
 
     async extendTopicQuestionByUser(options: ExtendTopicQuestionForUserOptions): Promise<UpsertResult<StudentTopicQuestionOverride>> {
         try {
-            console.log(options);
             const found = await StudentTopicQuestionOverride.findOne({where: {...options.where, active: true}});
             if (!found) {
                 const newExtension = await StudentTopicQuestionOverride.create({...options.where, ...options.updates}, {validate: true});
@@ -556,8 +557,7 @@ class CourseRepository {
                 updatedRecords: updates[1],
             };
         } catch (e) {
-            this.checkCourseTopicError(e);
-            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
+            throw new WrappedError(`Could not extend question for ${options.where}`, e);
         }
     }
 

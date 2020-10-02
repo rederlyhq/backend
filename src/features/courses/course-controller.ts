@@ -121,31 +121,32 @@ class CourseController {
         
         if (isOpen) {
             const date = new Date();
-            where[Sequelize.Op.and] = [
+            where[Sequelize.Op.or] = [
                 {
-                    [Sequelize.Op.or]: [
+                    [Sequelize.Op.and]: [
                         {
                             startDate: {
                                 [Sequelize.Op.lte]: date
                             }
                         },
                         {
-                            [`$studentTopicOverride.${StudentTopicOverride.rawAttributes.startDate.field}$`]: {
-                                [Sequelize.Op.lte]: date
-                            }
-                        }
-                    ]
-                },
-                {
-                    [Sequelize.Op.or]: [
-                        {
                             deadDate: {
                                 [Sequelize.Op.gte]: date
                             }
                         },
+
+                    ]
+                },
+                {
+                    [Sequelize.Op.and]: [
+                        {
+                            [`$studentTopicOverride.${StudentTopicOverride.rawAttributes.startDate.field}$`]: {
+                                [Sequelize.Op.lte]: date,
+                            }
+                        },
                         {
                             [`$studentTopicOverride.${StudentTopicOverride.rawAttributes.deadDate.field}$`]: {
-                                [Sequelize.Op.gte]: date
+                                [Sequelize.Op.gte]: date,
                             }
                         }
                     ]

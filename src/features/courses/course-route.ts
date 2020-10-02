@@ -206,7 +206,11 @@ router.get('/questions',
         let topic: CourseTopicContent | null = null;
         if(!_.isNil(req.query.courseTopicContentId)) {
             topic = await courseController.getTopicById(req.query.courseTopicContentId, userId);
-            if (moment().isBefore(topic.startDate)) {
+            const overrideStartDate = topic.studentTopicOverride?.[0]?.startDate;
+            const dates = _.compact([overrideStartDate?.toMoment(), topic.startDate.toMoment()]);
+            const startDate = moment.min(dates);
+
+            if (moment().isBefore(startDate)) {
                 const user = await req.session.getUser();
                 if (user.roleId === Role.STUDENT) {
                     next(Boom.badRequest(`The topic "${topic.name}" has not started yet.`));

@@ -1,4 +1,5 @@
 import * as moment from 'moment';
+
 // We need this declare because this file has an import
 declare global {
     interface Date {

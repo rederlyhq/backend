@@ -208,8 +208,7 @@ router.get('/questions',
         if(!_.isNil(req.query.courseTopicContentId)) {
             topic = await courseController.getTopicById(req.query.courseTopicContentId, userId);
             const overrideStartDate = topic.studentTopicOverride?.[0]?.startDate;
-            const dates = _.compact([overrideStartDate?.toMoment(), topic.startDate.toMoment()]);
-            const startDate = moment.min(dates);
+            const startDate = overrideStartDate ?? topic.startDate;
 
             if (moment().isBefore(startDate)) {
                 const user = await req.session.getUser();
@@ -654,15 +653,18 @@ router.get('/topics',
     authenticationMiddleware,
     validate(getTopicsValidation),
     asyncHandler(async (req: RederlyExpressRequest<GetTopicsRequest.params, unknown, GetTopicsRequest.body, GetTopicsRequest.query>, _res: Response, next: NextFunction) => {
-        try {
-            const result = await courseController.getTopics({
-                courseId: req.query.courseId,
-                isOpen: req.query.isOpen
-            });
-            next(httpResponse.Ok('Fetched successfully', result));
-        } catch (e) {
-            next(e);
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
+        const user = await req.session.getUser();
+        const userId = (user.roleId === Role.STUDENT) ? user.id : undefined;
+
+        const result = await courseController.getTopics({
+            courseId: req.query.courseId,
+            isOpen: req.query.isOpen,
+            userId
+        });
+        next(httpResponse.Ok('Fetched successfully', result));
     }));
 
 router.get('/:id',

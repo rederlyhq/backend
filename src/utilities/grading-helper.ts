@@ -134,12 +134,12 @@ export const determineGradingRationale = ({
         willGetCreditReason = WillGetCreditReason.NO_EXPIRED;
     }
     // isLate is all that is required to check here
-    // though due the sensitivity of a grades adding an exhausitive check to make sure
+    // though due the sensitivity of a grades adding an exhaustive check to make sure
     else if (isLate && isWithinAttemptLimit && !isLocked && willTrackAttemptReason === WillTrackAttemptReason.YES) {
         willGetCreditReason = WillGetCreditReason.YES_BUT_PARTIAL_CREDIT;
     }
     // isOnTime is all that is required to check here
-    // though due the sensitivity of a grades adding an exhausitive check to make sure
+    // though due the sensitivity of a grades adding an exhaustive check to make sure
     else if (isOnTime && isWithinAttemptLimit && !isLocked && willTrackAttemptReason === WillTrackAttemptReason.YES) {
         willGetCreditReason = WillGetCreditReason.YES;
     } else {

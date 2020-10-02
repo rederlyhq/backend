@@ -2004,6 +2004,971 @@ describe('Grading Helper Tests', () => {
                 });
             });
 
+            describe('Exceeds attempt limit', () => {
+                const maxAttempts = 1;
+                const numAttempts = 2;
+
+                const resultIsWithinAttemptLimit = false;
+
+                const resultWillTrackAttemptReason = 'YES';
+                const resultWillGetCreditReason = 'NO_ATTEMPTS_EXCEEDED';
+
+                describe('Has no score', () => {
+                    const bestScore = 0;
+                    const effectiveScore = 0;
+                    const legalScore = 0;
+                    const overallBestScore = 0;
+                    const partialCreditBestScore = 0;
+
+                    const resultIsCompleted = false;
+
+                    describe('Grade unlocked', () => {
+                        const locked = false;
+                        const resultIsLocked = false;
+
+                        it('Scored 0', () => {
+                            const newScore = 0;
+                            const params: CalculateGradeOptions = {
+                                newScore,
+                                question: {
+                                    ...defaultQuestionUnusedFields,
+                                    maxAttempts,
+                                },
+                                solutionDate,
+                                studentGrade: {
+                                    ...defaultStudentGradeUnusedFields,
+                                    numAttempts,
+                                    bestScore,
+                                    effectiveScore,
+                                    legalScore,
+                                    overallBestScore,
+                                    partialCreditBestScore,
+                                    locked,
+                                },
+                                timeOfSubmission,
+                                topic: {
+                                    ...defaultTopicUnusedFields,
+                                    startDate: startDate.toDate(),
+                                    endDate: endDate.toDate(),
+                                    deadDate: deadDate.toDate(),
+                                }
+                            };
+                            const result = calculateGrade(params);
+
+                            expect(result).toStrictEqual({
+                                gradingPolicy: {
+                                    isCompleted: resultIsCompleted,
+                                    isExpired: resultIsExpired,
+                                    isLocked: resultIsLocked,
+                                    isWithinAttemptLimit: resultIsWithinAttemptLimit,
+                                    isOnTime: resultIsOnTime,
+                                    isLate: resultIsLate,
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
+                                    willGetCreditReason: resultWillGetCreditReason
+                                },
+                                // Nothing should be updated since nothing improved
+                                gradeUpdates: {},
+                                // Should match score from params
+                                score: newScore
+                            });
+                        });
+
+                        it('Scored .5', () => {
+                            const newScore = .5;
+                            const params: CalculateGradeOptions = {
+                                newScore,
+                                question: {
+                                    ...defaultQuestionUnusedFields,
+                                    maxAttempts,
+                                },
+                                solutionDate,
+                                studentGrade: {
+                                    ...defaultStudentGradeUnusedFields,
+                                    numAttempts,
+                                    bestScore,
+                                    effectiveScore,
+                                    legalScore,
+                                    overallBestScore,
+                                    partialCreditBestScore,
+                                    locked,
+                                },
+                                timeOfSubmission,
+                                topic: {
+                                    ...defaultTopicUnusedFields,
+                                    startDate: startDate.toDate(),
+                                    endDate: endDate.toDate(),
+                                    deadDate: deadDate.toDate(),
+                                }
+                            };
+                            const result = calculateGrade(params);
+
+
+                            expect(result).toStrictEqual({
+                                gradingPolicy: {
+                                    isCompleted: resultIsCompleted,
+                                    isExpired: resultIsExpired,
+                                    isLocked: resultIsLocked,
+                                    isWithinAttemptLimit: resultIsWithinAttemptLimit,
+                                    isOnTime: resultIsOnTime,
+                                    isLate: resultIsLate,
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
+                                    willGetCreditReason: resultWillGetCreditReason
+                                },
+                                // Nothing should be updated since nothing improved
+                                gradeUpdates: {
+                                    overallBestScore: newScore,
+                                },
+                                // Should match score from params
+                                score: newScore
+                            });
+                        });
+
+                        it('Scored 1', () => {
+                            const newScore = 1;
+                            const params: CalculateGradeOptions = {
+                                newScore,
+                                question: {
+                                    ...defaultQuestionUnusedFields,
+                                    maxAttempts,
+                                },
+                                solutionDate,
+                                studentGrade: {
+                                    ...defaultStudentGradeUnusedFields,
+                                    numAttempts,
+                                    bestScore,
+                                    effectiveScore,
+                                    legalScore,
+                                    overallBestScore,
+                                    partialCreditBestScore,
+                                    locked,
+                                },
+                                timeOfSubmission,
+                                topic: {
+                                    ...defaultTopicUnusedFields,
+                                    startDate: startDate.toDate(),
+                                    endDate: endDate.toDate(),
+                                    deadDate: deadDate.toDate(),
+                                }
+                            };
+                            const result = calculateGrade(params);
+
+
+                            expect(result).toStrictEqual({
+                                gradingPolicy: {
+                                    // isCompleted is false because this object represents why you got the grade that you did
+                                    // even though it is completed now it was not at the time of getting the grade
+                                    isCompleted: resultIsCompleted,
+                                    isExpired: resultIsExpired,
+                                    isLocked: resultIsLocked,
+                                    isWithinAttemptLimit: resultIsWithinAttemptLimit,
+                                    isOnTime: resultIsOnTime,
+                                    isLate: resultIsLate,
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
+                                    willGetCreditReason: resultWillGetCreditReason
+                                },
+                                // Nothing should be updated since nothing improved
+                                gradeUpdates: {
+                                    overallBestScore: newScore,
+                                },
+                                // Should match score from params
+                                score: newScore
+                            });
+                        });
+                    });
+
+                    describe('Grade locked', () => {
+                        const locked = true;
+                        const resultIsLocked = true;
+                        const resultWillGetCreditReason = 'NO_GRADE_LOCKED';
+
+                        it('Scored 0', () => {
+                            const newScore = 0;
+                            const params: CalculateGradeOptions = {
+                                newScore,
+                                question: {
+                                    ...defaultQuestionUnusedFields,
+                                    maxAttempts,
+                                },
+                                solutionDate,
+                                studentGrade: {
+                                    ...defaultStudentGradeUnusedFields,
+                                    numAttempts,
+                                    bestScore,
+                                    effectiveScore,
+                                    legalScore,
+                                    overallBestScore,
+                                    partialCreditBestScore,
+                                    locked,
+                                },
+                                timeOfSubmission,
+                                topic: {
+                                    ...defaultTopicUnusedFields,
+                                    startDate: startDate.toDate(),
+                                    endDate: endDate.toDate(),
+                                    deadDate: deadDate.toDate(),
+                                }
+                            };
+                            const result = calculateGrade(params);
+
+                            expect(result).toStrictEqual({
+                                gradingPolicy: {
+                                    isCompleted: resultIsCompleted,
+                                    isExpired: resultIsExpired,
+                                    isLocked: resultIsLocked,
+                                    isWithinAttemptLimit: resultIsWithinAttemptLimit,
+                                    isOnTime: resultIsOnTime,
+                                    isLate: resultIsLate,
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
+                                    willGetCreditReason: resultWillGetCreditReason
+                                },
+                                // Nothing should be updated since nothing improved
+                                gradeUpdates: {},
+                                // Should match score from params
+                                score: newScore
+                            });
+                        });
+
+                        it('Scored .5', () => {
+                            const newScore = .5;
+                            const params: CalculateGradeOptions = {
+                                newScore,
+                                question: {
+                                    ...defaultQuestionUnusedFields,
+                                    maxAttempts,
+                                },
+                                solutionDate,
+                                studentGrade: {
+                                    ...defaultStudentGradeUnusedFields,
+                                    numAttempts,
+                                    bestScore,
+                                    effectiveScore,
+                                    legalScore,
+                                    overallBestScore,
+                                    partialCreditBestScore,
+                                    locked,
+                                },
+                                timeOfSubmission,
+                                topic: {
+                                    ...defaultTopicUnusedFields,
+                                    startDate: startDate.toDate(),
+                                    endDate: endDate.toDate(),
+                                    deadDate: deadDate.toDate(),
+                                }
+                            };
+                            const result = calculateGrade(params);
+
+
+                            expect(result).toStrictEqual({
+                                gradingPolicy: {
+                                    isCompleted: resultIsCompleted,
+                                    isExpired: resultIsExpired,
+                                    isLocked: resultIsLocked,
+                                    isWithinAttemptLimit: resultIsWithinAttemptLimit,
+                                    isOnTime: resultIsOnTime,
+                                    isLate: resultIsLate,
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
+                                    willGetCreditReason: resultWillGetCreditReason
+                                },
+                                // Nothing should be updated since nothing improved
+                                gradeUpdates: {
+                                    overallBestScore: newScore,
+                                },
+                                // Should match score from params
+                                score: newScore
+                            });
+                        });
+
+                        it('Scored 1', () => {
+                            const newScore = 1;
+                            const params: CalculateGradeOptions = {
+                                newScore,
+                                question: {
+                                    ...defaultQuestionUnusedFields,
+                                    maxAttempts,
+                                },
+                                solutionDate,
+                                studentGrade: {
+                                    ...defaultStudentGradeUnusedFields,
+                                    numAttempts,
+                                    bestScore,
+                                    effectiveScore,
+                                    legalScore,
+                                    overallBestScore,
+                                    partialCreditBestScore,
+                                    locked,
+                                },
+                                timeOfSubmission,
+                                topic: {
+                                    ...defaultTopicUnusedFields,
+                                    startDate: startDate.toDate(),
+                                    endDate: endDate.toDate(),
+                                    deadDate: deadDate.toDate(),
+                                }
+                            };
+                            const result = calculateGrade(params);
+
+
+                            expect(result).toStrictEqual({
+                                gradingPolicy: {
+                                    // isCompleted is false because this object represents why you got the grade that you did
+                                    // even though it is completed now it was not at the time of getting the grade
+                                    isCompleted: resultIsCompleted,
+                                    isExpired: resultIsExpired,
+                                    isLocked: resultIsLocked,
+                                    isWithinAttemptLimit: resultIsWithinAttemptLimit,
+                                    isOnTime: resultIsOnTime,
+                                    isLate: resultIsLate,
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
+                                    willGetCreditReason: resultWillGetCreditReason
+                                },
+                                // Nothing should be updated since nothing improved
+                                gradeUpdates: {
+                                    overallBestScore: newScore,
+                                },
+                                // Should match score from params
+                                score: newScore
+                            });
+                        });
+                    });
+                });
+
+                describe('Has a .5', () => {
+                    const bestScore = .5;
+                    const effectiveScore = .5;
+                    const legalScore = .5;
+                    const overallBestScore = .5;
+                    const partialCreditBestScore = .5;
+
+                    const resultIsCompleted = false;
+
+                    describe('Grade unlocked', () => {
+                        const locked = false;
+                        const resultIsLocked = false;
+
+                        it('Scored 0', () => {
+                            const newScore = 0;
+                            const params: CalculateGradeOptions = {
+                                newScore,
+                                question: {
+                                    ...defaultQuestionUnusedFields,
+                                    maxAttempts,
+                                },
+                                solutionDate,
+                                studentGrade: {
+                                    ...defaultStudentGradeUnusedFields,
+                                    numAttempts,
+                                    bestScore,
+                                    effectiveScore,
+                                    legalScore,
+                                    overallBestScore,
+                                    partialCreditBestScore,
+                                    locked,
+                                },
+                                timeOfSubmission,
+                                topic: {
+                                    ...defaultTopicUnusedFields,
+                                    startDate: startDate.toDate(),
+                                    endDate: endDate.toDate(),
+                                    deadDate: deadDate.toDate(),
+                                }
+                            };
+                            const result = calculateGrade(params);
+
+                            expect(result).toStrictEqual({
+                                gradingPolicy: {
+                                    isCompleted: resultIsCompleted,
+                                    isExpired: resultIsExpired,
+                                    isLocked: resultIsLocked,
+                                    isWithinAttemptLimit: resultIsWithinAttemptLimit,
+                                    isOnTime: resultIsOnTime,
+                                    isLate: resultIsLate,
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
+                                    willGetCreditReason: resultWillGetCreditReason
+                                },
+                                // Nothing should be updated since nothing improved
+                                gradeUpdates: {},
+                                // Should match score from params
+                                score: newScore
+                            });
+                        });
+
+                        it('Scored .5', () => {
+                            const newScore = .5;
+                            const params: CalculateGradeOptions = {
+                                newScore,
+                                question: {
+                                    ...defaultQuestionUnusedFields,
+                                    maxAttempts,
+                                },
+                                solutionDate,
+                                studentGrade: {
+                                    ...defaultStudentGradeUnusedFields,
+                                    numAttempts,
+                                    bestScore,
+                                    effectiveScore,
+                                    legalScore,
+                                    overallBestScore,
+                                    partialCreditBestScore,
+                                    locked,
+                                },
+                                timeOfSubmission,
+                                topic: {
+                                    ...defaultTopicUnusedFields,
+                                    startDate: startDate.toDate(),
+                                    endDate: endDate.toDate(),
+                                    deadDate: deadDate.toDate(),
+                                }
+                            };
+                            const result = calculateGrade(params);
+
+
+                            expect(result).toStrictEqual({
+                                gradingPolicy: {
+                                    isCompleted: resultIsCompleted,
+                                    isExpired: resultIsExpired,
+                                    isLocked: resultIsLocked,
+                                    isWithinAttemptLimit: resultIsWithinAttemptLimit,
+                                    isOnTime: resultIsOnTime,
+                                    isLate: resultIsLate,
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
+                                    willGetCreditReason: resultWillGetCreditReason
+                                },
+                                // Nothing should be updated since nothing improved
+                                gradeUpdates: {
+                                },
+                                // Should match score from params
+                                score: newScore
+                            });
+                        });
+
+                        it('Scored 1', () => {
+                            const newScore = 1;
+                            const params: CalculateGradeOptions = {
+                                newScore,
+                                question: {
+                                    ...defaultQuestionUnusedFields,
+                                    maxAttempts,
+                                },
+                                solutionDate,
+                                studentGrade: {
+                                    ...defaultStudentGradeUnusedFields,
+                                    numAttempts,
+                                    bestScore,
+                                    effectiveScore,
+                                    legalScore,
+                                    overallBestScore,
+                                    partialCreditBestScore,
+                                    locked,
+                                },
+                                timeOfSubmission,
+                                topic: {
+                                    ...defaultTopicUnusedFields,
+                                    startDate: startDate.toDate(),
+                                    endDate: endDate.toDate(),
+                                    deadDate: deadDate.toDate(),
+                                }
+                            };
+                            const result = calculateGrade(params);
+
+
+                            expect(result).toStrictEqual({
+                                gradingPolicy: {
+                                    // isCompleted is false because this object represents why you got the grade that you did
+                                    // even though it is completed now it was not at the time of getting the grade
+                                    isCompleted: resultIsCompleted,
+                                    isExpired: resultIsExpired,
+                                    isLocked: resultIsLocked,
+                                    isWithinAttemptLimit: resultIsWithinAttemptLimit,
+                                    isOnTime: resultIsOnTime,
+                                    isLate: resultIsLate,
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
+                                    willGetCreditReason: resultWillGetCreditReason
+                                },
+                                // Nothing should be updated since nothing improved
+                                gradeUpdates: {
+                                    overallBestScore: newScore,
+                                },
+                                // Should match score from params
+                                score: newScore
+                            });
+                        });
+                    });
+
+                    describe('Grade locked', () => {
+                        const locked = true;
+                        const resultIsLocked = true;
+                        const resultWillGetCreditReason = 'NO_GRADE_LOCKED';
+
+                        it('Scored 0', () => {
+                            const newScore = 0;
+                            const params: CalculateGradeOptions = {
+                                newScore,
+                                question: {
+                                    ...defaultQuestionUnusedFields,
+                                    maxAttempts,
+                                },
+                                solutionDate,
+                                studentGrade: {
+                                    ...defaultStudentGradeUnusedFields,
+                                    numAttempts,
+                                    bestScore,
+                                    effectiveScore,
+                                    legalScore,
+                                    overallBestScore,
+                                    partialCreditBestScore,
+                                    locked,
+                                },
+                                timeOfSubmission,
+                                topic: {
+                                    ...defaultTopicUnusedFields,
+                                    startDate: startDate.toDate(),
+                                    endDate: endDate.toDate(),
+                                    deadDate: deadDate.toDate(),
+                                }
+                            };
+                            const result = calculateGrade(params);
+
+                            expect(result).toStrictEqual({
+                                gradingPolicy: {
+                                    isCompleted: resultIsCompleted,
+                                    isExpired: resultIsExpired,
+                                    isLocked: resultIsLocked,
+                                    isWithinAttemptLimit: resultIsWithinAttemptLimit,
+                                    isOnTime: resultIsOnTime,
+                                    isLate: resultIsLate,
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
+                                    willGetCreditReason: resultWillGetCreditReason
+                                },
+                                // Nothing should be updated since nothing improved
+                                gradeUpdates: {},
+                                // Should match score from params
+                                score: newScore
+                            });
+                        });
+
+                        it('Scored .5', () => {
+                            const newScore = .5;
+                            const params: CalculateGradeOptions = {
+                                newScore,
+                                question: {
+                                    ...defaultQuestionUnusedFields,
+                                    maxAttempts,
+                                },
+                                solutionDate,
+                                studentGrade: {
+                                    ...defaultStudentGradeUnusedFields,
+                                    numAttempts,
+                                    bestScore,
+                                    effectiveScore,
+                                    legalScore,
+                                    overallBestScore,
+                                    partialCreditBestScore,
+                                    locked,
+                                },
+                                timeOfSubmission,
+                                topic: {
+                                    ...defaultTopicUnusedFields,
+                                    startDate: startDate.toDate(),
+                                    endDate: endDate.toDate(),
+                                    deadDate: deadDate.toDate(),
+                                }
+                            };
+                            const result = calculateGrade(params);
+
+
+                            expect(result).toStrictEqual({
+                                gradingPolicy: {
+                                    isCompleted: resultIsCompleted,
+                                    isExpired: resultIsExpired,
+                                    isLocked: resultIsLocked,
+                                    isWithinAttemptLimit: resultIsWithinAttemptLimit,
+                                    isOnTime: resultIsOnTime,
+                                    isLate: resultIsLate,
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
+                                    willGetCreditReason: resultWillGetCreditReason
+                                },
+                                // Nothing should be updated since nothing improved
+                                gradeUpdates: {
+                                },
+                                // Should match score from params
+                                score: newScore
+                            });
+                        });
+
+                        it('Scored 1', () => {
+                            const newScore = 1;
+                            const params: CalculateGradeOptions = {
+                                newScore,
+                                question: {
+                                    ...defaultQuestionUnusedFields,
+                                    maxAttempts,
+                                },
+                                solutionDate,
+                                studentGrade: {
+                                    ...defaultStudentGradeUnusedFields,
+                                    numAttempts,
+                                    bestScore,
+                                    effectiveScore,
+                                    legalScore,
+                                    overallBestScore,
+                                    partialCreditBestScore,
+                                    locked,
+                                },
+                                timeOfSubmission,
+                                topic: {
+                                    ...defaultTopicUnusedFields,
+                                    startDate: startDate.toDate(),
+                                    endDate: endDate.toDate(),
+                                    deadDate: deadDate.toDate(),
+                                }
+                            };
+                            const result = calculateGrade(params);
+
+
+                            expect(result).toStrictEqual({
+                                gradingPolicy: {
+                                    // isCompleted is false because this object represents why you got the grade that you did
+                                    // even though it is completed now it was not at the time of getting the grade
+                                    isCompleted: resultIsCompleted,
+                                    isExpired: resultIsExpired,
+                                    isLocked: resultIsLocked,
+                                    isWithinAttemptLimit: resultIsWithinAttemptLimit,
+                                    isOnTime: resultIsOnTime,
+                                    isLate: resultIsLate,
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
+                                    willGetCreditReason: resultWillGetCreditReason
+                                },
+                                // Nothing should be updated since nothing improved
+                                gradeUpdates: {
+                                    overallBestScore: newScore,
+                                },
+                                // Should match score from params
+                                score: newScore
+                            });
+                        });
+                    });
+                });
+
+                describe('Has a 1', () => {
+                    const bestScore = 1;
+                    const effectiveScore = 1;
+                    const legalScore = 1;
+                    const overallBestScore = 1;
+                    const partialCreditBestScore = 1;
+
+                    const resultIsCompleted = true;
+                    // This is an override
+                    const resultWillTrackAttemptReason = 'NO_ALREADY_COMPLETED';
+                    const resultWillGetCreditReason = 'NO_ATTEMPT_NOT_RECORDED';
+
+
+                    describe('Grade unlocked', () => {
+                        const locked = false;
+                        const resultIsLocked = false;
+
+                        it('Scored 0', () => {
+                            const newScore = 0;
+                            const params: CalculateGradeOptions = {
+                                newScore,
+                                question: {
+                                    ...defaultQuestionUnusedFields,
+                                    maxAttempts,
+                                },
+                                solutionDate,
+                                studentGrade: {
+                                    ...defaultStudentGradeUnusedFields,
+                                    numAttempts,
+                                    bestScore,
+                                    effectiveScore,
+                                    legalScore,
+                                    overallBestScore,
+                                    partialCreditBestScore,
+                                    locked,
+                                },
+                                timeOfSubmission,
+                                topic: {
+                                    ...defaultTopicUnusedFields,
+                                    startDate: startDate.toDate(),
+                                    endDate: endDate.toDate(),
+                                    deadDate: deadDate.toDate(),
+                                }
+                            };
+                            const result = calculateGrade(params);
+
+                            expect(result).toStrictEqual({
+                                gradingPolicy: {
+                                    isCompleted: resultIsCompleted,
+                                    isExpired: resultIsExpired,
+                                    isLocked: resultIsLocked,
+                                    isWithinAttemptLimit: resultIsWithinAttemptLimit,
+                                    isOnTime: resultIsOnTime,
+                                    isLate: resultIsLate,
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
+                                    willGetCreditReason: resultWillGetCreditReason
+                                },
+                                // Nothing should be updated since nothing improved
+                                gradeUpdates: {},
+                                // Should match score from params
+                                score: newScore
+                            });
+                        });
+
+                        it('Scored .5', () => {
+                            const newScore = .5;
+                            const params: CalculateGradeOptions = {
+                                newScore,
+                                question: {
+                                    ...defaultQuestionUnusedFields,
+                                    maxAttempts,
+                                },
+                                solutionDate,
+                                studentGrade: {
+                                    ...defaultStudentGradeUnusedFields,
+                                    numAttempts,
+                                    bestScore,
+                                    effectiveScore,
+                                    legalScore,
+                                    overallBestScore,
+                                    partialCreditBestScore,
+                                    locked,
+                                },
+                                timeOfSubmission,
+                                topic: {
+                                    ...defaultTopicUnusedFields,
+                                    startDate: startDate.toDate(),
+                                    endDate: endDate.toDate(),
+                                    deadDate: deadDate.toDate(),
+                                }
+                            };
+                            const result = calculateGrade(params);
+
+
+                            expect(result).toStrictEqual({
+                                gradingPolicy: {
+                                    isCompleted: resultIsCompleted,
+                                    isExpired: resultIsExpired,
+                                    isLocked: resultIsLocked,
+                                    isWithinAttemptLimit: resultIsWithinAttemptLimit,
+                                    isOnTime: resultIsOnTime,
+                                    isLate: resultIsLate,
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
+                                    willGetCreditReason: resultWillGetCreditReason
+                                },
+                                // Nothing should be updated since nothing improved
+                                gradeUpdates: {
+                                },
+                                // Should match score from params
+                                score: newScore
+                            });
+                        });
+
+                        it('Scored 1', () => {
+                            const newScore = 1;
+                            const params: CalculateGradeOptions = {
+                                newScore,
+                                question: {
+                                    ...defaultQuestionUnusedFields,
+                                    maxAttempts,
+                                },
+                                solutionDate,
+                                studentGrade: {
+                                    ...defaultStudentGradeUnusedFields,
+                                    numAttempts,
+                                    bestScore,
+                                    effectiveScore,
+                                    legalScore,
+                                    overallBestScore,
+                                    partialCreditBestScore,
+                                    locked,
+                                },
+                                timeOfSubmission,
+                                topic: {
+                                    ...defaultTopicUnusedFields,
+                                    startDate: startDate.toDate(),
+                                    endDate: endDate.toDate(),
+                                    deadDate: deadDate.toDate(),
+                                }
+                            };
+                            const result = calculateGrade(params);
+
+
+                            expect(result).toStrictEqual({
+                                gradingPolicy: {
+                                    // isCompleted is false because this object represents why you got the grade that you did
+                                    // even though it is completed now it was not at the time of getting the grade
+                                    isCompleted: resultIsCompleted,
+                                    isExpired: resultIsExpired,
+                                    isLocked: resultIsLocked,
+                                    isWithinAttemptLimit: resultIsWithinAttemptLimit,
+                                    isOnTime: resultIsOnTime,
+                                    isLate: resultIsLate,
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
+                                    willGetCreditReason: resultWillGetCreditReason
+                                },
+                                // Nothing should be updated since nothing improved
+                                gradeUpdates: {
+                                },
+                                // Should match score from params
+                                score: newScore
+                            });
+                        });
+                    });
+
+                    describe('Grade locked', () => {
+                        const locked = true;
+                        const resultIsLocked = true;
+                        const resultWillGetCreditReason = 'NO_ATTEMPT_NOT_RECORDED';
+
+                        it('Scored 0', () => {
+                            const newScore = 0;
+                            const params: CalculateGradeOptions = {
+                                newScore,
+                                question: {
+                                    ...defaultQuestionUnusedFields,
+                                    maxAttempts,
+                                },
+                                solutionDate,
+                                studentGrade: {
+                                    ...defaultStudentGradeUnusedFields,
+                                    numAttempts,
+                                    bestScore,
+                                    effectiveScore,
+                                    legalScore,
+                                    overallBestScore,
+                                    partialCreditBestScore,
+                                    locked,
+                                },
+                                timeOfSubmission,
+                                topic: {
+                                    ...defaultTopicUnusedFields,
+                                    startDate: startDate.toDate(),
+                                    endDate: endDate.toDate(),
+                                    deadDate: deadDate.toDate(),
+                                }
+                            };
+                            const result = calculateGrade(params);
+
+                            expect(result).toStrictEqual({
+                                gradingPolicy: {
+                                    isCompleted: resultIsCompleted,
+                                    isExpired: resultIsExpired,
+                                    isLocked: resultIsLocked,
+                                    isWithinAttemptLimit: resultIsWithinAttemptLimit,
+                                    isOnTime: resultIsOnTime,
+                                    isLate: resultIsLate,
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
+                                    willGetCreditReason: resultWillGetCreditReason
+                                },
+                                // Nothing should be updated since nothing improved
+                                gradeUpdates: {},
+                                // Should match score from params
+                                score: newScore
+                            });
+                        });
+
+                        it('Scored .5', () => {
+                            const newScore = .5;
+                            const params: CalculateGradeOptions = {
+                                newScore,
+                                question: {
+                                    ...defaultQuestionUnusedFields,
+                                    maxAttempts,
+                                },
+                                solutionDate,
+                                studentGrade: {
+                                    ...defaultStudentGradeUnusedFields,
+                                    numAttempts,
+                                    bestScore,
+                                    effectiveScore,
+                                    legalScore,
+                                    overallBestScore,
+                                    partialCreditBestScore,
+                                    locked,
+                                },
+                                timeOfSubmission,
+                                topic: {
+                                    ...defaultTopicUnusedFields,
+                                    startDate: startDate.toDate(),
+                                    endDate: endDate.toDate(),
+                                    deadDate: deadDate.toDate(),
+                                }
+                            };
+                            const result = calculateGrade(params);
+
+
+                            expect(result).toStrictEqual({
+                                gradingPolicy: {
+                                    isCompleted: resultIsCompleted,
+                                    isExpired: resultIsExpired,
+                                    isLocked: resultIsLocked,
+                                    isWithinAttemptLimit: resultIsWithinAttemptLimit,
+                                    isOnTime: resultIsOnTime,
+                                    isLate: resultIsLate,
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
+                                    willGetCreditReason: resultWillGetCreditReason
+                                },
+                                // Nothing should be updated since nothing improved
+                                gradeUpdates: {
+                                },
+                                // Should match score from params
+                                score: newScore
+                            });
+                        });
+
+                        it('Scored 1', () => {
+                            const newScore = 1;
+                            const params: CalculateGradeOptions = {
+                                newScore,
+                                question: {
+                                    ...defaultQuestionUnusedFields,
+                                    maxAttempts,
+                                },
+                                solutionDate,
+                                studentGrade: {
+                                    ...defaultStudentGradeUnusedFields,
+                                    numAttempts,
+                                    bestScore,
+                                    effectiveScore,
+                                    legalScore,
+                                    overallBestScore,
+                                    partialCreditBestScore,
+                                    locked,
+                                },
+                                timeOfSubmission,
+                                topic: {
+                                    ...defaultTopicUnusedFields,
+                                    startDate: startDate.toDate(),
+                                    endDate: endDate.toDate(),
+                                    deadDate: deadDate.toDate(),
+                                }
+                            };
+                            const result = calculateGrade(params);
+
+
+                            expect(result).toStrictEqual({
+                                gradingPolicy: {
+                                    // isCompleted is false because this object represents why you got the grade that you did
+                                    // even though it is completed now it was not at the time of getting the grade
+                                    isCompleted: resultIsCompleted,
+                                    isExpired: resultIsExpired,
+                                    isLocked: resultIsLocked,
+                                    isWithinAttemptLimit: resultIsWithinAttemptLimit,
+                                    isOnTime: resultIsOnTime,
+                                    isLate: resultIsLate,
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
+                                    willGetCreditReason: resultWillGetCreditReason
+                                },
+                                // Nothing should be updated since nothing improved
+                                gradeUpdates: {
+                                },
+                                // Should match score from params
+                                score: newScore
+                            });
+                        });
+                    });
+                });
+            });
+
         });
     });
 });

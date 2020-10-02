@@ -67,6 +67,8 @@ describe('Grading Helper Tests', () => {
 
                 const resultIsWithinAttemptLimit = true;
 
+                const resultWillTrackAttemptReason = 'YES';
+
                 describe('Has no score', () => {
                     const bestScore = 0;
                     const effectiveScore = 0;
@@ -118,7 +120,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
-                                    willTrackAttemptReason: 'YES',
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
                                 // Nothing should be updated since nothing improved
@@ -166,7 +168,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
-                                    willTrackAttemptReason: 'YES',
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
                                 // Nothing should be updated since nothing improved
@@ -222,7 +224,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
-                                    willTrackAttemptReason: 'YES',
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
                                 // Nothing should be updated since nothing improved
@@ -281,7 +283,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
-                                    willTrackAttemptReason: 'YES',
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
                                 // Nothing should be updated since nothing improved
@@ -329,7 +331,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
-                                    willTrackAttemptReason: 'YES',
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
                                 // Nothing should be updated since nothing improved
@@ -381,7 +383,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
-                                    willTrackAttemptReason: 'YES',
+                                    willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
                                 // Nothing should be updated since nothing improved

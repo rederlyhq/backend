@@ -109,8 +109,8 @@
     "type": "git",
     "url": "git+https://github.com/rederly/backend.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Rederly",
+  "license": "GPL-3.0 License",
   "bugs": {
     "url": "https://github.com/rederly/backend/issues"
   },

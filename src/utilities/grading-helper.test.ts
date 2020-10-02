@@ -180,6 +180,62 @@ describe('Grading Helper Tests', () => {
                                 score: newScore
                             });
                         });
+
+                        it('Scored 1', () => {
+                            const newScore = 1;
+                            const params: CalculateGradeOptions = {
+                                newScore,
+                                question: {
+                                    ...defaultQuestionUnusedFields,
+                                    maxAttempts,
+                                },
+                                solutionDate,
+                                studentGrade: {
+                                    ...defaultStudentGradeUnusedFields,
+                                    numAttempts,
+                                    bestScore,
+                                    effectiveScore,
+                                    legalScore,
+                                    overallBestScore,
+                                    partialCreditBestScore,
+                                    locked,
+                                },
+                                timeOfSubmission,
+                                topic: {
+                                    ...defaultTopicUnusedFields,
+                                    startDate: startDate.toDate(),
+                                    endDate: endDate.toDate(),
+                                    deadDate: deadDate.toDate(),
+                                }
+                            };
+                            const result = calculateGrade(params);
+
+
+                            expect(result).toStrictEqual({
+                                gradingPolicy: {
+                                    // isCompleted is false because this object represents why you got the grade that you did
+                                    // even though it is completed now it was not at the time of getting the grade
+                                    isCompleted: resultIsCompleted,
+                                    isExpired: resultIsExpired,
+                                    isLocked: resultIsLocked,
+                                    isWithinAttemptLimit: resultIsWithinAttemptLimit,
+                                    isOnTime: resultIsOnTime,
+                                    isLate: resultIsLate,
+                                    willTrackAttemptReason: 'YES',
+                                    willGetCreditReason: 'YES'
+                                },
+                                // Nothing should be updated since nothing improved
+                                gradeUpdates: {
+                                    bestScore: newScore,
+                                    effectiveScore: newScore,
+                                    legalScore: newScore,
+                                    overallBestScore: newScore,
+                                    partialCreditBestScore: newScore
+                                },
+                                // Should match score from params
+                                score: newScore
+                            });
+                        });
                     });
                 });
             });

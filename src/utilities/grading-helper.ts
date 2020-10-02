@@ -88,7 +88,7 @@ export const determineGradingRationale = ({
     timeOfSubmission
 }: DetermineGradingRationaleOptions): DetermineGradingRationaleResult => {
     // use the same time for everything
-    // also if there was a case in which we were retroing we could take an option param and swap this out
+    // also if there was a case in which we were retroactively grading we could take an option param and swap this out
     const theMoment = moment(timeOfSubmission);
 
     const isCompleted = overallBestScore >= 1;

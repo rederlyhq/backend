@@ -237,6 +237,160 @@ describe('Grading Helper Tests', () => {
                             });
                         });
                     });
+
+                    describe('Grade locked', () => {
+                        const locked = true;
+                        const resultIsLocked = true;
+
+                        it('Scored 0', () => {
+                            const newScore = 0;
+                            const params: CalculateGradeOptions = {
+                                newScore,
+                                question: {
+                                    ...defaultQuestionUnusedFields,
+                                    maxAttempts,
+                                },
+                                solutionDate,
+                                studentGrade: {
+                                    ...defaultStudentGradeUnusedFields,
+                                    numAttempts,
+                                    bestScore,
+                                    effectiveScore,
+                                    legalScore,
+                                    overallBestScore,
+                                    partialCreditBestScore,
+                                    locked,
+                                },
+                                timeOfSubmission,
+                                topic: {
+                                    ...defaultTopicUnusedFields,
+                                    startDate: startDate.toDate(),
+                                    endDate: endDate.toDate(),
+                                    deadDate: deadDate.toDate(),
+                                }
+                            };
+                            const result = calculateGrade(params);
+
+                            expect(result).toStrictEqual({
+                                gradingPolicy: {
+                                    isCompleted: resultIsCompleted,
+                                    isExpired: resultIsExpired,
+                                    isLocked: resultIsLocked,
+                                    isWithinAttemptLimit: resultIsWithinAttemptLimit,
+                                    isOnTime: resultIsOnTime,
+                                    isLate: resultIsLate,
+                                    willTrackAttemptReason: 'YES',
+                                    willGetCreditReason: 'NO_GRADE_LOCKED'
+                                },
+                                // Nothing should be updated since nothing improved
+                                gradeUpdates: {},
+                                // Should match score from params
+                                score: newScore
+                            });
+                        });
+
+                        it('Scored .5', () => {
+                            const newScore = .5;
+                            const params: CalculateGradeOptions = {
+                                newScore,
+                                question: {
+                                    ...defaultQuestionUnusedFields,
+                                    maxAttempts,
+                                },
+                                solutionDate,
+                                studentGrade: {
+                                    ...defaultStudentGradeUnusedFields,
+                                    numAttempts,
+                                    bestScore,
+                                    effectiveScore,
+                                    legalScore,
+                                    overallBestScore,
+                                    partialCreditBestScore,
+                                    locked,
+                                },
+                                timeOfSubmission,
+                                topic: {
+                                    ...defaultTopicUnusedFields,
+                                    startDate: startDate.toDate(),
+                                    endDate: endDate.toDate(),
+                                    deadDate: deadDate.toDate(),
+                                }
+                            };
+                            const result = calculateGrade(params);
+
+
+                            expect(result).toStrictEqual({
+                                gradingPolicy: {
+                                    isCompleted: resultIsCompleted,
+                                    isExpired: resultIsExpired,
+                                    isLocked: resultIsLocked,
+                                    isWithinAttemptLimit: resultIsWithinAttemptLimit,
+                                    isOnTime: resultIsOnTime,
+                                    isLate: resultIsLate,
+                                    willTrackAttemptReason: 'YES',
+                                    willGetCreditReason: 'NO_GRADE_LOCKED'
+                                },
+                                // Nothing should be updated since nothing improved
+                                gradeUpdates: {
+                                    overallBestScore: newScore,
+                                },
+                                // Should match score from params
+                                score: newScore
+                            });
+                        });
+
+                        it('Scored 1', () => {
+                            const newScore = 1;
+                            const params: CalculateGradeOptions = {
+                                newScore,
+                                question: {
+                                    ...defaultQuestionUnusedFields,
+                                    maxAttempts,
+                                },
+                                solutionDate,
+                                studentGrade: {
+                                    ...defaultStudentGradeUnusedFields,
+                                    numAttempts,
+                                    bestScore,
+                                    effectiveScore,
+                                    legalScore,
+                                    overallBestScore,
+                                    partialCreditBestScore,
+                                    locked,
+                                },
+                                timeOfSubmission,
+                                topic: {
+                                    ...defaultTopicUnusedFields,
+                                    startDate: startDate.toDate(),
+                                    endDate: endDate.toDate(),
+                                    deadDate: deadDate.toDate(),
+                                }
+                            };
+                            const result = calculateGrade(params);
+
+
+                            expect(result).toStrictEqual({
+                                gradingPolicy: {
+                                    // isCompleted is false because this object represents why you got the grade that you did
+                                    // even though it is completed now it was not at the time of getting the grade
+                                    isCompleted: resultIsCompleted,
+                                    isExpired: resultIsExpired,
+                                    isLocked: resultIsLocked,
+                                    isWithinAttemptLimit: resultIsWithinAttemptLimit,
+                                    isOnTime: resultIsOnTime,
+                                    isLate: resultIsLate,
+                                    willTrackAttemptReason: 'YES',
+                                    willGetCreditReason: 'NO_GRADE_LOCKED'
+                                },
+                                // Nothing should be updated since nothing improved
+                                gradeUpdates: {
+                                    overallBestScore: newScore,
+                                },
+                                // Should match score from params
+                                score: newScore
+                            });
+                        });
+                    });
                 });
             });
         });

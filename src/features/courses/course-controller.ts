@@ -1414,6 +1414,8 @@ class CourseController {
             // This query must be run raw, otherwise the deduplication logic in Sequelize will force-add the primary key
             // resulting in a group-by error. For more information: https://github.com/sequelize/sequelize/issues/3920
             raw: true,
+            // Using raw results in nested objects being represented with . notation, using this will expand it like we see elsewhere
+            nest: true,
             include: [{
                 model: User,
                 as: 'user',

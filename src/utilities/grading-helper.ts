@@ -1,5 +1,6 @@
 import { Constants } from '../constants';
 import * as moment from 'moment';
+import * as _ from 'lodash';
 import logger from './logger';
 import StudentGrade, { StudentGradeInterface } from '../database/models/student-grade';
 import { CourseTopicContentInterface } from '../database/models/course-topic-content';
@@ -225,5 +226,6 @@ export const calculateGrade = ({
             }
         }
     }
+    result.gradeUpdates = _(result.gradeUpdates).omitBy(_.isUndefined).value();
     return result;
 };

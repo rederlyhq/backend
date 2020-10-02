@@ -1,4 +1,4 @@
-import { calculateGrade } from './grading-helper';
+import { calculateGrade, CalculateGradeOptions } from './grading-helper';
 import * as moment from 'moment';
 
 const defaultUnusedFields = {
@@ -19,8 +19,6 @@ const defaultQuestionUnusedFields = {
     optional: false,
     hidden: false,
     ...defaultUnusedFields,
-    // Probably used
-    maxAttempts: 1,
 };
 
 const defaultStudentGradeUnusedFields = {
@@ -33,16 +31,8 @@ const defaultStudentGradeUnusedFields = {
     latestAttempts: 0,
     randomSeed: 0,
     ...defaultUnusedFields,
-    // Probably used
-    numAttempts: 0,
     numExtendedAttempts: 0,
     numLegalAttempts: 0,
-    bestScore: 0,
-    effectiveScore: 0,
-    legalScore: 0,
-    overallBestScore: 0,
-    partialCreditBestScore: 0,
-    locked: false,
 };
 
 const defaultTopicUnusedFields = {
@@ -52,48 +42,82 @@ const defaultTopicUnusedFields = {
     courseUnitContentId: -1,
     curriculumTopicContentId: -1,
     // Fields
-    startDate: new Date(),
     contentOrder: 0,
-    deadDate: new Date(),
-    endDate: new Date(),
     name: 'Topic Name',
     partialExtend: false,
     ...defaultUnusedFields
 };
 
-describe('Grades Tests', () => {
-    describe('Full Credit', () => {
-        it('pass', () => {
-            const result = calculateGrade({
-                newScore: 0,
-                question: {
-                    ...defaultQuestionUnusedFields,
-                },
-                solutionDate: moment(),
-                studentGrade: {
-                    ...defaultStudentGradeUnusedFields
+describe('Grading Helper Tests', () => {
+    describe('calculateGrade', () => {
+        describe('On Time', () => {
+            const startDate = moment().subtract(1, 'days');
+            const endDate = moment().add(1, 'days');
+            const deadDate = moment().add(2, 'days');
+            const solutionDate = moment().add(3, 'days');
 
-                },
-                timeOfSubmission: new Date(),
-                topic: {
-                    ...defaultTopicUnusedFields
-                }
+            describe('Within attempt limit', () => {
+                const maxAttempts = 1;
+                const numAttempts = 0;
+
+                describe('Within attempt limit', () => {
+                    const bestScore = 0;
+                    const effectiveScore = 0;
+                    const legalScore = 0;
+                    const overallBestScore = 0;
+                    const partialCreditBestScore = 0;
+
+                    describe('Grade unlocked', () => {
+                        const locked = false;
+                        it('Scored 0', () => {
+                            const newScore = 0;
+                            const params: CalculateGradeOptions = {
+                                newScore,
+                                question: {
+                                    ...defaultQuestionUnusedFields,
+                                    maxAttempts,
+                                },
+                                solutionDate,
+                                studentGrade: {
+                                    ...defaultStudentGradeUnusedFields,
+                                    numAttempts,
+                                    bestScore,
+                                    effectiveScore,
+                                    legalScore,
+                                    overallBestScore,
+                                    partialCreditBestScore,
+                                    locked,
+                                },
+                                timeOfSubmission: new Date(),
+                                topic: {
+                                    ...defaultTopicUnusedFields,
+                                    startDate: startDate.toDate(),
+                                    endDate: endDate.toDate(),
+                                    deadDate: deadDate.toDate(),
+                                }
+                            };
+                            const result = calculateGrade(params);
+
+                            expect(result).toStrictEqual({
+                                gradingPolicy: {
+                                    isCompleted: false,
+                                    isExpired: false,
+                                    isLocked: false,
+                                    isWithinAttemptLimit: true,
+                                    isOnTime: true,
+                                    isLate: false,
+                                    willTrackAttemptReason: 'YES',
+                                    willGetCreditReason: 'YES'
+                                },
+                                // Nothing should be updated since nothing improved
+                                gradeUpdates: {},
+                                // Should match score from params
+                                score: 0
+                            });
+                        });
+                    });
+                });
             });
-
-            expect(result).toStrictEqual({
-                gradingPolicy: {
-                  isCompleted: false,
-                  isExpired: false,
-                  isLocked: false,
-                  isWithinAttemptLimit: true,
-                  isOnTime: false,
-                  isLate: false,
-                  willTrackAttemptReason: 'NO_IS_AFTER_SOLUTIONS_DATE',
-                  willGetCreditReason: 'NO_SOLUTIONS_AVAILABLE'
-                },
-                gradeUpdates: {},
-                score: 0
-              });
         });
     });
 });

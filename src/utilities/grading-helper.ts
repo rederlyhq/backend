@@ -114,7 +114,7 @@ export const determineGradingRationale = ({
     else if (!isCompleted && !areSolutionsAvailable) {
         willTrackAttemptReason = WillTrackAttemptReason.YES;
     } else {
-        logger.error('An error occurred determing whether or not to keep the attempt');
+        logger.error('An error occurred determining whether or not to keep the attempt');
         willTrackAttemptReason = WillTrackAttemptReason.UNKNOWN;
     }
 
@@ -124,7 +124,7 @@ export const determineGradingRationale = ({
     } else if (willTrackAttemptReason !== WillTrackAttemptReason.YES) {
         willGetCreditReason = WillGetCreditReason.NO_ATTEMPT_NOT_RECORDED;
     }
-    if (isLocked) {
+    else if (isLocked) {
         willGetCreditReason = WillGetCreditReason.NO_GRADE_LOCKED;
     } else if (!isWithinAttemptLimit) {
         willGetCreditReason = WillGetCreditReason.NO_ATTEMPTS_EXCEEDED;

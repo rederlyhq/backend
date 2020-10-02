@@ -79,6 +79,7 @@ describe('Grading Helper Tests', () => {
                     describe('Grade unlocked', () => {
                         const locked = false;
                         const resultIsLocked = false;
+                        const resultWillGetCreditReason = 'YES';
 
                         it('Scored 0', () => {
                             const newScore = 0;
@@ -118,7 +119,7 @@ describe('Grading Helper Tests', () => {
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
                                     willTrackAttemptReason: 'YES',
-                                    willGetCreditReason: 'YES'
+                                    willGetCreditReason: resultWillGetCreditReason
                                 },
                                 // Nothing should be updated since nothing improved
                                 gradeUpdates: {},
@@ -166,7 +167,7 @@ describe('Grading Helper Tests', () => {
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
                                     willTrackAttemptReason: 'YES',
-                                    willGetCreditReason: 'YES'
+                                    willGetCreditReason: resultWillGetCreditReason
                                 },
                                 // Nothing should be updated since nothing improved
                                 gradeUpdates: {
@@ -222,7 +223,7 @@ describe('Grading Helper Tests', () => {
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
                                     willTrackAttemptReason: 'YES',
-                                    willGetCreditReason: 'YES'
+                                    willGetCreditReason: resultWillGetCreditReason
                                 },
                                 // Nothing should be updated since nothing improved
                                 gradeUpdates: {
@@ -241,6 +242,7 @@ describe('Grading Helper Tests', () => {
                     describe('Grade locked', () => {
                         const locked = true;
                         const resultIsLocked = true;
+                        const resultWillGetCreditReason = 'NO_GRADE_LOCKED';
 
                         it('Scored 0', () => {
                             const newScore = 0;
@@ -280,7 +282,7 @@ describe('Grading Helper Tests', () => {
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
                                     willTrackAttemptReason: 'YES',
-                                    willGetCreditReason: 'NO_GRADE_LOCKED'
+                                    willGetCreditReason: resultWillGetCreditReason
                                 },
                                 // Nothing should be updated since nothing improved
                                 gradeUpdates: {},
@@ -328,7 +330,7 @@ describe('Grading Helper Tests', () => {
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
                                     willTrackAttemptReason: 'YES',
-                                    willGetCreditReason: 'NO_GRADE_LOCKED'
+                                    willGetCreditReason: resultWillGetCreditReason
                                 },
                                 // Nothing should be updated since nothing improved
                                 gradeUpdates: {
@@ -380,7 +382,7 @@ describe('Grading Helper Tests', () => {
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
                                     willTrackAttemptReason: 'YES',
-                                    willGetCreditReason: 'NO_GRADE_LOCKED'
+                                    willGetCreditReason: resultWillGetCreditReason
                                 },
                                 // Nothing should be updated since nothing improved
                                 gradeUpdates: {

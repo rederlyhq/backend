@@ -196,6 +196,7 @@ export interface GetStatisticsOnQuestionsOptions {
 export interface GetTopicsOptions {
     courseId?: number;
     isOpen?: boolean;
+    userId?: number;
 }
 
 export interface GetQuestionOptions {

@@ -1,3 +1,4 @@
+require('dotenv').config();
 import * as _ from 'lodash';
 
 const fromBooleanField = (value: string | undefined): boolean | null => {

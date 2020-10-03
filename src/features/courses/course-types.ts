@@ -28,10 +28,13 @@ export interface GetQuestionOptions {
 
 export interface GetQuestionRepositoryOptions {
     id: number;
+    userId?: number;
 }
 
 export interface GetCourseTopicRepositoryOptions {
     id: number;
+    // For overrides
+    userId?: number;
 }
 
 // TODO make generic interface
@@ -63,6 +66,28 @@ export interface UpdateCourseTopicsOptions {
     // TODO further investigation if there is any way for the suggested type to show but allow other values
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updates: Partial<CourseTopicContent> | any;
+}
+
+export interface ExtendTopicQuestionForUserOptions {
+    where: {
+        courseTopicQuestionId: number;
+        userId: number;
+    };
+    updates: {
+        maxAttempts?: number;
+    };
+}
+
+export interface ExtendTopicForUserOptions {
+    where: {
+        courseTopicContentId: number;
+        userId: number;
+    };
+    updates: {
+        startDate?: Date;
+        endDate?: Date;
+        deadDate?: Date;
+    };
 }
 
 export interface UpdateUnitOptions {
@@ -171,6 +196,7 @@ export interface GetStatisticsOnQuestionsOptions {
 export interface GetTopicsOptions {
     courseId?: number;
     isOpen?: boolean;
+    userId?: number;
 }
 
 export interface GetQuestionOptions {
@@ -227,6 +253,11 @@ export interface CreateGradesForUserEnrollmentOptions {
     userId: number;
 }
 
+export interface DeleteUserEnrollmentOptions {
+    courseId: number;
+    userId: number;
+}
+
 export interface CreateGradesForQuestionOptions {
     questionId: number;
 }
@@ -266,4 +297,10 @@ export interface GetCalculatedRendererParamsResponse {
     outputformat: OutputFormat;
     permissionLevel: number;
     showSolutions: number;
+}
+
+export interface PostQuestionMeta {
+    rendererParams: GetCalculatedRendererParamsResponse;
+    studentGrade?: StudentGrade | null;
+    courseQuestion: CourseWWTopicQuestion;
 }

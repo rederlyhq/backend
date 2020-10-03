@@ -85,6 +85,19 @@ export const updateCourseTopicValidation = {
     query: {},
 };
 
+export const extendCourseTopicForUserValidation = {
+    params: {},
+    body: {
+        startDate: Joi.date().optional(),
+        endDate: Joi.date().optional(),
+        deadDate: Joi.date().optional()
+    },
+    query: {
+        courseTopicContentId: Joi.number().required(),
+        userId: Joi.number().required()
+    },
+};
+
 export const deleteCourseUnitValidation = {
     params: {
         id: Joi.number().required()
@@ -175,7 +188,8 @@ export const updateGradeValidation = {
     },
     body: {
         locked: Joi.boolean().optional(),
-        effectiveScore: Joi.number().optional()
+        effectiveScore: Joi.number().optional(),
+        currentProblemState: Joi.any().optional()
         // Deletes are one directional and soft
         // active: Joi.boolean().optional(),
     },
@@ -199,13 +213,29 @@ export const createCourseTopicQuestionValidation = {
     query: {}
 };
 
+export const extendCourseTopicQuestionValidation = {
+    params: {
+    },
+    body: {
+        maxAttempts: Joi.number().optional(),
+        // weight: Joi.number().optional().default(1),
+        // hidden: Joi.boolean().optional().default(false),
+        // optional: Joi.boolean().optional().default(false),
+    },
+    query: {
+        courseTopicQuestionId: Joi.number().required(),
+        userId: Joi.number().required()
+    },
+};
+
 export const getQuestionValidation = {
     params: {
         id: Joi.number().required()
     },
     query: {
         workbookId: Joi.number().optional(),
-        readonly: Joi.boolean().optional()
+        readonly: Joi.boolean().optional(),
+        userId: Joi.number().optional(),
     },
     body: {}
 };
@@ -226,6 +256,16 @@ export const getCourseValidation = {
     },
     body: {},
     query: {}
+};
+
+export const getTopicValidation = {
+    params: {
+        id: Joi.number().required(),
+    },
+    query: {
+        userId: Joi.number().optional()
+    },
+    body: {},
 };
 
 export const getTopicsValidation = {
@@ -252,6 +292,15 @@ export const enrollInCourseByCodeValidation = {
     },
     query: {},
     body: {}
+};
+
+export const deleteEnrollmentValidation = {
+    params: {},
+    query: {},
+    body: {
+        courseId: Joi.number().required(),
+        userId: Joi.number().required()
+    }
 };
 
 export const listCoursesValidation = {

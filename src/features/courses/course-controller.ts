@@ -5,7 +5,7 @@ import StudentEnrollment from '../../database/models/student-enrollment';
 import { BaseError } from 'sequelize';
 import NotFoundError from '../../exceptions/not-found-error';
 import CourseUnitContent from '../../database/models/course-unit-content';
-import CourseTopicContent from '../../database/models/course-topic-content';
+import CourseTopicContent, { CourseTopicContentInterface } from '../../database/models/course-topic-content';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 import rendererHelper, { OutputFormat, RendererResponse } from '../../utilities/renderer-helper';
 import StudentWorkbook from '../../database/models/student-workbook';
@@ -417,14 +417,19 @@ class CourseController {
     }
 
     async updateTopic(options: UpdateTopicOptions): Promise<CourseTopicContent[]> {
+        const existingTopic = await courseRepository.getCourseTopic({
+            id: options.where.id
+        });
+
+        const originalTopic = existingTopic.get({
+            plain: true
+        }) as CourseTopicContentInterface;
+
         return useDatabaseTransaction(async () => {
             // This is a set of all update results as they come in, since there are 5 updates that occur this will have 5 elements
             let updatesResults: UpdateResult<CourseTopicContent>[] = [];
             if (!_.isNil(options.updates.contentOrder) || !_.isNil(options.updates.courseUnitContentId)) {
                 // What happens if you move from one topic to another? Disregarding since that should not be possible from the UI
-                const existingTopic = await courseRepository.getCourseTopic({
-                    id: options.where.id
-                });
                 const sourceContentOrder = existingTopic.contentOrder;
                 // Move the object out of the way for now, this is due to constraint issues
                 // TODO make unique index a deferable unique constraint and then make the transaction deferable
@@ -455,9 +460,11 @@ class CourseController {
                 .values()
                 .value();
 
-            if (updateCourseTopicResult.updatedCount > 0 && (!_.isNil(options.updates.endDate) || !_.isNil(options.updates.deadDate))) {
+            if (updateCourseTopicResult.updatedCount > 0) {
                 await this.reGradeTopic({
-                    topic: updateCourseTopicResult.updatedRecords[0]
+                    topic: updateCourseTopicResult.updatedRecords[0],
+                    originalTopic,
+                    skipIfPossible: true
                 });
             }
             return resultantUpdates;
@@ -1178,10 +1185,57 @@ class CourseController {
     }
 
     reGradeTopic = async ({
-        topic
+        topic,
+        originalTopic,
+        skipIfPossible = false
     }: {
         topic: CourseTopicContent;
+        originalTopic?: CourseTopicContentInterface;
+        skipIfPossible?: boolean;
     }): Promise<void> => {
+        if (skipIfPossible) {
+            if (!_.isNil(originalTopic)) {
+                const {
+                    endDate: originalEndDate,
+                    deadDate: originalDeadDate
+                } = originalTopic;
+                const originalDueDates = [originalEndDate, originalDeadDate];
+
+                const {
+                    endDate: newEndDate,
+                    deadDate: newDeadDate
+                } = topic;
+                const newDueDates = [newEndDate, newDeadDate];
+
+                const theMoment = moment();
+                let canSkip = true;
+
+                for (let i = 0; i < newDueDates.length; i++) {
+                    const newDateMoment = moment(newDueDates[i]);
+                    const originalDateMoment = moment(originalDueDates[i]);
+                    if (
+                        // The date changed
+                        !newDateMoment.isSame(originalDateMoment) &&
+                        // The dates are in the future
+                        (
+                            theMoment.isAfter(newDateMoment) ||
+                            theMoment.isAfter(originalDateMoment)
+                        )
+                    ) {
+                        canSkip = false;
+                        break;
+                    }
+                }
+
+                if (canSkip) {
+                    logger.debug('Skipping topic regrade');
+                    return;
+                }
+            } else {
+                logger.error('Skip is not possible if the original topic is not passed');
+            }
+        }
+
         return useDatabaseTransaction(async () => {
             const questions = await topic.getQuestions();
             await questions.asyncForEach(async (question: CourseWWTopicQuestion) => {

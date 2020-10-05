@@ -3,7 +3,7 @@
         "module": "commonjs",
         "target": "ES6",
         "outDir": "ts-built",
-        "rootDir": "src",
+        "resolveJsonModule": true,
 
         "noImplicitAny": true,
         "removeComments": true,
@@ -12,6 +12,9 @@
         
         "strict": true
     },
+    "include": [
+        "src"
+    ],
     "exclude": [
         "node_modules",
         "**/*.test.ts"

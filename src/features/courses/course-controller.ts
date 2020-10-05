@@ -99,7 +99,7 @@ class CourseController {
     }
 
     getTopics(options: GetTopicsOptions): Promise<CourseTopicContent[]> {
-        const { courseId, isOpen } = options;
+        const { courseId, isOpen, userId } = options;
         const where: sequelize.WhereOptions = {
             active: true
         };
@@ -122,36 +122,86 @@ class CourseController {
         
         if (isOpen) {
             const date = new Date();
-            where[Sequelize.Op.and] = [
-                {
-                    [Sequelize.Op.or]: [
-                        {
-                            startDate: {
-                                [Sequelize.Op.lte]: date
+            // If no userId is passed, show all active topics and topics with extensions (professor view)
+            // TODO: Consider breaking these complex queries into functions that describe their utility.
+            if (_.isNil(userId)) {
+                where[Sequelize.Op.or] = [
+                    {
+                        [Sequelize.Op.and]: [
+                            {
+                                startDate: {
+                                    [Sequelize.Op.lte]: date
+                                }
+                            },
+                            {
+                                deadDate: {
+                                    [Sequelize.Op.gte]: date
+                                }
+                            },
+                        ]
+                    },
+                    {
+                        [Sequelize.Op.and]: [
+                            {
+                                [`$studentTopicOverride.${StudentTopicOverride.rawAttributes.startDate.field}$`]: {
+                                    [Sequelize.Op.lte]: date,
+                                }
+                            },
+                            {
+                                [`$studentTopicOverride.${StudentTopicOverride.rawAttributes.deadDate.field}$`]: {
+                                    [Sequelize.Op.gte]: date,
+                                }
                             }
-                        },
-                        {
-                            [`$studentTopicOverride.${StudentTopicOverride.rawAttributes.startDate.field}$`]: {
-                                [Sequelize.Op.lte]: date
+                        ]
+                    }
+                ];
+            } else {
+                // If you have overrides, use the overrides, else use the base daterange (student view)
+                where[Sequelize.Op.or] = [
+                    {
+                        [Sequelize.Op.and]: [
+                            {
+                                startDate: {
+                                    [Sequelize.Op.lte]: date
+                                }
+                            },
+                            {
+                                deadDate: {
+                                    [Sequelize.Op.gte]: date
+                                }
+                            },
+                            {
+                                [`$studentTopicOverride.${StudentTopicOverride.rawAttributes.startDate.field}$`]: {
+                                    [Sequelize.Op.is]: null,
+                                }
+                            },
+                            {
+                                [`$studentTopicOverride.${StudentTopicOverride.rawAttributes.deadDate.field}$`]: {
+                                    [Sequelize.Op.is]: null,
+                                }
+                            },
+                        ]
+                    },
+                    {
+                        [Sequelize.Op.and]: [
+                            {
+                                [`$studentTopicOverride.${StudentTopicOverride.rawAttributes.startDate.field}$`]: {
+                                    [Sequelize.Op.lte]: date,
+                                }
+                            },
+                            {
+                                [`$studentTopicOverride.${StudentTopicOverride.rawAttributes.deadDate.field}$`]: {
+                                    [Sequelize.Op.gte]: date,
+                                }
                             }
-                        }
-                    ]
-                },
-                {
-                    [Sequelize.Op.or]: [
-                        {
-                            deadDate: {
-                                [Sequelize.Op.gte]: date
-                            }
-                        },
-                        {
-                            [`$studentTopicOverride.${StudentTopicOverride.rawAttributes.deadDate.field}$`]: {
-                                [Sequelize.Op.gte]: date
-                            }
-                        }
-                    ]
-                }
-            ];
+                        ]
+                    }
+                ];
+            }
+
+            // Only allow original dates if extension dates are null (i.e., no extension was given).
+            // Otherwise, use the extension dates.
+
         }
         return CourseTopicContent.findAll({
             where,

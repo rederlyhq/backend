@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import WrappedError from '../../exceptions/wrapped-error';
 import { Constants } from '../../constants';
-import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, UpdateGradeInstanceOptions } from './course-types';
+import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, UpdateGradeInstanceOptions, GetTopicAssessmentInfoByTopicIdOptions } from './course-types';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 import NotFoundError from '../../exceptions/not-found-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
@@ -19,6 +19,7 @@ import StudentTopicQuestionOverride from '../../database/models/student-topic-qu
 import StudentGradeOverride from '../../database/models/student-grade-override';
 import StudentGradeLockAction from '../../database/models/student-grade-lock-action';
 import StudentGradeInstance from '../../database/models/student-grade-instance';
+import TopicAssessmentInfo from '../../database/models/topic-assessment-info';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -203,6 +204,19 @@ class CourseRepository {
         const result = await CourseTopicContent.findOne({
             where: {
                 id: options.id,
+                active: true
+            },
+        });
+        if (_.isNil(result)) {
+            throw new NotFoundError('The requested topic does not exist');
+        }
+        return result;
+    }
+
+    async getTopicAssessmentInfoByTopicId(options: GetTopicAssessmentInfoByTopicIdOptions): Promise<TopicAssessmentInfo> {
+        const result = await TopicAssessmentInfo.findOne({
+            where: {
+                courseTopicContentId: options.topicId,
                 active: true
             },
         });

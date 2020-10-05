@@ -37,6 +37,10 @@ export interface GetCourseTopicRepositoryOptions {
     id: number;
 }
 
+export interface GetTopicAssessmentInfoByTopicIdOptions {
+    topicId: number;
+}
+
 // TODO make generic interface
 export interface GetCourseUnitRepositoryOptions {
     id: number;
@@ -260,14 +264,15 @@ export interface CreateNewStudentGradeInstanceOptions {
     userId: number;
     courseTopicQuestionId: number;
     webworkQuestionPath: string;
+    randomSeed: number;
     problemNumber: number;
 }
 
 export interface CreateNewStudentTopicAssessmentInfoOptions {
     courseTopicContentId: number;
-    startedAt: moment.Moment;
-    endsAt: moment.Moment;
-    nextVersionCanStartAfter: moment.Moment;
+    startTime: moment.Moment;
+    endTime: moment.Moment;
+    nextVersionAvailableTime: moment.Moment;
 }
 
 export interface GetQuestionsForThisAssessmentOptions {
@@ -277,7 +282,7 @@ export interface GetQuestionsForThisAssessmentOptions {
 export interface CreateGradeInstancesForAssessmentOptions {
     userId: number;
     topicId: number;
-    webworkQuestionPath: string;
+    problemPath: string;
 }
 
 export interface CreateQuestionsForTopicFromDefFileContentOptions {

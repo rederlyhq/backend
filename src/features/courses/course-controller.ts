@@ -17,7 +17,7 @@ import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import appSequelize from '../../database/app-sequelize';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, CreateNewStudentGradeInstanceOptions, GetQuestionsForThisAssessmentOptions, CreateGradeInstancesForAssessmentOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, UpdateGradeInstanceOptions, GradeOptions, GradeResult, DeleteUserEnrollmentOptions, CreateNewStudentTopicAssessmentInfoOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, CreateNewStudentGradeInstanceOptions, CreateGradeInstancesForAssessmentOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, UpdateGradeInstanceOptions, GradeOptions, GradeResult, DeleteUserEnrollmentOptions, CreateNewStudentTopicAssessmentInfoOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -2009,36 +2009,20 @@ class CourseController {
         }
     }
 
-    async getQuestionsForThisAssessment(options: GetQuestionsForThisAssessmentOptions): Promise<CourseWWTopicQuestion[]> {
-        const { topicId } = options;
-        try {
-            return await CourseWWTopicQuestion.findAll({
-                // attributes: [
-                //     'id',
-                // ],
-                where: {
-                    courseTopicContentId: topicId,
-                },
-            });
-        } catch (e) {
-            throw new WrappedError('Could not retrieve questions for this assessment', e);
-        }
-    };
-    
     // does this actually belong in course-repository?
     async createStudentTopicAssessmentInfo(options: CreateNewStudentTopicAssessmentInfoOptions): Promise<StudentTopicAssessmentInfo> {
         const { 
             courseTopicContentId,
-            startedAt,
-            endsAt,
-            nextVersionCanStartAfter,
+            startTime,
+            endTime,
+            nextVersionAvailableTime,
         } = options;
         try {
             return await StudentTopicAssessmentInfo.create({
                 courseTopicContentId,
-                startedAt,
-                endsAt,
-                nextVersionCanStartAfter,
+                startTime,
+                endTime,
+                nextVersionAvailableTime,
             });
         } catch (e) {
             throw new WrappedError('Could not create new Student Topic Assessment info for this topic', e);
@@ -2048,34 +2032,41 @@ class CourseController {
     // change this to return a StudentTopicAssessmentInfo - we will want TIMES
     async createGradeInstancesForAssessment(options: CreateGradeInstancesForAssessmentOptions): Promise<number> {
         const { topicId, userId } = options;
-        const results = await this.getQuestionsForThisAssessment({
-            topicId
-        });
-        const startedAt = moment().add(1,'minute'); // cover our bases for any delay in creating records before a student may begin
-        // TODO: make a call to topic_assessment_info (or student_topic_assessment_overrides) and grab the duration
-        const endsAt = moment(startedAt).add(2, 'hours');
-        // TODO: also grab the randomizationDelay
-        const nextVersionCanStartAfter = moment(startedAt).add(24, 'hours');
-        // CHECK: does the student have another randomization available?
+        const topic = await courseRepository.getCourseTopic({id: topicId});
+        const topicInfo = await courseRepository.getTopicAssessmentInfoByTopicId({topicId});
+
+        const questions = await topic.getQuestions();
+        const startTime = moment().add(1,'minute'); // cover our bases for any delay in creating records before a student can actually begin
+
+        let endTime = moment(startTime).add(topicInfo.duration, 'minutes');
+        if (topicInfo.hardCutoff) {
+            endTime = moment.min(moment(topic.deadDate), moment(startTime).add(topicInfo.duration, 'minutes')); // TODO: overrides
+        } 
+
+        // CHECK: does the student have another randomization available, if not, should this be null? checked elsewhere?
+        const nextVersionAvailableTime = moment(startTime).add(topicInfo.randomizationDelay, 'minutes');
         // CHECK: has the student waited long enough since their last randomization?
-        const problemOrder = Array(results.length);
-        // CHECK: should the problems be shuffled? (problemOrder should not remain const)
-        // problemOrder = shuffle(problemOrder);
-        await results.asyncForEach(async (result, index) => {
+        const problemOrder = Array(questions.length);
+        // if (topicInfo.randomizeOrder) problemOrder = shuffle(problemOrder);
+
+        await questions.asyncForEach(async (question, index) => {
             await this.createNewStudentGradeInstance({
-                courseTopicQuestionId: result.id,
-                webworkQuestionPath: result.webworkQuestionPath,
+                // get randomized problem paths?
+                // get randomized from list of random seeds?
+                courseTopicQuestionId: question.id,
+                webworkQuestionPath: question.webworkQuestionPath,
+                randomSeed: this.generateRandomSeed(),
                 userId: userId,
                 problemNumber: problemOrder[index],
             });
         });
         await this.createStudentTopicAssessmentInfo({
             courseTopicContentId: topicId,
-            startedAt,
-            endsAt,
-            nextVersionCanStartAfter,
+            startTime,
+            endTime,
+            nextVersionAvailableTime,
         });
-        return results.length;
+        return questions.length;
     }
 
    async createNewStudentGradeInstance(options: CreateNewStudentGradeInstanceOptions): Promise<StudentGradeInstance> {
@@ -2083,20 +2074,16 @@ class CourseController {
             userId,
             courseTopicQuestionId,
             webworkQuestionPath,
+            randomSeed,
+            problemNumber
         } = options;
         try {
             return await StudentGradeInstance.create({
-                userId: userId,
+                userId,
                 courseWWTopicQuestionId: courseTopicQuestionId,
-                // TODO: replace this with randomized question path
                 webworkQuestionPath,
-                // TODO: replace this call with generateLimitedRandomSeed()
-                randomSeed: this.generateRandomSeed(),
-                bestScore: 0,
-                overallBestScore: 0,
-                numAttempts: 0,
-                firstAttempts: 0,
-                latestAttempts: 0,
+                randomSeed,
+                problemNumber,
             });
         } catch (e) {
             throw new WrappedError('Could not create new student grade instance', e);

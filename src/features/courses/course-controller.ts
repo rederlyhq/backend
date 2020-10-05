@@ -6,7 +6,7 @@ import { BaseError } from 'sequelize';
 import NotFoundError from '../../exceptions/not-found-error';
 import CourseUnitContent from '../../database/models/course-unit-content';
 import CourseTopicContent, { CourseTopicContentInterface } from '../../database/models/course-topic-content';
-import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
+import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface } from '../../database/models/course-ww-topic-question';
 import rendererHelper, { OutputFormat, RendererResponse } from '../../utilities/renderer-helper';
 import StudentWorkbook from '../../database/models/student-workbook';
 import StudentGrade from '../../database/models/student-grade';
@@ -860,13 +860,15 @@ class CourseController {
 
     updateQuestion(options: UpdateQuestionOptions): Promise<CourseWWTopicQuestion[]> {
         return useDatabaseTransaction(async () => {
+            const existingQuestion = await courseRepository.getQuestion({
+                id: options.where.id
+            });
+            const originalQuestion = existingQuestion.get({ plain: true }) as CourseWWTopicQuestionInterface;
+
             // This is a set of all update results as they come in, since there are 5 updates that occur this will have 5 elements
             let updatesResults: UpdateResult<CourseWWTopicQuestion>[] = [];
             if (!_.isNil(options.updates.problemNumber)) {
                 // What happens if you move from one topic to another? Disregarding since that should not be possible from the UI
-                const existingQuestion = await courseRepository.getQuestion({
-                    id: options.where.id
-                });
                 const sourceProblemNumber = existingQuestion.problemNumber;
                 // Move the question out of the way for now, this is due to constraint issues
                 // TODO make unique index a deferable unique constraint and then make the transaction deferable
@@ -893,9 +895,11 @@ class CourseController {
                 .values()
                 .value();
 
-            if (updateQuestionResult.updatedCount > 0 && (!_.isNil(options.updates.maxAttempts))) {
+            if (updateQuestionResult.updatedCount > 0) {
                 await this.reGradeQuestion({
-                    question: updateQuestionResult.updatedRecords[0]
+                    question: updateQuestionResult.updatedRecords[0],
+                    skipIfPossible: true,
+                    originalQuestion
                 });
             }
             return resultantUpdates;
@@ -1241,7 +1245,8 @@ class CourseController {
             await questions.asyncForEach(async (question: CourseWWTopicQuestion) => {
                 await this.reGradeQuestion({
                     topic,
-                    question
+                    question,
+                    skipIfPossible: false
                 });
             });
         });
@@ -1249,13 +1254,51 @@ class CourseController {
 
     reGradeQuestion = async ({
         question,
-        topic
+        topic,
+        originalQuestion,
+        skipIfPossible = false
     }: {
         question: CourseWWTopicQuestion;
         topic?: CourseTopicContent;
+        originalQuestion?: CourseWWTopicQuestionInterface;
+        skipIfPossible?: boolean;
     }): Promise<void> => {
+        let grades: Array<StudentGrade> | undefined;
+        if (skipIfPossible) {
+            if (!_.isNil(originalQuestion)) {
+                if (originalQuestion.maxAttempts !== question.maxAttempts) {
+                    grades = await question.getGrades({
+                        where: {
+                            [Sequelize.Op.or]: [
+                                {
+                                    numAttempts: {
+                                        [Sequelize.Op.gt]: originalQuestion.maxAttempts
+                                    }
+                                },
+                                {
+                                    numAttempts: {
+                                        [Sequelize.Op.gt]: question.maxAttempts
+                                    }
+                                },
+                            ]
+                        },
+                    });
+                    const canSkip: boolean = _.isEmpty(grades);
+
+                    if (canSkip) {
+                        logger.debug('Skipping question regrade');
+                        return;
+                    } else {
+                        logger.debug('Question needs regrade');
+                    }
+                }
+            } else {
+                logger.error('Skip is not possible if the original question is not passed');
+            }
+        }
+
         return useDatabaseTransaction(async () => {
-            const grades = await question.getGrades();
+            grades = grades ?? await question.getGrades();
             topic = topic ?? await question.getTopic();
 
             await grades.asyncForEach(async (studentGrade: StudentGrade) => {

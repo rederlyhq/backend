@@ -268,7 +268,8 @@ class CourseRepository {
     async extendTopicByUser(options: ExtendTopicForUserOptions): Promise<UpsertResult<StudentTopicOverride>> {
         try {
             const found = await StudentTopicOverride.findOne({where: {...options.where, active: true}});
-
+            const original = found?.get({ plain: true });
+            
             if (!found) {
                 const newExtension = await StudentTopicOverride.create({...options.where, ...options.updates}, {validate: true});
 
@@ -290,6 +291,7 @@ class CourseRepository {
                     createdNewEntry: false,
                     updatedCount: updates[0],
                     updatedRecords: updates[1],
+                    original,
                 };
             }
         } catch (e) {
@@ -555,6 +557,7 @@ class CourseRepository {
     async extendTopicQuestionByUser(options: ExtendTopicQuestionForUserOptions): Promise<UpsertResult<StudentTopicQuestionOverride>> {
         try {
             const found = await StudentTopicQuestionOverride.findOne({where: {...options.where, active: true}});
+            const original = found?.get({ plain: true });
             if (!found) {
                 const newExtension = await StudentTopicQuestionOverride.create({...options.where, ...options.updates}, {validate: true});
 
@@ -575,6 +578,7 @@ class CourseRepository {
                 createdNewEntry: false,
                 updatedCount: updates[0],
                 updatedRecords: updates[1],
+                original
             };
         } catch (e) {
             throw new WrappedError(`Could not extend question for ${options.where}`, e);

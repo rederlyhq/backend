@@ -897,14 +897,14 @@ class CourseController {
                 .value();
 
             if (updateQuestionResult.updatedCount > 0) {
+                const question = updateQuestionResult.updatedRecords[0];
+                const newQuestion = question.get({ plain: true }) as CourseWWTopicQuestionInterface;
                 await this.reGradeQuestion({
-                    question: updateQuestionResult.updatedRecords[0],
+                    question,
                     skipContext: {
                         skipIfPossible: true,
-                        // TODO account for existing override
-                        newOverrides: undefined,
-                        originalOverrides: undefined,
-                        originalQuestion
+                        originalQuestion,
+                        newQuestion,
                     }
                 });
             }
@@ -1006,8 +1006,31 @@ class CourseController {
     }
 
     async extendQuestionForUser(options: ExtendTopicQuestionForUserOptions): Promise<UpsertResult<StudentTopicQuestionOverride>> {
-        return useDatabaseTransaction(() =>  {
-            return courseRepository.extendTopicQuestionByUser(options);
+        return useDatabaseTransaction(async () =>  {
+            const result = await courseRepository.extendTopicQuestionByUser(options);
+            if (result.updatedRecords.length > 0) {
+                const question = await courseRepository.getQuestion({
+                    id: options.where.courseTopicQuestionId
+                });
+                const originalOverride: StudentTopicQuestionOverrideInterface = result.original;
+                const strippedQuestion: CourseWWTopicQuestionInterface = question.get({ plain: true }) as CourseWWTopicQuestionInterface;
+                const newOverride: StudentTopicQuestionOverrideInterface = result.updatedRecords[0].get({ plain: true }) as StudentTopicQuestionOverrideInterface;
+                // Since only the override is changing the question would be the same except the overrides
+                const originalQuestion: CourseWWTopicQuestionInterface  = _.assign({}, strippedQuestion, _.pick(originalOverride, 'maxAttempts'));
+                const newQuestion: CourseWWTopicQuestionInterface = _.assign({}, strippedQuestion, _.pick(newOverride, 'maxAttempts'));
+                await this.reGradeQuestion({
+                    question,
+                    skipContext: {
+                        skipIfPossible: true,
+                        originalQuestion,
+                        newQuestion,
+                        // This userId would be the same for either override
+                        // We only need to regrade this user
+                        userId: newOverride.userId
+                    }
+                });
+            }
+            return result;
         });
     }
 
@@ -1265,55 +1288,53 @@ class CourseController {
         topic,
         skipContext: {
             skipIfPossible = false,
-            originalOverrides,
-            newOverrides,
             originalQuestion,
+            newQuestion,
+            userId
         } = {}
     }: {
         question: CourseWWTopicQuestion;
         topic?: CourseTopicContent;
         skipContext?: {
             skipIfPossible?: boolean;
-            originalOverrides?: StudentTopicQuestionOverrideInterface;
-            newOverrides?: StudentTopicQuestionOverrideInterface;    
+            newQuestion?: CourseWWTopicQuestionInterface;
             originalQuestion?: CourseWWTopicQuestionInterface;
+            userId?: number;
         };
     }): Promise<void> => {
         let grades: Array<StudentGrade> | undefined;
         if (skipIfPossible) {
+            let canSkip: boolean = false;
             const maxAttemptsArray = _.compact([
-                question.maxAttempts,
+                newQuestion?.maxAttempts,
                 originalQuestion?.maxAttempts,
-                originalOverrides?.maxAttempts,
-                newOverrides?.maxAttempts,
             ]);
             if (maxAttemptsArray.length < 2) {
                 // Not throwing it because it is recoverable
                 // If not enough context is provided then don't regrade the question
                 logger.error(new IllegalArgumentException('Not enough context sent to reGradeQuestion with skipIfPossible true to regrade the question'));
+            } else if (Math.max(...maxAttemptsArray) === Math.min(...maxAttemptsArray)) {
+                logger.debug('Nothing changed');
+                canSkip = true;
             } else {
                 const lowestMaxAttempts = Math.min(...maxAttemptsArray);
                 grades = await question.getGrades({
-                    where: {
-                        [Sequelize.Op.or]: [
-                            {
-                                numAttempts: {
-                                    [Sequelize.Op.gt]: lowestMaxAttempts
-                                }
-                            },
-                        ]
-                    },
+                    where: _({
+                        numAttempts: {
+                            [Sequelize.Op.gt]: lowestMaxAttempts
+                        },
+                        userId
+                    }).omitBy(_.isUndefined).value() as sequelize.WhereOptions, // Adding this suppresses the error of userId could be undefined, sequelize disregards undefined so that is a bad sequelize type
                 });
-                const canSkip: boolean = _.isEmpty(grades);
-
-                if (canSkip) {
-                    logger.debug('Skipping question regrade');
-                    return;
-                } else {
-                    logger.debug('Question needs regrade');
-                }
+                canSkip = _.isEmpty(grades);
             }
-        }
+            if (canSkip) {
+                logger.debug('Skipping question regrade');
+                return;
+            } else {
+                logger.debug('Question needs regrade');
+            }
+    }
 
         return useDatabaseTransaction(async () => {
             // Validation that passed in values match up (fk) are done deeper

@@ -30,7 +30,7 @@ import moment = require('moment');
 import RederlyExtendedError from '../../exceptions/rederly-extended-error';
 import { calculateGrade, WillTrackAttemptReason } from '../../utilities/grading-helper';
 import { useDatabaseTransaction } from '../../utilities/database-helper';
-import StudentTopicOverride from '../../database/models/student-topic-override';
+import StudentTopicOverride, { StudentTopicOverrideInterface } from '../../database/models/student-topic-override';
 import StudentTopicQuestionOverride, { StudentTopicQuestionOverrideInterface } from '../../database/models/student-topic-question-override';
 import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
 
@@ -473,8 +473,30 @@ class CourseController {
     }
 
     async extendTopicForUser(options: ExtendTopicForUserOptions): Promise<UpsertResult<StudentTopicOverride>> {
-        return useDatabaseTransaction(() =>  {
-            return courseRepository.extendTopicByUser(options);
+        return useDatabaseTransaction(async () =>  {
+            const result = await courseRepository.extendTopicByUser(options);
+            if (result.updatedRecords.length > 0) {
+                const topic = await courseRepository.getCourseTopic({
+                    id: options.where.courseTopicContentId
+                });
+                const originalOverride: StudentTopicOverrideInterface = result.original;
+                const strippedTopic: CourseTopicContentInterface = topic.get({ plain: true }) as CourseTopicContentInterface;
+                const newOverride: StudentTopicOverrideInterface = result.updatedRecords[0].get({ plain: true }) as StudentTopicOverrideInterface;
+                // Since only the override is changing the question would be the same except the overrides
+                const originalTopic: CourseTopicContentInterface  = _.assign({}, strippedTopic, _.pick(originalOverride, 'deadDate', 'endDate'));
+                const newTopic: CourseTopicContentInterface = _.assign({}, strippedTopic, _.pick(newOverride, 'deadDate', 'endDate'));
+                await this.reGradeTopic({
+                    topic,
+                    // We are only overriding for one user so filter the results by that
+                    userId: newOverride.userId,
+                    skipContext: {
+                        skipIfPossible: true,
+                        originalTopic,
+                        newTopic,
+                    }
+                });
+            }
+            return result;
         });
     }
 
@@ -1020,13 +1042,12 @@ class CourseController {
                 const newQuestion: CourseWWTopicQuestionInterface = _.assign({}, strippedQuestion, _.pick(newOverride, 'maxAttempts'));
                 await this.reGradeQuestion({
                     question,
+                    // We are only overriding for one user so filter the results by that
+                    userId: newOverride.userId,
                     skipContext: {
                         skipIfPossible: true,
                         originalQuestion,
                         newQuestion,
-                        // This userId would be the same for either override
-                        // We only need to regrade this user
-                        userId: newOverride.userId
                     }
                 });
             }
@@ -1219,33 +1240,47 @@ class CourseController {
 
     reGradeTopic = async ({
         topic,
-        originalTopic,
-        skipIfPossible = false
+        userId,
+        skipContext: {
+            skipIfPossible = false,
+            originalTopic,
+            newTopic,
+        } = {}
     }: {
         topic: CourseTopicContent;
         originalTopic?: CourseTopicContentInterface;
         skipIfPossible?: boolean;
+        userId?: number;
+        skipContext?: {
+            skipIfPossible?: boolean;
+            newTopic?: CourseTopicContentInterface;
+            originalTopic?: CourseTopicContentInterface;
+        };
     }): Promise<void> => {
         if (skipIfPossible) {
-            if (!_.isNil(originalTopic)) {
+            if (!_.isNil(originalTopic) && !_.isNil(newTopic)) {
                 const {
                     endDate: originalEndDate,
                     deadDate: originalDeadDate
                 } = originalTopic;
-                const originalDueDates = [originalEndDate, originalDeadDate];
 
                 const {
                     endDate: newEndDate,
                     deadDate: newDeadDate
-                } = topic;
-                const newDueDates = [newEndDate, newDeadDate];
+                } = newTopic;
+
+                const dueDateTuples: [Date, Date][] = [
+                    [originalEndDate, newEndDate],
+                    [originalDeadDate, newDeadDate]
+                ];
 
                 const theMoment = moment();
                 let canSkip = true;
 
-                for (let i = 0; i < newDueDates.length; i++) {
-                    const newDateMoment = moment(newDueDates[i]);
-                    const originalDateMoment = moment(originalDueDates[i]);
+                for (let i = 0; i < dueDateTuples.length; i++) {
+                    // Tuples are index safe
+                    const newDateMoment = moment(dueDateTuples[i][0]);
+                    const originalDateMoment = moment(dueDateTuples[i][1]);
                     if (
                         // The date changed
                         !newDateMoment.isSame(originalDateMoment) &&
@@ -1275,8 +1310,9 @@ class CourseController {
                 await this.reGradeQuestion({
                     topic,
                     question,
+                    userId,
                     skipContext: {
-                        skipIfPossible: false
+                        skipIfPossible: false,
                     }
                 });
             });
@@ -1286,25 +1322,25 @@ class CourseController {
     reGradeQuestion = async ({
         question,
         topic,
+        userId,
         skipContext: {
             skipIfPossible = false,
             originalQuestion,
             newQuestion,
-            userId
         } = {}
     }: {
         question: CourseWWTopicQuestion;
         topic?: CourseTopicContent;
+        userId?: number;
         skipContext?: {
             skipIfPossible?: boolean;
             newQuestion?: CourseWWTopicQuestionInterface;
             originalQuestion?: CourseWWTopicQuestionInterface;
-            userId?: number;
         };
     }): Promise<void> => {
         let grades: Array<StudentGrade> | undefined;
         if (skipIfPossible) {
-            let canSkip: boolean = false;
+            let canSkip = false;
             const maxAttemptsArray = _.compact([
                 newQuestion?.maxAttempts,
                 originalQuestion?.maxAttempts,
@@ -1338,7 +1374,11 @@ class CourseController {
 
         return useDatabaseTransaction(async () => {
             // Validation that passed in values match up (fk) are done deeper
-            grades = grades ?? await question.getGrades();
+            grades = grades ?? await question.getGrades({
+                where: _({
+                    userId
+                }).omitBy(_.isUndefined).value() as sequelize.WhereOptions
+            });
             topic = topic ?? await question.getTopic();
 
             await grades.asyncForEach(async (studentGrade: StudentGrade) => {

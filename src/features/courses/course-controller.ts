@@ -31,7 +31,8 @@ import RederlyExtendedError from '../../exceptions/rederly-extended-error';
 import { calculateGrade, WillTrackAttemptReason } from '../../utilities/grading-helper';
 import { useDatabaseTransaction } from '../../utilities/database-helper';
 import StudentTopicOverride from '../../database/models/student-topic-override';
-import StudentTopicQuestionOverride from '../../database/models/student-topic-question-override';
+import StudentTopicQuestionOverride, { StudentTopicQuestionOverrideInterface } from '../../database/models/student-topic-question-override';
+import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -898,8 +899,13 @@ class CourseController {
             if (updateQuestionResult.updatedCount > 0) {
                 await this.reGradeQuestion({
                     question: updateQuestionResult.updatedRecords[0],
-                    skipIfPossible: true,
-                    originalQuestion
+                    skipContext: {
+                        skipIfPossible: true,
+                        // TODO account for existing override
+                        newOverrides: undefined,
+                        originalOverrides: undefined,
+                        originalQuestion
+                    }
                 });
             }
             return resultantUpdates;
@@ -1246,7 +1252,9 @@ class CourseController {
                 await this.reGradeQuestion({
                     topic,
                     question,
-                    skipIfPossible: false
+                    skipContext: {
+                        skipIfPossible: false
+                    }
                 });
             });
         });
@@ -1255,49 +1263,60 @@ class CourseController {
     reGradeQuestion = async ({
         question,
         topic,
-        originalQuestion,
-        skipIfPossible = false
+        skipContext: {
+            skipIfPossible = false,
+            originalOverrides,
+            newOverrides,
+            originalQuestion,
+        } = {}
     }: {
         question: CourseWWTopicQuestion;
         topic?: CourseTopicContent;
-        originalQuestion?: CourseWWTopicQuestionInterface;
-        skipIfPossible?: boolean;
+        skipContext?: {
+            skipIfPossible?: boolean;
+            originalOverrides?: StudentTopicQuestionOverrideInterface;
+            newOverrides?: StudentTopicQuestionOverrideInterface;    
+            originalQuestion?: CourseWWTopicQuestionInterface;
+        };
     }): Promise<void> => {
         let grades: Array<StudentGrade> | undefined;
         if (skipIfPossible) {
-            if (!_.isNil(originalQuestion)) {
-                if (originalQuestion.maxAttempts !== question.maxAttempts) {
-                    grades = await question.getGrades({
-                        where: {
-                            [Sequelize.Op.or]: [
-                                {
-                                    numAttempts: {
-                                        [Sequelize.Op.gt]: originalQuestion.maxAttempts
-                                    }
-                                },
-                                {
-                                    numAttempts: {
-                                        [Sequelize.Op.gt]: question.maxAttempts
-                                    }
-                                },
-                            ]
-                        },
-                    });
-                    const canSkip: boolean = _.isEmpty(grades);
-
-                    if (canSkip) {
-                        logger.debug('Skipping question regrade');
-                        return;
-                    } else {
-                        logger.debug('Question needs regrade');
-                    }
-                }
+            const maxAttemptsArray = _.compact([
+                question.maxAttempts,
+                originalQuestion?.maxAttempts,
+                originalOverrides?.maxAttempts,
+                newOverrides?.maxAttempts,
+            ]);
+            if (maxAttemptsArray.length < 2) {
+                // Not throwing it because it is recoverable
+                // If not enough context is provided then don't regrade the question
+                logger.error(new IllegalArgumentException('Not enough context sent to reGradeQuestion with skipIfPossible true to regrade the question'));
             } else {
-                logger.error('Skip is not possible if the original question is not passed');
+                const lowestMaxAttempts = Math.min(...maxAttemptsArray);
+                grades = await question.getGrades({
+                    where: {
+                        [Sequelize.Op.or]: [
+                            {
+                                numAttempts: {
+                                    [Sequelize.Op.gt]: lowestMaxAttempts
+                                }
+                            },
+                        ]
+                    },
+                });
+                const canSkip: boolean = _.isEmpty(grades);
+
+                if (canSkip) {
+                    logger.debug('Skipping question regrade');
+                    return;
+                } else {
+                    logger.debug('Question needs regrade');
+                }
             }
         }
 
         return useDatabaseTransaction(async () => {
+            // Validation that passed in values match up (fk) are done deeper
             grades = grades ?? await question.getGrades();
             topic = topic ?? await question.getTopic();
 
@@ -1326,6 +1345,15 @@ class CourseController {
             });
             question = question ?? await studentGrade.getQuestion();
             topic = topic ?? await question.getTopic();
+
+            if (studentGrade.courseWWTopicQuestionId !== question.id) {
+                throw new IllegalArgumentException('studentGrade question id does not match the question\'s id');
+            }
+
+            if (question.courseTopicContentId !== topic.id) {
+                throw new IllegalArgumentException('question topic id does not match the topic\'s id');
+            }
+            
             const solutionDate = moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days');
 
             // reset student grade before submitting

@@ -2,7 +2,7 @@ import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize';
 import CourseWWTopicQuestion from './course-ww-topic-question';
 
-interface StudentTopicQuestionOverrideInterface {
+export interface StudentTopicQuestionOverrideInterface {
     id: number;
     courseTopicQuestionId: number;
     userId: number;

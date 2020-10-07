@@ -18,6 +18,7 @@ export default class CourseWWTopicQuestion extends Model {
     public getTopic!: BelongsToGetAssociationMixin<CourseTopicContent>;
     public getGrades!: HasManyGetAssociationsMixin<StudentGrade>;
     public getQuestionAssessmentInfo!: HasOneGetAssociationMixin<CourseQuestionAssessmentInfo>;
+    public studentTopicQuestionOverride?: StudentTopicQuestionOverride[];
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -49,6 +50,13 @@ export default class CourseWWTopicQuestion extends Model {
             sourceKey: 'id',
             as: 'grades'
         });
+
+        CourseWWTopicQuestion.hasMany(StudentTopicQuestionOverride, {
+            foreignKey: 'courseTopicQuestionId',
+            sourceKey: 'id',
+            as: 'studentTopicQuestionOverride'
+        });
+        
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }
@@ -125,3 +133,4 @@ import CourseTopicContent from './course-topic-content';
 import StudentGrade from './student-grade';
 import CurriculumWWTopicQuestion from './curriculum-ww-topic-question';
 import CourseQuestionAssessmentInfo from './course-question-assessment-info';
+import StudentTopicQuestionOverride from './student-topic-question-override';

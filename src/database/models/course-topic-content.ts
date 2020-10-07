@@ -24,6 +24,7 @@ export default class CourseTopicContent extends Model {
     public readonly topicType!: TopicType;
     public readonly questions?: CourseWWTopicQuestion[];
     public readonly studentTopicOverride?: StudentTopicOverride[];
+    public readonly topicAssessmentInfo?: TopicAssessmentInfo;
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -68,6 +69,12 @@ export default class CourseTopicContent extends Model {
             foreignKey: 'courseTopicContentId',
             sourceKey: 'id',
             as: 'studentTopicOverride'
+        });
+
+        CourseTopicContent.hasOne(TopicAssessmentInfo, {
+            foreignKey: 'courseTopicContentId',
+            sourceKey: 'id',
+            as: 'topicAssessmentInfo'
         });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }

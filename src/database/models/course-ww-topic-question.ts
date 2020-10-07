@@ -2,8 +2,24 @@
 
 import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin, HasOneGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
+import * as _ from 'lodash';
 
-export default class CourseWWTopicQuestion extends Model {
+export interface CourseWWTopicQuestionInterface {
+    id: number;
+    courseTopicContentId: number;
+    problemNumber: number;
+    webworkQuestionPath: string;
+    weight: number;
+    maxAttempts: number;
+    hidden: boolean;
+    active: boolean;
+    optional: boolean;
+    curriculumQuestionId: number;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export default class CourseWWTopicQuestion extends Model implements CourseWWTopicQuestionInterface {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
     public courseTopicContentId!: number;
     public problemNumber!: number;
@@ -18,11 +34,30 @@ export default class CourseWWTopicQuestion extends Model {
     public getTopic!: BelongsToGetAssociationMixin<CourseTopicContent>;
     public getGrades!: HasManyGetAssociationsMixin<StudentGrade>;
     public getQuestionAssessmentInfo!: HasOneGetAssociationMixin<CourseQuestionAssessmentInfo>;
-    public studentTopicQuestionOverride?: StudentTopicQuestionOverride[];
+    public getStudentTopicQuestionOverride!: HasManyGetAssociationsMixin<StudentTopicQuestionOverride>;
+
+    public readonly studentTopicQuestionOverride?: StudentTopicQuestionOverride[];
+    public readonly grades!: StudentGrade;
 
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
+
+    static getWithOverrides = (obj: CourseWWTopicQuestionInterface, overrides: StudentTopicQuestionOverrideOverridesInterface): CourseWWTopicQuestionInterface => {
+        return _.assign({}, obj, overrides);
+    }
+
+    getWithOverrides = (overrides: StudentTopicQuestionOverrideOverridesInterface): CourseWWTopicQuestionInterface => {
+        return CourseWWTopicQuestion.getWithOverrides(this.get({ plain: true }) as CourseWWTopicQuestionInterface, overrides);
+    }
+
+    static getVersion = (obj: CourseWWTopicQuestionInterface, version: StudentGradeInstance): CourseWWTopicQuestionInterface => {
+        return _.assign({}, obj, version); // will override problemNumber and webworkQuestionPath
+    }
+
+    getVersion = (version: StudentGradeInstance): CourseWWTopicQuestionInterface => {
+        return CourseWWTopicQuestion.getVersion(this.get({ plain: true }) as CourseWWTopicQuestionInterface, version);
+    }
 
     static constraints = {
         uniqueOrderPerTopic: 'course_topic_question--problem_number-topic_id',
@@ -133,4 +168,5 @@ import CourseTopicContent from './course-topic-content';
 import StudentGrade from './student-grade';
 import CurriculumWWTopicQuestion from './curriculum-ww-topic-question';
 import CourseQuestionAssessmentInfo from './course-question-assessment-info';
-import StudentTopicQuestionOverride from './student-topic-question-override';
+import StudentTopicQuestionOverride, { StudentTopicQuestionOverrideOverridesInterface } from './student-topic-question-override';
+import StudentGradeInstance from './student-grade-instance';

@@ -1257,6 +1257,7 @@ class CourseController {
             originalTopic?: CourseTopicContentInterface;
         };
     }): Promise<void> => {
+        let minDate: Date | undefined;
         if (skipIfPossible) {
             if (!_.isNil(originalTopic) && !_.isNil(newTopic)) {
                 const {
@@ -1274,31 +1275,19 @@ class CourseController {
                     [originalDeadDate, newDeadDate]
                 ];
 
-                const theMoment = moment();
-                let canSkip = true;
+                const changedDueDateTuples: [Date, Date][] = _.filter(dueDateTuples, (dateTuple: [Date, Date]) => !dateTuple[0].toMoment().isSame(dateTuple[1].toMoment()));
+                const minDateMoment = moment.min(_.flatten(changedDueDateTuples).map((date: Date) => date.toMoment()));
+                // For use with optimization, skipping grade reprocessing
+                minDate = minDateMoment.toDate();
 
-                for (let i = 0; i < dueDateTuples.length; i++) {
-                    // Tuples are index safe
-                    const newDateMoment = moment(dueDateTuples[i][0]);
-                    const originalDateMoment = moment(dueDateTuples[i][1]);
-                    if (
-                        // The date changed
-                        !newDateMoment.isSame(originalDateMoment) &&
-                        // The dates are in the future
-                        (
-                            theMoment.isAfter(newDateMoment) ||
-                            theMoment.isAfter(originalDateMoment)
-                        )
-                    ) {
-                        canSkip = false;
-                        break;
-                    }
-                }
+                const theMoment = moment();
+                const canSkip = theMoment.isBefore(minDateMoment);
 
                 if (canSkip) {
                     logger.debug('Skipping topic regrade');
                     return;
                 }
+
             } else {
                 logger.error('Skip is not possible if the original topic is not passed');
             }
@@ -1311,6 +1300,7 @@ class CourseController {
                     topic,
                     question,
                     userId,
+                    minDate,
                     skipContext: {
                         skipIfPossible: false,
                     }
@@ -1323,6 +1313,7 @@ class CourseController {
         question,
         topic,
         userId,
+        minDate,
         skipContext: {
             skipIfPossible = false,
             originalQuestion,
@@ -1332,6 +1323,7 @@ class CourseController {
         question: CourseWWTopicQuestion;
         topic?: CourseTopicContent;
         userId?: number;
+        minDate?: Date;
         skipContext?: {
             skipIfPossible?: boolean;
             newQuestion?: CourseWWTopicQuestionInterface;
@@ -1381,11 +1373,14 @@ class CourseController {
             });
             topic = topic ?? await question.getTopic();
 
+            logger.debug(`Regrading ${grades.length} grades`);
+
             await grades.asyncForEach(async (studentGrade: StudentGrade) => {
                 await this.reGradeStudentGrade({
                     studentGrade,
                     question,
-                    topic
+                    topic,
+                    minDate
                 });
             });
         });
@@ -1394,16 +1389,46 @@ class CourseController {
     reGradeStudentGrade = async ({
         studentGrade,
         topic,
-        question
+        question,
+        workbooks,
+        minDate
     }: {
         studentGrade: StudentGrade;
         topic?: CourseTopicContent;
         question?: CourseWWTopicQuestion;
+        workbooks?: Array<StudentWorkbook>;
+        minDate?: Date;
     }): Promise<void> => {
         return useDatabaseTransaction(async () => {
-            const workbooks = await studentGrade.getWorkbooks({
-                order: ['id']
+            // Can't grade a subset of workbooks because the rest of the logic is absolute
+            // It resets the grade entirely and then rebuilds it from the beginning
+            // const timeClause = _.isNil(minDate) ? undefined : {
+            //     time: {
+            //         [Sequelize.Op.gte]: minDate
+            //     }
+            // };
+            workbooks = workbooks ?? await studentGrade.getWorkbooks({
+                order: ['id'],
+                // Use something like object assign if there are more clauses
+                // where: timeClause
             });
+
+            if(!_.isNil(minDate)) {
+                // Min date can't be used in the actual grading
+                // however we can use it skip the regrading process
+                const applicableWorkbooks = _.filter(workbooks, ((workbook: StudentWorkbook) => workbook.time.toMoment().isSameOrAfter(minDate.toMoment())));
+                if (_.isEmpty(applicableWorkbooks)) {
+                    logger.debug('Dates changed but none of the workbooks were after the min date, skipping');
+                    return;
+                } else {
+                    logger.debug('Cannot skip regrade!');
+                }
+            }
+
+            // have to make sure order is correct
+            workbooks = _.orderBy(workbooks, 'id', 'asc');
+            logger.debug(`Regrading ${workbooks.length} attempts`);
+
             question = question ?? await studentGrade.getQuestion();
             topic = topic ?? await question.getTopic();
 
@@ -1436,6 +1461,10 @@ class CourseController {
             // Order is extremely important here, our async for each does not wait for one to be done before starting another
             for (let i = 0; i < workbooks.length; i++) {
                 const workbook = workbooks[i];
+                if (workbook.studentGradeId !== studentGrade.id) {
+                    throw new IllegalArgumentException('workbook studentGradeId does not match studentGrade.id');
+                }
+    
                 if(_.isNil(question) || _.isNil(topic)) {
                     throw new Error('This cannot be undefined, strict is confused because of transaction callback');
                 }

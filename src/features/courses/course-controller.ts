@@ -15,7 +15,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeResult, GradeOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeResult, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -1159,7 +1159,7 @@ class CourseController {
 
 
     /**
-     * This function takes the grade results and merges it into the databse objects and save thems
+     * This function takes the grade results and merges it into the database objects and save them
      * @param param0 
      */
     setGradeFromSubmission = async ({
@@ -1168,13 +1168,7 @@ class CourseController {
         gradeResult,
         submitted,
         timeOfSubmission
-    }: {
-        studentGrade: StudentGrade;
-        workbook?: StudentWorkbook;
-        gradeResult: GradeResult;
-        submitted: unknown;
-        timeOfSubmission? : Date;
-    }): Promise<StudentWorkbook | undefined> => {
+    }: SetGradeFromSubmissionOptions): Promise<StudentWorkbook | undefined> => {
         if (gradeResult.gradingPolicy.willTrackAttemptReason === WillTrackAttemptReason.YES) {
             if(studentGrade.numAttempts === 0) {
                 studentGrade.firstAttempts = gradeResult.score;
@@ -1255,16 +1249,7 @@ class CourseController {
             originalTopic,
             newTopic,
         } = {}
-    }: {
-        topic: CourseTopicContent;
-        userId?: number;
-        topicOverride?: StudentTopicOverride;
-        skipContext?: {
-            skipIfPossible?: boolean;
-            newTopic?: CourseTopicContentInterface;
-            originalTopic?: CourseTopicContentInterface;
-        };
-    }): Promise<void> => {
+    }: ReGradeTopicOptions): Promise<void> => {
         let minDate: Date | undefined;
         if (skipIfPossible) {
             if (!_.isNil(originalTopic) && !_.isNil(newTopic)) {
@@ -1330,19 +1315,7 @@ class CourseController {
             originalQuestion,
             newQuestion,
         } = {}
-    }: {
-        question: CourseWWTopicQuestion;
-        topic?: CourseTopicContent;
-        userId?: number;
-        minDate?: Date;
-        topicOverride?: StudentTopicOverride;
-        questionOverride?: StudentTopicQuestionOverride;
-        skipContext?: {
-            skipIfPossible?: boolean;
-            newQuestion?: CourseWWTopicQuestionInterface;
-            originalQuestion?: CourseWWTopicQuestionInterface;
-        };
-    }): Promise<void> => {
+    }: ReGradeQuestionOptions): Promise<void> => {
         let grades: Array<StudentGrade> | undefined;
         if (skipIfPossible) {
             let canSkip = false;
@@ -1409,15 +1382,7 @@ class CourseController {
         minDate,
         topicOverride,
         questionOverride
-    }: {
-        studentGrade: StudentGrade;
-        topic?: CourseTopicContent;
-        question?: CourseWWTopicQuestion;
-        workbooks?: Array<StudentWorkbook>;
-        minDate?: Date;
-        topicOverride?: StudentTopicOverride;
-        questionOverride?: StudentTopicQuestionOverride;
-    }): Promise<void> => {
+    }: ReGradeStudentGradeOptions): Promise<void> => {
         return useDatabaseTransaction(async () => {
             // Can't grade a subset of workbooks because the rest of the logic is absolute
             // It resets the grade entirely and then rebuilds it from the beginning

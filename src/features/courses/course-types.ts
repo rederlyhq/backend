@@ -1,11 +1,11 @@
 import StudentGrade from '../../database/models/student-grade';
 import StudentWorkbook from '../../database/models/student-workbook';
 import User from '../../database/models/user';
-import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
+import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface } from '../../database/models/course-ww-topic-question';
 import Course from '../../database/models/course';
 import { WhereOptions } from 'sequelize/types';
 import CourseUnitContent from '../../database/models/course-unit-content';
-import CourseTopicContent from '../../database/models/course-topic-content';
+import CourseTopicContent, { CourseTopicContentInterface } from '../../database/models/course-topic-content';
 import Role from '../permissions/roles';
 import { OutputFormat } from '../../utilities/renderer-helper';
 import { Moment } from 'moment';
@@ -338,4 +338,47 @@ export interface PostQuestionMeta {
     rendererParams: GetCalculatedRendererParamsResponse;
     studentGrade?: StudentGrade | null;
     courseQuestion: CourseWWTopicQuestion;
+}
+
+export interface SetGradeFromSubmissionOptions {
+    studentGrade: StudentGrade;
+    workbook?: StudentWorkbook;
+    gradeResult: GradeResult;
+    submitted: unknown;
+    timeOfSubmission? : Date;
+}
+
+export interface ReGradeTopicOptions {
+    topic: CourseTopicContent;
+    userId?: number;
+    topicOverride?: StudentTopicOverride;
+    skipContext?: {
+        skipIfPossible?: boolean;
+        newTopic?: CourseTopicContentInterface;
+        originalTopic?: CourseTopicContentInterface;
+    };
+}
+
+export interface ReGradeQuestionOptions {
+    question: CourseWWTopicQuestion;
+    topic?: CourseTopicContent;
+    userId?: number;
+    minDate?: Date;
+    topicOverride?: StudentTopicOverride;
+    questionOverride?: StudentTopicQuestionOverride;
+    skipContext?: {
+        skipIfPossible?: boolean;
+        newQuestion?: CourseWWTopicQuestionInterface;
+        originalQuestion?: CourseWWTopicQuestionInterface;
+    };
+}
+
+export interface ReGradeStudentGradeOptions {
+    studentGrade: StudentGrade;
+    topic?: CourseTopicContent;
+    question?: CourseWWTopicQuestion;
+    workbooks?: Array<StudentWorkbook>;
+    minDate?: Date;
+    topicOverride?: StudentTopicOverride;
+    questionOverride?: StudentTopicQuestionOverride;
 }

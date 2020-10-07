@@ -57,125 +57,6 @@ export default {
             });
 
             /**
-             * student_grade_instance
-             */
-            await queryInterface.createTable('student_grade_instance', {
-                id: {
-                    field: 'student_grade_instance_id',
-                    type: DataTypes.INTEGER,
-                    autoIncrement: true,
-                    primaryKey: true,
-                },
-                studentGradeId: {
-                    field: 'student_grade_id',
-                    type: DataTypes.INTEGER,
-                    allowNull: false,
-                    // Defaults to cascade when generating the db, no action on migrations
-                    onUpdate: 'CASCADE',
-                    // Different from sequelize model, on models I do this with associations so I can use types
-                    references: {
-                        model: 'student_grade',
-                        key: 'student_grade_id',
-                    },
-                },
-                userId: {
-                    field: 'user_id',
-                    type: DataTypes.INTEGER,
-                    allowNull: false,
-                    // Defaults to cascade when generating the db, no action on migrations
-                    onUpdate: 'CASCADE',
-                    // Different from sequelize model, on models I do this with associations so I can use types
-                    references: {
-                        model: 'users',
-                        key: 'user_id',
-                    },
-                },
-                courseWWTopicQuestionId: {
-                    field: 'course_topic_question_id',
-                    type: DataTypes.INTEGER,
-                    allowNull: false,
-                    // Defaults to cascade when generating the db, no action on migrations
-                    onUpdate: 'CASCADE',
-                    // Different from sequelize model, on models I do this with associations so I can use types
-                    references: {
-                        model: 'course_topic_question',
-                        key: 'course_topic_question_id',
-                    },
-                },
-                studentTopicAssessmentInfoId: {
-                    field: 'student_topic_assessment_info_id',
-                    type: DataTypes.INTEGER,
-                    allowNull: false,
-                    // Defaults to cascade when generating the db, no action on migrations
-                    onUpdate: 'CASCADE',
-                    // Different from sequelize model, on models I do this with associations so I can use types
-                    references: {
-                        model: 'student_topic_assessment_info',
-                        key: 'student_topic_assessment_info_id',
-                    },
-                },
-                randomSeed: {
-                    field: 'student_grade_instance_random_seed',
-                    type: DataTypes.INTEGER,
-                    allowNull: false
-                },
-                problemPath: {
-                    field: 'student_grade_instance_problem_path',
-                    type: DataTypes.TEXT,
-                    allowNull: false
-                },
-                bestScore: {
-                    field: 'student_grade_instance_best_score',
-                    type: DataTypes.INTEGER,
-                    allowNull: false,
-                    defaultValue: 0
-                },
-                overallBestScore: {
-                    field: 'student_grade_isntance_overall_best_score',
-                    type: DataTypes.INTEGER,
-                    allowNull: false,
-                    defaultValue: 0
-                },
-                numAttempts: {
-                    field: 'student_grade_isntance_num_attempts',
-                    type: DataTypes.INTEGER,
-                    allowNull: false,
-                    defaultValue: 0
-                },
-                active: {
-                    field: 'student_grade_isntance_active',
-                    type: DataTypes.BOOLEAN,
-                    allowNull: false,
-                    defaultValue: true
-                },
-                currentProblemState: {
-                    field: 'student_grade_instance_current_problem_state',
-                    type: DataTypes.JSONB,
-                    allowNull: true,
-                },
-                bestIndividualAttemptId: {
-                    field: 'student_grade_instance_best_individual_workbook_id',
-                    type: DataTypes.INTEGER,
-                    allowNull: true,
-                },
-                bestVersionAttemptId: {
-                    field: 'student_grade_instance_best_version_workbook_id',
-                    type: DataTypes.INTEGER,
-                    allowNull: true,
-                },
-                updatedAt: {
-                    field: 'updated_at',
-                    type: DataTypes.DATE,
-                    allowNull: false,
-                },
-                createdAt: {
-                    field: 'created_at',
-                    type: DataTypes.DATE,
-                    allowNull: false,
-                },
-            });
-
-            /**
              * student_topic_assessment_info
              */
             await queryInterface.createTable('student_topic_assessment_info', {
@@ -251,25 +132,25 @@ export default {
             });
 
             /**
-             * student_topic_assessment_override
+             * student_grade_instance
              */
-            await queryInterface.createTable('student_topic_assessment_override', {
+            await queryInterface.createTable('student_grade_instance', {
                 id: {
-                    field: 'student_topic_assessment_override_id',
+                    field: 'student_grade_instance_id',
                     type: DataTypes.INTEGER,
                     autoIncrement: true,
                     primaryKey: true,
                 },
-                courseTopicContentId: {
-                    field: 'topic_assessment_info_id',
+                studentGradeId: {
+                    field: 'student_grade_id',
                     type: DataTypes.INTEGER,
                     allowNull: false,
                     // Defaults to cascade when generating the db, no action on migrations
                     onUpdate: 'CASCADE',
                     // Different from sequelize model, on models I do this with associations so I can use types
                     references: {
-                        model: 'topic_assessment_info',
-                        key: 'topic_assessment_info_id',
+                        model: 'student_grade',
+                        key: 'student_grade_id',
                     },
                 },
                 userId: {
@@ -284,31 +165,78 @@ export default {
                         key: 'user_id',
                     },
                 },
-                duration: {
-                    field: 'student_topic_assessment_override_duration',
+                courseWWTopicQuestionId: {
+                    field: 'course_topic_question_id',
                     type: DataTypes.INTEGER,
-                    allowNull: true,
+                    allowNull: false,
+                    // Defaults to cascade when generating the db, no action on migrations
+                    onUpdate: 'CASCADE',
+                    // Different from sequelize model, on models I do this with associations so I can use types
+                    references: {
+                        model: 'course_topic_question',
+                        key: 'course_topic_question_id',
+                    },
                 },
-                maxGradedAttemptsPerRandomization: {
-                    field: 'student_topic_assessment_override_max_graded_attempts_per_randomization',
+                studentTopicAssessmentInfoId: {
+                    field: 'student_topic_assessment_info_id',
                     type: DataTypes.INTEGER,
-                    allowNull: true,
+                    allowNull: false,
+                    // Defaults to cascade when generating the db, no action on migrations
+                    onUpdate: 'CASCADE',
+                    // Different from sequelize model, on models I do this with associations so I can use types
+                    references: {
+                        model: 'student_topic_assessment_info',
+                        key: 'student_topic_assessment_info_id',
+                    },
                 },
-                maxReRandomizations: {
-                    field: 'student_topic_assessment_override_max_re_randomizations',
+                randomSeed: {
+                    field: 'student_grade_instance_random_seed',
                     type: DataTypes.INTEGER,
-                    allowNull: true,
+                    allowNull: false
                 },
-                randomizationDelay: {
-                    field: 'student_topic_assessment_override_randomization_delay',
+                webworkQuestionPath: {
+                    field: 'student_grade_instance_problem_path',
+                    type: DataTypes.TEXT,
+                    allowNull: false
+                },
+                bestScore: {
+                    field: 'student_grade_instance_best_score',
                     type: DataTypes.INTEGER,
-                    allowNull: true,
+                    allowNull: false,
+                    defaultValue: 0
+                },
+                overallBestScore: {
+                    field: 'student_grade_isntance_overall_best_score',
+                    type: DataTypes.INTEGER,
+                    allowNull: false,
+                    defaultValue: 0
+                },
+                numAttempts: {
+                    field: 'student_grade_isntance_num_attempts',
+                    type: DataTypes.INTEGER,
+                    allowNull: false,
+                    defaultValue: 0
                 },
                 active: {
-                    field: 'student_topic_assessment_override_active',
+                    field: 'student_grade_isntance_active',
                     type: DataTypes.BOOLEAN,
                     allowNull: false,
                     defaultValue: true
+                },
+                currentProblemState: {
+                    field: 'student_grade_instance_current_problem_state',
+                    type: DataTypes.JSONB,
+                    allowNull: true,
+                },
+                bestIndividualAttemptId: {
+                    field: 'student_grade_instance_best_individual_workbook_id',
+                    type: DataTypes.INTEGER,
+                    allowNull: true,
+                },
+                bestVersionAttemptId: {
+                    field: 'student_grade_instance_best_version_workbook_id',
+                    type: DataTypes.INTEGER,
+                    allowNull: true,
                 },
                 updatedAt: {
                     field: 'updated_at',
@@ -422,10 +350,81 @@ export default {
                 },
             });
 
+            /**
+             * student_topic_assessment_override
+             */
+            await queryInterface.createTable('student_topic_assessment_override', {
+                id: {
+                    field: 'student_topic_assessment_override_id',
+                    type: DataTypes.INTEGER,
+                    autoIncrement: true,
+                    primaryKey: true,
+                },
+                courseTopicContentId: {
+                    field: 'topic_assessment_info_id',
+                    type: DataTypes.INTEGER,
+                    allowNull: false,
+                    // Defaults to cascade when generating the db, no action on migrations
+                    onUpdate: 'CASCADE',
+                    // Different from sequelize model, on models I do this with associations so I can use types
+                    references: {
+                        model: 'topic_assessment_info',
+                        key: 'topic_assessment_info_id',
+                    },
+                },
+                userId: {
+                    field: 'user_id',
+                    type: DataTypes.INTEGER,
+                    allowNull: false,
+                    // Defaults to cascade when generating the db, no action on migrations
+                    onUpdate: 'CASCADE',
+                    // Different from sequelize model, on models I do this with associations so I can use types
+                    references: {
+                        model: 'users',
+                        key: 'user_id',
+                    },
+                },
+                duration: {
+                    field: 'student_topic_assessment_override_duration',
+                    type: DataTypes.INTEGER,
+                    allowNull: true,
+                },
+                maxGradedAttemptsPerRandomization: {
+                    field: 'student_topic_assessment_override_max_graded_attempts_per_randomization',
+                    type: DataTypes.INTEGER,
+                    allowNull: true,
+                },
+                maxReRandomizations: {
+                    field: 'student_topic_assessment_override_max_re_randomizations',
+                    type: DataTypes.INTEGER,
+                    allowNull: true,
+                },
+                randomizationDelay: {
+                    field: 'student_topic_assessment_override_randomization_delay',
+                    type: DataTypes.INTEGER,
+                    allowNull: true,
+                },
+                active: {
+                    field: 'student_topic_assessment_override_active',
+                    type: DataTypes.BOOLEAN,
+                    allowNull: false,
+                    defaultValue: true
+                },
+                updatedAt: {
+                    field: 'updated_at',
+                    type: DataTypes.DATE,
+                    allowNull: false,
+                },
+                createdAt: {
+                    field: 'created_at',
+                    type: DataTypes.DATE,
+                    allowNull: false,
+                },
+            });
+
             await queryInterface.addColumn('student_workbook', 'student_grade_instance_id', {
                 type: DataTypes.INTEGER,
                 allowNull: true,
-                defaultValue: false
             });
 
         });

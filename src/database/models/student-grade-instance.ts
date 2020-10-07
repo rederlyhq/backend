@@ -1,14 +1,14 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
-interface StudentGradeInstanceInterface {
+export interface StudentGradeInstanceInterface {
     id: number;
     studentGradeId: number;
     // userId: number;
     // courseWWTopicQuestionId: number;
     studentTopicAssessmentInfoId: number;
     randomSeed: number;
-    problemPath: string;
+    webworkQuestionPath: string;
     problemNumber: number;
     bestScore: number; // the score from the highest-scoring exam submission
     overallBestScore: number; // the best score on this problem alone
@@ -38,7 +38,7 @@ export default class StudentGradeInstance extends Model implements StudentGradeI
     // public courseWWTopicQuestionId!: number;
     public studentTopicAssessmentInfoId!: number;
     public randomSeed!: number;
-    public problemPath!: string;
+    public webworkQuestionPath!: string;
     public problemNumber!: number;
     public bestScore!: number;
     public overallBestScore!: number;
@@ -162,7 +162,7 @@ StudentGradeInstance.init({
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    problemPath: {
+    webworkQuestionPath: {
         field: 'student_grade_instance_problem_path',
         type: DataTypes.TEXT,
         allowNull: false

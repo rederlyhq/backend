@@ -14,7 +14,7 @@ import * as _ from 'lodash';
 import configurations from '../../configurations';
 import WrappedError from '../../exceptions/wrapped-error';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
-import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest, ExtendCourseTopicQuestionRequest } from './course-route-request-types';
+import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest, ExtendCourseTopicQuestionRequest, CreateAssessmentVersionRequest } from './course-route-request-types';
 import Boom = require('boom');
 import { Constants } from '../../constants';
 import CourseTopicContent from '../../database/models/course-topic-content';
@@ -23,7 +23,6 @@ import { PostQuestionMeta } from './course-types';
 import rendererHelper, { RENDERER_ENDPOINT, GetProblemParameters, RendererResponse } from '../../utilities/renderer-helper';
 import StudentGrade from '../../database/models/student-grade';
 import bodyParser = require('body-parser');
-import courseRepository from './course-repository';
 import moment = require('moment');
 
 const fileUpload = multer();
@@ -288,14 +287,16 @@ router.get('/assessment/topic/:id/start',
         }
         const user = await req.session.getUser();
 
-        const topic = await courseController.getTopicById(params.id);
-        const topicInfo = await topic.getTopicAssessmentInfo(); // order by startDate 
-        const studentAssessments = await courseRepository.getStudentTopicAssessmentInfo({ topicId: topic.id, userId: user.id });
+        const topic = await courseController.getTopicById(params.id); // includes TopicOverrides
+        const topicInfo = await courseController.getTopicAssessmentInfoByTopicId({ topicId: topic.id, userId: user.id }); // ordered by startDate, includes overrides
+        const studentAssessments = await courseController.getStudentTopicAssessmentInfo({ topicId: topic.id, userId: user.id });
+
+        const maxReRandomizations = topicInfo.studentTopicAssessmentOverride?.[0]?.maxReRandomizations ?? topicInfo.maxReRandomizations;
 
         // TODO deal with possible overrides: duration, maxReRandomizations, randomizationDelay
         // do we possibly include nextRandomizationStartsAfter as an override?
         // topic overrides: startDate/endDate
-        if (studentAssessments.length >= topicInfo.maxReRandomizations) {
+        if (studentAssessments.length >= maxReRandomizations) {
             if (user.roleId === Role.STUDENT) {
                 next(Boom.badRequest('You have no re-randomizations remaining.'));
                 return;

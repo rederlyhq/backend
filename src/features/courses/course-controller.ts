@@ -17,7 +17,7 @@ import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import appSequelize from '../../database/app-sequelize';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, CreateNewStudentGradeInstanceOptions, CreateGradeInstancesForAssessmentOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, UpdateGradeInstanceOptions, GradeOptions, GradeResult, DeleteUserEnrollmentOptions, CreateNewStudentTopicAssessmentInfoOptions, ExtendTopicForUserOptions, ExtendTopicQuestionForUserOptions, GetQuestionRepositoryOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, CreateNewStudentGradeInstanceOptions, CreateGradeInstancesForAssessmentOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, UpdateGradeInstanceOptions, GradeOptions, GradeResult, DeleteUserEnrollmentOptions, CreateNewStudentTopicAssessmentInfoOptions, ExtendTopicForUserOptions, ExtendTopicQuestionForUserOptions, GetQuestionRepositoryOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -34,6 +34,8 @@ import { calculateGrade, WillTrackAttemptReason } from '../../utilities/grading-
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 import StudentTopicOverride from '../../database/models/student-topic-override';
 import StudentTopicQuestionOverride from '../../database/models/student-topic-question-override';
+import StudentTopicAssessmentOverride from '../../database/models/student-topic-assessment-override';
+import TopicAssessmentInfo from '../../database/models/topic-assessment-info';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -79,6 +81,15 @@ class CourseController {
 
     getTopicById(id: number, userId?: number): Promise<CourseTopicContent> {
         const include = [];
+        include.push({
+            model: TopicAssessmentInfo,
+            as: 'topicAssessmentInfo',
+            required: false,
+            where: {
+                active: true,
+                courseTopicContentId: id,
+            }
+        });
         if (!_.isNil(userId)) {
             include.push({
                 model: StudentTopicOverride,
@@ -2014,7 +2025,23 @@ class CourseController {
                     ['problemNumber', 'ASC'],
                 ]
             };
-            return await CourseWWTopicQuestion.findAll(findOptions);
+            const questions = await CourseWWTopicQuestion.findAll(findOptions);
+            if (!_.isNil(courseTopicContentId)){
+                const topic = await this.getTopicById(courseTopicContentId);
+                if (topic.topicTypeId === 2) {
+                    questions.asyncForEach(async (question) => {
+                        const version = await question.grades.getStudentGradeInstance();
+                        question = question.getVersion(version) as CourseWWTopicQuestion;
+                    });
+                } else {
+                    questions.forEach( (question) => {
+                        if (!_.isNil(question.studentTopicQuestionOverride) && question.studentTopicQuestionOverride[0].active && !_.isNil(question.studentTopicQuestionOverride[0].maxAttempts)) {
+                            question.maxAttempts = question.studentTopicQuestionOverride[0].maxAttempts;
+                        }
+                    });
+                }
+            }
+            return questions;
         } catch (e) {
             throw new WrappedError('Error fetching problems', e);
         }
@@ -2169,6 +2196,51 @@ class CourseController {
         return Math.floor(Math.random() * 999999);
     }
 
+    async getStudentTopicAssessmentInfo(options: GetStudentTopicAssessmentInfoOptions): Promise<StudentTopicAssessmentInfo[]> {
+        const result = await StudentTopicAssessmentInfo.findAll({
+            where: {
+                courseTopicContentId: options.topicId,
+                userId: options.userId,
+                active: true,
+            },
+            order: [
+                ['startTime', 'DESC'],
+            ],
+        });
+        if (_.isNil(result)) {
+            throw new NotFoundError('The requested student topic assessment info does not exist');
+        }
+        return result;
+    }
+
+    async getTopicAssessmentInfoByTopicId(options: GetTopicAssessmentInfoByTopicIdOptions): Promise<TopicAssessmentInfo> {
+        const include = [];
+        if (!_.isNil(options.userId)) {
+            include.push({
+                model: StudentTopicAssessmentOverride,
+                as: 'studentTopicAssessmentOverride',
+                attributes: ['duration', 'maxReRandomizations', 'randomizationDelay'],
+                required: false,
+                where: {
+                    active: true,
+                    userId: options.userId,
+                }
+            });
+        }
+
+        const result = await TopicAssessmentInfo.findOne({
+            where: {
+                courseTopicContentId: options.topicId,
+                active: true
+            },
+            include,
+        });
+        if (_.isNil(result)) {
+            throw new NotFoundError('The requested topic does not exist');
+        }
+        return result;
+    }
+
     async createNewStudentGrade(options: CreateNewStudentGradeOptions): Promise<StudentGrade> {
         const {
             userId,
@@ -2268,13 +2340,72 @@ class CourseController {
         }
     }
 
-    getGradeInstance(id: number): Promise<StudentGradeInstance> {
-        return StudentGradeInstance.findOne({
-            where: {
-                id,
-            }
-        });
-    }
+    // async getAssessmentQuestions(options: GetAssessmentQuestionsOptions): Promise<CourseWWTopicQuestion[]> {
+    //     const {
+    //         courseTopicContentId,
+    //         userId
+    //     } = options;
+    //     // const topic = await this.getTopicById(courseTopicContentId, userId);
+    //     // const assessmentInfo = await topic.getTopicAssessmentInfo();
+    //     // const assessmentInfoOverride = await (StudentTopicAssessmentOverride.findOne({
+    //     //     where: {
+
+    //     //     }
+    //     // })
+
+    //     try {
+    //         const include: sequelize.IncludeOptions[] = [];
+    //         if (!_.isNil(userId)) {
+    //             include.push({
+    //                 model: StudentGrade,
+    //                 as: 'grades',
+    //                 required: true,
+    //                 where: {
+    //                     userId: userId,
+    //                 },
+    //                 include: [{
+    //                     model: StudentGradeInstance,
+    //                     as: 'gradeInstance',
+    //                     required: true,
+    //                 }]
+    //             });
+    //             include.push({
+    //                 model: StudentTopicQuestionOverride,
+    //                 as: 'studentTopicQuestionOverride',
+    //                 attributes: ['userId', 'maxAttempts'],
+    //                 required: false,
+    //                 where: {
+    //                     active: true,
+    //                     userId: userId
+    //                 }
+    //             });
+    //         }
+
+    //         // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
+    //         const where: sequelize.WhereOptions = _({
+    //             courseTopicContentId,
+    //             active: true
+    //         }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
+
+    //         const findOptions: sequelize.FindOptions = {
+    //             include,
+    //             where,
+    //             order: [
+    //                 ['problemNumber', 'ASC'],
+    //             ]
+    //         };
+    //         const questions = await CourseWWTopicQuestion.findAll(findOptions);
+    //         questions.forEach((question: CourseWWTopicQuestion)=>{
+    //             // coalescing is to satisfy TS, GradeInstance is not *required* on a StudentGrade in general - but we definitely have it
+    //             question.webworkQuestionPath = question.grades.gradeInstance?.webworkQuestionPath ?? question.webworkQuestionPath;
+    //             question.grades.randomSeed = question.grades.gradeInstance?.randomSeed ?? question.grades.randomSeed;
+    //             question.problemNumber = question.grades.gradeInstance?.problemNumber ?? question.problemNumber;
+    //         });
+    //         return questions;
+    //     } catch (e) {
+    //         throw new WrappedError('Error fetching problems', e);
+    //     }
+    // }
 
     // is this necessary? Does every request need to pass through the controller level to the repository?
     async updateGradeInstance(options: UpdateGradeInstanceOptions): Promise<UpdateResult<StudentGradeInstance>> {

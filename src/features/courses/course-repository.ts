@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import WrappedError from '../../exceptions/wrapped-error';
 import { Constants } from '../../constants';
-import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, UpdateGradeInstanceOptions, GetTopicAssessmentInfoByTopicIdOptions, GetStudentTopicAssessmentInfoOptions, ExtendTopicForUserOptions, ExtendTopicQuestionForUserOptions } from './course-types';
+import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, UpdateGradeInstanceOptions, ExtendTopicForUserOptions, ExtendTopicQuestionForUserOptions } from './course-types';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 import NotFoundError from '../../exceptions/not-found-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
@@ -19,9 +19,6 @@ import StudentTopicQuestionOverride from '../../database/models/student-topic-qu
 import StudentGradeOverride from '../../database/models/student-grade-override';
 import StudentGradeLockAction from '../../database/models/student-grade-lock-action';
 import StudentGradeInstance from '../../database/models/student-grade-instance';
-import TopicAssessmentInfo from '../../database/models/topic-assessment-info';
-import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
-import StudentTopicAssessmentOverride from '../../database/models/student-topic-assessment-override';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -211,51 +208,6 @@ class CourseRepository {
         });
         if (_.isNil(result)) {
             throw new NotFoundError('The requested topic does not exist');
-        }
-        return result;
-    }
-
-    async getTopicAssessmentInfoByTopicId(options: GetTopicAssessmentInfoByTopicIdOptions): Promise<TopicAssessmentInfo> {
-        const include = [];
-        if (!_.isNil(options.userId)) {
-            include.push({
-                model: StudentTopicAssessmentOverride,
-                as: 'studentTopicAssessmentOverride',
-                attributes: ['duration', 'maxReRandomizations', 'randomizationDelay'],
-                required: false,
-                where: {
-                    active: true,
-                    userId: options.userId,
-                }
-            });
-        }
-
-        const result = await TopicAssessmentInfo.findOne({
-            where: {
-                courseTopicContentId: options.topicId,
-                active: true
-            },
-            include,
-        });
-        if (_.isNil(result)) {
-            throw new NotFoundError('The requested topic does not exist');
-        }
-        return result;
-    }
-
-    async getStudentTopicAssessmentInfo(options: GetStudentTopicAssessmentInfoOptions): Promise<StudentTopicAssessmentInfo[]> {
-        const result = await StudentTopicAssessmentInfo.findAll({
-            where: {
-                courseTopicContentId: options.topicId,
-                userId: options.userId,
-                active: true,
-            },
-            order: [
-                ['startTime', 'DESC'], 
-            ],
-        });
-        if (_.isNil(result)) {
-            throw new NotFoundError('The requested student topic assessment info does not exist');
         }
         return result;
     }

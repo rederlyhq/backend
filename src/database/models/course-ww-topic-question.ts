@@ -2,6 +2,7 @@
 
 import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
+import * as _ from 'lodash';
 
 export interface CourseWWTopicQuestionInterface {
     id: number;
@@ -32,11 +33,20 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
     
     public getTopic!: BelongsToGetAssociationMixin<CourseTopicContent>;
     public getGrades!: HasManyGetAssociationsMixin<StudentGrade>;
+    public getStudentTopicQuestionOverride!: HasManyGetAssociationsMixin<StudentTopicQuestionOverride>;
     public studentTopicQuestionOverride?: StudentTopicQuestionOverride[];
 
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
+
+    static getWithOverrides = (obj: CourseWWTopicQuestionInterface, overrides: StudentTopicQuestionOverrideOverridesInterface): CourseWWTopicQuestionInterface => {
+        return _.assign({}, obj, overrides);
+    }
+
+    getWithOverrides = (overrides: StudentTopicQuestionOverrideOverridesInterface): CourseWWTopicQuestionInterface => {
+        return CourseWWTopicQuestion.getWithOverrides(this.get({ plain: true }) as CourseWWTopicQuestionInterface, overrides);
+    }
 
     static constraints = {
         uniqueOrderPerTopic: 'course_topic_question--problem_number-topic_id',
@@ -146,4 +156,4 @@ CourseWWTopicQuestion.init({
 import CourseTopicContent from './course-topic-content';
 import StudentGrade from './student-grade';
 import CurriculumWWTopicQuestion from './curriculum-ww-topic-question';
-import StudentTopicQuestionOverride from './student-topic-question-override';
+import StudentTopicQuestionOverride, { StudentTopicQuestionOverrideOverridesInterface } from './student-topic-question-override';

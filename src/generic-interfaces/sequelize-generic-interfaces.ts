@@ -6,5 +6,5 @@ export interface UpdateResult<T> {
 export interface UpsertResult<T> extends UpdateResult<T> {
     createdNewEntry: boolean;
     // TODO generics
-    original?: any;
+    original?: unknown;
 }

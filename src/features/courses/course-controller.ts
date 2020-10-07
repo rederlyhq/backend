@@ -462,10 +462,17 @@ class CourseController {
                 .value();
 
             if (updateCourseTopicResult.updatedCount > 0) {
+                const topic = updateCourseTopicResult.updatedRecords[0];
                 await this.reGradeTopic({
-                    topic: updateCourseTopicResult.updatedRecords[0],
-                    originalTopic,
-                    skipIfPossible: true
+                    topic: topic,
+                    // We will need to fetch these on a per user basis
+                    topicOverride: undefined,
+                    userId: undefined,
+                    skipContext: {
+                        originalTopic: originalTopic,
+                        newTopic: topic,
+                        skipIfPossible: true,
+                    }
                 });
             }
             return resultantUpdates;
@@ -479,14 +486,15 @@ class CourseController {
                 const topic = await courseRepository.getCourseTopic({
                     id: options.where.courseTopicContentId
                 });
-                const originalOverride: StudentTopicOverrideInterface = result.original;
-                const strippedTopic: CourseTopicContentInterface = topic.get({ plain: true }) as CourseTopicContentInterface;
-                const newOverride: StudentTopicOverrideInterface = result.updatedRecords[0].get({ plain: true }) as StudentTopicOverrideInterface;
-                // Since only the override is changing the question would be the same except the overrides
-                const originalTopic: CourseTopicContentInterface  = _.assign({}, strippedTopic, _.pick(originalOverride, 'deadDate', 'endDate'));
-                const newTopic: CourseTopicContentInterface = _.assign({}, strippedTopic, _.pick(newOverride, 'deadDate', 'endDate'));
+                const newOverride = result.updatedRecords[0];
+                const originalOverride: StudentTopicOverrideInterface = result.original as StudentTopicOverrideInterface;
+                
+                const originalTopic: CourseTopicContentInterface = topic.getWithOverrides(originalOverride);
+                const newTopic: CourseTopicContentInterface = topic.getWithOverrides(newOverride);
+
                 await this.reGradeTopic({
                     topic,
+                    topicOverride: newOverride,
                     // We are only overriding for one user so filter the results by that
                     userId: newOverride.userId,
                     skipContext: {
@@ -1034,16 +1042,16 @@ class CourseController {
                 const question = await courseRepository.getQuestion({
                     id: options.where.courseTopicQuestionId
                 });
-                const originalOverride: StudentTopicQuestionOverrideInterface = result.original;
-                const strippedQuestion: CourseWWTopicQuestionInterface = question.get({ plain: true }) as CourseWWTopicQuestionInterface;
-                const newOverride: StudentTopicQuestionOverrideInterface = result.updatedRecords[0].get({ plain: true }) as StudentTopicQuestionOverrideInterface;
+                const originalOverride: StudentTopicQuestionOverrideInterface = result.original as StudentTopicQuestionOverrideInterface;
+                const newOverride = result.updatedRecords[0];
                 // Since only the override is changing the question would be the same except the overrides
-                const originalQuestion: CourseWWTopicQuestionInterface  = _.assign({}, strippedQuestion, _.pick(originalOverride, 'maxAttempts'));
-                const newQuestion: CourseWWTopicQuestionInterface = _.assign({}, strippedQuestion, _.pick(newOverride, 'maxAttempts'));
+                const originalQuestion: CourseWWTopicQuestionInterface  = question.getWithOverrides(originalOverride);
+                const newQuestion: CourseWWTopicQuestionInterface  = question.getWithOverrides(newOverride);
                 await this.reGradeQuestion({
                     question,
                     // We are only overriding for one user so filter the results by that
                     userId: newOverride.userId,
+                    questionOverride: newOverride,
                     skipContext: {
                         skipIfPossible: true,
                         originalQuestion,
@@ -1240,6 +1248,7 @@ class CourseController {
 
     reGradeTopic = async ({
         topic,
+        topicOverride,
         userId,
         skipContext: {
             skipIfPossible = false,
@@ -1248,9 +1257,8 @@ class CourseController {
         } = {}
     }: {
         topic: CourseTopicContent;
-        originalTopic?: CourseTopicContentInterface;
-        skipIfPossible?: boolean;
         userId?: number;
+        topicOverride?: StudentTopicOverride;
         skipContext?: {
             skipIfPossible?: boolean;
             newTopic?: CourseTopicContentInterface;
@@ -1301,6 +1309,7 @@ class CourseController {
                     question,
                     userId,
                     minDate,
+                    topicOverride,
                     skipContext: {
                         skipIfPossible: false,
                     }
@@ -1314,6 +1323,8 @@ class CourseController {
         topic,
         userId,
         minDate,
+        topicOverride,
+        questionOverride,
         skipContext: {
             skipIfPossible = false,
             originalQuestion,
@@ -1324,6 +1335,8 @@ class CourseController {
         topic?: CourseTopicContent;
         userId?: number;
         minDate?: Date;
+        topicOverride?: StudentTopicOverride;
+        questionOverride?: StudentTopicQuestionOverride;
         skipContext?: {
             skipIfPossible?: boolean;
             newQuestion?: CourseWWTopicQuestionInterface;
@@ -1380,7 +1393,9 @@ class CourseController {
                     studentGrade,
                     question,
                     topic,
-                    minDate
+                    minDate,
+                    questionOverride: questionOverride,
+                    topicOverride: topicOverride
                 });
             });
         });
@@ -1391,13 +1406,17 @@ class CourseController {
         topic,
         question,
         workbooks,
-        minDate
+        minDate,
+        topicOverride,
+        questionOverride
     }: {
         studentGrade: StudentGrade;
         topic?: CourseTopicContent;
         question?: CourseWWTopicQuestion;
         workbooks?: Array<StudentWorkbook>;
         minDate?: Date;
+        topicOverride?: StudentTopicOverride;
+        questionOverride?: StudentTopicQuestionOverride;
     }): Promise<void> => {
         return useDatabaseTransaction(async () => {
             // Can't grade a subset of workbooks because the rest of the logic is absolute
@@ -1469,20 +1488,21 @@ class CourseController {
                     throw new Error('This cannot be undefined, strict is confused because of transaction callback');
                 }
 
-                const gradeResult = calculateGrade({
+                await this.gradeSubmission({
                     newScore: workbook.result,
                     question,
                     solutionDate,
                     studentGrade,
                     topic,
 
-                    timeOfSubmission: workbook.time
-                });
-                await this.setGradeFromSubmission({
-                    gradeResult,
-                    studentGrade,
+                    timeOfSubmission: workbook.time,
                     submitted: null,
-                    workbook
+                    workbook,
+                    override: {
+                        useOverride: true,
+                        questionOverride: questionOverride,
+                        topicOverride: topicOverride
+                    }
                 });
             }
         });
@@ -1495,12 +1515,52 @@ class CourseController {
     gradeSubmission = async ({
         studentGrade,
         newScore,
-        question,
+        question: passedQuestion,
         solutionDate,
-        topic,
+        topic: passedTopic,
         submitted,
-        timeOfSubmission
+        timeOfSubmission,
+        workbook,
+        override: {
+            useOverride = true,
+            questionOverride,
+            topicOverride
+        } = {}
     }: GradeOptions): Promise<StudentWorkbook | undefined> => {
+        let topic: CourseTopicContentInterface = passedTopic;
+        let question: CourseWWTopicQuestionInterface = passedQuestion;
+        if (useOverride) {
+            /**
+             * Currently:
+             * Submit answers fetches the override as an includes and it will be passed in
+             * When an extension is performed that extension will be passed in
+             * When an update is performed to topic or question that triggers regrade we'll need each student's extensions
+             */
+            // Don't fetch if null is passed in (there is no extension)
+            if (_.isUndefined(topicOverride)) {
+                const overrides = await passedTopic.getStudentTopicOverride({
+                    where: {
+                        userId: studentGrade.userId,
+                        active: true
+                    }
+                });
+                topicOverride = overrides?.[0] ?? null;
+            }
+
+            if (_.isUndefined(topicOverride)) {
+                const overrides = await passedQuestion.getStudentTopicQuestionOverride({
+                    where: {
+                        userId: studentGrade.userId,
+                        active: true
+                    }
+                });
+                questionOverride = overrides?.[0] ?? null;
+            }
+
+            topic = _.isNil(topicOverride) ? topic : passedTopic.getWithOverrides(topicOverride);
+            question = _.isNil(questionOverride) ? question : passedQuestion.getWithOverrides(questionOverride);
+        }
+
         const gradeResult = calculateGrade({
             newScore,
             question,
@@ -1513,8 +1573,8 @@ class CourseController {
             gradeResult,
             studentGrade,
             submitted,
-            timeOfSubmission
-            // workbook
+            timeOfSubmission,
+            workbook
         });
     };
 
@@ -1573,18 +1633,6 @@ class CourseController {
                 }
             }]
         });
-        
-        if (topic.studentTopicOverride?.length === 1) {
-            // TODO: Fix typing here
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            _.assign(topic, (topic as any).studentTopicOverride[0]);
-        }
-        
-        if (question.studentTopicQuestionOverride?.length === 1) {
-            // TODO: Fix typing here
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            _.assign(question, (question as any).studentTopicQuestionOverride[0]);
-        }
 
         const solutionDate = moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days');
 
@@ -1597,7 +1645,12 @@ class CourseController {
                     studentGrade,
                     submitted: options.submitted,
                     topic,
-                    timeOfSubmission: options.timeOfSubmission ?? new Date()
+                    timeOfSubmission: options.timeOfSubmission ?? new Date(),
+                    override: {
+                        useOverride: true,
+                        questionOverride: question.studentTopicQuestionOverride?.[0] ?? null,
+                        topicOverride: topic.studentTopicOverride?.[0] ?? null
+                    }
                 });
 
                 return {

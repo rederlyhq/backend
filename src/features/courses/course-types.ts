@@ -10,6 +10,8 @@ import Role from '../permissions/roles';
 import { OutputFormat } from '../../utilities/renderer-helper';
 import { Moment } from 'moment';
 import { DetermineGradingRationaleResult } from '../../utilities/grading-helper';
+import StudentTopicOverride from '../../database/models/student-topic-override';
+import StudentTopicQuestionOverride from '../../database/models/student-topic-question-override';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -317,6 +319,13 @@ export interface GradeOptions {
     submitted: unknown;
 
     timeOfSubmission: Date;
+    workbook?: StudentWorkbook;
+
+    override?: {
+        useOverride?: boolean;
+        topicOverride?: StudentTopicOverride | null;
+        questionOverride?: StudentTopicQuestionOverride | null;
+    };
 }
 
 export interface GradeResult {

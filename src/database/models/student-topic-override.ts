@@ -1,14 +1,18 @@
 import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize';
 import CourseTopicContent from './course-topic-content';
+import * as _ from 'lodash';
 
-export interface StudentTopicOverrideInterface {
-    id: number;
-    courseTopicContentId: number;
-    userId: number;
+export interface StudentTopicOverrideOveridesInterface {
     startDate: Date | null;
     endDate: Date | null;
     deadDate: Date | null;
+}
+
+export interface StudentTopicOverrideInterface extends StudentTopicOverrideOveridesInterface {
+    id: number;
+    courseTopicContentId: number;
+    userId: number;
     active: boolean;
 }
 
@@ -29,6 +33,14 @@ export default class StudentTopicOverride extends Model implements StudentTopicO
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
+
+    static getOverrides = (obj: StudentTopicOverrideInterface): StudentTopicOverrideOveridesInterface => {
+        return _.pick(obj, 'startDate', 'deadDate', 'endDate');
+    }
+
+    getOverrides = (): StudentTopicOverrideOveridesInterface => {
+        return StudentTopicOverride.getOverrides(this);
+    }
 
     static constraints = {
     }

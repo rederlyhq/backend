@@ -1,5 +1,6 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
+import * as _ from 'lodash';
 
 export interface CourseTopicContentInterface {
     id: number;
@@ -35,6 +36,7 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
     public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
     public getTopicType!: BelongsToGetAssociationMixin<TopicType>;
     public getQuestions!: HasManyGetAssociationsMixin<CourseWWTopicQuestion>;
+    public getStudentTopicOverride!: HasManyGetAssociationsMixin<StudentTopicOverride>;
 
     public readonly curriculumTopicContent!: CurriculumTopicContent;
     public readonly topicType!: TopicType;
@@ -44,6 +46,14 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
+
+    static getWithOverrides = (obj: CourseTopicContentInterface, overrides: StudentTopicOverrideOveridesInterface): CourseTopicContentInterface => {
+        return _.assign({}, obj, overrides);
+    }
+
+    getWithOverrides = (overrides: StudentTopicOverrideOveridesInterface): CourseTopicContentInterface => {
+        return CourseTopicContent.getWithOverrides(this.get({ plain: true }) as CourseTopicContentInterface, overrides);
+    }
 
     static constraints = {
         uniqueOrderPerUnit: 'course_topic_content--unit_id-order',
@@ -175,4 +185,4 @@ import CurriculumTopicContent from './curriculum-topic-content';
 import TopicType from './topic-type';
 import CourseUnitContent from './course-unit-content';
 import CourseWWTopicQuestion from './course-ww-topic-question';
-import StudentTopicOverride from './student-topic-override';
+import StudentTopicOverride, { StudentTopicOverrideOveridesInterface } from './student-topic-override';

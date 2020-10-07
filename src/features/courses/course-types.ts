@@ -41,6 +41,11 @@ export interface GetTopicAssessmentInfoByTopicIdOptions {
     topicId: number;
 }
 
+export interface GetStudentTopicAssessmentInfoOptions {
+    topicId: number;
+    userId: number;
+}
+
 // TODO make generic interface
 export interface GetCourseUnitRepositoryOptions {
     id: number;
@@ -282,7 +287,6 @@ export interface GetQuestionsForThisAssessmentOptions {
 export interface CreateGradeInstancesForAssessmentOptions {
     userId: number;
     topicId: number;
-    problemPath: string;
 }
 
 export interface CreateQuestionsForTopicFromDefFileContentOptions {

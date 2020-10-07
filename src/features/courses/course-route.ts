@@ -5,7 +5,7 @@ import validate from '../../middleware/joi-validator';
 import { authenticationMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
-import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation, deleteEnrollmentValidation } from './course-route-validation';
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation, deleteEnrollmentValidation, createAssessmentVersionValidation } from './course-route-validation';
 import NotFoundError from '../../exceptions/not-found-error';
 import multer = require('multer');
 import * as proxy from 'express-http-proxy';
@@ -23,6 +23,7 @@ import { GetCalculatedRendererParamsResponse } from './course-types';
 import rendererHelper, { RENDERER_ENDPOINT, GetProblemParameters, RendererResponse } from '../../utilities/renderer-helper';
 import StudentGrade from '../../database/models/student-grade';
 import bodyParser = require('body-parser');
+import courseRepository from './course-repository';
 
 const fileUpload = multer();
 
@@ -245,6 +246,62 @@ router.put('/topic/:id',
             next(httpResponse.Ok('Updated topic successfully', {
                 updatesResult,
                 updatesCount: updatesResult.length
+            }));
+        } catch (e) {
+            next(e);
+        }
+    }));
+
+router.get('/assessment/topic/:id/start',
+    authenticationMiddleware,
+    validate(createAssessmentVersionValidation),
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, CreateAssessmentVersionRequest.body, CreateAssessmentVersionRequest.query>, _res: Response, next: NextFunction) => {
+        const params = req.params as CreateAssessmentVersionRequest.params;
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+        const user = await req.session.getUser();
+
+        const topic = await courseController.getTopicById(params.id);
+        const topicInfo = await topic.getTopicAssessmentInfo(); // order by startDate 
+        const studentAssessments = await courseRepository.getStudentTopicAssessmentInfo({ topicId: topic.id, userId: user.id });
+
+        // TODO deal with possible overrides: duration, maxReRandomizations, randomizationDelay
+        // do we possibly include nextRandomizationStartsAfter as an override?
+        // topic overrides: startDate/endDate
+        if (studentAssessments.length >= topicInfo.maxReRandomizations) {
+            if (user.roleId === Role.STUDENT) {
+                next(Boom.badRequest('You have no re-randomizations remaining.'));
+                return;
+            }
+        }
+
+        if (studentAssessments[0] && new Date().getTime() < studentAssessments[0].nextVersionAvailableTime.getTime() ) {
+            if (user.roleId === Role.STUDENT) {
+                // toLocaleString supports timezone, which we should maybe use?
+                next(Boom.badRequest(`Another randomization will be available after ${studentAssessments[0].nextVersionAvailableTime.toLocaleString()}.`));
+                return;
+            }
+        }
+
+        // if the assessment has not yet started, there is no way to fail the above
+        if (new Date().getTime() < topic.startDate.getTime()) {
+            if (user.roleId === Role.STUDENT) {
+                next(Boom.badRequest(`The topic "${topic.name}" has not started yet.`));
+                return;
+            }
+            // what should we do about instructors - it will be a mess to allow simultaneous versions
+        }
+
+        try {
+            const versionInfo = await courseController.createGradeInstancesForAssessment({
+                topicId: topic.id, 
+                userId: user.id,
+            });
+            next(httpResponse.Ok('New randomization created successfully', {
+                versionInfo,
             }));
         } catch (e) {
             next(e);

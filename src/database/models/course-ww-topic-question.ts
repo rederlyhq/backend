@@ -1,6 +1,6 @@
 // TODO rename file
 
-import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin } from 'sequelize';
+import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin, HasOneGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
 export default class CourseWWTopicQuestion extends Model {
@@ -17,6 +17,7 @@ export default class CourseWWTopicQuestion extends Model {
     
     public getTopic!: BelongsToGetAssociationMixin<CourseTopicContent>;
     public getGrades!: HasManyGetAssociationsMixin<StudentGrade>;
+    public getQuestionAssessmentInfo!: HasOneGetAssociationMixin<CourseQuestionAssessmentInfo>;
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -123,3 +124,4 @@ CourseWWTopicQuestion.init({
 import CourseTopicContent from './course-topic-content';
 import StudentGrade from './student-grade';
 import CurriculumWWTopicQuestion from './curriculum-ww-topic-question';
+import CourseQuestionAssessmentInfo from './course-question-assessment-info';

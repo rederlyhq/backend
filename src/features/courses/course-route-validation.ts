@@ -335,3 +335,11 @@ export const getProblemsValidation = {
     },
     body: {},
 };
+
+export const createAssessmentVersionValidation = {
+    params: {
+        id: Joi.number().required(),
+    },
+    query: {},
+    body: {},
+};

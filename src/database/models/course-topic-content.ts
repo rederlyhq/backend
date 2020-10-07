@@ -1,4 +1,4 @@
-import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin } from 'sequelize';
+import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin, HasOneCreateAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
 export default class CourseTopicContent extends Model {
@@ -15,11 +15,10 @@ export default class CourseTopicContent extends Model {
     public deadDate!: Date;
     public partialExtend!: boolean;
 
-
-
     public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
     public getTopicType!: BelongsToGetAssociationMixin<TopicType>;
     public getQuestions!: HasManyGetAssociationsMixin<CourseWWTopicQuestion>;
+    public getTopicAssessmentInfo!: HasOneCreateAssociationMixin<TopicAssessmentInfo>;
 
     public readonly curriculumTopicContent!: CurriculumTopicContent;
     public readonly topicType!: TopicType;
@@ -153,3 +152,4 @@ import CurriculumTopicContent from './curriculum-topic-content';
 import TopicType from './topic-type';
 import CourseUnitContent from './course-unit-content';
 import CourseWWTopicQuestion from './course-ww-topic-question';
+import TopicAssessmentInfo from './topic-assessment-info';

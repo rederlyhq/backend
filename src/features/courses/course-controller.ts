@@ -2029,44 +2029,41 @@ class CourseController {
         }
     }
 
-    // change this to return a StudentTopicAssessmentInfo - we will want TIMES
-    async createGradeInstancesForAssessment(options: CreateGradeInstancesForAssessmentOptions): Promise<number> {
+    async createGradeInstancesForAssessment(options: CreateGradeInstancesForAssessmentOptions): Promise<StudentTopicAssessmentInfo> {
         const { topicId, userId } = options;
         const topic = await courseRepository.getCourseTopic({id: topicId});
-        const topicInfo = await courseRepository.getTopicAssessmentInfoByTopicId({topicId});
+        const topicInfo = await topic.getTopicAssessmentInfo(); // order by startDate 
 
-        const questions = await topic.getQuestions();
-        const startTime = moment().add(1,'minute'); // cover our bases for any delay in creating records before a student can actually begin
+        const questions = await courseRepository.getQuestionsFromTopicId({id:topicId});
+        const startTime = moment().add(1,'minute'); // 1 minute should cover any delay in creating records before a student can actually begin
 
         let endTime = moment(startTime).add(topicInfo.duration, 'minutes');
         if (topicInfo.hardCutoff) {
-            endTime = moment.min(moment(topic.deadDate), moment(startTime).add(topicInfo.duration, 'minutes')); // TODO: overrides
+            endTime = moment.min(moment(topic.deadDate), moment(startTime).add(topicInfo.duration, 'minutes'));
         } 
 
-        // CHECK: does the student have another randomization available, if not, should this be null? checked elsewhere?
         const nextVersionAvailableTime = moment(startTime).add(topicInfo.randomizationDelay, 'minutes');
-        // CHECK: has the student waited long enough since their last randomization?
-        const problemOrder = Array(questions.length);
-        // if (topicInfo.randomizeOrder) problemOrder = shuffle(problemOrder);
+        const problemOrder = (topicInfo.randomizeOrder) ? _.shuffle(Array(questions.length)) : Array(questions.length);
 
         await questions.asyncForEach(async (question, index) => {
+            const questionInfo = await question.getQuestionAssessmentInfo();
+            const randomSeed = _.sample(questionInfo.randomSeedSet) ?? this.generateRandomSeed();
+            const problemPaths = [question.webworkQuestionPath, ...questionInfo.additionalProblemPaths];
+            const webworkQuestionPath = _.sample(problemPaths) ?? question.webworkQuestionPath; // coalesce required because _.sample() is string | undefined
             await this.createNewStudentGradeInstance({
-                // get randomized problem paths?
-                // get randomized from list of random seeds?
                 courseTopicQuestionId: question.id,
-                webworkQuestionPath: question.webworkQuestionPath,
-                randomSeed: this.generateRandomSeed(),
-                userId: userId,
+                webworkQuestionPath,
+                randomSeed,
+                userId,
                 problemNumber: problemOrder[index],
             });
         });
-        await this.createStudentTopicAssessmentInfo({
+        return await this.createStudentTopicAssessmentInfo({
             courseTopicContentId: topicId,
             startTime,
             endTime,
             nextVersionAvailableTime,
         });
-        return questions.length;
     }
 
    async createNewStudentGradeInstance(options: CreateNewStudentGradeInstanceOptions): Promise<StudentGradeInstance> {

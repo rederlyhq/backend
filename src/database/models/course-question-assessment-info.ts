@@ -1,14 +1,14 @@
 import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
-interface CourseTopicAssessmentInfoInterface {
+interface CourseQuestionAssessmentInfoInterface {
     id: number;
     courseTopicContentId: number;
     randomSeedSet: Array<number>;
     additionalProblemPaths: Array<string>;
     active: boolean;
 }
-export default class CourseTopicAssessmentInfo extends Model implements CourseTopicAssessmentInfoInterface {
+export default class CourseQuestionAssessmentInfo extends Model implements CourseQuestionAssessmentInfoInterface {
 
     public id!: number;
     public courseTopicContentId!: number;
@@ -30,10 +30,10 @@ export default class CourseTopicAssessmentInfo extends Model implements CourseTo
     static createAssociations(): void {
         // This is a hack to add the associations later to avoid cyclic dependencies
         /* eslint-disable @typescript-eslint/no-use-before-define */
-        CourseTopicAssessmentInfo.belongsTo(CourseTopicContent, {
-            foreignKey: 'courseTopicContentId',
+        CourseQuestionAssessmentInfo.belongsTo(CourseWWTopicQuestion, {
+            foreignKey: 'courseTopicQuestionId',
             targetKey: 'id',
-            as: 'courseTopicContent'
+            as: 'courseTopicQuestion'
         });
 
         // CourseTopicContent.hasMany(CourseWWTopicQuestion, {
@@ -45,7 +45,7 @@ export default class CourseTopicAssessmentInfo extends Model implements CourseTo
     }
 }
 
-CourseTopicAssessmentInfo.init({
+CourseQuestionAssessmentInfo.init({
     id: {
         field: 'course_topic_assessment_info_id',
         type: DataTypes.INTEGER,
@@ -53,7 +53,7 @@ CourseTopicAssessmentInfo.init({
         primaryKey: true,
     },
     courseTopicContentId: {
-        field: 'course_topic_content_id',
+        field: 'course_topic_question_id',
         type: DataTypes.INTEGER,
         allowNull: false
     },
@@ -80,4 +80,4 @@ CourseTopicAssessmentInfo.init({
     sequelize: appSequelize, // this bit is important
 });
 
-import CourseTopicContent from './course-topic-content';
+import CourseWWTopicQuestion from './course-ww-topic-question';

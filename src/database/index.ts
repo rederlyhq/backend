@@ -26,7 +26,7 @@ import StudentTopicQuestionOverride from './models/student-topic-question-overri
 import StudentTopicAssessmentOverride from './models/student-topic-assessment-override';
 import StudentTopicAssessmentInfo from './models/student-topic-assessment-info';
 import TopicAssessmentInfo from './models/topic-assessment-info';
-import CourseTopicAssessmentInfo from './models/course-topic-assessment-info';
+import CourseQuestionAssessmentInfo from './models/course-question-assessment-info';
 
 export const sync = async (): Promise<void> => {
     try {
@@ -60,7 +60,7 @@ const models = [
     StudentGradeOverride,
     StudentTopicOverride,
     StudentTopicQuestionOverride,
-    CourseTopicAssessmentInfo,
+    CourseQuestionAssessmentInfo,
     StudentTopicAssessmentInfo,
     StudentTopicAssessmentOverride,
     TopicAssessmentInfo

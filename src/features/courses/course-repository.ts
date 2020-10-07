@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import WrappedError from '../../exceptions/wrapped-error';
 import { Constants } from '../../constants';
-import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, UpdateGradeInstanceOptions, GetTopicAssessmentInfoByTopicIdOptions } from './course-types';
+import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, UpdateGradeInstanceOptions, GetTopicAssessmentInfoByTopicIdOptions, GetStudentTopicAssessmentInfoOptions } from './course-types';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 import NotFoundError from '../../exceptions/not-found-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
@@ -20,6 +20,7 @@ import StudentGradeOverride from '../../database/models/student-grade-override';
 import StudentGradeLockAction from '../../database/models/student-grade-lock-action';
 import StudentGradeInstance from '../../database/models/student-grade-instance';
 import TopicAssessmentInfo from '../../database/models/topic-assessment-info';
+import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -226,6 +227,23 @@ class CourseRepository {
         return result;
     }
 
+    async getStudentTopicAssessmentInfo(options: GetStudentTopicAssessmentInfoOptions): Promise<StudentTopicAssessmentInfo[]> {
+        const result = await StudentTopicAssessmentInfo.findAll({
+            where: {
+                courseTopicContentId: options.topicId,
+                userId: options.userId,
+                active: true,
+            },
+            order: [
+                ['startTime', 'DESC'], 
+            ],
+        });
+        if (_.isNil(result)) {
+            throw new NotFoundError('The requested student topic assessment info does not exist');
+        }
+        return result;
+    }
+
     private checkCourseTopicError(e: Error): void {
         if (e instanceof BaseError === false) {
             throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
@@ -348,6 +366,19 @@ class CourseRepository {
         });
         if (_.isNil(result)) {
             throw new NotFoundError('The requested question does not exist');
+        }
+        return result;
+    }
+
+    async getQuestionsFromTopicId(options: GetQuestionRepositoryOptions): Promise<CourseWWTopicQuestion[]> {
+        const result = await CourseWWTopicQuestion.findAll({
+            where: {
+                id: options.id,
+                active: true
+            },
+        });
+        if (_.isNil(result)) {
+            throw new NotFoundError('Questions requested from a non-existent topic');
         }
         return result;
     }

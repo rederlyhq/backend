@@ -7,7 +7,7 @@ export default {
             /**
              * course_topic_assessment_info
              */
-            await queryInterface.createTable('course_topic_assessment_info', {
+            await queryInterface.createTable('course_question_assessment_info', {
                 id: {
                     field: 'course_topic_assessment_info_id',
                     type: DataTypes.INTEGER,
@@ -433,7 +433,7 @@ export default {
     down: async (queryInterface: QueryInterface): Promise<void> => {
         // Transactions are automatically use because a namespace is injected into sequelize when fetching configurations
         await queryInterface.sequelize.transaction(async () => {
-            await queryInterface.dropTable('course_topic_exam_info');
+            await queryInterface.dropTable('course_question_assessment_info');
             await queryInterface.dropTable('student_grade_instance');
             await queryInterface.dropTable('student_topic_assessment_info');
             await queryInterface.dropTable('student_topic_assessment_override');

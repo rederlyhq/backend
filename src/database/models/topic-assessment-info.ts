@@ -52,6 +52,12 @@ export default class TopicAssessmentInfo extends Model implements TopicAssessmen
             as: 'studentGrade'
         });
 
+        TopicAssessmentInfo.hasMany(StudentTopicAssessmentOverride, {
+            foreignKey: 'studentTopicAssessmentInfoId',
+            sourceKey: 'id',
+            as: 'studentTopicAssessmentOverride'
+        });
+
         // CourseTopicContent.hasMany(CourseWWTopicQuestion, {
         //     foreignKey: 'courseTopicContentId',
         //     sourceKey: 'id',
@@ -145,3 +151,4 @@ TopicAssessmentInfo.init({
 });
 
 import CourseTopicContent from './course-topic-content';
+import StudentTopicAssessmentOverride from './student-topic-assessment-override';

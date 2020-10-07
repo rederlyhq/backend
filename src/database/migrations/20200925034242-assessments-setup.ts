@@ -261,15 +261,15 @@ export default {
                     primaryKey: true,
                 },
                 courseTopicContentId: {
-                    field: 'course_topic_content_id',
+                    field: 'topic_assessment_info_id',
                     type: DataTypes.INTEGER,
                     allowNull: false,
                     // Defaults to cascade when generating the db, no action on migrations
                     onUpdate: 'CASCADE',
                     // Different from sequelize model, on models I do this with associations so I can use types
                     references: {
-                        model: 'course_topic_content',
-                        key: 'course_topic_content_id',
+                        model: 'topic_assessment_info',
+                        key: 'topic_assessment_info_id',
                     },
                 },
                 userId: {

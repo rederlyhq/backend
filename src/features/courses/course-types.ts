@@ -42,6 +42,8 @@ export interface GetCourseTopicRepositoryOptions {
 
 export interface GetTopicAssessmentInfoByTopicIdOptions {
     topicId: number;
+    // For overrides
+    userId?: number;
 }
 
 export interface GetStudentTopicAssessmentInfoOptions {

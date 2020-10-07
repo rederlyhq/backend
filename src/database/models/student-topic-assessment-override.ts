@@ -1,6 +1,6 @@
 import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize';
-import CourseTopicContent from './course-topic-content';
+import TopicAssessmentInfo from './topic-assessment-info';
 
 interface StudentTopicAssessmentOverrideInterface {
     id: number;
@@ -37,8 +37,8 @@ export default class StudentTopicAssessmentOverride extends Model implements Stu
     static createAssociations(): void {
         // This is a hack to add the associations later to avoid cyclic dependencies
         /* eslint-disable @typescript-eslint/no-use-before-define */
-        StudentTopicAssessmentOverride.belongsTo(CourseTopicContent, {
-            foreignKey: 'courseTopicContentId',
+        StudentTopicAssessmentOverride.belongsTo(TopicAssessmentInfo, {
+            foreignKey: 'topicAssessmentInfoId',
             targetKey: 'id',
             as: 'studentGrade'
         });
@@ -64,8 +64,8 @@ StudentTopicAssessmentOverride.init({
         autoIncrement: true,
         primaryKey: true,
     },
-    courseTopicContentId: {
-        field: 'course_topic_content_id',
+    topicAssessmentInfoId: {
+        field: 'topic_assessment_info_id',
         type: DataTypes.INTEGER,
         allowNull: false
     },

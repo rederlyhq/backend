@@ -1203,6 +1203,7 @@ class CourseController {
                     wasExpired: gradeResult.gradingPolicy.isExpired,
                     wasAfterAttemptLimit: !gradeResult.gradingPolicy.isWithinAttemptLimit,
                     wasLocked: gradeResult.gradingPolicy.isLocked,
+                    active: true
                 });
                 
                 if(gradeResult.gradingPolicy.willTrackAttemptReason !== WillTrackAttemptReason.YES && gradeResult.gradingPolicy.willTrackAttemptReason !== WillTrackAttemptReason.UNKNOWN) {

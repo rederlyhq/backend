@@ -33,6 +33,7 @@ import { useDatabaseTransaction } from '../../utilities/database-helper';
 import StudentTopicOverride, { StudentTopicOverrideInterface } from '../../database/models/student-topic-override';
 import StudentTopicQuestionOverride, { StudentTopicQuestionOverrideInterface } from '../../database/models/student-topic-question-override';
 import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
+import StudentGradeOverride from '../../database/models/student-grade-override';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -1404,6 +1405,12 @@ class CourseController {
         topicOverride,
         questionOverride
     }: ReGradeStudentGradeOptions): Promise<void> => {
+        // Locked grades cannot be processed
+        if (studentGrade.locked) {
+            logger.debug(`Skipping retro on locked student grade Grade: ${studentGrade.id}; User: ${studentGrade.userId};`);
+            return;
+        }
+
         return useDatabaseTransaction(async () => {
             // Can't grade a subset of workbooks because the rest of the logic is absolute
             // It resets the grade entirely and then rebuilds it from the beginning
@@ -1479,6 +1486,12 @@ class CourseController {
             // Order is extremely important here, our async for each does not wait for one to be done before starting another
             for (let i = 0; i < workbooks.length; i++) {
                 const workbook = workbooks[i];
+                if (workbook.wasLocked) {
+                    studentGrade.overallBestScore = Math.max(studentGrade.overallBestScore, workbook.result);
+                    studentGrade.lastInfluencingAttemptId = workbook.id;
+                    continue;
+                }
+
                 if (workbook.studentGradeId !== studentGrade.id) {
                     throw new IllegalArgumentException('workbook studentGradeId does not match studentGrade.id');
                 }
@@ -1504,6 +1517,17 @@ class CourseController {
                     }
                 });
             }
+
+            const lastOverride: StudentGradeOverride | undefined = (await studentGrade.getOverrides({
+                order: ['id', 'desc'],
+                limit: 1
+            }))?.[0];
+            
+            // The problem here would be if a professor lowered a student's grade but didn't lock it and then a retro occurred
+            if(!_.isNil(lastOverride) && lastOverride.newValue > studentGrade.effectiveScore) {
+                studentGrade.effectiveScore = lastOverride.newValue;
+            }
+            await studentGrade.save();
         });
     }
 

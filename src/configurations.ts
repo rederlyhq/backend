@@ -27,7 +27,7 @@ const verifyInstutionalEmailTokenLife = fromIntValue(process.env.AUTH_VERIFY_INS
 if (process.env.NODE_ENV !== 'production') {
     Object.keys(LOGGING_LEVEL).forEach((loggingLevelKey: string) => {
         if (loggingLevelKey !== loggingLevelKey.toUpperCase()) {
-            throw new Error('Logging levels constant should bee all upper case');
+            throw new Error('Logging levels constant should be all upper case');
         }
     });
 }

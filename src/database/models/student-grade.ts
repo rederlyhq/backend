@@ -53,10 +53,12 @@ export default class StudentGrade extends Model implements StudentGradeInterface
   public getUser!: BelongsToGetAssociationMixin<User>;
   public getQuestion!: BelongsToGetAssociationMixin<CourseWWTopicQuestion>;
   public getWorkbooks!: HasManyGetAssociationsMixin<StudentWorkbook>;
+  public getOverrides!: HasManyGetAssociationsMixin<StudentGradeOverride>;
 
   public user!: User;
   public courseWWTopicQuestion!: CourseWWTopicQuestion;
   public workbooks?: Array<StudentWorkbook>;
+  public overrides?: Array<StudentGradeOverride>;
 
   // timestamps!
   public readonly createdAt!: Date;
@@ -109,6 +111,12 @@ export default class StudentGrade extends Model implements StudentGradeInterface
       targetKey: 'id',
       as: 'lastInfluencingAttempt',
       constraints: false
+    });
+
+    StudentGrade.hasMany(StudentGradeOverride, {
+      foreignKey: 'studentGradeId',
+      sourceKey: 'id',
+      as: 'overrides'
     });
     /* eslint-enable @typescript-eslint/no-use-before-define */
   }
@@ -246,3 +254,4 @@ StudentGrade.init({
 import CourseWWTopicQuestion from './course-ww-topic-question';
 import User from './user';
 import StudentWorkbook from './student-workbook';
+import StudentGradeOverride from './student-grade-override';

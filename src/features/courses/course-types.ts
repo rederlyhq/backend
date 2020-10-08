@@ -54,6 +54,7 @@ export interface UpdateTopicOptions {
     // TODO further investigation if there is any way for the suggested type to show but allow other values
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updates: Partial<CourseTopicContent>;
+    checkDates?: boolean;
 }
 
 export interface UpdateCourseUnitsOptions {
@@ -92,6 +93,7 @@ export interface ExtendTopicForUserOptions {
         endDate?: Date;
         deadDate?: Date;
     };
+    checkDates?: boolean;
 }
 
 export interface UpdateUnitOptions {

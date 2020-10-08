@@ -1170,16 +1170,16 @@ class CourseController {
         submitted,
         timeOfSubmission
     }: SetGradeFromSubmissionOptions): Promise<StudentWorkbook | undefined> => {
-        if (gradeResult.gradingPolicy.willTrackAttemptReason === WillTrackAttemptReason.YES) {
+        if (gradeResult.gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
             if(studentGrade.numAttempts === 0) {
                 studentGrade.firstAttempts = gradeResult.score;
             } 
             studentGrade.latestAttempts = gradeResult.score;
             studentGrade.numAttempts++;
-            if (gradeResult.gradingPolicy.isOnTime && !gradeResult.gradingPolicy.isLocked && gradeResult.gradingPolicy.isWithinAttemptLimit) {
+            if (gradeResult.gradingRationale.isOnTime && !gradeResult.gradingRationale.isLocked && gradeResult.gradingRationale.isWithinAttemptLimit) {
                 studentGrade.numLegalAttempts++;
             }
-            if (!gradeResult.gradingPolicy.isExpired && !gradeResult.gradingPolicy.isLocked && gradeResult.gradingPolicy.isWithinAttemptLimit) {
+            if (!gradeResult.gradingRationale.isExpired && !gradeResult.gradingRationale.isLocked && gradeResult.gradingRationale.isWithinAttemptLimit) {
                 studentGrade.numExtendedAttempts++;
             }
 
@@ -1192,22 +1192,22 @@ class CourseController {
                     submitted: rendererHelper.cleanRendererResponseForTheDatabase(submitted as RendererResponse),
                     result: gradeResult.score,
                     time: timeOfSubmission ?? new Date(),
-                    wasLate: gradeResult.gradingPolicy.isLate,
-                    wasExpired: gradeResult.gradingPolicy.isExpired,
-                    wasAfterAttemptLimit: !gradeResult.gradingPolicy.isWithinAttemptLimit,
-                    wasLocked: gradeResult.gradingPolicy.isLocked,
+                    wasLate: gradeResult.gradingRationale.isLate,
+                    wasExpired: gradeResult.gradingRationale.isExpired,
+                    wasAfterAttemptLimit: !gradeResult.gradingRationale.isWithinAttemptLimit,
+                    wasLocked: gradeResult.gradingRationale.isLocked,
                     wasAutoSubmitted: false // TODO
                 });
             } else {
                 _.assign(workbook, {
-                    wasLate: gradeResult.gradingPolicy.isLate,
-                    wasExpired: gradeResult.gradingPolicy.isExpired,
-                    wasAfterAttemptLimit: !gradeResult.gradingPolicy.isWithinAttemptLimit,
-                    wasLocked: gradeResult.gradingPolicy.isLocked,
+                    wasLate: gradeResult.gradingRationale.isLate,
+                    wasExpired: gradeResult.gradingRationale.isExpired,
+                    wasAfterAttemptLimit: !gradeResult.gradingRationale.isWithinAttemptLimit,
+                    wasLocked: gradeResult.gradingRationale.isLocked,
                     active: true
                 });
                 
-                if(gradeResult.gradingPolicy.willTrackAttemptReason !== WillTrackAttemptReason.YES && gradeResult.gradingPolicy.willTrackAttemptReason !== WillTrackAttemptReason.UNKNOWN) {
+                if(gradeResult.gradingRationale.willTrackAttemptReason !== WillTrackAttemptReason.YES && gradeResult.gradingRationale.willTrackAttemptReason !== WillTrackAttemptReason.UNKNOWN) {
                     logger.error('During regrade we somehow got a workbook that should not count... this should not be possible, setting all workbooks audit flags to false and active to false');
                     _.assign(workbook, {
                         wasLate: false,

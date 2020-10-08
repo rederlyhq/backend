@@ -331,7 +331,7 @@ export interface GradeOptions {
 }
 
 export interface GradeResult {
-    gradingPolicy: DetermineGradingRationaleResult;
+    gradingRationale: DetermineGradingRationaleResult;
     gradeUpdates: Partial<StudentGrade>;
     score: number;
 }

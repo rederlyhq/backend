@@ -116,7 +116,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -164,7 +164,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -218,7 +218,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -279,7 +279,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -327,7 +327,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -377,7 +377,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -444,7 +444,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -492,7 +492,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -541,7 +541,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -602,7 +602,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -650,7 +650,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -699,7 +699,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -769,7 +769,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -817,7 +817,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -866,7 +866,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -922,7 +922,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -970,7 +970,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -1019,7 +1019,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -1094,7 +1094,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -1142,7 +1142,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -1192,7 +1192,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -1249,7 +1249,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -1297,7 +1297,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -1347,7 +1347,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -1413,7 +1413,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -1461,7 +1461,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -1510,7 +1510,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -1567,7 +1567,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -1615,7 +1615,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -1664,7 +1664,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -1734,7 +1734,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -1782,7 +1782,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -1831,7 +1831,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -1887,7 +1887,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -1935,7 +1935,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -1984,7 +1984,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -2059,7 +2059,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -2107,7 +2107,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -2157,7 +2157,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -2214,7 +2214,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -2262,7 +2262,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -2312,7 +2312,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -2378,7 +2378,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -2426,7 +2426,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -2475,7 +2475,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -2532,7 +2532,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -2580,7 +2580,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -2629,7 +2629,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -2699,7 +2699,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -2747,7 +2747,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -2796,7 +2796,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -2852,7 +2852,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -2900,7 +2900,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -2949,7 +2949,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -3036,7 +3036,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -3084,7 +3084,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -3137,7 +3137,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -3197,7 +3197,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -3245,7 +3245,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -3295,7 +3295,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -3362,7 +3362,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -3410,7 +3410,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -3459,7 +3459,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -3519,7 +3519,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -3567,7 +3567,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -3616,7 +3616,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -3686,7 +3686,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -3734,7 +3734,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -3783,7 +3783,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -3839,7 +3839,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -3887,7 +3887,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -3936,7 +3936,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -4011,7 +4011,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -4059,7 +4059,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -4109,7 +4109,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -4166,7 +4166,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -4214,7 +4214,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -4264,7 +4264,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -4330,7 +4330,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -4378,7 +4378,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -4427,7 +4427,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -4484,7 +4484,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -4532,7 +4532,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -4581,7 +4581,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -4651,7 +4651,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -4699,7 +4699,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -4748,7 +4748,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -4804,7 +4804,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -4852,7 +4852,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -4901,7 +4901,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -4976,7 +4976,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -5024,7 +5024,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -5074,7 +5074,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -5131,7 +5131,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -5179,7 +5179,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -5229,7 +5229,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -5295,7 +5295,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -5343,7 +5343,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -5392,7 +5392,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -5449,7 +5449,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -5497,7 +5497,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -5546,7 +5546,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -5616,7 +5616,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -5664,7 +5664,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -5713,7 +5713,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -5769,7 +5769,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -5817,7 +5817,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -5866,7 +5866,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -5952,7 +5952,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -6000,7 +6000,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -6050,7 +6050,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -6107,7 +6107,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -6155,7 +6155,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -6205,7 +6205,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -6271,7 +6271,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -6319,7 +6319,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -6368,7 +6368,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -6425,7 +6425,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -6473,7 +6473,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -6522,7 +6522,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -6592,7 +6592,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -6640,7 +6640,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -6689,7 +6689,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -6745,7 +6745,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -6793,7 +6793,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -6842,7 +6842,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -6917,7 +6917,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -6965,7 +6965,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -7015,7 +7015,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -7072,7 +7072,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -7120,7 +7120,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -7170,7 +7170,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -7236,7 +7236,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -7284,7 +7284,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -7333,7 +7333,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -7390,7 +7390,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -7438,7 +7438,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -7487,7 +7487,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -7557,7 +7557,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -7605,7 +7605,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -7654,7 +7654,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -7710,7 +7710,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -7758,7 +7758,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -7807,7 +7807,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -7882,7 +7882,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -7930,7 +7930,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -7980,7 +7980,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -8037,7 +8037,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -8085,7 +8085,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -8135,7 +8135,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -8201,7 +8201,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -8249,7 +8249,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -8298,7 +8298,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -8355,7 +8355,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -8403,7 +8403,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -8452,7 +8452,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -8522,7 +8522,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -8570,7 +8570,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -8619,7 +8619,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -8675,7 +8675,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -8723,7 +8723,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -8772,7 +8772,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -8858,7 +8858,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -8906,7 +8906,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -8954,7 +8954,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -9008,7 +9008,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -9056,7 +9056,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -9104,7 +9104,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -9168,7 +9168,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -9216,7 +9216,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -9265,7 +9265,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -9319,7 +9319,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -9367,7 +9367,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -9416,7 +9416,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -9484,7 +9484,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -9532,7 +9532,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -9581,7 +9581,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -9637,7 +9637,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -9685,7 +9685,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -9734,7 +9734,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -9806,7 +9806,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -9854,7 +9854,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -9902,7 +9902,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -9956,7 +9956,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -10004,7 +10004,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -10052,7 +10052,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -10116,7 +10116,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -10164,7 +10164,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -10213,7 +10213,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -10267,7 +10267,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -10315,7 +10315,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -10364,7 +10364,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -10432,7 +10432,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -10480,7 +10480,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -10529,7 +10529,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -10585,7 +10585,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -10633,7 +10633,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -10682,7 +10682,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -10754,7 +10754,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -10802,7 +10802,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -10850,7 +10850,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -10904,7 +10904,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -10952,7 +10952,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -11000,7 +11000,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -11064,7 +11064,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -11112,7 +11112,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -11161,7 +11161,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -11215,7 +11215,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -11263,7 +11263,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -11312,7 +11312,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -11380,7 +11380,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -11428,7 +11428,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -11477,7 +11477,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -11533,7 +11533,7 @@ describe('Grading Helper Tests', () => {
                             const result = calculateGrade(params);
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -11581,7 +11581,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     isCompleted: resultIsCompleted,
                                     isExpired: resultIsExpired,
                                     isLocked: resultIsLocked,
@@ -11630,7 +11630,7 @@ describe('Grading Helper Tests', () => {
 
 
                             expect(result).toStrictEqual({
-                                gradingPolicy: {
+                                gradingRationale: {
                                     // isCompleted is false because this object represents why you got the grade that you did
                                     // even though it is completed now it was not at the time of getting the grade
                                     isCompleted: resultIsCompleted,
@@ -11719,7 +11719,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -11767,7 +11767,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -11820,7 +11820,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -11880,7 +11880,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -11928,7 +11928,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -11978,7 +11978,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -12044,7 +12044,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -12092,7 +12092,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -12141,7 +12141,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -12201,7 +12201,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -12249,7 +12249,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -12298,7 +12298,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -12367,7 +12367,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -12415,7 +12415,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -12464,7 +12464,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -12520,7 +12520,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -12568,7 +12568,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -12617,7 +12617,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -12691,7 +12691,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -12739,7 +12739,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -12789,7 +12789,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -12846,7 +12846,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -12894,7 +12894,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -12944,7 +12944,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -13009,7 +13009,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -13057,7 +13057,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -13106,7 +13106,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -13163,7 +13163,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -13211,7 +13211,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -13260,7 +13260,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -13329,7 +13329,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -13377,7 +13377,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -13426,7 +13426,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -13482,7 +13482,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -13530,7 +13530,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -13579,7 +13579,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -13653,7 +13653,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -13701,7 +13701,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -13751,7 +13751,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -13808,7 +13808,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -13856,7 +13856,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -13906,7 +13906,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -13971,7 +13971,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -14019,7 +14019,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -14068,7 +14068,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -14125,7 +14125,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -14173,7 +14173,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -14222,7 +14222,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -14291,7 +14291,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -14339,7 +14339,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -14388,7 +14388,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -14444,7 +14444,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -14492,7 +14492,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -14541,7 +14541,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -14627,7 +14627,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -14675,7 +14675,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -14727,7 +14727,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -14786,7 +14786,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -14834,7 +14834,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -14884,7 +14884,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -14950,7 +14950,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -14998,7 +14998,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -15047,7 +15047,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -15106,7 +15106,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -15154,7 +15154,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -15203,7 +15203,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -15272,7 +15272,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -15320,7 +15320,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -15369,7 +15369,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -15425,7 +15425,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -15473,7 +15473,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -15522,7 +15522,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -15596,7 +15596,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -15644,7 +15644,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -15694,7 +15694,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -15751,7 +15751,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -15799,7 +15799,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -15849,7 +15849,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -15914,7 +15914,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -15962,7 +15962,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -16011,7 +16011,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -16068,7 +16068,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -16116,7 +16116,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -16165,7 +16165,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -16234,7 +16234,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -16282,7 +16282,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -16331,7 +16331,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -16387,7 +16387,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -16435,7 +16435,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -16484,7 +16484,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -16558,7 +16558,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -16606,7 +16606,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -16656,7 +16656,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -16713,7 +16713,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -16761,7 +16761,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -16811,7 +16811,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -16876,7 +16876,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -16924,7 +16924,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -16973,7 +16973,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -17030,7 +17030,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -17078,7 +17078,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -17127,7 +17127,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -17196,7 +17196,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -17244,7 +17244,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -17293,7 +17293,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -17349,7 +17349,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -17397,7 +17397,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -17446,7 +17446,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -17531,7 +17531,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -17579,7 +17579,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -17629,7 +17629,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -17686,7 +17686,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -17734,7 +17734,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -17784,7 +17784,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -17849,7 +17849,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -17897,7 +17897,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -17946,7 +17946,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -18003,7 +18003,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -18051,7 +18051,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -18100,7 +18100,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -18169,7 +18169,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -18217,7 +18217,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -18266,7 +18266,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -18322,7 +18322,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -18370,7 +18370,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -18419,7 +18419,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -18493,7 +18493,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -18541,7 +18541,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -18591,7 +18591,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -18648,7 +18648,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -18696,7 +18696,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -18746,7 +18746,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -18811,7 +18811,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -18859,7 +18859,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -18908,7 +18908,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -18965,7 +18965,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -19013,7 +19013,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -19062,7 +19062,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -19131,7 +19131,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -19179,7 +19179,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -19228,7 +19228,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -19284,7 +19284,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -19332,7 +19332,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -19381,7 +19381,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -19455,7 +19455,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -19503,7 +19503,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -19553,7 +19553,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -19610,7 +19610,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -19658,7 +19658,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -19708,7 +19708,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -19773,7 +19773,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -19821,7 +19821,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -19870,7 +19870,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -19927,7 +19927,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -19975,7 +19975,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -20024,7 +20024,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -20093,7 +20093,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -20141,7 +20141,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -20190,7 +20190,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -20246,7 +20246,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -20294,7 +20294,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -20343,7 +20343,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -20428,7 +20428,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -20476,7 +20476,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -20524,7 +20524,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -20578,7 +20578,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -20626,7 +20626,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -20674,7 +20674,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -20737,7 +20737,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -20785,7 +20785,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -20834,7 +20834,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -20888,7 +20888,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -20936,7 +20936,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -20985,7 +20985,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -21052,7 +21052,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -21100,7 +21100,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -21149,7 +21149,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -21205,7 +21205,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -21253,7 +21253,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -21302,7 +21302,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -21373,7 +21373,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -21421,7 +21421,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -21469,7 +21469,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -21523,7 +21523,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -21571,7 +21571,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -21619,7 +21619,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -21682,7 +21682,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -21730,7 +21730,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -21779,7 +21779,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -21833,7 +21833,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -21881,7 +21881,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -21930,7 +21930,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -21997,7 +21997,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -22045,7 +22045,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -22094,7 +22094,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -22150,7 +22150,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -22198,7 +22198,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -22247,7 +22247,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -22318,7 +22318,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -22366,7 +22366,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -22414,7 +22414,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -22468,7 +22468,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -22516,7 +22516,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -22564,7 +22564,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -22627,7 +22627,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -22675,7 +22675,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -22724,7 +22724,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -22778,7 +22778,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -22826,7 +22826,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -22875,7 +22875,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -22942,7 +22942,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -22990,7 +22990,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -23039,7 +23039,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,
@@ -23095,7 +23095,7 @@ describe('Grading Helper Tests', () => {
                                 const result = calculateGrade(params);
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -23143,7 +23143,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         isCompleted: resultIsCompleted,
                                         isExpired: resultIsExpired,
                                         isLocked: resultIsLocked,
@@ -23192,7 +23192,7 @@ describe('Grading Helper Tests', () => {
 
 
                                 expect(result).toStrictEqual({
-                                    gradingPolicy: {
+                                    gradingRationale: {
                                         // isCompleted is false because this object represents why you got the grade that you did
                                         // even though it is completed now it was not at the time of getting the grade
                                         isCompleted: resultIsCompleted,

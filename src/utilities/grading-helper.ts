@@ -64,7 +64,7 @@ export interface CalculateGradeOptions {
 }
 
 export interface CalculateGradeResult {
-    gradingPolicy: DetermineGradingRationaleResult;
+    gradingRationale: DetermineGradingRationaleResult;
     gradeUpdates: Partial<StudentGrade>;
     score: number;
 }
@@ -176,7 +176,7 @@ export const calculateGrade = ({
 
     timeOfSubmission
 }: CalculateGradeOptions): CalculateGradeResult => {
-    const gradingPolicy: DetermineGradingRationaleResult = determineGradingRationale({
+    const gradingRationale: DetermineGradingRationaleResult = determineGradingRationale({
         deadDate: topic.deadDate.toMoment(),
         endDate: topic.endDate.toMoment(),
 
@@ -190,18 +190,18 @@ export const calculateGrade = ({
     });
 
     const result: CalculateGradeResult = {
-        gradingPolicy,
+        gradingRationale,
         gradeUpdates: {},
         score: newScore
     };
-    if (gradingPolicy.willTrackAttemptReason === WillTrackAttemptReason.YES) {
+    if (gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
 
         result.gradeUpdates.overallBestScore =
             newScore > studentGrade.overallBestScore ?
                 newScore : undefined;
 
-        if (willBeGraded(gradingPolicy.willGetCreditReason)) {
-            if (gradingPolicy.willGetCreditReason === WillGetCreditReason.YES) {
+        if (willBeGraded(gradingRationale.willGetCreditReason)) {
+            if (gradingRationale.willGetCreditReason === WillGetCreditReason.YES) {
                 // Full credit.
                 // If overall best score was updated then update these
                 result.gradeUpdates.bestScore = result.gradeUpdates.overallBestScore;
@@ -211,7 +211,7 @@ export const calculateGrade = ({
                 result.gradeUpdates.effectiveScore =
                     newScore > studentGrade.effectiveScore ?
                         newScore : undefined;
-            } else if (gradingPolicy.willGetCreditReason === WillGetCreditReason.YES_BUT_PARTIAL_CREDIT) {
+            } else if (gradingRationale.willGetCreditReason === WillGetCreditReason.YES_BUT_PARTIAL_CREDIT) {
                 // Partial credit
                 const partialCreditScalar = 0.5;
                 const partialCreditScore = ((newScore - studentGrade.legalScore) * partialCreditScalar) + studentGrade.legalScore;

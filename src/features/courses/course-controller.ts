@@ -1482,51 +1482,75 @@ class CourseController {
             studentGrade.firstAttempts = 0;
             studentGrade.latestAttempts = 0;
             
-            await studentGrade.save();
-            // Order is extremely important here, our async for each does not wait for one to be done before starting another
-            for (let i = 0; i < workbooks.length; i++) {
-                const workbook = workbooks[i];
-                if (workbook.wasLocked) {
-                    studentGrade.overallBestScore = Math.max(studentGrade.overallBestScore, workbook.result);
-                    studentGrade.lastInfluencingAttemptId = workbook.id;
-                    continue;
+            const gradeOverrides: StudentGradeOverride[] = await studentGrade.getOverrides({
+                order: ['id'],
+                where: {
+                    active: true
                 }
-
-                if (workbook.studentGradeId !== studentGrade.id) {
-                    throw new IllegalArgumentException('workbook studentGradeId does not match studentGrade.id');
-                }
-    
-                if(_.isNil(question) || _.isNil(topic)) {
-                    throw new Error('This cannot be undefined, strict is confused because of transaction callback');
-                }
-
-                await this.gradeSubmission({
-                    newScore: workbook.result,
-                    question,
-                    solutionDate,
-                    studentGrade,
-                    topic,
-
-                    timeOfSubmission: workbook.time,
-                    submitted: null,
-                    workbook,
-                    override: {
-                        useOverride: true,
-                        questionOverride: questionOverride,
-                        topicOverride: topicOverride
-                    }
-                });
-            }
-
-            const lastOverride: StudentGradeOverride | undefined = (await studentGrade.getOverrides({
-                order: ['id', 'desc'],
-                limit: 1
-            }))?.[0];
+            });
             
-            // The problem here would be if a professor lowered a student's grade but didn't lock it and then a retro occurred
-            if(!_.isNil(lastOverride) && lastOverride.newValue > studentGrade.effectiveScore) {
-                studentGrade.effectiveScore = lastOverride.newValue;
+            const workbooksAndOverrides: (StudentWorkbook | StudentGradeOverride)[] = [...workbooks, ...gradeOverrides];
+            const sortedWorkbooksAndOverrides = _.sortBy(workbooksAndOverrides, (first: StudentWorkbook | StudentGradeOverride, second: StudentWorkbook | StudentGradeOverride) => {
+                const getDate = (object: StudentWorkbook | StudentGradeOverride): Date => {
+                    if (object instanceof StudentWorkbook) {
+                        return object.time;
+                    } else {
+                        if (!(object instanceof StudentGradeOverride)) {
+                            logger.error('Invalid type, should be StudentWorkbook | StudentGradeOverride');
+                        }
+                        // could always be createdAt...
+                        // time for workbook is redundant and should always be the same as created at
+                        // That being said
+                        return object.createdAt;
+                    }
+                };
+                return getDate(first).toMoment().isAfter(getDate(second).toMoment());
+            });
+
+            // Order is extremely important here, our async for each does not wait for one to be done before starting another
+            for (let i = 0; i < sortedWorkbooksAndOverrides.length; i++) {
+                const workbookOrOverride = sortedWorkbooksAndOverrides[i];
+                if (workbookOrOverride instanceof StudentWorkbook) {
+                    const workbook = workbookOrOverride;
+                    if (workbook.wasLocked) {
+                        studentGrade.overallBestScore = Math.max(studentGrade.overallBestScore, workbook.result);
+                        studentGrade.lastInfluencingAttemptId = workbook.id;
+                        continue;
+                    }
+    
+                    if (workbook.studentGradeId !== studentGrade.id) {
+                        throw new IllegalArgumentException('workbook studentGradeId does not match studentGrade.id');
+                    }
+        
+                    if(_.isNil(question) || _.isNil(topic)) {
+                        throw new Error('This cannot be undefined, strict is confused because of transaction callback');
+                    }
+    
+                    await this.gradeSubmission({
+                        newScore: workbook.result,
+                        question,
+                        solutionDate,
+                        studentGrade,
+                        topic,
+    
+                        timeOfSubmission: workbook.time,
+                        submitted: null,
+                        workbook,
+                        override: {
+                            useOverride: true,
+                            questionOverride: questionOverride,
+                            topicOverride: topicOverride
+                        }
+                    });                        
+                } else if (workbookOrOverride instanceof StudentGradeOverride) {
+                    // redundant but makes it easier to read
+                    const override = workbookOrOverride;
+                    studentGrade.effectiveScore = override.newValue;
+                } else {
+                    logger.error('Impossible case, workbookOrOverride is not a workbook or an override');
+                }
             }
+
             await studentGrade.save();
         });
     }

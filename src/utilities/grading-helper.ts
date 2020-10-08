@@ -25,8 +25,8 @@ export enum WillGetCreditReason {
 };
 
 interface DetermineGradingRationaleOptions {
-    endDate: Date;
-    deadDate: Date;
+    endDate: moment.Moment;
+    deadDate: moment.Moment;
     locked: boolean;
 
     overallBestScore: number;
@@ -36,7 +36,7 @@ interface DetermineGradingRationaleOptions {
 
     solutionDate: moment.Moment;
 
-    timeOfSubmission: Date;
+    timeOfSubmission: moment.Moment;
 }
 
 export interface DetermineGradingRationaleResult {
@@ -60,7 +60,7 @@ export interface CalculateGradeOptions {
 
     newScore: number;
 
-    timeOfSubmission: Date;
+    timeOfSubmission: moment.Moment;
 }
 
 export interface CalculateGradeResult {
@@ -177,8 +177,8 @@ export const calculateGrade = ({
     timeOfSubmission
 }: CalculateGradeOptions): CalculateGradeResult => {
     const gradingPolicy: DetermineGradingRationaleResult = determineGradingRationale({
-        deadDate: topic.deadDate,
-        endDate: topic.endDate,
+        deadDate: topic.deadDate.toMoment(),
+        endDate: topic.endDate.toMoment(),
 
         locked: studentGrade.locked,
         maxAttempts: question.maxAttempts,

@@ -320,7 +320,7 @@ export interface GradeOptions {
 
     submitted: unknown;
 
-    timeOfSubmission: Date;
+    timeOfSubmission: moment.Moment;
     workbook?: StudentWorkbook;
 
     override?: {
@@ -347,7 +347,7 @@ export interface SetGradeFromSubmissionOptions {
     workbook?: StudentWorkbook;
     gradeResult: GradeResult;
     submitted: unknown;
-    timeOfSubmission? : Date;
+    timeOfSubmission? : Moment;
 }
 
 export interface ReGradeTopicOptions {

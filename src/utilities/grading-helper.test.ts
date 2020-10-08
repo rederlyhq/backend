@@ -1,5 +1,7 @@
 import { calculateGrade, CalculateGradeOptions } from './grading-helper';
 import * as moment from 'moment';
+// TODO this should somehow be done a level higher to be used for all unit tests
+import '../extensions';
 
 const defaultUnusedFields = {
     active: true,
@@ -49,7 +51,7 @@ const defaultTopicUnusedFields = {
 };
 
 describe('Grading Helper Tests', () => {
-    const timeOfSubmission = new Date();
+    const timeOfSubmission = moment();
     describe('calculateGrade', () => {
 
         describe('On Time', () => {

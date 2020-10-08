@@ -1471,7 +1471,7 @@ class CourseController {
             studentGrade.bestScore = 0;
             studentGrade.overallBestScore = 0;
             studentGrade.partialCreditBestScore = 0;
-            // studentGrade.effectiveScore // Don't touch this
+            studentGrade.effectiveScore = 0;
             studentGrade.legalScore = 0;
             studentGrade.numAttempts = 0;
             studentGrade.numLegalAttempts = 0;
@@ -1533,7 +1533,7 @@ class CourseController {
                         studentGrade,
                         topic,
     
-                        timeOfSubmission: workbook.time,
+                        timeOfSubmission: workbook.time.toMoment(),
                         submitted: null,
                         workbook,
                         override: {
@@ -1692,7 +1692,7 @@ class CourseController {
                     studentGrade,
                     submitted: options.submitted,
                     topic,
-                    timeOfSubmission: options.timeOfSubmission ?? new Date(),
+                    timeOfSubmission: options.timeOfSubmission?.toMoment() ?? moment(),
                     override: {
                         useOverride: true,
                         questionOverride: question.studentTopicQuestionOverride?.[0] ?? null,

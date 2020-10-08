@@ -1204,6 +1204,17 @@ class CourseController {
                     wasAfterAttemptLimit: !gradeResult.gradingPolicy.isWithinAttemptLimit,
                     wasLocked: gradeResult.gradingPolicy.isLocked,
                 });
+                
+                if(gradeResult.gradingPolicy.willTrackAttemptReason !== WillTrackAttemptReason.YES && gradeResult.gradingPolicy.willTrackAttemptReason !== WillTrackAttemptReason.UNKNOWN) {
+                    logger.error('During regrade we somehow got a workbook that should not count... this should not be possible, setting all workbooks audit flags to false and active to false');
+                    _.assign(workbook, {
+                        wasLate: false,
+                        wasExpired: false,
+                        wasAfterAttemptLimit: !false,
+                        wasLocked: false,
+                        active: false
+                    });
+                }
                 await workbook.save();
             }
 
@@ -1287,7 +1298,11 @@ class CourseController {
         }
 
         return useDatabaseTransaction(async () => {
-            const questions = await topic.getQuestions();
+            const questions = await topic.getQuestions({
+                where: {
+                    active: true
+                }
+            });
             await questions.asyncForEach(async (question: CourseWWTopicQuestion) => {
                 await this.reGradeQuestion({
                     topic,
@@ -1354,10 +1369,15 @@ class CourseController {
             // Validation that passed in values match up (fk) are done deeper
             grades = grades ?? await question.getGrades({
                 where: _({
-                    userId
+                    userId,
+                    active: true
                 }).omitBy(_.isUndefined).value() as sequelize.WhereOptions
             });
-            topic = topic ?? await question.getTopic();
+            topic = topic ?? await question.getTopic({
+                where: {
+                    active: true
+                }
+            });
 
             logger.debug(`Regrading ${grades.length} grades`);
 
@@ -1393,6 +1413,11 @@ class CourseController {
             // };
             workbooks = workbooks ?? await studentGrade.getWorkbooks({
                 order: ['id'],
+                // I was thinking of using the active flag for the case where the solutions date would be available
+                // That shouldn't be possible, but this way we have a catch
+                // where: {
+                //     active: true
+                // }
                 // Use something like object assign if there are more clauses
                 // where: timeClause
             });
@@ -1413,8 +1438,16 @@ class CourseController {
             workbooks = _.orderBy(workbooks, 'id', 'asc');
             logger.debug(`Regrading ${workbooks.length} attempts`);
 
-            question = question ?? await studentGrade.getQuestion();
-            topic = topic ?? await question.getTopic();
+            question = question ?? await studentGrade.getQuestion({
+                where: {
+                    active: true
+                }
+            });
+            topic = topic ?? await question.getTopic({
+                where: {
+                    active: true
+                }
+            });
 
             if (studentGrade.courseWWTopicQuestionId !== question.id) {
                 throw new IllegalArgumentException('studentGrade question id does not match the question\'s id');

@@ -1288,12 +1288,13 @@ class CourseController {
                 ];
 
                 const changedDueDateTuples: [Date, Date][] = _.filter(dueDateTuples, (dateTuple: [Date, Date]) => !dateTuple[0].toMoment().isSame(dateTuple[1].toMoment()));
-                const minDateMoment = moment.min(_.flatten(changedDueDateTuples).map((date: Date) => date.toMoment()));
+                const dateArray = _.flatten(changedDueDateTuples).map((date: Date) => date.toMoment());
+                const minDateMoment = _.isEmpty(dateArray) ? null : moment.min(dateArray);
                 // For use with optimization, skipping grade reprocessing
-                minDate = minDateMoment.toDate();
+                minDate = minDateMoment?.toDate();
 
                 const theMoment = moment();
-                const canSkip = theMoment.isBefore(minDateMoment);
+                const canSkip = _.isNil(minDateMoment) || theMoment.isBefore(minDateMoment);
 
                 if (canSkip) {
                     logger.debug('Skipping topic regrade');
@@ -1342,6 +1343,7 @@ class CourseController {
         let grades: Array<StudentGrade> | undefined;
         if (skipIfPossible) {
             let canSkip = false;
+
             const maxAttemptsArray = _.compact([
                 newQuestion?.maxAttempts,
                 originalQuestion?.maxAttempts,

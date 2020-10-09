@@ -450,7 +450,7 @@ class CourseController {
                 // Move the object out of the way for now, this is due to constraint issues
                 // TODO make unique index a deferable unique constraint and then make the transaction deferable
                 // NOTE: sequelize did not have a nice way of doing this on unique constraints that use the same key in a composite key
-                existingTopic.contentOrder = Constants.Database.MAX_INTEGER_VALUE;;
+                existingTopic.contentOrder = Constants.Database.MAX_INTEGER_VALUE;
                 await existingTopic.save();
                 updatesResults = await this.makeCourseTopicOrderAvailable({
                     sourceContentOrder,

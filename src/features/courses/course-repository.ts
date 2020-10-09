@@ -21,7 +21,7 @@ import StudentGradeLockAction from '../../database/models/student-grade-lock-act
 import StudentGradeInstance from '../../database/models/student-grade-instance';
 import * as moment from 'moment';
 import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
-
+import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -208,6 +208,15 @@ class CourseRepository {
                 id: options.id,
                 active: true
             },
+            include: [
+                {
+                    model: StudentTopicAssessmentInfo,
+                    as: 'topicAssessmentInfo',
+                    where: {
+                        active: true
+                    }
+                }
+            ]
         });
         if (_.isNil(result)) {
             throw new NotFoundError('The requested topic does not exist');
@@ -264,6 +273,22 @@ class CourseRepository {
         }
         
         try {
+            const topicKeys = CourseTopicContent.prototype;
+            const topicUpdates: any = {};
+            const assessmentUpdates: any = {};
+
+            _.forOwn(options.updates, (val, key) => {
+                console.log(`Evaluating ${key}`);
+                // console.log(CourseTopicContent.prototype);
+                if (_.includes(Object.keys(CourseTopicContent.prototype), key)) {
+                    console.log(`Storing ${key} and ${val}`);
+                    topicUpdates[key] = val;
+                } else {
+                    console.log(`Assessing ${key} and ${val}`);
+                    assessmentUpdates[key] = val;
+                }
+            });
+
             const updates = await CourseTopicContent.update(options.updates, {
                 where: {
                     ...options.where,

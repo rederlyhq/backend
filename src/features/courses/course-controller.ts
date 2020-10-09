@@ -1513,8 +1513,7 @@ class CourseController {
                         return object.createdAt;
                     }
                 };
-                // Return 1 for true, 0 for false
-                return Number(getDate(first).toMoment().isAfter(getDate(second).toMoment()));
+                return getDate(first).getTime() - getDate(second).getTime();
             });
 
             // Order is extremely important here, our async for each does not wait for one to be done before starting another

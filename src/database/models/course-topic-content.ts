@@ -48,7 +48,10 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
     public readonly updatedAt!: Date;
 
     static getWithOverrides = (obj: CourseTopicContentInterface, overrides: StudentTopicOverrideOveridesInterface): CourseTopicContentInterface => {
-        return _.assign({}, obj, overrides);
+        // This is a hack to add the associations later to avoid cyclic dependencies
+        /* eslint-disable @typescript-eslint/no-use-before-define */
+        return _.assign({}, obj, StudentTopicOverride.getOverrides(overrides));
+        /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 
     getWithOverrides = (overrides: StudentTopicOverrideOveridesInterface): CourseTopicContentInterface => {

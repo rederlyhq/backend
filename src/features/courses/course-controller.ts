@@ -1520,8 +1520,11 @@ class CourseController {
                 if (workbookOrOverride instanceof StudentWorkbook) {
                     const workbook = workbookOrOverride;
                     if (workbook.wasLocked) {
-                        studentGrade.overallBestScore = Math.max(studentGrade.overallBestScore, workbook.result);
-                        studentGrade.lastInfluencingAttemptId = workbook.id;
+                        studentGrade.numAttempts++;
+                        if (workbook.result > studentGrade.overallBestScore) {
+                            studentGrade.overallBestScore = workbook.result;
+                            studentGrade.lastInfluencingAttemptId = workbook.id;
+                        }
                         continue;
                     }
     

@@ -34,7 +34,7 @@ export default class StudentTopicOverride extends Model implements StudentTopicO
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 
-    static getOverrides = (obj: StudentTopicOverrideInterface): StudentTopicOverrideOveridesInterface => {
+    static getOverrides = (obj: StudentTopicOverrideOveridesInterface): StudentTopicOverrideOveridesInterface => {
         return _.pick(obj, 'startDate', 'deadDate', 'endDate');
     }
 

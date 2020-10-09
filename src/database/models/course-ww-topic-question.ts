@@ -41,7 +41,9 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
     public readonly updatedAt!: Date;
 
     static getWithOverrides = (obj: CourseWWTopicQuestionInterface, overrides: StudentTopicQuestionOverrideOverridesInterface): CourseWWTopicQuestionInterface => {
-        return _.assign({}, obj, overrides);
+        // Avoid cyclic dependencies
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        return _.assign({}, obj, StudentTopicQuestionOverride.getOverrides(overrides));
     }
 
     getWithOverrides = (overrides: StudentTopicQuestionOverrideOverridesInterface): CourseWWTopicQuestionInterface => {

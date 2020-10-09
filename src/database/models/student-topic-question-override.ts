@@ -30,7 +30,7 @@ export default class StudentTopicQuestionOverride extends Model implements Stude
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 
-    static getOverrides = (obj: StudentTopicQuestionOverrideInterface): StudentTopicQuestionOverrideOverridesInterface => {
+    static getOverrides = (obj: StudentTopicQuestionOverrideOverridesInterface): StudentTopicQuestionOverrideOverridesInterface => {
       return _.pick(obj, 'maxAttempts');
     }
     

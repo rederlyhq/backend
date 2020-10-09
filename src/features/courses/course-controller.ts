@@ -1606,7 +1606,7 @@ class CourseController {
                 topicOverride = overrides?.[0] ?? null;
             }
 
-            if (_.isUndefined(topicOverride)) {
+            if (_.isUndefined(questionOverride)) {
                 const overrides = await passedQuestion.getStudentTopicQuestionOverride({
                     where: {
                         userId: studentGrade.userId,

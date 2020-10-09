@@ -48,7 +48,7 @@ export default class TopicAssessmentInfo extends Model implements TopicAssessmen
         TopicAssessmentInfo.belongsTo(CourseTopicContent, {
             foreignKey: 'courseTopicContentId',
             targetKey: 'id',
-            as: 'studentGrade'
+            as: 'courseTopicContent'
         });
 
         TopicAssessmentInfo.hasMany(StudentTopicAssessmentOverride, {

@@ -1,4 +1,4 @@
-import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
+import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
 interface StudentTopicAssessmentInfoInterface {
@@ -22,6 +22,7 @@ export default class StudentTopicAssessmentInfo extends Model implements Student
 
     public getUser!: BelongsToGetAssociationMixin<User>;
     public getTopic!: BelongsToGetAssociationMixin<CourseTopicContent>;
+    public getStudentGradeInstances!: HasManyGetAssociationsMixin<StudentGradeInstance>;
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -45,6 +46,11 @@ export default class StudentTopicAssessmentInfo extends Model implements Student
             as: 'user'
         });
 
+        StudentTopicAssessmentInfo.hasMany(StudentGradeInstance, {
+            foreignKey: 'studentTopicAssessmentInfoId',
+            sourceKey: 'id',
+            as: 'studentGradeInstances'
+        });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }
@@ -97,3 +103,4 @@ StudentTopicAssessmentInfo.init({
 
 import User from './user';
 import CourseTopicContent from './course-topic-content';
+import StudentGradeInstance from './student-grade-instance';

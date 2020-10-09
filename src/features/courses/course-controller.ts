@@ -1207,16 +1207,6 @@ class CourseController {
                     active: true
                 });
                 
-                if(gradeResult.gradingRationale.willTrackAttemptReason !== WillTrackAttemptReason.YES && gradeResult.gradingRationale.willTrackAttemptReason !== WillTrackAttemptReason.UNKNOWN) {
-                    logger.error('During regrade we somehow got a workbook that should not count... this should not be possible, setting all workbooks audit flags to false and active to false');
-                    _.assign(workbook, {
-                        wasLate: false,
-                        wasExpired: false,
-                        wasAfterAttemptLimit: !false,
-                        wasLocked: false,
-                        active: false
-                    });
-                }
                 await workbook.save();
             }
 
@@ -1246,7 +1236,23 @@ class CourseController {
                 // We don't track the effective grade that altered the effective score, in part because it could be updated externally
             }
         } else {
-            logger.debug('Not keeping a workbook');
+            if (!_.isNil(workbook)) {
+                if (gradeResult.gradingRationale.willTrackAttemptReason !== WillTrackAttemptReason.UNKNOWN) {
+                    logger.error(`${workbook.id} now meets critieria that is should not be kept, marking it as active false (as well as audit fields)`);
+                    _.assign(workbook, {
+                        wasLate: false,
+                        wasExpired: false,
+                        wasAfterAttemptLimit: false,
+                        wasLocked: false,
+                        active: false
+                    });
+                    await workbook.save();
+                } else {
+                    logger.error(`Did not regrade submission ${workbook.id} because of an error that occured in coming up with grading rationale`);
+                }
+            } else {
+                logger.debug('Not keeping a workbook');                
+            }
         }
         await studentGrade.save();
         // If nil coming in and the attempt was tracked this will result in the new workbook
@@ -1490,7 +1496,7 @@ class CourseController {
             });
             
             const workbooksAndOverrides: (StudentWorkbook | StudentGradeOverride)[] = [...workbooks, ...gradeOverrides];
-            const sortedWorkbooksAndOverrides = _.sortBy(workbooksAndOverrides, (first: StudentWorkbook | StudentGradeOverride, second: StudentWorkbook | StudentGradeOverride) => {
+            const sortedWorkbooksAndOverrides = workbooksAndOverrides.sort((first: StudentWorkbook | StudentGradeOverride, second: StudentWorkbook | StudentGradeOverride): number => {
                 const getDate = (object: StudentWorkbook | StudentGradeOverride): Date => {
                     if (object instanceof StudentWorkbook) {
                         return object.time;
@@ -1504,7 +1510,8 @@ class CourseController {
                         return object.createdAt;
                     }
                 };
-                return getDate(first).toMoment().isAfter(getDate(second).toMoment());
+                // Return 1 for true, 0 for false
+                return Number(getDate(first).toMoment().isAfter(getDate(second).toMoment()));
             });
 
             // Order is extremely important here, our async for each does not wait for one to be done before starting another

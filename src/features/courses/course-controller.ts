@@ -1344,10 +1344,11 @@ class CourseController {
         if (skipIfPossible) {
             let canSkip = false;
 
-            const maxAttemptsArray = _.compact([
+            const maxAttemptsArray: number[] = _.filter([
                 newQuestion?.maxAttempts,
                 originalQuestion?.maxAttempts,
-            ]);
+            ], (elm: unknown): boolean => !_.isNil(elm)) as number[]; // nil check prevents the undefined s from going back
+
             if (maxAttemptsArray.length < 2) {
                 // Not throwing it because it is recoverable
                 // If not enough context is provided then don't regrade the question

@@ -2371,7 +2371,7 @@ class CourseController {
                     });
                 } else {
                     questions.forEach( (question) => {
-                        if (!_.isNil(question.studentTopicQuestionOverride) && question.studentTopicQuestionOverride[0].active && !_.isNil(question.studentTopicQuestionOverride[0].maxAttempts)) {
+                        if (!_.isNil(question.studentTopicQuestionOverride) && !_.isNil(question.studentTopicQuestionOverride?.[0]) && question.studentTopicQuestionOverride[0].active && !_.isNil(question.studentTopicQuestionOverride[0].maxAttempts)) {
                             question.maxAttempts = question.studentTopicQuestionOverride[0].maxAttempts;
                         }
                     });

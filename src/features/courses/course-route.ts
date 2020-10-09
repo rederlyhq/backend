@@ -150,15 +150,11 @@ router.post('/topic',
     authenticationMiddleware,
     validate(createCourseTopicValidation),
     asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
-        try {
-            const newTopic = await courseController.createTopic({
-                ...req.body
-            });
-            // TODO handle not found case
-            next(httpResponse.Created('Course Topic created successfully', newTopic));
-        } catch (e) {
-            next(e);
-        }
+        const newTopic = await courseController.createTopic({
+            ...req.body
+        });
+
+        next(httpResponse.Created('Course Topic created successfully', newTopic));
     }));
 
 router.get('/grades',

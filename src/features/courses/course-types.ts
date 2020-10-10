@@ -13,6 +13,7 @@ import { DetermineGradingRationaleResult } from '../../utilities/grading-helper'
 import StudentGradeInstance from '../../database/models/student-grade-instance';
 import StudentTopicOverride from '../../database/models/student-topic-override';
 import StudentTopicQuestionOverride from '../../database/models/student-topic-question-override';
+import { DeepPartial } from '../../utilities/typescript-helpers';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -65,7 +66,7 @@ export interface UpdateTopicOptions {
     // Updates can take any form, i.e. I can have problemNumber: { [sequelize.OP.gte]: 0 } or sequelize.literal
     // TODO further investigation if there is any way for the suggested type to show but allow other values
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    updates: Partial<CourseTopicContent>;
+    updates: DeepPartial<CourseTopicContent>;
     checkDates?: boolean;
 }
 

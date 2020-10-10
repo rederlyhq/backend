@@ -13,7 +13,7 @@ interface TopicAssessmentInfoInterface {
     showItemizedResults: boolean;
     showTotalGradeImmediately: boolean;
     hideProblemsAfterFinish: boolean;
-    randomizeOrder: number;
+    randomizeOrder: boolean;
 }
 
 export default class TopicAssessmentInfo extends Model implements TopicAssessmentInfoInterface {
@@ -28,7 +28,7 @@ export default class TopicAssessmentInfo extends Model implements TopicAssessmen
     public showItemizedResults!: boolean;
     public showTotalGradeImmediately!: boolean;
     public hideProblemsAfterFinish!: boolean;
-    public randomizeOrder!: number;
+    public randomizeOrder!: boolean;
     public active!: boolean;
 
     // public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
@@ -136,7 +136,7 @@ TopicAssessmentInfo.init({
         field: 'topic_assessment_info_randomizeOrder',
         type: DataTypes.BOOLEAN,
         allowNull: false,
-        defaultValue: true
+        defaultValue: false
     },
     active: {
         field: 'student_topic_override_active',

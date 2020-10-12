@@ -1,0 +1,10 @@
+const path = require('path');
+
+const targetFolder = 'ts-built'; // would be src if `ts-node` played nicely
+const pathToDatabase = path.resolve(targetFolder, 'database');
+module.exports = {
+  'config': path.resolve(pathToDatabase, 'sequelize-config.js'),
+  'models-path': path.resolve(pathToDatabase, 'models'),
+  'seeders-path': path.resolve(pathToDatabase, 'seeders'),
+  'migrations-path': path.resolve(pathToDatabase, 'migrations')
+};

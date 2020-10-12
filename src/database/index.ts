@@ -18,6 +18,10 @@ import CourseWWTopicQuestion from './models/course-ww-topic-question';
 import StudentGrade from './models/student-grade';
 import StudentWorkbook from './models/student-workbook';
 import Curriculum from './models/curriculum';
+import StudentGradeLockAction from './models/student-grade-lock-action';
+import StudentGradeOverride from './models/student-grade-override';
+import StudentTopicOverride from './models/student-topic-override';
+import StudentTopicQuestionOverride from './models/student-topic-question-override';
 
 export const sync = async (): Promise<void> => {
     try {
@@ -46,6 +50,10 @@ const models = [
     CourseWWTopicQuestion,
     StudentGrade,
     StudentWorkbook,
+    StudentGradeLockAction,
+    StudentGradeOverride,
+    StudentTopicOverride,
+    StudentTopicQuestionOverride
 ];
 
 // TODO fix this

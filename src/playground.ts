@@ -1,6 +1,5 @@
-require('dotenv').config();
-import './extensions';
 import configurations from './configurations';
+import './extensions';
 // TODO change logger to just use console in this case
 import logger from './utilities/logger';
 

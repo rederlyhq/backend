@@ -131,6 +131,7 @@ class UserController {
                         }]
                     });
                     where[`$courseEnrollments.course.${StudentEnrollment.rawAttributes.courseId.field}$`] = listOptions.filters.courseId;
+                    where[`$courseEnrollments.${StudentEnrollment.rawAttributes.dropDate.field}$`] = null;
                 }
             }
         }

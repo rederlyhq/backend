@@ -1,12 +1,12 @@
 import * as _ from 'lodash';
 import WrappedError from '../../exceptions/wrapped-error';
 import { Constants } from '../../constants';
-import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions } from './course-types';
+import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, ExtendTopicForUserOptions, ExtendTopicQuestionForUserOptions } from './course-types';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 import NotFoundError from '../../exceptions/not-found-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import { BaseError } from 'sequelize';
-import { UpdateResult } from '../../generic-interfaces/sequelize-generic-interfaces';
+import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
 import CourseUnitContent from '../../database/models/course-unit-content';
 import { UpdateUnitOptions } from '../curriculum/curriculum-types';
 import CourseTopicContent from '../../database/models/course-topic-content';
@@ -14,6 +14,8 @@ import Course from '../../database/models/course';
 import logger from '../../utilities/logger';
 import StudentWorkbook from '../../database/models/student-workbook';
 import StudentGrade from '../../database/models/student-grade';
+import StudentTopicOverride from '../../database/models/student-topic-override';
+import StudentTopicQuestionOverride from '../../database/models/student-topic-question-override';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -261,6 +263,38 @@ class CourseRepository {
         }
     }
 
+    async extendTopicByUser(options: ExtendTopicForUserOptions): Promise<UpsertResult<StudentTopicOverride>> {
+        try {
+            const found = await StudentTopicOverride.findOne({where: {...options.where, active: true}});
+
+            if (!found) {
+                const newExtension = await StudentTopicOverride.create({...options.where, ...options.updates}, {validate: true});
+
+                return {
+                    createdNewEntry: true,
+                    updatedCount: 1,
+                    updatedRecords: [newExtension],
+                };
+            } else {
+                const updates = await StudentTopicOverride.update(options.updates, {
+                    where: {
+                        ...options.where,
+                        active: true
+                    },
+                    returning: true,
+                });
+
+                return {
+                    createdNewEntry: false,
+                    updatedCount: updates[0],
+                    updatedRecords: updates[1],
+                };
+            }
+        } catch (e) {
+            throw new WrappedError(`Could not extend topic for ${options.where}`, e);
+        }
+    }
+
     async updateTopics(options: UpdateCourseTopicsOptions): Promise<UpdateResult<CourseTopicContent>> {
         try {
             const updates = await CourseTopicContent.update(options.updates, {
@@ -321,12 +355,28 @@ class CourseRepository {
     /* ******************** Questions ******************** */
     /* ************************* ************************* */
     async getQuestion(options: GetQuestionRepositoryOptions): Promise<CourseWWTopicQuestion> {
+        const include = [];
+        if (options.userId) {
+            include.push({
+                model: StudentTopicQuestionOverride,
+                as: 'studentTopicQuestionOverride',
+                attributes: ['userId', 'maxAttempts'],
+                required: false,
+                where: {
+                    active: true,
+                    userId: options.userId
+                }
+            });
+        }
+
         const result = await CourseWWTopicQuestion.findOne({
             where: {
                 id: options.id,
                 active: true
             },
+            include
         });
+
         if (_.isNil(result)) {
             throw new NotFoundError('The requested question does not exist');
         }
@@ -465,6 +515,52 @@ class CourseRepository {
             throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
         }
     }
+
+    async createStudentTopicOverride(obj: Partial<StudentTopicOverride>): Promise<StudentTopicOverride> {
+        try {
+            return await StudentTopicOverride.create(obj);
+        } catch (e) {
+            throw new WrappedError('Could not create StudentTopicOverride', e);
+        }
+    }
+
+    async createStudentTopicQuestionOverride(obj: Partial<StudentTopicQuestionOverride>): Promise<StudentTopicQuestionOverride> {
+        try {
+            return await StudentTopicQuestionOverride.create(obj);
+        } catch (e) {
+            throw new WrappedError('Could not create StudentTopicQuestionOverride', e);
+        }
+    }
+
+    async extendTopicQuestionByUser(options: ExtendTopicQuestionForUserOptions): Promise<UpsertResult<StudentTopicQuestionOverride>> {
+        try {
+            const found = await StudentTopicQuestionOverride.findOne({where: {...options.where, active: true}});
+            if (!found) {
+                const newExtension = await StudentTopicQuestionOverride.create({...options.where, ...options.updates}, {validate: true});
+
+                return {
+                    createdNewEntry: true,
+                    updatedCount: 1,
+                    updatedRecords: [newExtension],
+                };
+            }
+            const updates = await StudentTopicQuestionOverride.update(options.updates, {
+                where: {
+                    ...options.where,
+                    active: true
+                },
+                returning: true,
+            });
+            return {
+                createdNewEntry: false,
+                updatedCount: updates[0],
+                updatedRecords: updates[1],
+            };
+        } catch (e) {
+            throw new WrappedError(`Could not extend question for ${options.where}`, e);
+        }
+    }
+
 }
 
 const courseRepository = new CourseRepository();

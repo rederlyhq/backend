@@ -1,7 +1,28 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
-export default class StudentGrade extends Model {
+export interface StudentGradeInterface {
+  id: number;
+  active: boolean;
+  userId: number;
+  courseWWTopicQuestionId: number;
+  randomSeed: number;
+  bestScore: number;
+  numAttempts: number;
+  numLegalAttempts: number;
+  numExtendedAttempts: number;
+  firstAttempts: number;
+  latestAttempts: number;
+  overallBestScore: number;
+  effectiveScore: number;
+  partialCreditBestScore: number;
+  legalScore: number;
+  locked: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export default class StudentGrade extends Model implements StudentGradeInterface {
   public id!: number; // Note that the `null assertion` `!` is required in strict mode.
   public active!: boolean;
   public userId!: number;
@@ -25,17 +46,19 @@ export default class StudentGrade extends Model {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public currentProblemState!: any;
 
-  public lastInfluencingLegalAttemptId!: number;
-  public lastInfluencingCreditedAttemptId!: number;
-  public lastInfluencingAttemptId!: number;
+  public lastInfluencingLegalAttemptId!: number | null;
+  public lastInfluencingCreditedAttemptId!: number | null;
+  public lastInfluencingAttemptId!: number | null;
 
   public getUser!: BelongsToGetAssociationMixin<User>;
   public getQuestion!: BelongsToGetAssociationMixin<CourseWWTopicQuestion>;
   public getWorkbooks!: HasManyGetAssociationsMixin<StudentWorkbook>;
+  public getOverrides!: HasManyGetAssociationsMixin<StudentGradeOverride>;
 
   public user!: User;
   public courseWWTopicQuestion!: CourseWWTopicQuestion;
   public workbooks?: Array<StudentWorkbook>;
+  public overrides?: Array<StudentGradeOverride>;
 
   // timestamps!
   public readonly createdAt!: Date;
@@ -88,6 +111,12 @@ export default class StudentGrade extends Model {
       targetKey: 'id',
       as: 'lastInfluencingAttempt',
       constraints: false
+    });
+
+    StudentGrade.hasMany(StudentGradeOverride, {
+      foreignKey: 'studentGradeId',
+      sourceKey: 'id',
+      as: 'overrides'
     });
     /* eslint-enable @typescript-eslint/no-use-before-define */
   }
@@ -225,3 +254,4 @@ StudentGrade.init({
 import CourseWWTopicQuestion from './course-ww-topic-question';
 import User from './user';
 import StudentWorkbook from './student-workbook';
+import StudentGradeOverride from './student-grade-override';

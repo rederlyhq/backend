@@ -17,6 +17,7 @@ COPY . ./
 
 #COPY . ./
 RUN npm run build
+RUN npm prune --production
 
 # The instructions for second stage
 FROM node:10-alpine
@@ -24,7 +25,7 @@ FROM node:10-alpine
 #WORKDIR /app
 COPY --from=builder /app/ts-built ./ts-built
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/*.json ./
+COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/.env ./
 #RUN ls
 CMD node ts-built/index.js

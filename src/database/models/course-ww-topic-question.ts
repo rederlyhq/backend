@@ -1,9 +1,25 @@
 // TODO rename file
 
-import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
+import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
+import * as _ from 'lodash';
 
-export default class CourseWWTopicQuestion extends Model {
+export interface CourseWWTopicQuestionInterface {
+    id: number;
+    courseTopicContentId: number;
+    problemNumber: number;
+    webworkQuestionPath: string;
+    weight: number;
+    maxAttempts: number;
+    hidden: boolean;
+    active: boolean;
+    optional: boolean;
+    curriculumQuestionId: number;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export default class CourseWWTopicQuestion extends Model implements CourseWWTopicQuestionInterface {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
     public courseTopicContentId!: number;
     public problemNumber!: number;
@@ -16,11 +32,23 @@ export default class CourseWWTopicQuestion extends Model {
     public curriculumQuestionId!: number;
     
     public getTopic!: BelongsToGetAssociationMixin<CourseTopicContent>;
+    public getGrades!: HasManyGetAssociationsMixin<StudentGrade>;
+    public getStudentTopicQuestionOverride!: HasManyGetAssociationsMixin<StudentTopicQuestionOverride>;
     public studentTopicQuestionOverride?: StudentTopicQuestionOverride[];
 
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
+
+    static getWithOverrides = (obj: CourseWWTopicQuestionInterface, overrides: StudentTopicQuestionOverrideOverridesInterface): CourseWWTopicQuestionInterface => {
+        // Avoid cyclic dependencies
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        return _.assign({}, obj, StudentTopicQuestionOverride.getOverrides(overrides));
+    }
+
+    getWithOverrides = (overrides: StudentTopicQuestionOverrideOverridesInterface): CourseWWTopicQuestionInterface => {
+        return CourseWWTopicQuestion.getWithOverrides(this.get({ plain: true }) as CourseWWTopicQuestionInterface, overrides);
+    }
 
     static constraints = {
         uniqueOrderPerTopic: 'course_topic_question--problem_number-topic_id',
@@ -130,4 +158,4 @@ CourseWWTopicQuestion.init({
 import CourseTopicContent from './course-topic-content';
 import StudentGrade from './student-grade';
 import CurriculumWWTopicQuestion from './curriculum-ww-topic-question';
-import StudentTopicQuestionOverride from './student-topic-question-override';
+import StudentTopicQuestionOverride, { StudentTopicQuestionOverrideOverridesInterface } from './student-topic-question-override';

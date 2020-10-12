@@ -19,12 +19,11 @@ import Boom = require('boom');
 import { Constants } from '../../constants';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import Role from '../permissions/roles';
-import { GetCalculatedRendererParamsResponse, PostQuestionMeta } from './course-types';
+import { PostQuestionMeta } from './course-types';
 import rendererHelper, { RENDERER_ENDPOINT, GetProblemParameters, RendererResponse } from '../../utilities/renderer-helper';
 import StudentGrade from '../../database/models/student-grade';
 import bodyParser = require('body-parser');
 import moment = require('moment');
-import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 
 const fileUpload = multer();
 
@@ -371,6 +370,10 @@ router.put('/question/grade/:id',
     // This is to work around "extractMap" error
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateGradeRequest.body, UpdateGradeRequest.query>, _res: Response, next: NextFunction) => {
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+        
         const params = req.params as UpdateCourseTopicQuestionRequest.params;
         const updatesResult = await courseController.updateGrade({
             where: {
@@ -378,7 +381,8 @@ router.put('/question/grade/:id',
             },
             updates: {
                 ...req.body
-            }
+            },
+            initiatingUserId: req.session.userId
         });
         next(httpResponse.Ok('Updated grade successfully', {
             updatesResult,

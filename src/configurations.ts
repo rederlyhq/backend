@@ -1,5 +1,6 @@
 require('dotenv').config();
 import * as _ from 'lodash';
+import { LoggingLevelType, LOGGING_LEVEL } from './utilities/logger-logging-levels';
 
 const fromBooleanField = (value: string | undefined): boolean | null => {
     return value ? value.toLowerCase() === 'true' : null;
@@ -10,7 +11,7 @@ const fromIntValue = (value: string | undefined, defaultValue: number): number =
         return defaultValue;
     }
     
-    const result = parseInt(value);
+    const result = parseInt(value, 10);
     if (isNaN(result)) {
         return defaultValue;
     }
@@ -21,6 +22,38 @@ const fromIntValue = (value: string | undefined, defaultValue: number): number =
 const tokenLife = fromIntValue(process.env.AUTH_TOKEN_LIFE, 1440);
 const forgotPasswordTokenLife = fromIntValue(process.env.AUTH_FORGOT_PASSWORD_TOKEN_LIFE, tokenLife);
 const verifyInstutionalEmailTokenLife = fromIntValue(process.env.AUTH_VERIFY_INSTUTIONAL_EMAIL_TOKEN_LIFE, tokenLife);
+
+// Developer check, would be cool to have a preprocessor strip this code out
+if (process.env.NODE_ENV !== 'production') {
+    Object.keys(LOGGING_LEVEL).forEach((loggingLevelKey: string) => {
+        if (loggingLevelKey !== loggingLevelKey.toUpperCase()) {
+            throw new Error('Logging levels constant should be all upper case');
+        }
+    });
+}
+
+const getLoggingLevel = (value: string | undefined, defaultValue: LoggingLevelType | null): LoggingLevelType | null => {
+    // Not set
+    if (_.isUndefined(value)) {
+        return defaultValue;
+    }
+
+    if (_.isNull(value) || value === 'null') {
+        return null;
+    }
+
+    // upper case for case insensitive search (should be validation above to make sure all keys are uppercased)
+    value = value.toUpperCase();
+    if (Object.keys(LOGGING_LEVEL).indexOf(value) < 0) {
+        return defaultValue;
+    }
+
+    return LOGGING_LEVEL[value as keyof typeof LOGGING_LEVEL];
+};
+
+const loggingLevel = getLoggingLevel(process.env.LOGGING_LEVEL, LOGGING_LEVEL.INFO);
+const loggingLevelForFile = getLoggingLevel(process.env.LOGGING_LEVEL_FOR_FILE, loggingLevel);
+const loggingLevelForConsole = getLoggingLevel(process.env.LOGGING_LEVEL_FOR_CONSOLE, loggingLevel);
 
 export default {
     server: {
@@ -66,5 +99,11 @@ export default {
         strictSSL: _.defaultTo(fromBooleanField(process.env.JIRA_STRICT_SSL), true),
         apiVersion: _.defaultTo(process.env.JIRA_API_VERSION, '2'),
         projectKey: _.defaultTo(process.env.JIRA_PROJECT_KEY, 'RS'),
+    },
+    // If we put logging level in the configurations we have a cyclic dependency if we ever want to log from this file...
+    logging: {
+        loggingLevel,
+        loggingLevelForFile,
+        loggingLevelForConsole
     }
 };

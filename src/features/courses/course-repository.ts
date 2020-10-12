@@ -16,6 +16,11 @@ import StudentWorkbook from '../../database/models/student-workbook';
 import StudentGrade from '../../database/models/student-grade';
 import StudentTopicOverride from '../../database/models/student-topic-override';
 import StudentTopicQuestionOverride from '../../database/models/student-topic-question-override';
+import StudentGradeOverride from '../../database/models/student-grade-override';
+import StudentGradeLockAction from '../../database/models/student-grade-lock-action';
+import * as moment from 'moment';
+import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
+
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -245,6 +250,18 @@ class CourseRepository {
     }
 
     async updateCourseTopic(options: UpdateTopicOptions): Promise<UpdateResult<CourseTopicContent>> {
+        const {
+            checkDates = true
+        } = options;
+        if (checkDates) {
+            const dueDates = _.compact([options.updates.endDate?.toMoment(), options.updates.deadDate?.toMoment()]);
+            // moment.min([]) returns right now, so if there are no due dates we def don't want to throw an error
+            // Otherwise you can't set due dates in the past
+            if (dueDates.length > 0 && moment.min(...dueDates).isBefore(moment())) {
+                throw new IllegalArgumentException('End date and due date cannot be in the past');
+            }
+        }
+        
         try {
             const updates = await CourseTopicContent.update(options.updates, {
                 where: {
@@ -264,9 +281,22 @@ class CourseRepository {
     }
 
     async extendTopicByUser(options: ExtendTopicForUserOptions): Promise<UpsertResult<StudentTopicOverride>> {
+        const {
+            checkDates = true
+        } = options;
+        if (checkDates) {
+            const dueDates = _.compact([options.updates.endDate?.toMoment(), options.updates.deadDate?.toMoment()]);
+            // moment.min([]) returns right now, so if there are no due dates we def don't want to throw an error
+            // Otherwise you can't set due dates in the past
+            if (dueDates.length > 0 && moment.min(...dueDates).isBefore(moment())) {
+                throw new IllegalArgumentException('End date and due date cannot be in the past');
+            }
+        }
+
         try {
             const found = await StudentTopicOverride.findOne({where: {...options.where, active: true}});
-
+            const original = found?.get({ plain: true });
+            
             if (!found) {
                 const newExtension = await StudentTopicOverride.create({...options.where, ...options.updates}, {validate: true});
 
@@ -288,6 +318,7 @@ class CourseRepository {
                     createdNewEntry: false,
                     updatedCount: updates[0],
                     updatedRecords: updates[1],
+                    original,
                 };
             }
         } catch (e) {
@@ -532,9 +563,28 @@ class CourseRepository {
         }
     }
 
+    async createStudentGradeOverride(obj: Partial<StudentGradeOverride>): Promise<StudentGradeOverride> {
+        try {
+            return await StudentGradeOverride.create(obj);
+        } catch (e) {
+            // Check constraint errors if there are any
+            throw new WrappedError('Could not create StudentGradeOverride', e);
+        }
+    }
+
+    async createStudentGradeLockAction(obj: Partial<StudentGradeLockAction>): Promise<StudentGradeLockAction> {
+        try {
+            return await StudentGradeLockAction.create(obj);
+        } catch (e) {
+            // Check constraint errors if there are any
+            throw new WrappedError('Could not create StudentGradeLockAction', e);
+        }
+    }
+
     async extendTopicQuestionByUser(options: ExtendTopicQuestionForUserOptions): Promise<UpsertResult<StudentTopicQuestionOverride>> {
         try {
             const found = await StudentTopicQuestionOverride.findOne({where: {...options.where, active: true}});
+            const original = found?.get({ plain: true });
             if (!found) {
                 const newExtension = await StudentTopicQuestionOverride.create({...options.where, ...options.updates}, {validate: true});
 
@@ -555,12 +605,12 @@ class CourseRepository {
                 createdNewEntry: false,
                 updatedCount: updates[0],
                 updatedRecords: updates[1],
+                original
             };
         } catch (e) {
             throw new WrappedError(`Could not extend question for ${options.where}`, e);
         }
     }
-
 }
 
 const courseRepository = new CourseRepository();

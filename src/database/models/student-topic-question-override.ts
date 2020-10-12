@@ -1,12 +1,16 @@
 import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize';
 import CourseWWTopicQuestion from './course-ww-topic-question';
+import * as _ from 'lodash';
 
-interface StudentTopicQuestionOverrideInterface {
+export interface StudentTopicQuestionOverrideOverridesInterface {
+  maxAttempts: number | null;
+}
+
+export interface StudentTopicQuestionOverrideInterface extends StudentTopicQuestionOverrideOverridesInterface {
     id: number;
     courseTopicQuestionId: number;
     userId: number;
-    maxAttempts: number | null;
     active: boolean;
 }
 
@@ -25,6 +29,14 @@ export default class StudentTopicQuestionOverride extends Model implements Stude
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
+
+    static getOverrides = (obj: StudentTopicQuestionOverrideOverridesInterface): StudentTopicQuestionOverrideOverridesInterface => {
+      return _.pick(obj, 'maxAttempts');
+    }
+    
+    getOverrides = (): StudentTopicQuestionOverrideOverridesInterface => {
+        return StudentTopicQuestionOverride.getOverrides(this);
+    }
 
     static constraints = {
     }

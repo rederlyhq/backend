@@ -10,9 +10,9 @@ import curriculumController from './curriculum-controller';
 import logger from '../../utilities/logger';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
 import { CreateCurriculumRequest, CreateCurriculumTopicRequest, UpdateCurriculumUnitRequest, UpdateCurriculumTopicRequest, CreateCurriculumTopicQuestionRequest, GetCurriculumRequest, ListCurriculumRequest } from './curriculum-route-request-types';
-import appSequelize from '../../database/app-sequelize';
 import Curriculum from '../../database/models/curriculum';
 import { Constants } from '../../constants';
+import { useDatabaseTransaction } from '../../utilities/database-helper';
 
 router.post('/',
     authenticationMiddleware,
@@ -27,7 +27,7 @@ router.post('/',
             const user = await session.getUser();
             const university = await user.getUniversity();
 
-            const newCurriculum: Curriculum = await appSequelize.transaction(async () => {
+            const newCurriculum: Curriculum = await useDatabaseTransaction(async () => {
                 const newCurriculum = await curriculumController.createCurriculum({
                     ...req.body,
                     universityId: university.id

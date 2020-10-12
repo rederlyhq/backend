@@ -3,7 +3,8 @@ import configurations from '../configurations';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
 import cls = require('cls-hooked');
-const namespace = cls.createNamespace('rederly-backend-api');
+import { Constants } from '../constants';
+const namespace = cls.createNamespace(Constants.Application.REDERLY_CLS_NAMESPACE_NAME);
 Sequelize.useCLS(namespace);
 
 const {

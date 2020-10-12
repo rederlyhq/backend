@@ -4,7 +4,30 @@ import CourseWWTopicQuestion from './course-ww-topic-question';
 import User from './user';
 import StudentGrade from './student-grade';
 
-export default class StudentWorkbook extends Model {
+export interface StudentWorkbookInterface {
+    id: number;
+    active: boolean;
+    studentGradeId: number;
+    userId: number;
+    courseWWTopicQuestionId: number;
+    randomSeed: number;
+
+    // This is a jsonb field so it could be any (from db)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    submitted: any;
+    result: number;
+    time: Date;
+    wasLate: boolean;
+    wasExpired: boolean;
+    wasAfterAttemptLimit: boolean;
+    wasLocked: boolean;
+    wasAutoSubmitted: boolean;
+
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export default class StudentWorkbook extends Model implements StudentWorkbookInterface {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
     public active!: boolean;
     public studentGradeId!: number;

@@ -55,11 +55,13 @@ export default class StudentGrade extends Model implements StudentGradeInterface
     public getQuestion!: BelongsToGetAssociationMixin<CourseWWTopicQuestion>;
     public getWorkbooks!: HasManyGetAssociationsMixin<StudentWorkbook>;
     public getStudentGradeInstance!: HasOneGetAssociationMixin<StudentGradeInstance>;
+    public getOverrides!: HasManyGetAssociationsMixin<StudentGradeOverride>;
 
     public readonly user!: User;
     public readonly courseWWTopicQuestion!: CourseWWTopicQuestion;
     public readonly workbooks?: Array<StudentWorkbook>;
     public readonly gradeInstance?: StudentGradeInstance;
+    public readonly overrides?: Array<StudentGradeOverride>;
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -122,11 +124,17 @@ export default class StudentGrade extends Model implements StudentGradeInterface
             constraints: false
         });
 
-        StudentGrade.hasOne(StudentGradeInstance, {
+        StudentGrade.hasMany(StudentGradeInstance, {
             foreignKey: 'studentGradeId',
             sourceKey: 'id',
             as: 'gradeInstance',
             constraints: false
+        });
+
+        StudentGrade.hasMany(StudentGradeOverride, {
+            foreignKey: 'studentGradeId',
+            sourceKey: 'id',
+            as: 'overrides'
         });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
@@ -265,3 +273,4 @@ import CourseWWTopicQuestion from './course-ww-topic-question';
 import User from './user';
 import StudentWorkbook from './student-workbook';
 import StudentGradeInstance, { StudentGradeInstanceInterface } from './student-grade-instance';
+import StudentGradeOverride from './student-grade-override';

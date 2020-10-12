@@ -44,14 +44,16 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
     public readonly updatedAt!: Date;
 
     static getWithOverrides = (obj: CourseWWTopicQuestionInterface, overrides: StudentTopicQuestionOverrideOverridesInterface): CourseWWTopicQuestionInterface => {
-        return _.assign({}, obj, overrides);
+        // Avoid cyclic dependencies
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        return _.assign({}, obj, StudentTopicQuestionOverride.getOverrides(overrides));
     }
 
     getWithOverrides = (overrides: StudentTopicQuestionOverrideOverridesInterface): CourseWWTopicQuestionInterface => {
         return CourseWWTopicQuestion.getWithOverrides(this.get({ plain: true }) as CourseWWTopicQuestionInterface, overrides);
     }
 
-    static getVersion = (obj: CourseWWTopicQuestionInterface, version: StudentGradeInstance): CourseWWTopicQuestionInterface => {
+    static getVersion = (obj: CourseWWTopicQuestionInterface, version: StudentGradeInstanceInterface): CourseWWTopicQuestionInterface => {
         return _.assign({}, obj, version); // will override problemNumber and webworkQuestionPath
     }
 
@@ -169,4 +171,4 @@ import StudentGrade from './student-grade';
 import CurriculumWWTopicQuestion from './curriculum-ww-topic-question';
 import CourseQuestionAssessmentInfo from './course-question-assessment-info';
 import StudentTopicQuestionOverride, { StudentTopicQuestionOverrideOverridesInterface } from './student-topic-question-override';
-import StudentGradeInstance from './student-grade-instance';
+import StudentGradeInstance, { StudentGradeInstanceInterface } from './student-grade-instance';

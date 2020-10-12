@@ -73,3 +73,24 @@
 | JIRA_STRICT_SSL | Enforce ssl | true |
 | JIRA_API_VERSION | API version | 2 |
 | JIRA_PROJECT_KEY | The project to add tickets to (currently `Rederly Support`)| RS |
+
+#### Logging
+* Right now we use the default logging levels from winston (see logger-logging-levels.ts)
+* This can be provided as a case insensitive string
+* `null` is also an option to turn off that logger (case sensitive), if both are turned off winston will do console logs warning you that there are no transports
+
+##### Logging Levels
+* ERROR
+* WARN
+* INFO
+* HTTP
+* VERBOSE
+* DEBUG
+* SILLY
+* null
+
+| Environment variable | Description | Default value |
+| --- | --- | --- |
+| LOGGING_LEVEL | Fallback logging level for values below that are not provided | debug |
+| LOGGING_LEVEL_FOR_FILE | The logging level for use with the file, pass null to turn off file logging | LOGGING_LEVEL |
+| LOGGING_LEVEL_FOR_CONSOLE | The logging level for use with the console, pass null to turn off console logging | LOGGING_LEVEL |

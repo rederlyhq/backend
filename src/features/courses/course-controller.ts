@@ -5,8 +5,8 @@ import StudentEnrollment from '../../database/models/student-enrollment';
 import { BaseError } from 'sequelize';
 import NotFoundError from '../../exceptions/not-found-error';
 import CourseUnitContent from '../../database/models/course-unit-content';
-import CourseTopicContent from '../../database/models/course-topic-content';
-import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
+import CourseTopicContent, { CourseTopicContentInterface } from '../../database/models/course-topic-content';
+import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface } from '../../database/models/course-ww-topic-question';
 import rendererHelper, { OutputFormat, RendererResponse } from '../../utilities/renderer-helper';
 import StudentWorkbook from '../../database/models/student-workbook';
 import StudentGrade from '../../database/models/student-grade';
@@ -16,8 +16,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import appSequelize from '../../database/app-sequelize';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, CreateNewStudentGradeInstanceOptions, CreateGradeInstancesForAssessmentOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, UpdateGradeInstanceOptions, GradeOptions, GradeResult, DeleteUserEnrollmentOptions, CreateNewStudentTopicAssessmentInfoOptions, ExtendTopicForUserOptions, ExtendTopicQuestionForUserOptions, GetQuestionRepositoryOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, CreateNewStudentTopicAssessmentInfoOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, UpdateGradeInstanceOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -31,9 +30,13 @@ import Role from '../permissions/roles';
 import moment = require('moment');
 import RederlyExtendedError from '../../exceptions/rederly-extended-error';
 import { calculateGrade, WillTrackAttemptReason } from '../../utilities/grading-helper';
+import { useDatabaseTransaction } from '../../utilities/database-helper';
+import StudentTopicOverride, { StudentTopicOverrideInterface } from '../../database/models/student-topic-override';
+import StudentTopicQuestionOverride, { StudentTopicQuestionOverrideInterface } from '../../database/models/student-topic-question-override';
+import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
+import StudentGradeOverride from '../../database/models/student-grade-override';
+import appSequelize from '../../database/app-sequelize';
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
-import StudentTopicOverride from '../../database/models/student-topic-override';
-import StudentTopicQuestionOverride from '../../database/models/student-topic-question-override';
 import StudentTopicAssessmentOverride from '../../database/models/student-topic-assessment-override';
 import TopicAssessmentInfo from '../../database/models/topic-assessment-info';
 
@@ -246,7 +249,7 @@ class CourseController {
 
     async createCourse(options: CreateCourseOptions): Promise<Course> {
         if (options.options.useCurriculum) {
-            return appSequelize.transaction(async () => {
+            return useDatabaseTransaction(async () => {
                 // I didn't want this in the transaction, however use strict throws errors if not
                 if (_.isNil(options.object.curriculumId)) {
                     throw new NotFoundError('Cannot useCurriculum if curriculumId is not given');
@@ -430,14 +433,19 @@ class CourseController {
     }
 
     async updateTopic(options: UpdateTopicOptions): Promise<CourseTopicContent[]> {
-        return appSequelize.transaction(async () => {
+        const existingTopic = await courseRepository.getCourseTopic({
+            id: options.where.id
+        });
+
+        const originalTopic = existingTopic.get({
+            plain: true
+        }) as CourseTopicContentInterface;
+
+        return useDatabaseTransaction(async () => {
             // This is a set of all update results as they come in, since there are 5 updates that occur this will have 5 elements
             let updatesResults: UpdateResult<CourseTopicContent>[] = [];
             if (!_.isNil(options.updates.contentOrder) || !_.isNil(options.updates.courseUnitContentId)) {
                 // What happens if you move from one topic to another? Disregarding since that should not be possible from the UI
-                const existingTopic = await courseRepository.getCourseTopic({
-                    id: options.where.id
-                });
                 const sourceContentOrder = existingTopic.contentOrder;
                 // Move the object out of the way for now, this is due to constraint issues
                 // TODO make unique index a deferable unique constraint and then make the transaction deferable
@@ -468,9 +476,18 @@ class CourseController {
                 .values()
                 .value();
 
-            if (updateCourseTopicResult.updatedCount > 0 && (!_.isNil(options.updates.endDate) || !_.isNil(options.updates.deadDate))) {
+            if (updateCourseTopicResult.updatedCount > 0) {
+                const topic = updateCourseTopicResult.updatedRecords[0];
                 await this.reGradeTopic({
-                    topic: updateCourseTopicResult.updatedRecords[0]
+                    topic: topic,
+                    // We will need to fetch these on a per user basis
+                    topicOverride: undefined,
+                    userId: undefined,
+                    skipContext: {
+                        originalTopic: originalTopic,
+                        newTopic: topic,
+                        skipIfPossible: true,
+                    }
                 });
             }
             return resultantUpdates;
@@ -478,8 +495,31 @@ class CourseController {
     }
 
     async extendTopicForUser(options: ExtendTopicForUserOptions): Promise<UpsertResult<StudentTopicOverride>> {
-        return appSequelize.transaction(() =>  {
-            return courseRepository.extendTopicByUser(options);
+        return useDatabaseTransaction(async () =>  {
+            const result = await courseRepository.extendTopicByUser(options);
+            if (result.updatedRecords.length > 0) {
+                const topic = await courseRepository.getCourseTopic({
+                    id: options.where.courseTopicContentId
+                });
+                const newOverride = result.updatedRecords[0];
+                const originalOverride: StudentTopicOverrideInterface = result.original as StudentTopicOverrideInterface;
+                
+                const originalTopic: CourseTopicContentInterface = topic.getWithOverrides(originalOverride);
+                const newTopic: CourseTopicContentInterface = topic.getWithOverrides(newOverride);
+
+                await this.reGradeTopic({
+                    topic,
+                    topicOverride: newOverride,
+                    // We are only overriding for one user so filter the results by that
+                    userId: newOverride.userId,
+                    skipContext: {
+                        skipIfPossible: true,
+                        originalTopic,
+                        newTopic,
+                    }
+                });
+            }
+            return result;
         });
     }
 
@@ -547,7 +587,7 @@ class CourseController {
 
     async softDeleteQuestions(options: DeleteQuestionsOptions): Promise<UpdateResult<CourseWWTopicQuestion>> {
         let courseTopicContentId = options.courseTopicContentId;
-        return appSequelize.transaction(async (): Promise<UpdateResult<CourseWWTopicQuestion>> => {
+        return useDatabaseTransaction(async (): Promise<UpdateResult<CourseWWTopicQuestion>> => {
             const where: sequelize.WhereOptions = _({
                 id: options.id,
                 courseTopicContentId,
@@ -608,7 +648,7 @@ class CourseController {
 
     async softDeleteTopics(options: DeleteTopicsOptions): Promise<UpdateResult<CourseTopicContent>> {
         let courseUnitContentId = options.courseUnitContentId;
-        return appSequelize.transaction(async (): Promise<UpdateResult<CourseTopicContent>> => {
+        return useDatabaseTransaction(async (): Promise<UpdateResult<CourseTopicContent>> => {
             const results: CourseTopicContent[] = [];
             let updatedCount = 0;
             const where: sequelize.WhereOptions = _({
@@ -693,7 +733,7 @@ class CourseController {
     }
 
     async softDeleteUnits(options: DeleteUnitsOptions): Promise<UpdateResult<CourseUnitContent>> {
-        return appSequelize.transaction(async (): Promise<UpdateResult<CourseUnitContent>> => {
+        return useDatabaseTransaction(async (): Promise<UpdateResult<CourseUnitContent>> => {
             const results: CourseUnitContent[] = [];
             let updatedCount = 0;
             const where: sequelize.WhereOptions = _({
@@ -764,7 +804,7 @@ class CourseController {
     }
 
     async updateCourseUnit(options: UpdateUnitOptions): Promise<CourseUnitContent[]> {
-        return appSequelize.transaction(async () => {
+        return useDatabaseTransaction(async () => {
             // This is a set of all update results as they come in, since there are 5 updates that occur this will have 5 elements
             let updatesResults: UpdateResult<CourseUnitContent>[] = [];
             if (!_.isNil(options.updates.contentOrder)) {
@@ -865,14 +905,16 @@ class CourseController {
     }
 
     updateQuestion(options: UpdateQuestionOptions): Promise<CourseWWTopicQuestion[]> {
-        return appSequelize.transaction(async () => {
+        return useDatabaseTransaction(async () => {
+            const existingQuestion = await courseRepository.getQuestion({
+                id: options.where.id
+            });
+            const originalQuestion = existingQuestion.get({ plain: true }) as CourseWWTopicQuestionInterface;
+
             // This is a set of all update results as they come in, since there are 5 updates that occur this will have 5 elements
             let updatesResults: UpdateResult<CourseWWTopicQuestion>[] = [];
             if (!_.isNil(options.updates.problemNumber)) {
                 // What happens if you move from one topic to another? Disregarding since that should not be possible from the UI
-                const existingQuestion = await courseRepository.getQuestion({
-                    id: options.where.id
-                });
                 const sourceProblemNumber = existingQuestion.problemNumber;
                 // Move the question out of the way for now, this is due to constraint issues
                 // TODO make unique index a deferable unique constraint and then make the transaction deferable
@@ -899,9 +941,16 @@ class CourseController {
                 .values()
                 .value();
 
-            if (updateQuestionResult.updatedCount > 0 && (!_.isNil(options.updates.maxAttempts))) {
+            if (updateQuestionResult.updatedCount > 0) {
+                const question = updateQuestionResult.updatedRecords[0];
+                const newQuestion = question.get({ plain: true }) as CourseWWTopicQuestionInterface;
                 await this.reGradeQuestion({
-                    question: updateQuestionResult.updatedRecords[0]
+                    question,
+                    skipContext: {
+                        skipIfPossible: true,
+                        originalQuestion,
+                        newQuestion,
+                    }
                 });
             }
             return resultantUpdates;
@@ -909,7 +958,7 @@ class CourseController {
     }
 
     async updateGrade(options: UpdateGradeOptions): Promise<UpdateResult<StudentGrade>> {
-        return appSequelize.transaction(async (): Promise<UpdateResult<StudentGrade>> => {
+        return useDatabaseTransaction(async (): Promise<UpdateResult<StudentGrade>> => {
             if (!_.isNil(options.updates.effectiveScore)) {
                 await courseRepository.createStudentGradeOverride({
                     studentGradeId: options.where.id,
@@ -947,7 +996,9 @@ class CourseController {
     async createQuestionsForTopicFromDefFileContent(options: CreateQuestionsForTopicFromDefFileContentOptions): Promise<CourseWWTopicQuestion[]> {
         const parsedWebworkDef = new WebWorkDef(options.webworkDefFileContent);
         let lastProblemNumber = await courseRepository.getLatestProblemNumberForTopic(options.courseTopicId) || 0;
-        return appSequelize.transaction(() => {
+        // TODO fix typings - remove any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return useDatabaseTransaction<any>((): Promise<any> => {
             return parsedWebworkDef.problems.asyncForEach(async (problem: Problem) => {
                 return this.addQuestion({
                     // active: true,
@@ -964,7 +1015,7 @@ class CourseController {
     }
 
     async addQuestion(question: Partial<CourseWWTopicQuestion>): Promise<CourseWWTopicQuestion> {
-        return await appSequelize.transaction(async () => {
+        return await useDatabaseTransaction(async () => {
             const result = await this.createQuestion(question);
             await this.createGradesForQuestion({
                 questionId: result.id
@@ -1000,8 +1051,30 @@ class CourseController {
     }
 
     async extendQuestionForUser(options: ExtendTopicQuestionForUserOptions): Promise<UpsertResult<StudentTopicQuestionOverride>> {
-        return appSequelize.transaction(() =>  {
-            return courseRepository.extendTopicQuestionByUser(options);
+        return useDatabaseTransaction(async () =>  {
+            const result = await courseRepository.extendTopicQuestionByUser(options);
+            if (result.updatedRecords.length > 0) {
+                const question = await courseRepository.getQuestion({
+                    id: options.where.courseTopicQuestionId
+                });
+                const originalOverride: StudentTopicQuestionOverrideInterface = result.original as StudentTopicQuestionOverrideInterface;
+                const newOverride = result.updatedRecords[0];
+                // Since only the override is changing the question would be the same except the overrides
+                const originalQuestion: CourseWWTopicQuestionInterface  = question.getWithOverrides(originalOverride);
+                const newQuestion: CourseWWTopicQuestionInterface  = question.getWithOverrides(newOverride);
+                await this.reGradeQuestion({
+                    question,
+                    // We are only overriding for one user so filter the results by that
+                    userId: newOverride.userId,
+                    questionOverride: newOverride,
+                    skipContext: {
+                        skipIfPossible: true,
+                        originalQuestion,
+                        newQuestion,
+                    }
+                });
+            }
+            return result;
         });
     }
 
@@ -1101,7 +1174,7 @@ class CourseController {
 
 
     /**
-     * This function takes the grade results and merges it into the databse objects and save thems
+     * This function takes the grade results and merges it into the database objects and save them
      * @param param0 
      */
     setGradeFromSubmission = async ({
@@ -1110,23 +1183,17 @@ class CourseController {
         gradeResult,
         submitted,
         timeOfSubmission
-    }: {
-        studentGrade: StudentGrade;
-        workbook?: StudentWorkbook;
-        gradeResult: GradeResult;
-        submitted: unknown;
-        timeOfSubmission? : Date;
-    }): Promise<StudentWorkbook | undefined> => {
-        if (gradeResult.gradingPolicy.willTrackAttemptReason === WillTrackAttemptReason.YES) {
+    }: SetGradeFromSubmissionOptions): Promise<StudentWorkbook | undefined> => {
+        if (gradeResult.gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
             if(studentGrade.numAttempts === 0) {
                 studentGrade.firstAttempts = gradeResult.score;
             } 
             studentGrade.latestAttempts = gradeResult.score;
             studentGrade.numAttempts++;
-            if (gradeResult.gradingPolicy.isOnTime && !gradeResult.gradingPolicy.isLocked && gradeResult.gradingPolicy.isWithinAttemptLimit) {
+            if (gradeResult.gradingRationale.isOnTime && !gradeResult.gradingRationale.isLocked && gradeResult.gradingRationale.isWithinAttemptLimit) {
                 studentGrade.numLegalAttempts++;
             }
-            if (!gradeResult.gradingPolicy.isExpired && !gradeResult.gradingPolicy.isLocked && gradeResult.gradingPolicy.isWithinAttemptLimit) {
+            if (!gradeResult.gradingRationale.isExpired && !gradeResult.gradingRationale.isLocked && gradeResult.gradingRationale.isWithinAttemptLimit) {
                 studentGrade.numExtendedAttempts++;
             }
 
@@ -1139,19 +1206,21 @@ class CourseController {
                     submitted: rendererHelper.cleanRendererResponseForTheDatabase(submitted as RendererResponse),
                     result: gradeResult.score,
                     time: timeOfSubmission ?? new Date(),
-                    wasLate: gradeResult.gradingPolicy.isLate,
-                    wasExpired: gradeResult.gradingPolicy.isExpired,
-                    wasAfterAttemptLimit: !gradeResult.gradingPolicy.isWithinAttemptLimit,
-                    wasLocked: gradeResult.gradingPolicy.isLocked,
+                    wasLate: gradeResult.gradingRationale.isLate,
+                    wasExpired: gradeResult.gradingRationale.isExpired,
+                    wasAfterAttemptLimit: !gradeResult.gradingRationale.isWithinAttemptLimit,
+                    wasLocked: gradeResult.gradingRationale.isLocked,
                     wasAutoSubmitted: false // TODO
                 });
             } else {
                 _.assign(workbook, {
-                    wasLate: gradeResult.gradingPolicy.isLate,
-                    wasExpired: gradeResult.gradingPolicy.isExpired,
-                    wasAfterAttemptLimit: !gradeResult.gradingPolicy.isWithinAttemptLimit,
-                    wasLocked: gradeResult.gradingPolicy.isLocked,
+                    wasLate: gradeResult.gradingRationale.isLate,
+                    wasExpired: gradeResult.gradingRationale.isExpired,
+                    wasAfterAttemptLimit: !gradeResult.gradingRationale.isWithinAttemptLimit,
+                    wasLocked: gradeResult.gradingRationale.isLocked,
+                    active: true
                 });
+                
                 await workbook.save();
             }
 
@@ -1181,7 +1250,23 @@ class CourseController {
                 // We don't track the effective grade that altered the effective score, in part because it could be updated externally
             }
         } else {
-            logger.debug('Not keeping a workbook');
+            if (!_.isNil(workbook)) {
+                if (gradeResult.gradingRationale.willTrackAttemptReason !== WillTrackAttemptReason.UNKNOWN) {
+                    logger.error(`${workbook.id} now meets critieria that is should not be kept, marking it as active false (as well as audit fields)`);
+                    _.assign(workbook, {
+                        wasLate: false,
+                        wasExpired: false,
+                        wasAfterAttemptLimit: false,
+                        wasLocked: false,
+                        active: false
+                    });
+                    await workbook.save();
+                } else {
+                    logger.error(`Did not regrade submission ${workbook.id} because of an error that occured in coming up with grading rationale`);
+                }
+            } else {
+                logger.debug('Not keeping a workbook');                
+            }
         }
         await studentGrade.save();
         // If nil coming in and the attempt was tracked this will result in the new workbook
@@ -1189,36 +1274,147 @@ class CourseController {
     }
 
     reGradeTopic = async ({
-        topic
-    }: {
-        topic: CourseTopicContent;
-    }): Promise<void> => {
-        // TODO optional transaction with too many transactions it deadlocks
-        const questions = await topic.getQuestions();
-        questions.asyncForEach(async (question: CourseWWTopicQuestion) => {
-            await this.reGradeQuestion({
-                topic,
-                question
+        topic,
+        topicOverride,
+        userId,
+        skipContext: {
+            skipIfPossible = false,
+            originalTopic,
+            newTopic,
+        } = {}
+    }: ReGradeTopicOptions): Promise<void> => {
+        let minDate: Date | undefined;
+        if (skipIfPossible) {
+            if (!_.isNil(originalTopic) && !_.isNil(newTopic)) {
+                const {
+                    endDate: originalEndDate,
+                    deadDate: originalDeadDate
+                } = originalTopic;
+
+                const {
+                    endDate: newEndDate,
+                    deadDate: newDeadDate
+                } = newTopic;
+
+                const dueDateTuples: [Date, Date][] = [
+                    [originalEndDate, newEndDate],
+                    [originalDeadDate, newDeadDate]
+                ];
+
+                const changedDueDateTuples: [Date, Date][] = _.filter(dueDateTuples, (dateTuple: [Date, Date]) => !dateTuple[0].toMoment().isSame(dateTuple[1].toMoment()));
+                const dateArray = _.flatten(changedDueDateTuples).map((date: Date) => date.toMoment());
+                const minDateMoment = _.isEmpty(dateArray) ? null : moment.min(dateArray);
+                // For use with optimization, skipping grade reprocessing
+                minDate = minDateMoment?.toDate();
+
+                const theMoment = moment();
+                const canSkip = _.isNil(minDateMoment) || theMoment.isBefore(minDateMoment);
+
+                if (canSkip) {
+                    logger.debug('Skipping topic regrade');
+                    return;
+                }
+
+            } else {
+                logger.error('Skip is not possible if the original topic is not passed');
+            }
+        }
+
+        return useDatabaseTransaction(async () => {
+            const questions = await topic.getQuestions({
+                where: {
+                    active: true
+                }
+            });
+            await questions.asyncForEach(async (question: CourseWWTopicQuestion) => {
+                await this.reGradeQuestion({
+                    topic,
+                    question,
+                    userId,
+                    minDate,
+                    topicOverride,
+                    skipContext: {
+                        skipIfPossible: false,
+                    }
+                });
             });
         });
     }
 
     reGradeQuestion = async ({
         question,
-        topic
-    }: {
-        question: CourseWWTopicQuestion;
-        topic?: CourseTopicContent;
-    }): Promise<void> => {
-        // TODO optional transaction with too many transactions it deadlocks
-        const grades = await question.getGrades();
-        topic = topic ?? await question.getTopic();
+        topic,
+        userId,
+        minDate,
+        topicOverride,
+        questionOverride,
+        skipContext: {
+            skipIfPossible = false,
+            originalQuestion,
+            newQuestion,
+        } = {}
+    }: ReGradeQuestionOptions): Promise<void> => {
+        let grades: Array<StudentGrade> | undefined;
+        if (skipIfPossible) {
+            let canSkip = false;
 
-        grades.asyncForEach(async (studentGrade: StudentGrade) => {
-            await this.reGradeStudentGrade({
-                studentGrade,
-                question,
-                topic
+            const maxAttemptsArray: number[] = _.filter([
+                newQuestion?.maxAttempts,
+                originalQuestion?.maxAttempts,
+            ], (elm: unknown): boolean => !_.isNil(elm)) as number[]; // nil check prevents the undefined s from going back
+
+            if (maxAttemptsArray.length < 2) {
+                // Not throwing it because it is recoverable
+                // If not enough context is provided then don't regrade the question
+                logger.error(new IllegalArgumentException('Not enough context sent to reGradeQuestion with skipIfPossible true to regrade the question'));
+            } else if (Math.max(...maxAttemptsArray) === Math.min(...maxAttemptsArray)) {
+                logger.debug('Nothing changed');
+                canSkip = true;
+            } else {
+                const lowestMaxAttempts = Math.min(...maxAttemptsArray);
+                grades = await question.getGrades({
+                    where: _({
+                        numAttempts: {
+                            [Sequelize.Op.gt]: lowestMaxAttempts
+                        },
+                        userId
+                    }).omitBy(_.isUndefined).value() as sequelize.WhereOptions, // Adding this suppresses the error of userId could be undefined, sequelize disregards undefined so that is a bad sequelize type
+                });
+                canSkip = _.isEmpty(grades);
+            }
+            if (canSkip) {
+                logger.debug('Skipping question regrade');
+                return;
+            } else {
+                logger.debug('Question needs regrade');
+            }
+    }
+
+        return useDatabaseTransaction(async () => {
+            // Validation that passed in values match up (fk) are done deeper
+            grades = grades ?? await question.getGrades({
+                where: _({
+                    userId,
+                    active: true
+                }).omitBy(_.isUndefined).value() as sequelize.WhereOptions
+            });
+            topic = topic ?? await question.getTopic({
+                where: {
+                    active: true
+                }
+            });
+
+            logger.debug(`Regrading ${grades.length} grades`);
+
+            await grades.asyncForEach(async (studentGrade: StudentGrade) => {
+                await this.reGradeStudentGrade({
+                    studentGrade,
+                    question,
+                    topic,
+                    minDate,
+                    questionOverride: questionOverride,
+                    topicOverride: topicOverride
+                });
             });
         });
     }
@@ -1226,59 +1422,163 @@ class CourseController {
     reGradeStudentGrade = async ({
         studentGrade,
         topic,
-        question
-    }: {
-        studentGrade: StudentGrade;
-        topic?: CourseTopicContent;
-        question?: CourseWWTopicQuestion;
-    }): Promise<void> => {
-        // TODO optional transaction with too many transactions it deadlocks
-        const workbooks = await studentGrade.getWorkbooks({
-            order: ['id']
-        });
-        question = question ?? await studentGrade.getQuestion();
-        topic = topic ?? await question.getTopic();
-        const solutionDate = moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days');
+        question,
+        workbooks,
+        minDate,
+        topicOverride,
+        questionOverride
+    }: ReGradeStudentGradeOptions): Promise<void> => {
+        // Locked grades cannot be processed
+        if (studentGrade.locked) {
+            logger.debug(`Skipping retro on locked student grade Grade: ${studentGrade.id}; User: ${studentGrade.userId};`);
+            return;
+        }
 
-        // reset student grade before submitting
-        studentGrade.bestScore = 0;
-        studentGrade.overallBestScore = 0;
-        studentGrade.partialCreditBestScore = 0;
-        // studentGrade.effectiveScore // Don't touch this
-        studentGrade.legalScore = 0;
-        studentGrade.numAttempts = 0;
-        studentGrade.numLegalAttempts = 0;
-        studentGrade.numExtendedAttempts = 0;
-        studentGrade.lastInfluencingAttemptId = null;
-        studentGrade.lastInfluencingCreditedAttemptId = null;
-        studentGrade.lastInfluencingLegalAttemptId = null;
-        studentGrade.firstAttempts = 0;
-        studentGrade.latestAttempts = 0;
-        
-        await studentGrade.save();
-        // Order is extremely important here, our async for each does not wait for one to be done before starting another
-        for (let i = 0; i < workbooks.length; i++) {
-            const workbook = workbooks[i];
-            if(_.isNil(question) || _.isNil(topic)) {
-                throw new Error('This cannot be undefined, strict is confused because of transaction callback');
+        return useDatabaseTransaction(async () => {
+            // Can't grade a subset of workbooks because the rest of the logic is absolute
+            // It resets the grade entirely and then rebuilds it from the beginning
+            // const timeClause = _.isNil(minDate) ? undefined : {
+            //     time: {
+            //         [Sequelize.Op.gte]: minDate
+            //     }
+            // };
+            workbooks = workbooks ?? await studentGrade.getWorkbooks({
+                order: ['id'],
+                // I was thinking of using the active flag for the case where the solutions date would be available
+                // That shouldn't be possible, but this way we have a catch
+                // where: {
+                //     active: true
+                // }
+                // Use something like object assign if there are more clauses
+                // where: timeClause
+            });
+
+            if(!_.isNil(minDate)) {
+                // Min date can't be used in the actual grading
+                // however we can use it skip the regrading process
+                const applicableWorkbooks = _.filter(workbooks, ((workbook: StudentWorkbook) => workbook.time.toMoment().isSameOrAfter(minDate.toMoment())));
+                if (_.isEmpty(applicableWorkbooks)) {
+                    logger.debug('Dates changed but none of the workbooks were after the min date, skipping');
+                    return;
+                } else {
+                    logger.debug('Cannot skip regrade!');
+                }
             }
 
-            const gradeResult = calculateGrade({
-                newScore: workbook.result,
-                question,
-                solutionDate,
-                studentGrade,
-                topic,
+            // have to make sure order is correct
+            workbooks = _.orderBy(workbooks, 'id', 'asc');
+            logger.debug(`Regrading ${workbooks.length} attempts`);
 
-                timeOfSubmission: workbook.time
+            question = question ?? await studentGrade.getQuestion({
+                where: {
+                    active: true
+                }
             });
-            await this.setGradeFromSubmission({
-                gradeResult,
-                studentGrade,
-                submitted: null,
-                workbook
+            topic = topic ?? await question.getTopic({
+                where: {
+                    active: true
+                }
             });
-        }
+
+            if (studentGrade.courseWWTopicQuestionId !== question.id) {
+                throw new IllegalArgumentException('studentGrade question id does not match the question\'s id');
+            }
+
+            if (question.courseTopicContentId !== topic.id) {
+                throw new IllegalArgumentException('question topic id does not match the topic\'s id');
+            }
+            
+            const solutionDate = moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days');
+
+            // reset student grade before submitting
+            studentGrade.bestScore = 0;
+            studentGrade.overallBestScore = 0;
+            studentGrade.partialCreditBestScore = 0;
+            studentGrade.effectiveScore = 0;
+            studentGrade.legalScore = 0;
+            studentGrade.numAttempts = 0;
+            studentGrade.numLegalAttempts = 0;
+            studentGrade.numExtendedAttempts = 0;
+            studentGrade.lastInfluencingAttemptId = null;
+            studentGrade.lastInfluencingCreditedAttemptId = null;
+            studentGrade.lastInfluencingLegalAttemptId = null;
+            studentGrade.firstAttempts = 0;
+            studentGrade.latestAttempts = 0;
+            
+            const gradeOverrides: StudentGradeOverride[] = await studentGrade.getOverrides({
+                order: ['id'],
+                where: {
+                    active: true
+                }
+            });
+            
+            const workbooksAndOverrides: (StudentWorkbook | StudentGradeOverride)[] = [...workbooks, ...gradeOverrides];
+            const sortedWorkbooksAndOverrides = workbooksAndOverrides.sort((first: StudentWorkbook | StudentGradeOverride, second: StudentWorkbook | StudentGradeOverride): number => {
+                const getDate = (object: StudentWorkbook | StudentGradeOverride): Date => {
+                    if (object instanceof StudentWorkbook) {
+                        return object.time;
+                    } else {
+                        if (!(object instanceof StudentGradeOverride)) {
+                            logger.error('Invalid type, should be StudentWorkbook | StudentGradeOverride');
+                        }
+                        // could always be createdAt...
+                        // time for workbook is redundant and should always be the same as created at
+                        // That being said
+                        return object.createdAt;
+                    }
+                };
+                return getDate(first).getTime() - getDate(second).getTime();
+            });
+
+            // Order is extremely important here, our async for each does not wait for one to be done before starting another
+            for (let i = 0; i < sortedWorkbooksAndOverrides.length; i++) {
+                const workbookOrOverride = sortedWorkbooksAndOverrides[i];
+                if (workbookOrOverride instanceof StudentWorkbook) {
+                    const workbook = workbookOrOverride;
+                    if (workbook.wasLocked) {
+                        studentGrade.numAttempts++;
+                        if (workbook.result > studentGrade.overallBestScore) {
+                            studentGrade.overallBestScore = workbook.result;
+                            studentGrade.lastInfluencingAttemptId = workbook.id;
+                        }
+                        continue;
+                    }
+    
+                    if (workbook.studentGradeId !== studentGrade.id) {
+                        throw new IllegalArgumentException('workbook studentGradeId does not match studentGrade.id');
+                    }
+        
+                    if(_.isNil(question) || _.isNil(topic)) {
+                        throw new Error('This cannot be undefined, strict is confused because of transaction callback');
+                    }
+    
+                    await this.gradeSubmission({
+                        newScore: workbook.result,
+                        question,
+                        solutionDate,
+                        studentGrade,
+                        topic,
+    
+                        timeOfSubmission: workbook.time.toMoment(),
+                        submitted: null,
+                        workbook,
+                        override: {
+                            useOverride: true,
+                            questionOverride: questionOverride,
+                            topicOverride: topicOverride
+                        }
+                    });                        
+                } else if (workbookOrOverride instanceof StudentGradeOverride) {
+                    // redundant but makes it easier to read
+                    const override = workbookOrOverride;
+                    studentGrade.effectiveScore = override.newValue;
+                } else {
+                    logger.error('Impossible case, workbookOrOverride is not a workbook or an override');
+                }
+            }
+
+            await studentGrade.save();
+        });
     }
 
     /**
@@ -1288,12 +1588,52 @@ class CourseController {
     gradeSubmission = async ({
         studentGrade,
         newScore,
-        question,
+        question: passedQuestion,
         solutionDate,
-        topic,
+        topic: passedTopic,
         submitted,
-        timeOfSubmission
+        timeOfSubmission,
+        workbook,
+        override: {
+            useOverride = true,
+            questionOverride,
+            topicOverride
+        } = {}
     }: GradeOptions): Promise<StudentWorkbook | undefined> => {
+        let topic: CourseTopicContentInterface = passedTopic;
+        let question: CourseWWTopicQuestionInterface = passedQuestion;
+        if (useOverride) {
+            /**
+             * Currently:
+             * Submit answers fetches the override as an includes and it will be passed in
+             * When an extension is performed that extension will be passed in
+             * When an update is performed to topic or question that triggers regrade we'll need each student's extensions
+             */
+            // Don't fetch if null is passed in (there is no extension)
+            if (_.isUndefined(topicOverride)) {
+                const overrides = await passedTopic.getStudentTopicOverride({
+                    where: {
+                        userId: studentGrade.userId,
+                        active: true
+                    }
+                });
+                topicOverride = overrides?.[0] ?? null;
+            }
+
+            if (_.isUndefined(questionOverride)) {
+                const overrides = await passedQuestion.getStudentTopicQuestionOverride({
+                    where: {
+                        userId: studentGrade.userId,
+                        active: true
+                    }
+                });
+                questionOverride = overrides?.[0] ?? null;
+            }
+
+            topic = _.isNil(topicOverride) ? topic : passedTopic.getWithOverrides(topicOverride);
+            question = _.isNil(questionOverride) ? question : passedQuestion.getWithOverrides(questionOverride);
+        }
+
         const gradeResult = calculateGrade({
             newScore,
             question,
@@ -1306,8 +1646,8 @@ class CourseController {
             gradeResult,
             studentGrade,
             submitted,
-            timeOfSubmission
-            // workbook
+            timeOfSubmission,
+            workbook
         });
     };
 
@@ -1366,23 +1706,11 @@ class CourseController {
                 }
             }]
         });
-        
-        if (topic.studentTopicOverride?.length === 1) {
-            // TODO: Fix typing here
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            _.assign(topic, (topic as any).studentTopicOverride[0]);
-        }
-        
-        if (question.studentTopicQuestionOverride?.length === 1) {
-            // TODO: Fix typing here
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            _.assign(question, (question as any).studentTopicQuestionOverride[0]);
-        }
 
         const solutionDate = moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days');
 
         try {
-            return await appSequelize.transaction(async (): Promise<SubmitAnswerResult> => {
+            return await useDatabaseTransaction(async (): Promise<SubmitAnswerResult> => {
                 const workbook = await this.gradeSubmission({
                     newScore: options.score,
                     question,
@@ -1390,7 +1718,12 @@ class CourseController {
                     studentGrade,
                     submitted: options.submitted,
                     topic,
-                    timeOfSubmission: options.timeOfSubmission ?? new Date()
+                    timeOfSubmission: options.timeOfSubmission?.toMoment() ?? moment(),
+                    override: {
+                        useOverride: true,
+                        questionOverride: question.studentTopicQuestionOverride?.[0] ?? null,
+                        topicOverride: topic.studentTopicOverride?.[0] ?? null
+                    }
                 });
 
                 return {
@@ -1443,7 +1776,7 @@ class CourseController {
     }
 
     async enroll(enrollment: CreateGradesForUserEnrollmentOptions): Promise<StudentEnrollment> {
-        return await appSequelize.transaction(async () => {
+        return await useDatabaseTransaction(async () => {
             const result = await this.createStudentEnrollment({
                 ...enrollment,
                 enrollDate: new Date()
@@ -1467,9 +1800,12 @@ class CourseController {
         });
     }
 
+    // TODO fix return type, transactions were returning any so type checking was suspended
     // Returns true is successfully deleted the enrollment.
     async softDeleteEnrollment(deEnrollment: DeleteUserEnrollmentOptions): Promise<boolean> {
-        return await appSequelize.transaction(async () => {
+        // TODO fix typings - remove any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return await useDatabaseTransaction<any>(async (): Promise<any> => {
             const enrollment = await StudentEnrollment.findOne({
                 where: {
                     ...deEnrollment

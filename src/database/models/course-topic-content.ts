@@ -1,7 +1,24 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin, HasOneCreateAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
+import * as _ from 'lodash';
 
-export default class CourseTopicContent extends Model {
+export interface CourseTopicContentInterface {
+    id: number;
+    curriculumTopicContentId: number;
+    courseUnitContentId: number;
+    topicTypeId: number;
+    name: string;
+    active: boolean;
+    contentOrder: number;
+    startDate: Date;
+    endDate: Date;
+    deadDate: Date;
+    partialExtend: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export default class CourseTopicContent extends Model implements CourseTopicContentInterface {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
     public curriculumTopicContentId!: number;
     public courseUnitContentId!: number;
@@ -19,6 +36,7 @@ export default class CourseTopicContent extends Model {
     public getTopicType!: BelongsToGetAssociationMixin<TopicType>;
     public getQuestions!: HasManyGetAssociationsMixin<CourseWWTopicQuestion>;
     public getTopicAssessmentInfo!: HasOneCreateAssociationMixin<TopicAssessmentInfo>;
+    public getStudentTopicOverride!: HasManyGetAssociationsMixin<StudentTopicOverride>;
 
     public readonly curriculumTopicContent!: CurriculumTopicContent;
     public readonly topicType!: TopicType;
@@ -29,6 +47,16 @@ export default class CourseTopicContent extends Model {
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
+
+    static getWithOverrides = (obj: CourseTopicContentInterface, overrides: StudentTopicOverrideOveridesInterface): CourseTopicContentInterface => {
+        // Avoid cyclic dependencies
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        return _.assign({}, obj, StudentTopicOverride.getOverrides(overrides));
+    }
+
+    getWithOverrides = (overrides: StudentTopicOverrideOveridesInterface): CourseTopicContentInterface => {
+        return CourseTopicContent.getWithOverrides(this.get({ plain: true }) as CourseTopicContentInterface, overrides);
+    }
 
     static constraints = {
         uniqueOrderPerUnit: 'course_topic_content--unit_id-order',
@@ -167,4 +195,4 @@ import TopicType from './topic-type';
 import CourseUnitContent from './course-unit-content';
 import CourseWWTopicQuestion from './course-ww-topic-question';
 import TopicAssessmentInfo from './topic-assessment-info';
-import StudentTopicOverride from './student-topic-override';
+import StudentTopicOverride, { StudentTopicOverrideOveridesInterface } from './student-topic-override';

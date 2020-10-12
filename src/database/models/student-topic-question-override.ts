@@ -3,9 +3,8 @@ import appSequelize from '../app-sequelize';
 import CourseWWTopicQuestion from './course-ww-topic-question';
 import * as _ from 'lodash';
 
-
 export interface StudentTopicQuestionOverrideOverridesInterface {
-    maxAttempts: number | null;
+  maxAttempts: number | null;
 }
 
 export interface StudentTopicQuestionOverrideInterface extends StudentTopicQuestionOverrideOverridesInterface {
@@ -31,10 +30,10 @@ export default class StudentTopicQuestionOverride extends Model implements Stude
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 
-    static getOverrides = (obj: StudentTopicQuestionOverrideInterface): StudentTopicQuestionOverrideOverridesInterface => {
-        return _.pick(obj, 'maxAttempts');
+    static getOverrides = (obj: StudentTopicQuestionOverrideOverridesInterface): StudentTopicQuestionOverrideOverridesInterface => {
+      return _.pick(obj, 'maxAttempts');
     }
-
+    
     getOverrides = (): StudentTopicQuestionOverrideOverridesInterface => {
         return StudentTopicQuestionOverride.getOverrides(this);
     }

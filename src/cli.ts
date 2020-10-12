@@ -14,9 +14,9 @@ if (configurations.email.enabled) {
 
 import { sync } from './database';
 import courseController from './features/courses/course-controller';
-import appSequelize from './database/app-sequelize';
 import StudentWorkbook from './database/models/student-workbook';
 import rendererHelper from './utilities/renderer-helper';
+import { useDatabaseTransaction } from './utilities/database-helper';
 
 const syncMissingGrades = async (): Promise<void> => {
     logger.info('Performing missing grade sync');
@@ -25,7 +25,7 @@ const syncMissingGrades = async (): Promise<void> => {
 };
 
 const cleanupWorkbooks = async (): Promise<void> => {
-    await appSequelize.transaction(async () => {
+    await useDatabaseTransaction(async () => {
         const workbooks = await StudentWorkbook.findAll();
         logger.info(`Workbook count: ${workbooks.length}`);
         await workbooks.asyncForEach(async (workbook: StudentWorkbook) => {

@@ -1,9 +1,10 @@
 import { Constants } from '../constants';
 import * as moment from 'moment';
+import * as _ from 'lodash';
 import logger from './logger';
-import StudentGrade from '../database/models/student-grade';
-import CourseTopicContent from '../database/models/course-topic-content';
-import CourseWWTopicQuestion from '../database/models/course-ww-topic-question';
+import StudentGrade, { StudentGradeInterface } from '../database/models/student-grade';
+import { CourseTopicContentInterface } from '../database/models/course-topic-content';
+import { CourseWWTopicQuestionInterface } from '../database/models/course-ww-topic-question';
 
 export enum WillTrackAttemptReason {
     NO_IS_AFTER_SOLUTIONS_DATE='NO_IS_AFTER_SOLUTIONS_DATE',
@@ -24,8 +25,8 @@ export enum WillGetCreditReason {
 };
 
 interface DetermineGradingRationaleOptions {
-    endDate: Date;
-    deadDate: Date;
+    endDate: moment.Moment;
+    deadDate: moment.Moment;
     locked: boolean;
 
     overallBestScore: number;
@@ -35,7 +36,7 @@ interface DetermineGradingRationaleOptions {
 
     solutionDate: moment.Moment;
 
-    timeOfSubmission: Date;
+    timeOfSubmission: moment.Moment;
 }
 
 export interface DetermineGradingRationaleResult {
@@ -51,19 +52,19 @@ export interface DetermineGradingRationaleResult {
 }
 
 export interface CalculateGradeOptions {
-    studentGrade: StudentGrade;
-    topic: CourseTopicContent;
-    question: CourseWWTopicQuestion;
+    studentGrade: StudentGradeInterface;
+    topic: CourseTopicContentInterface;
+    question: CourseWWTopicQuestionInterface;
 
     solutionDate: moment.Moment;
 
     newScore: number;
 
-    timeOfSubmission: Date;
+    timeOfSubmission: moment.Moment;
 }
 
 export interface CalculateGradeResult {
-    gradingPolicy: DetermineGradingRationaleResult;
+    gradingRationale: DetermineGradingRationaleResult;
     gradeUpdates: Partial<StudentGrade>;
     score: number;
 }
@@ -87,7 +88,7 @@ export const determineGradingRationale = ({
     timeOfSubmission
 }: DetermineGradingRationaleOptions): DetermineGradingRationaleResult => {
     // use the same time for everything
-    // also if there was a case in which we were retroing we could take an option param and swap this out
+    // also if there was a case in which we were retroactively grading we could take an option param and swap this out
     const theMoment = moment(timeOfSubmission);
 
     const isCompleted = overallBestScore >= 1;
@@ -113,7 +114,7 @@ export const determineGradingRationale = ({
     else if (!isCompleted && !areSolutionsAvailable) {
         willTrackAttemptReason = WillTrackAttemptReason.YES;
     } else {
-        logger.error('An error occurred determing whether or not to keep the attempt');
+        logger.error('An error occurred determining whether or not to keep the attempt');
         willTrackAttemptReason = WillTrackAttemptReason.UNKNOWN;
     }
 
@@ -123,7 +124,7 @@ export const determineGradingRationale = ({
     } else if (willTrackAttemptReason !== WillTrackAttemptReason.YES) {
         willGetCreditReason = WillGetCreditReason.NO_ATTEMPT_NOT_RECORDED;
     }
-    if (isLocked) {
+    else if (isLocked) {
         willGetCreditReason = WillGetCreditReason.NO_GRADE_LOCKED;
     } else if (!isWithinAttemptLimit) {
         willGetCreditReason = WillGetCreditReason.NO_ATTEMPTS_EXCEEDED;
@@ -133,12 +134,12 @@ export const determineGradingRationale = ({
         willGetCreditReason = WillGetCreditReason.NO_EXPIRED;
     }
     // isLate is all that is required to check here
-    // though due the sensitivity of a grades adding an exhausitive check to make sure
+    // though due the sensitivity of a grades adding an exhaustive check to make sure
     else if (isLate && isWithinAttemptLimit && !isLocked && willTrackAttemptReason === WillTrackAttemptReason.YES) {
         willGetCreditReason = WillGetCreditReason.YES_BUT_PARTIAL_CREDIT;
     }
     // isOnTime is all that is required to check here
-    // though due the sensitivity of a grades adding an exhausitive check to make sure
+    // though due the sensitivity of a grades adding an exhaustive check to make sure
     else if (isOnTime && isWithinAttemptLimit && !isLocked && willTrackAttemptReason === WillTrackAttemptReason.YES) {
         willGetCreditReason = WillGetCreditReason.YES;
     } else {
@@ -175,9 +176,9 @@ export const calculateGrade = ({
 
     timeOfSubmission
 }: CalculateGradeOptions): CalculateGradeResult => {
-    const gradingPolicy: DetermineGradingRationaleResult = determineGradingRationale({
-        deadDate: topic.deadDate,
-        endDate: topic.endDate,
+    const gradingRationale: DetermineGradingRationaleResult = determineGradingRationale({
+        deadDate: topic.deadDate.toMoment(),
+        endDate: topic.endDate.toMoment(),
 
         locked: studentGrade.locked,
         maxAttempts: question.maxAttempts,
@@ -189,18 +190,18 @@ export const calculateGrade = ({
     });
 
     const result: CalculateGradeResult = {
-        gradingPolicy,
+        gradingRationale,
         gradeUpdates: {},
         score: newScore
     };
-    if (gradingPolicy.willTrackAttemptReason === WillTrackAttemptReason.YES) {
+    if (gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
 
         result.gradeUpdates.overallBestScore =
             newScore > studentGrade.overallBestScore ?
                 newScore : undefined;
 
-        if (willBeGraded(gradingPolicy.willGetCreditReason)) {
-            if (gradingPolicy.willGetCreditReason === WillGetCreditReason.YES) {
+        if (willBeGraded(gradingRationale.willGetCreditReason)) {
+            if (gradingRationale.willGetCreditReason === WillGetCreditReason.YES) {
                 // Full credit.
                 // If overall best score was updated then update these
                 result.gradeUpdates.bestScore = result.gradeUpdates.overallBestScore;
@@ -210,7 +211,7 @@ export const calculateGrade = ({
                 result.gradeUpdates.effectiveScore =
                     newScore > studentGrade.effectiveScore ?
                         newScore : undefined;
-            } else if (gradingPolicy.willGetCreditReason === WillGetCreditReason.YES_BUT_PARTIAL_CREDIT) {
+            } else if (gradingRationale.willGetCreditReason === WillGetCreditReason.YES_BUT_PARTIAL_CREDIT) {
                 // Partial credit
                 const partialCreditScalar = 0.5;
                 const partialCreditScore = ((newScore - studentGrade.legalScore) * partialCreditScalar) + studentGrade.legalScore;
@@ -225,5 +226,6 @@ export const calculateGrade = ({
             }
         }
     }
+    result.gradeUpdates = _(result.gradeUpdates).omitBy(_.isUndefined).value();
     return result;
 };

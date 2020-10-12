@@ -1,16 +1,18 @@
 import StudentGrade from '../../database/models/student-grade';
 import StudentWorkbook from '../../database/models/student-workbook';
 import User from '../../database/models/user';
-import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
+import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface } from '../../database/models/course-ww-topic-question';
 import Course from '../../database/models/course';
 import { WhereOptions } from 'sequelize/types';
 import CourseUnitContent from '../../database/models/course-unit-content';
-import CourseTopicContent from '../../database/models/course-topic-content';
+import CourseTopicContent, { CourseTopicContentInterface } from '../../database/models/course-topic-content';
 import Role from '../permissions/roles';
 import { OutputFormat } from '../../utilities/renderer-helper';
 import { Moment } from 'moment';
 import { DetermineGradingRationaleResult } from '../../utilities/grading-helper';
 import StudentGradeInstance from '../../database/models/student-grade-instance';
+import StudentTopicOverride from '../../database/models/student-topic-override';
+import StudentTopicQuestionOverride from '../../database/models/student-topic-question-override';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -64,6 +66,7 @@ export interface UpdateTopicOptions {
     // TODO further investigation if there is any way for the suggested type to show but allow other values
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updates: Partial<CourseTopicContent>;
+    checkDates?: boolean;
 }
 
 export interface UpdateCourseUnitsOptions {
@@ -102,6 +105,7 @@ export interface ExtendTopicForUserOptions {
         endDate?: Date;
         deadDate?: Date;
     };
+    checkDates?: boolean;
 }
 
 export interface UpdateUnitOptions {
@@ -360,11 +364,18 @@ export interface GradeOptions {
 
     submitted: unknown;
 
-    timeOfSubmission: Date;
+    timeOfSubmission: moment.Moment;
+    workbook?: StudentWorkbook;
+
+    override?: {
+        useOverride?: boolean;
+        topicOverride?: StudentTopicOverride | null;
+        questionOverride?: StudentTopicQuestionOverride | null;
+    };
 }
 
 export interface GradeResult {
-    gradingPolicy: DetermineGradingRationaleResult;
+    gradingRationale: DetermineGradingRationaleResult;
     gradeUpdates: Partial<StudentGrade>;
     score: number;
 }
@@ -373,4 +384,47 @@ export interface PostQuestionMeta {
     rendererParams: GetCalculatedRendererParamsResponse;
     studentGrade?: StudentGrade | null;
     courseQuestion: CourseWWTopicQuestion;
+}
+
+export interface SetGradeFromSubmissionOptions {
+    studentGrade: StudentGrade;
+    workbook?: StudentWorkbook;
+    gradeResult: GradeResult;
+    submitted: unknown;
+    timeOfSubmission? : Moment;
+}
+
+export interface ReGradeTopicOptions {
+    topic: CourseTopicContent;
+    userId?: number;
+    topicOverride?: StudentTopicOverride;
+    skipContext?: {
+        skipIfPossible?: boolean;
+        newTopic?: CourseTopicContentInterface;
+        originalTopic?: CourseTopicContentInterface;
+    };
+}
+
+export interface ReGradeQuestionOptions {
+    question: CourseWWTopicQuestion;
+    topic?: CourseTopicContent;
+    userId?: number;
+    minDate?: Date;
+    topicOverride?: StudentTopicOverride;
+    questionOverride?: StudentTopicQuestionOverride;
+    skipContext?: {
+        skipIfPossible?: boolean;
+        newQuestion?: CourseWWTopicQuestionInterface;
+        originalQuestion?: CourseWWTopicQuestionInterface;
+    };
+}
+
+export interface ReGradeStudentGradeOptions {
+    studentGrade: StudentGrade;
+    topic?: CourseTopicContent;
+    question?: CourseWWTopicQuestion;
+    workbooks?: Array<StudentWorkbook>;
+    minDate?: Date;
+    topicOverride?: StudentTopicOverride;
+    questionOverride?: StudentTopicQuestionOverride;
 }

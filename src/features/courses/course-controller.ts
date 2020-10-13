@@ -1101,46 +1101,49 @@ class CourseController {
             }
         }
 
-        let studentGrade: StudentGrade | null = null;
+        // it may be undefined (user not enrolled or first interaction)
+        // GetProblemParameters requires undefined over null
+        let formData: { [key: string]: unknown } | undefined;
+
+        // included in workbook, so do not bother with retrieving it if workbook
+        let numIncorrect: number | undefined;
+        let problemSeed: number | undefined;
+        let sourceFilePath = courseQuestion.webworkQuestionPath;
+
         // get studentGrade from workbook if workbookID, 
         // otherwise studentGrade from userID + questionID | null
         if(_.isNil(workbook)) {
-            studentGrade = await StudentGrade.findOne({
-                where: {
-                    userId: options.userId,
-                    courseWWTopicQuestionId: options.questionId
+            // assessmentState is sent over in assessment setting (instead of workbook)
+            // and *should* always be paired with info from grade instance to avoid repeated db queries
+            if (_.isNil(options.assessmentState)) {
+                const studentGrade = await StudentGrade.findOne({
+                    where: {
+                        userId: options.userId,
+                        courseWWTopicQuestionId: options.questionId
+                    }
+                });
+                numIncorrect = studentGrade?.numAttempts;
+                formData = studentGrade?.currentProblemState;
+                problemSeed = studentGrade?.randomSeed;
+            } else {
+                formData = options.assessmentState;
+                // in assessment setting, filepath and randomseed will always be included
+                if (_.isNil(options.assessmentQuestionPath)||_.isNil(options.assessmentRandomSeed)){
+                    throw new RederlyExtendedError('Impossible: An assessment question was requested with currentState but no path or seed.');
+                } else {
+                    sourceFilePath = options.assessmentQuestionPath;
+                    problemSeed = options.assessmentRandomSeed;
                 }
-            });
+            }
         } else {
-            studentGrade = await workbook.getStudentGrade();
+            // right now this is only in here as a sanity check -- is it worth the extra db query?
+            const studentGrade = await workbook.getStudentGrade();
             if (studentGrade.courseWWTopicQuestionId !== options.questionId) {
                 throw new NotFoundError('The workbook you have requested does not belong to the question provided');
             }
-        }
-
-        // if no workbookID, get the most recent workbook -- come back and delete this?
-        // if not enrolled, we don't even want to have workbooks
-        // if enrolled, workbooks are requested by ID for grades/statistics
-        // if enrolled, studentGrade holds currentProblemState
-        // if(_.isNil(workbook)) {
-        //     const workbooks = await studentGrade?.getWorkbooks({
-        //         limit: 1,
-        //         order: [ [ 'createdAt', 'DESC' ]]
-        //     });
-        //     workbook = workbooks?.[0] || null;
-        // }
-
-        // it may be undefined (user not enrolled)
-        // GetProblemParameters requires undefined over null
-        let formData: {[key: string]: unknown} | undefined = studentGrade?.currentProblemState;
-        // at this point, we only have a workbook if a valid workbookID was provided
-        // set the formData to match the contents of the workbook
-        if(!_.isNil(workbook)) {
+            numIncorrect = workbook.submitted.problem_state.num_of_incorrect_ans;
             formData = workbook.submitted.form_data;
         }
-
-        // studentGrade is the source of truth
-        const randomSeed = _.isNil(studentGrade) ? null : studentGrade.randomSeed;
 
         const calculatedRendererParameters = await this.getCalculatedRendererParams({
             courseQuestion,
@@ -1151,17 +1154,23 @@ class CourseController {
             calculatedRendererParameters.outputformat = OutputFormat.STATIC;
         }
 
+        if (options.topic?.topicTypeId === 2) {
+            // I do not like hardcoding the topicTypeId...
+            calculatedRendererParameters.outputformat = OutputFormat.ASSESS;
+            const assessmentInfo = await options.topic.getTopicAssessmentInfo();
+        }
+
         let showCorrectAnswers = false;
         if (options.role === Role.PROFESSOR && !_.isNil(workbook)) {
             showCorrectAnswers = true;
         }
 
         const rendererData = await rendererHelper.getProblem({
-            sourceFilePath: courseQuestion.webworkQuestionPath,
-            problemSeed: randomSeed,
+            sourceFilePath,
+            problemSeed,
             formURL: options.formURL,
-            numIncorrect: studentGrade?.numAttempts,
-            formData: formData,
+            numIncorrect,
+            formData,
             showCorrectAnswers,
             ...calculatedRendererParameters
         });
@@ -2549,6 +2558,18 @@ class CourseController {
         return result;
     }
 
+    async getStudentTopicAssessmentInfoById(id: number): Promise<StudentTopicAssessmentInfo> {
+        const result = await StudentTopicAssessmentInfo.findOne({
+            where: {
+                id,
+            },
+        });
+        if (_.isNil(result)) {
+            throw new NotFoundError('The requested student topic assessment info does not exist');
+        }
+        return result;
+    }
+
     async getTopicAssessmentInfoByTopicId(options: GetTopicAssessmentInfoByTopicIdOptions): Promise<TopicAssessmentInfo> {
         const include = [];
         if (!_.isNil(options.userId)) {
@@ -2742,6 +2763,22 @@ class CourseController {
     //         throw new WrappedError('Error fetching problems', e);
     //     }
     // }
+
+    // async submitAssessment(options: SubmitAssessmentOptions): Promise<SubmitAssessmentResult[]> {
+    //     const { userId, studentTopicAssessmentInfoId } = options;
+    //     const questions = await StudentGradeInstance.findAll({
+    //         where: {
+    //             userId,
+    //             studentTopicAssessmentInfoId,
+    //         },
+    //         order: [
+    //             ['problemNumber', 'ASC'],
+    //         ]
+    //     });
+    //     // questions.asyncForEach( async () => {
+            
+    //     // });
+    // } 
 
     // is this necessary? Does every request need to pass through the controller level to the repository?
     async updateGradeInstance(options: UpdateGradeInstanceOptions): Promise<UpdateResult<StudentGradeInstance>> {

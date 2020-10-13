@@ -26,10 +26,11 @@ export interface CourseListOptions {
     };
 }
 
-export interface GetQuestionOptions {
-    userId: number;
-    questionId: number;
-}
+// this is defined twice
+// export interface GetQuestionOptions {
+//     userId: number;
+//     questionId: number;
+// }
 
 export interface GetQuestionRepositoryOptions {
     id: number;
@@ -234,6 +235,14 @@ export interface GetQuestionOptions {
     topic?: CourseTopicContent;
     workbookId?: number;
     readonly?: boolean;
+    assessmentQuestionPath?: string;
+    assessmentRandomSeed?: number;
+    // This is a jsonb field so it could be any (from db)
+    // Submitted in workbook used any so I'm going to keep it consistent here
+    // If this is used for form data we will never know any info about what keys are available
+    // Might make sense to make this an unknown type since I don't think we will ever access the types
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    assessmentState?: any;
 };
 
 export interface GetQuestionResult {
@@ -258,6 +267,16 @@ export interface SubmitAnswerResult {
     studentGrade: StudentGrade | null;
     studentWorkbook: StudentWorkbook | null;
 }
+
+// export interface SubmitAssessmentOptions {
+//     userId: number;
+//     studentTopicAssessmentInfoId: number;
+// }
+
+// export interface SubmitAssessmentResult {
+//     studentGrade: StudentGradeInstance;
+//     studentWorkbook: StudentWorkbook;
+// }
 
 export interface FindMissingGradesResult {
     student: User;

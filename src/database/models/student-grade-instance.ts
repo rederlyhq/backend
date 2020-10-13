@@ -1,5 +1,11 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
+import * as _ from 'lodash';
+
+export interface StudentGradeInstanceQuestionOverridesInterface {
+    webworkQuestionPath: string;
+    problemNumber: number;
+}
 
 export interface StudentGradeInstanceInterface {
     id: number;
@@ -64,6 +70,14 @@ export default class StudentGradeInstance extends Model implements StudentGradeI
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
+
+    static getQuestionOverrides = (obj: StudentGradeInstanceQuestionOverridesInterface): StudentGradeInstanceQuestionOverridesInterface => {
+        return _.pick(obj, ['webworkQuestionPath', 'problemNumber']);
+    }
+
+    getQuestionOverrides = (): StudentGradeInstanceQuestionOverridesInterface => {
+        return StudentGradeInstance.getQuestionOverrides(this);
+    }
 
     static constraints = {
     }

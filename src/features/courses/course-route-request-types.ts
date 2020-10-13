@@ -196,3 +196,9 @@ export namespace CreateAssessmentVersionRequest {
     export type query = Joi.extractType<typeof validations.createAssessmentVersionValidation.query>;
     export type body = Joi.extractType<typeof validations.createAssessmentVersionValidation.body>;
 };
+
+export namespace SubmitAssessmentVersionRequest {
+    export type params = Joi.extractType<typeof validations.submitAssessmentVersionValidation.params>;
+    export type query = Joi.extractType<typeof validations.submitAssessmentVersionValidation.query>;
+    export type body = Joi.extractType<typeof validations.submitAssessmentVersionValidation.body>;
+};

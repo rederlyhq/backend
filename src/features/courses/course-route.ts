@@ -14,12 +14,12 @@ import * as _ from 'lodash';
 import configurations from '../../configurations';
 import WrappedError from '../../exceptions/wrapped-error';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
-import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest, ExtendCourseTopicQuestionRequest, CreateAssessmentVersionRequest } from './course-route-request-types';
+import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest, ExtendCourseTopicQuestionRequest, CreateAssessmentVersionRequest, SubmitAssessmentVersionRequest } from './course-route-request-types';
 import Boom = require('boom');
 import { Constants } from '../../constants';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import Role from '../permissions/roles';
-import { PostQuestionMeta } from './course-types';
+import { GetQuestionResult, PostQuestionMeta } from './course-types';
 import rendererHelper, { RENDERER_ENDPOINT, GetProblemParameters, RendererResponse } from '../../utilities/renderer-helper';
 import StudentGrade from '../../database/models/student-grade';
 import bodyParser = require('body-parser');
@@ -209,13 +209,35 @@ router.get('/questions',
             const overrideStartDate = topic.studentTopicOverride?.[0]?.startDate;
             const startDate = overrideStartDate ?? topic.startDate;
 
+            const user = await req.session.getUser();
             if (moment().isBefore(startDate)) {
-                const user = await req.session.getUser();
                 if (user.roleId === Role.STUDENT) {
                     next(Boom.badRequest(`The topic "${topic.name}" has not started yet.`));
                     return;
                 }
             }
+
+            if (topic?.topicTypeId === 2 && !_.isNil(userId)) {
+                if (_.isNil(topic.topicAssessmentInfo)){
+                    next(Boom.badRequest('Topic is an assessment, but does not have corresponding assessment info. This should never happen.'));
+                    return;
+                }
+
+                const versions = await courseController.getStudentTopicAssessmentInfo({userId: user.id, topicId: req.query.courseTopicContentId});
+
+                if (
+                    topic.topicAssessmentInfo.hideProblemsAfterFinish &&
+                    !_.isNil(versions[0]) && (
+                        moment().isAfter(moment(versions[0].endTime)) ||
+                        topic.topicAssessmentInfo.maxGradedAttemptsPerRandomization <= versions.length
+                    ) &&
+                    user.roleId === Role.STUDENT
+                ) {
+                    next(Boom.badRequest('You have completed this assessment and you are blocked from seeing the problems.'));
+                    return;
+                }
+            }
+
         }
 
         const questions = await courseController.getQuestions({
@@ -573,6 +595,40 @@ router.get('/question/:id',
             next(e);
         }
     }));
+
+// router.post('/assessment/topic/:id/submit/:version',
+//     authenticationMiddleware,
+//     // This is a typescript workaround since it tries to use the type extractMap
+//     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+//     asyncHandler(async (req: RederlyExpressRequest<any, unknown, unknown, SubmitAssessmentVersionRequest.body, SubmitAssessmentVersionRequest.query>, _res: Response, next: NextFunction) => {
+//         if (_.isNil(req.session)) {
+//             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+//         }
+
+//         const user = await req.session.getUser();
+
+//         const params = req.params as SubmitAssessmentVersionRequest.params;
+
+//         const studentTopicAssessmentInfo = await courseController.getStudentTopicAssessmentInfoById(params.version);
+//         if (user.id != studentTopicAssessmentInfo.userId) {
+//             throw new Error('You cannot submit an assessment that does not belong to you.');
+//         }
+
+//         const studentGradeInstances = await studentTopicAssessmentInfo.getStudentGradeInstances();
+
+//         const questionResponses = [];
+//         studentGradeInstances.asyncForEach(async (instance) => {
+//             const question = await instance.getQuestion(); // question.id mandatory for getQuestion - feels wasteful
+
+//             const questionResponse = await rendererHelper.getProblem({
+//                 formURL: '/', // we don't care about this - no one sees the rendered version
+//                 sourceFilePath: instance.webworkQuestionPath,
+//                 problemSeed: instance.randomSeed,
+//                 formData: instance.currentProblemState,
+//             });
+//             questionResponses.push(questionResponse);
+//         });
+//     }));
 
 router.post('/question/:id',
     authenticationMiddleware,

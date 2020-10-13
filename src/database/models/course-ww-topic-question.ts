@@ -35,6 +35,7 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
     public getGrades!: HasManyGetAssociationsMixin<StudentGrade>;
     public getQuestionAssessmentInfo!: HasOneGetAssociationMixin<CourseQuestionAssessmentInfo>;
     public getStudentTopicQuestionOverride!: HasManyGetAssociationsMixin<StudentTopicQuestionOverride>;
+    public getStudentGradeInstances!: HasManyGetAssociationsMixin<StudentGradeInstance>;
 
     public readonly studentTopicQuestionOverride?: StudentTopicQuestionOverride[];
     public readonly grades!: StudentGrade;
@@ -54,7 +55,9 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
     }
 
     static getVersion = (obj: CourseWWTopicQuestionInterface, version: StudentGradeInstanceInterface): CourseWWTopicQuestionInterface => {
-        return _.assign({}, obj, version); // will override problemNumber and webworkQuestionPath
+        // Avoid cyclic dependencies
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        return _.assign({}, obj, StudentGradeInstance.getQuestionOverrides(version)); // will override problemNumber and webworkQuestionPath
     }
 
     getVersion = (version: StudentGradeInstance): CourseWWTopicQuestionInterface => {
@@ -94,6 +97,11 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
             as: 'studentTopicQuestionOverride'
         });
         
+        CourseWWTopicQuestion.hasMany(StudentGradeInstance, {
+            foreignKey: 'courseWWTopicQuestionId',
+            sourceKey: 'id',
+            as: 'studentGradeInstance'
+        });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }

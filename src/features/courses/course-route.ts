@@ -24,7 +24,6 @@ import rendererHelper, { RENDERER_ENDPOINT, GetProblemParameters, RendererRespon
 import StudentGrade from '../../database/models/student-grade';
 import bodyParser = require('body-parser');
 import moment = require('moment');
-import { JoiToStringedStringConvertible } from '../../extensions/rederly-extended-joi';
 
 const fileUpload = multer();
 

@@ -83,16 +83,18 @@ export const updateCourseTopicValidation = {
         // curriculumTopicContentId: Joi.number().optional(),
 
         // The following fields are only found on exams.
-        duration: Joi.number().optional().min(10),
-        maxGradedAttemptsPerRandomization: Joi.number().optional().min(1),
-        maxReRandomizations: Joi.number().optional().min(0),
-        randomizationDelay: Joi.number().optional().min(0),
-        hardCutoff: Joi.boolean().optional(),
-        hideHints: Joi.boolean().optional(),
-        showItemizedResults: Joi.boolean().optional(),
-        showTotalGradeImmediately: Joi.boolean().optional(),
-        hideProblemsAfterFinish: Joi.boolean().optional(),
-        randomizeOrder: Joi.boolean().optional(),
+        topicAssessmentInfo: Joi.object({
+            duration: Joi.number().optional().min(10),
+            maxGradedAttemptsPerRandomization: Joi.number().optional().min(1),
+            maxReRandomizations: Joi.number().optional().min(0),
+            randomizationDelay: Joi.number().optional().min(0),
+            hardCutoff: Joi.boolean().optional(),
+            hideHints: Joi.boolean().optional(),
+            showItemizedResults: Joi.boolean().optional(),
+            showTotalGradeImmediately: Joi.boolean().optional(),
+            hideProblemsAfterFinish: Joi.boolean().optional(),
+            randomizeOrder: Joi.boolean().optional(),
+        }).optional()
     },
     query: {},
 };

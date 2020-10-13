@@ -10,7 +10,8 @@
         "preserveConstEnums": true,
         "sourceMap": true,
         
-        "strict": true
+        "strict": true,
+        "rootDir": "src"
     },
     "include": [
         "src"

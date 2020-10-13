@@ -12,10 +12,15 @@ if (configurations.email.enabled) {
 }
 
 import { sync } from './database';
+import courseRepository from './features/courses/course-repository';
 
 (async (): Promise<void> => {
     await sync();
 
     logger.info('Playground start');
+    const existingTopic = await courseRepository.getCourseTopic({
+        id: 2245
+    });
+    console.log(existingTopic);
     logger.info('Playground done');
 })();

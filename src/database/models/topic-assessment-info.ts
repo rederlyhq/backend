@@ -121,19 +121,19 @@ TopicAssessmentInfo.init({
         defaultValue: false
     },
     showTotalGradeImmediately: {
-        field: 'topic_assessment_info_showTotalGradeImmediately',
+        field: 'topic_assessment_info_show_total_grade_immediately',
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false
     },
     hideProblemsAfterFinish: {
-        field: 'topic_assessment_info_hideProblemsAfterFinish',
+        field: 'topic_assessment_info_hide_problems_after_finish',
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: true
     },
     randomizeOrder: {
-        field: 'topic_assessment_info_randomizeOrder',
+        field: 'topic_assessment_info_randomize_order',
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false

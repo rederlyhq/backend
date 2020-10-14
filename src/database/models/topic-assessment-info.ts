@@ -94,7 +94,10 @@ TopicAssessmentInfo.init({
         field: 'topic_assessment_info_max_graded_attempts_per_randomization',
         type: DataTypes.INTEGER,
         allowNull: false,
-        defaultValue: 0
+        defaultValue: 1,
+        validate: {
+            min: 1
+        }
     },
     maxReRandomizations: {
         field: 'topic_assessment_info_max_re_randomizations',

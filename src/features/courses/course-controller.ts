@@ -82,7 +82,7 @@ class CourseController {
         });
     }
 
-    getTopicById(id: number, userId?: number): Promise<CourseTopicContent> {
+    getTopicById({id, userId, includeQuestions}: {id: number; userId?: number; includeQuestions?: boolean}): Promise<CourseTopicContent> {
         const include = [];
         include.push({
             model: TopicAssessmentInfo,
@@ -93,6 +93,7 @@ class CourseController {
                 courseTopicContentId: id,
             }
         });
+
         if (!_.isNil(userId)) {
             include.push({
                 model: StudentTopicOverride,
@@ -105,6 +106,19 @@ class CourseController {
                 }
             });
         }
+
+        if (includeQuestions) {
+            include.push({
+                model: CourseWWTopicQuestion,
+                as: 'questions',
+                required: false,
+                where: {
+                    active: true,
+                }
+            });
+        }
+
+        console.log(include);
 
         return CourseTopicContent.findOne({
             where: {
@@ -1039,7 +1053,7 @@ class CourseController {
         // Currently we only need this fetch for student, small optimization to not call the db again
         if (!showSolutions) {
             if (_.isNil(topic)) {
-                topic = await this.getTopicById(courseQuestion.courseTopicContentId);
+                topic = await this.getTopicById({id: courseQuestion.courseTopicContentId});
             }
             showSolutions = moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days').isBefore(moment());
         }
@@ -2363,7 +2377,7 @@ class CourseController {
             };
             const questions = await CourseWWTopicQuestion.findAll(findOptions);
             if (!_.isNil(courseTopicContentId)){
-                const topic = await this.getTopicById(courseTopicContentId);
+                const topic = await this.getTopicById({id: courseTopicContentId});
                 if (topic.topicTypeId === 2) {
                     questions.asyncForEach(async (question) => {
                         const version = await question.grades.getStudentGradeInstance();

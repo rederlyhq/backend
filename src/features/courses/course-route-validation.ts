@@ -290,7 +290,8 @@ export const getTopicValidation = {
         id: Joi.number().required(),
     },
     query: {
-        userId: Joi.number().optional()
+        userId: Joi.number().optional(),
+        includeQuestions: Joi.boolean().optional(),
     },
     body: {},
 };

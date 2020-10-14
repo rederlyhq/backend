@@ -215,7 +215,8 @@ class CourseRepository {
                     as: 'topicAssessmentInfo',
                     where: {
                         active: true
-                    }
+                    },
+                    required: false
                 }
             ]
         });
@@ -285,7 +286,12 @@ class CourseRepository {
 
             if (updates[0] === 1 && !_.isEmpty(options.updates.topicAssessmentInfo)) {
                 const updatedObj: CourseTopicContent = updates[1][0];
-                const toUpdate = await updatedObj.getTopicAssessmentInfo();
+                let toUpdate = await updatedObj.getTopicAssessmentInfo();
+                if (_.isNil(toUpdate)) {
+                    toUpdate = await TopicAssessmentInfo.create({
+                        courseTopicContentId: updatedObj.id
+                    });
+                }
                 _.assign(toUpdate, options.updates.topicAssessmentInfo);
                 toUpdate.save();
             }

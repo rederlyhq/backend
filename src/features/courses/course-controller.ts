@@ -7,7 +7,7 @@ import NotFoundError from '../../exceptions/not-found-error';
 import CourseUnitContent from '../../database/models/course-unit-content';
 import CourseTopicContent, { CourseTopicContentInterface } from '../../database/models/course-topic-content';
 import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface } from '../../database/models/course-ww-topic-question';
-import rendererHelper, { OutputFormat, RendererResponse } from '../../utilities/renderer-helper';
+import rendererHelper, { GetProblemParameters, OutputFormat, RendererResponse } from '../../utilities/renderer-helper';
 import StudentWorkbook from '../../database/models/student-workbook';
 import StudentGrade from '../../database/models/student-grade';
 import StudentGradeInstance from '../../database/models/student-grade-instance';
@@ -16,7 +16,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, CreateNewStudentTopicAssessmentInfoOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, UpdateGradeInstanceOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, CreateNewStudentTopicAssessmentInfoOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -35,7 +35,6 @@ import StudentTopicOverride, { StudentTopicOverrideInterface } from '../../datab
 import StudentTopicQuestionOverride, { StudentTopicQuestionOverrideInterface } from '../../database/models/student-topic-question-override';
 import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
 import StudentGradeOverride from '../../database/models/student-grade-override';
-import appSequelize from '../../database/app-sequelize';
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 import StudentTopicAssessmentOverride from '../../database/models/student-topic-assessment-override';
 import TopicAssessmentInfo from '../../database/models/topic-assessment-info';
@@ -1084,8 +1083,9 @@ class CourseController {
 
     async getQuestion(options: GetQuestionOptions): Promise<GetQuestionResult> {
         // grades/statistics may send workbookID => show problem with workbookID.form_data
-        // (not enrolled) problem page will send questionID without userID => show problem with no form_data
-        // (enrolled) will send questionID with userID => show problem with grades.currentProblemState
+        // problem page (not enrolled) will send questionID without userID => show problem with no form_data
+        // problem page (enrolled, hw) will send questionID with userID => show problem with grades.currentProblemState
+        // problem page (enrolled, assess) will send 
         const courseQuestion = await this.getQuestionRecord(options.questionId);
 
         if (_.isNil(courseQuestion)) {
@@ -1114,8 +1114,17 @@ class CourseController {
         // otherwise studentGrade from userID + questionID | null
         if(_.isNil(workbook)) {
             // assessmentState is sent over in assessment setting (instead of workbook)
-            // and *should* always be paired with info from grade instance to avoid repeated db queries
-            if (_.isNil(options.assessmentState)) {
+            if (courseRepository.isQuestionAnAssessment(options.questionId)) {
+                const gradeInstance = await courseRepository.getCurrentInstanceForQuestion({
+                    questionId: options.questionId, 
+                    userId: options.userId
+                }); 
+
+                if (_.isNil(gradeInstance)) throw new RederlyExtendedError('No current grade instance for this question.');
+                formData = gradeInstance.currentProblemState;
+                sourceFilePath = gradeInstance.webworkQuestionPath;
+                problemSeed = gradeInstance.randomSeed;
+            } else {
                 const studentGrade = await StudentGrade.findOne({
                     where: {
                         userId: options.userId,
@@ -1125,15 +1134,6 @@ class CourseController {
                 numIncorrect = studentGrade?.numAttempts;
                 formData = studentGrade?.currentProblemState;
                 problemSeed = studentGrade?.randomSeed;
-            } else {
-                formData = options.assessmentState;
-                // in assessment setting, filepath and randomseed will always be included
-                if (_.isNil(options.assessmentQuestionPath)||_.isNil(options.assessmentRandomSeed)){
-                    throw new RederlyExtendedError('Impossible: An assessment question was requested with currentState but no path or seed.');
-                } else {
-                    sourceFilePath = options.assessmentQuestionPath;
-                    problemSeed = options.assessmentRandomSeed;
-                }
             }
         } else {
             // right now this is only in here as a sanity check -- is it worth the extra db query?
@@ -1157,7 +1157,6 @@ class CourseController {
         if (options.topic?.topicTypeId === 2) {
             // I do not like hardcoding the topicTypeId...
             calculatedRendererParameters.outputformat = OutputFormat.ASSESS;
-            const assessmentInfo = await options.topic.getTopicAssessmentInfo();
         }
 
         let showCorrectAnswers = false;
@@ -2373,10 +2372,13 @@ class CourseController {
             const questions = await CourseWWTopicQuestion.findAll(findOptions);
             if (!_.isNil(courseTopicContentId)){
                 const topic = await this.getTopicById(courseTopicContentId);
-                if (topic.topicTypeId === 2) {
+                // TODO remove assessment hardcoding
+                if (topic.topicTypeId === 2 && !_.isNil(userId)) {
                     questions.asyncForEach(async (question) => {
-                        const version = await question.grades.getStudentGradeInstance();
-                        question = question.getVersion(version) as CourseWWTopicQuestion;
+                        if (_.isNil(question.grades)) throw new RederlyExtendedError('Impossible! Found an assessment question without a grade.');
+                        const version = await courseRepository.getCurrentInstanceForQuestion({questionId: question.id, userId});
+                        question.webworkQuestionPath = version?.webworkQuestionPath ?? question.webworkQuestionPath;
+                        question.grades.randomSeed = version?.randomSeed ?? question.grades.randomSeed;
                     });
                 } else {
                     questions.forEach( (question) => {
@@ -2576,7 +2578,7 @@ class CourseController {
             include.push({
                 model: StudentTopicAssessmentOverride,
                 as: 'studentTopicAssessmentOverride',
-                attributes: ['duration', 'maxReRandomizations', 'randomizationDelay'],
+                attributes: ['duration', 'maxVersions', 'versionDelay'],
                 required: false,
                 where: {
                     active: true,
@@ -2626,6 +2628,7 @@ class CourseController {
             startTime,
             endTime,
             nextVersionAvailableTime,
+            maxAttempts
         } = options;
         try {
             return await StudentTopicAssessmentInfo.create({
@@ -2633,6 +2636,7 @@ class CourseController {
                 startTime,
                 endTime,
                 nextVersionAvailableTime,
+                maxAttempts
             });
         } catch (e) {
             throw new WrappedError('Could not create new Student Topic Assessment info for this topic', e);
@@ -2652,7 +2656,7 @@ class CourseController {
             endTime = moment.min(moment(topic.deadDate), moment(startTime).add(topicInfo.duration, 'minutes'));
         } 
 
-        const nextVersionAvailableTime = moment(startTime).add(topicInfo.randomizationDelay, 'minutes');
+        const nextVersionAvailableTime = moment(startTime).add(topicInfo.versionDelay, 'minutes');
         const problemOrder = (topicInfo.randomizeOrder) ? _.shuffle(Array(questions.length)) : Array(questions.length);
 
         await questions.asyncForEach(async (question, index) => {
@@ -2673,6 +2677,7 @@ class CourseController {
             startTime,
             endTime,
             nextVersionAvailableTime,
+            maxAttempts: topicInfo.maxGradedAttemptsPerVersion,
         });
     }
 
@@ -2697,108 +2702,129 @@ class CourseController {
         }
     }
 
-    // async getAssessmentQuestions(options: GetAssessmentQuestionsOptions): Promise<CourseWWTopicQuestion[]> {
-    //     const {
-    //         courseTopicContentId,
-    //         userId
-    //     } = options;
-    //     // const topic = await this.getTopicById(courseTopicContentId, userId);
-    //     // const assessmentInfo = await topic.getTopicAssessmentInfo();
-    //     // const assessmentInfoOverride = await (StudentTopicAssessmentOverride.findOne({
-    //     //     where: {
+    scoreAssessment = (results: SubmittedAssessmentResultContext[]): ScoreAssessmentResult => {
+        let totalScore = 0;
+        let bestVersionScore = 0;
+        let bestOverallVersion = 0;
+        const problemScores: Array<number> = [];
 
-    //     //     }
-    //     // })
-
-    //     try {
-    //         const include: sequelize.IncludeOptions[] = [];
-    //         if (!_.isNil(userId)) {
-    //             include.push({
-    //                 model: StudentGrade,
-    //                 as: 'grades',
-    //                 required: true,
-    //                 where: {
-    //                     userId: userId,
-    //                 },
-    //                 include: [{
-    //                     model: StudentGradeInstance,
-    //                     as: 'gradeInstance',
-    //                     required: true,
-    //                 }]
-    //             });
-    //             include.push({
-    //                 model: StudentTopicQuestionOverride,
-    //                 as: 'studentTopicQuestionOverride',
-    //                 attributes: ['userId', 'maxAttempts'],
-    //                 required: false,
-    //                 where: {
-    //                     active: true,
-    //                     userId: userId
-    //                 }
-    //             });
-    //         }
-
-    //         // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
-    //         const where: sequelize.WhereOptions = _({
-    //             courseTopicContentId,
-    //             active: true
-    //         }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
-
-    //         const findOptions: sequelize.FindOptions = {
-    //             include,
-    //             where,
-    //             order: [
-    //                 ['problemNumber', 'ASC'],
-    //             ]
-    //         };
-    //         const questions = await CourseWWTopicQuestion.findAll(findOptions);
-    //         questions.forEach((question: CourseWWTopicQuestion)=>{
-    //             // coalescing is to satisfy TS, GradeInstance is not *required* on a StudentGrade in general - but we definitely have it
-    //             question.webworkQuestionPath = question.grades.gradeInstance?.webworkQuestionPath ?? question.webworkQuestionPath;
-    //             question.grades.randomSeed = question.grades.gradeInstance?.randomSeed ?? question.grades.randomSeed;
-    //             question.problemNumber = question.grades.gradeInstance?.problemNumber ?? question.problemNumber;
-    //         });
-    //         return questions;
-    //     } catch (e) {
-    //         throw new WrappedError('Error fetching problems', e);
-    //     }
-    // }
-
-    // async submitAssessment(options: SubmitAssessmentOptions): Promise<SubmitAssessmentResult[]> {
-    //     const { userId, studentTopicAssessmentInfoId } = options;
-    //     const questions = await StudentGradeInstance.findAll({
-    //         where: {
-    //             userId,
-    //             studentTopicAssessmentInfoId,
-    //         },
-    //         order: [
-    //             ['problemNumber', 'ASC'],
-    //         ]
-    //     });
-    //     // questions.asyncForEach( async () => {
-            
-    //     // });
-    // } 
-
-    // is this necessary? Does every request need to pass through the controller level to the repository?
-    async updateGradeInstance(options: UpdateGradeInstanceOptions): Promise<UpdateResult<StudentGradeInstance>> {
-        return appSequelize.transaction(async (): Promise<UpdateResult<StudentGradeInstance>> => {
-            // is there any reason why a grade instance might be locked?
-            // if (!_.isNil(options.updates.locked)) {
-            //     await courseRepository.createStudentGradeLockAction({
-            //         studentGradeId: options.where.id,
-            //         initiatingUserId: options.initiatingUserId,
-            //         newValue: options.updates.locked
-            //     });    
-            // }
-    
-            try {
-                return await courseRepository.updateGradeInstance(options);
-            } catch (e) {
-                throw new WrappedError('Could not update the grade instance', e);
-            }    
+        results.forEach((result: SubmittedAssessmentResultContext) => {
+            const { questionResponse, grade, instance, weight } = result;
+            totalScore += weight * questionResponse.problem_result.score;
+            bestVersionScore += weight * instance.scoreForBestVersion;
+            bestOverallVersion += weight * grade.bestScore;
+            problemScores[result.instance.problemNumber] = result.questionResponse.problem_result.score * result.weight;
         });
+
+        problemScores[0] = totalScore; // scores indexed by problem number, total at [0]
+        return {problemScores, bestVersionScore: bestVersionScore, bestOverallVersion};
     }
+
+    async submitAssessmentAnswers(studentTopicAssessmentInfoId: number, wasAutoSubmitted: boolean): Promise<SubmitAssessmentAnswerResult> {
+        const studentTopicAssessmentInfo = await this.getStudentTopicAssessmentInfoById(studentTopicAssessmentInfoId);
+        if (studentTopicAssessmentInfo.numAttempts >= studentTopicAssessmentInfo.maxAttempts) {
+            throw new WrappedError('Cannot submit assessment answers when there are no attempts remaining'); // sanity check, shouldn't happen
+        }
+        const topicInfo = await studentTopicAssessmentInfo.getTopicAssessmentInfo();
+        const { showItemizedResults, showTotalGradeImmediately } = topicInfo;
+
+        const studentGradeInstances = await studentTopicAssessmentInfo.getStudentGradeInstances();
+
+        const questionResponses = [] as SubmittedAssessmentResultContext[];
+        await studentGradeInstances.asyncForEach(async (instance) => {
+            const question = await instance.getQuestion(); // getting this just for weight -- will save queries later
+            const grade = await instance.getGrade(); // passing studentGrade, studentGradeInstance, and questionResponse for grading
+
+            const getProblemParams: GetProblemParameters = {
+                formURL: '/', // we don't care about this - no one sees the rendered version
+                sourceFilePath: instance.webworkQuestionPath,
+                problemSeed: instance.randomSeed,
+                formData: instance.currentProblemState,
+            };
+
+            const questionResponse = await rendererHelper.getProblem(getProblemParams) as RendererResponse;
+            questionResponses.push({
+                questionResponse,
+                grade,
+                instance,
+                weight: question.weight,
+                submitted: instance.currentProblemState,
+            });
+        });
+
+        const { problemScores, bestVersionScore, bestOverallVersion } = this.scoreAssessment(questionResponses);
+        const isBestForThisVersion = problemScores[0] >= bestVersionScore;
+        const isBestOverallVersion = problemScores[0] >= bestOverallVersion;
+
+        await questionResponses.asyncForEach(async (result: SubmittedAssessmentResultContext) => {
+
+            // create workbook for attempt
+            const workbook = await StudentWorkbook.create({
+                studentGradeId: result.grade.id,
+                userId: result.grade.userId,
+                courseWWTopicQuestionId: result.grade.courseWWTopicQuestionId,
+                studentGradeInstanceId: result.instance.id, // shouldn't this workbook be tied to a grade instance?
+                randomSeed: result.instance.randomSeed,
+                submitted: rendererHelper.cleanRendererResponseForTheDatabase(result.submitted as RendererResponse),
+                result: result.questionResponse.problem_result.score,
+                time: new Date(),
+                wasLate: false,
+                wasExpired: false,
+                wasAfterAttemptLimit: false,
+                wasLocked: false,
+                wasAutoSubmitted: wasAutoSubmitted,
+            });
+
+            // update individual problem high-scores
+            if (result.questionResponse.problem_result.score > result.instance.overallBestScore) {
+                // update instance: overallBestScore, bestIndividualAttemptId
+                result.instance.overallBestScore = result.questionResponse.problem_result.score;
+                result.instance.bestIndividualAttemptId = workbook.id;
+                if (result.questionResponse.problem_result.score > result.grade.overallBestScore) {
+                    // update grade: overallBestScore, *what about workbook id*?
+                    result.grade.overallBestScore = result.questionResponse.problem_result.score;
+                    // which workbookId field should be used?
+                }
+            }
+
+            // update aggregate best-scores
+            if (isBestForThisVersion) {
+                // update instance: bestScore, bestVersionAttemptId
+                result.instance.scoreForBestVersion = result.questionResponse.problem_result.score;
+                result.instance.bestVersionAttemptId = workbook.id;
+                if (isBestOverallVersion) {
+                    // update grade: bestScore, lastInfluencingLegalAttemptId? (or do we forego workbooks on grades for assessments because of grade instances)
+                    result.grade.bestScore = result.questionResponse.problem_result.score;
+                    result.grade.lastInfluencingAttemptId = workbook.id;
+                }
+            }
+
+            // const versionAverage = (incoming.instance.averageScore * incoming.instance.numAttempts + incoming.questionResponse.problem_result.score)/(incoming.instance.numAttempts + 1);
+
+            // save updates
+            await result.grade.save();
+            await result.instance.save();
+        });
+
+        //reduce the number of attempts remaining
+        studentTopicAssessmentInfo.numAttempts++;
+        await studentTopicAssessmentInfo.save();
+
+        // use topic assessment info settings to decide what data is exposed to the frontend
+        let problemScoresReturn: Array<number> | undefined;
+        let bestVersionScoreReturn: number | undefined;
+        let bestOverallVersionReturn: number | undefined;
+        if (showTotalGradeImmediately){
+            if (showItemizedResults) {
+                problemScoresReturn = problemScores;
+            } else {
+                problemScoresReturn = [problemScores[0]];
+                bestOverallVersionReturn = bestVersionScore;
+                bestVersionScoreReturn = bestVersionScore;
+            }
+        }
+        return { problemScores: problemScoresReturn, bestVersionScore: bestVersionScoreReturn, bestOverallVersion: bestOverallVersionReturn};
+    };
 
 }
 

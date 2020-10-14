@@ -5,7 +5,7 @@ import validate from '../../middleware/joi-validator';
 import { authenticationMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
-import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation, deleteEnrollmentValidation, createAssessmentVersionValidation, extendCourseTopicForUserValidation, extendCourseTopicQuestionValidation, getTopicValidation } from './course-route-validation';
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation, deleteEnrollmentValidation, createAssessmentVersionValidation, extendCourseTopicForUserValidation, extendCourseTopicQuestionValidation, getTopicValidation, submitAssessmentVersionValidation } from './course-route-validation';
 import NotFoundError from '../../exceptions/not-found-error';
 import multer = require('multer');
 import * as proxy from 'express-http-proxy';
@@ -19,7 +19,7 @@ import Boom = require('boom');
 import { Constants } from '../../constants';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import Role from '../permissions/roles';
-import { GetQuestionResult, PostQuestionMeta } from './course-types';
+import { PostQuestionMeta } from './course-types';
 import rendererHelper, { RENDERER_ENDPOINT, GetProblemParameters, RendererResponse } from '../../utilities/renderer-helper';
 import StudentGrade from '../../database/models/student-grade';
 import bodyParser = require('body-parser');
@@ -229,7 +229,7 @@ router.get('/questions',
                     topic.topicAssessmentInfo.hideProblemsAfterFinish &&
                     !_.isNil(versions[0]) && (
                         moment().isAfter(moment(versions[0].endTime)) ||
-                        topic.topicAssessmentInfo.maxGradedAttemptsPerRandomization <= versions.length
+                        topic.topicAssessmentInfo.maxGradedAttemptsPerVersion <= versions.length
                     ) &&
                     user.roleId === Role.STUDENT
                 ) {
@@ -313,14 +313,14 @@ router.get('/assessment/topic/:id/start',
         const topicInfo = await courseController.getTopicAssessmentInfoByTopicId({ topicId: topic.id, userId: user.id }); // ordered by startDate, includes overrides
         const studentAssessments = await courseController.getStudentTopicAssessmentInfo({ topicId: topic.id, userId: user.id });
 
-        const maxReRandomizations = topicInfo.studentTopicAssessmentOverride?.[0]?.maxReRandomizations ?? topicInfo.maxReRandomizations;
+        const maxVersions = topicInfo.studentTopicAssessmentOverride?.[0]?.maxVersions ?? topicInfo.maxVersions;
 
-        // TODO deal with possible overrides: duration, maxReRandomizations, randomizationDelay
-        // do we possibly include nextRandomizationStartsAfter as an override?
+        // TODO deal with possible overrides: duration, maxVersions, versionDelay
+        // do we possibly include nextVersionStartsAfter as an override?
         // topic overrides: startDate/endDate
-        if (studentAssessments.length >= maxReRandomizations) {
+        if (studentAssessments.length >= maxVersions) {
             if (user.roleId === Role.STUDENT) {
-                next(Boom.badRequest('You have no re-randomizations remaining.'));
+                next(Boom.badRequest('You have no retakes remaining.'));
                 return;
             }
         }
@@ -328,7 +328,7 @@ router.get('/assessment/topic/:id/start',
         if (studentAssessments[0] && new Date().getTime() < studentAssessments[0].nextVersionAvailableTime.getTime() ) {
             if (user.roleId === Role.STUDENT) {
                 // toLocaleString supports timezone, which we should maybe use?
-                next(Boom.badRequest(`Another randomization will be available after ${studentAssessments[0].nextVersionAvailableTime.toLocaleString()}.`));
+                next(Boom.badRequest(`Another version of this assessment will be available after ${studentAssessments[0].nextVersionAvailableTime.toLocaleString()}.`));
                 return;
             }
         }
@@ -347,7 +347,7 @@ router.get('/assessment/topic/:id/start',
                 topicId: topic.id, 
                 userId: user.id,
             });
-            next(httpResponse.Ok('New randomization created successfully', {
+            next(httpResponse.Ok('New version of this assessment created successfully', {
                 versionInfo,
             }));
         } catch (e) {
@@ -596,39 +596,32 @@ router.get('/question/:id',
         }
     }));
 
-// router.post('/assessment/topic/:id/submit/:version',
-//     authenticationMiddleware,
-//     // This is a typescript workaround since it tries to use the type extractMap
-//     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-//     asyncHandler(async (req: RederlyExpressRequest<any, unknown, unknown, SubmitAssessmentVersionRequest.body, SubmitAssessmentVersionRequest.query>, _res: Response, next: NextFunction) => {
-//         if (_.isNil(req.session)) {
-//             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
-//         }
+router.post('/assessment/topic/:id/submit/:version',
+    authenticationMiddleware,
+    validate(submitAssessmentVersionValidation),
+    // This is a typescript workaround since it tries to use the type extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, unknown, SubmitAssessmentVersionRequest.body, SubmitAssessmentVersionRequest.query>, _res: Response, next: NextFunction) => {
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
 
-//         const user = await req.session.getUser();
+        const user = await req.session.getUser();
 
-//         const params = req.params as SubmitAssessmentVersionRequest.params;
+        const params = req.params as SubmitAssessmentVersionRequest.params;
 
-//         const studentTopicAssessmentInfo = await courseController.getStudentTopicAssessmentInfoById(params.version);
-//         if (user.id != studentTopicAssessmentInfo.userId) {
-//             throw new Error('You cannot submit an assessment that does not belong to you.');
-//         }
+        const studentTopicAssessmentInfo = await courseController.getStudentTopicAssessmentInfoById(params.version);
+        if (user.id != studentTopicAssessmentInfo.userId) {
+            throw new Error('You cannot submit an assessment that does not belong to you.');
+        }
 
-//         const studentGradeInstances = await studentTopicAssessmentInfo.getStudentGradeInstances();
+        if (studentTopicAssessmentInfo.numAttempts >= studentTopicAssessmentInfo.maxAttempts) {
+            throw new Error('This assessment version has no attempts remaining.');
+        }
 
-//         const questionResponses = [];
-//         studentGradeInstances.asyncForEach(async (instance) => {
-//             const question = await instance.getQuestion(); // question.id mandatory for getQuestion - feels wasteful
-
-//             const questionResponse = await rendererHelper.getProblem({
-//                 formURL: '/', // we don't care about this - no one sees the rendered version
-//                 sourceFilePath: instance.webworkQuestionPath,
-//                 problemSeed: instance.randomSeed,
-//                 formData: instance.currentProblemState,
-//             });
-//             questionResponses.push(questionResponse);
-//         });
-//     }));
+        const assessmentResult = await courseController.submitAssessmentAnswers(params.version, false);
+        next(httpResponse.Ok('Assessment submitted successfully', assessmentResult));
+    }));
 
 router.post('/question/:id',
     authenticationMiddleware,

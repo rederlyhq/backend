@@ -7,7 +7,7 @@ import { WhereOptions } from 'sequelize/types';
 import CourseUnitContent from '../../database/models/course-unit-content';
 import CourseTopicContent, { CourseTopicContentInterface } from '../../database/models/course-topic-content';
 import Role from '../permissions/roles';
-import { OutputFormat } from '../../utilities/renderer-helper';
+import { OutputFormat, RendererResponse } from '../../utilities/renderer-helper';
 import { Moment } from 'moment';
 import { DetermineGradingRationaleResult } from '../../utilities/grading-helper';
 import StudentGradeInstance from '../../database/models/student-grade-instance';
@@ -52,6 +52,17 @@ export interface GetTopicAssessmentInfoByTopicIdOptions {
 export interface GetStudentTopicAssessmentInfoOptions {
     topicId: number;
     userId: number;
+}
+
+export interface GetQuestionVersionDetailsOptions {
+    questionId: number;
+    userId: number;
+}
+
+export interface QuestionVersionDetails {
+    webworkQuestionPath: string;
+    problemNumber: number;
+    randomSeed: number;
 }
 
 // TODO make generic interface
@@ -235,14 +246,6 @@ export interface GetQuestionOptions {
     topic?: CourseTopicContent;
     workbookId?: number;
     readonly?: boolean;
-    assessmentQuestionPath?: string;
-    assessmentRandomSeed?: number;
-    // This is a jsonb field so it could be any (from db)
-    // Submitted in workbook used any so I'm going to keep it consistent here
-    // If this is used for form data we will never know any info about what keys are available
-    // Might make sense to make this an unknown type since I don't think we will ever access the types
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    assessmentState?: any;
 };
 
 export interface GetQuestionResult {
@@ -277,6 +280,28 @@ export interface SubmitAnswerResult {
 //     studentGrade: StudentGradeInstance;
 //     studentWorkbook: StudentWorkbook;
 // }
+
+export interface SubmittedAssessmentResultContext {
+    questionResponse: RendererResponse;
+    grade: StudentGrade;
+    instance: StudentGradeInstance;
+    weight: number;
+    // This is coming from the renderer right now
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    submitted: any;
+}
+
+export interface ScoreAssessmentResult {
+    problemScores: Array<number>;
+    bestVersionScore: number;
+    bestOverallVersion: number;
+}
+
+export interface SubmitAssessmentAnswerResult {
+    problemScores?: Array<number>;
+    bestVersionScore?: number;
+    bestOverallVersion?: number;
+}
 
 export interface FindMissingGradesResult {
     student: User;
@@ -329,6 +354,7 @@ export interface CreateNewStudentTopicAssessmentInfoOptions {
     startTime: moment.Moment;
     endTime: moment.Moment;
     nextVersionAvailableTime: moment.Moment;
+    maxAttempts: number;
 }
 
 export interface GetQuestionsForThisAssessmentOptions {

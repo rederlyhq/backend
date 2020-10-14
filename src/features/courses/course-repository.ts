@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import WrappedError from '../../exceptions/wrapped-error';
 import { Constants } from '../../constants';
-import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, UpdateGradeInstanceOptions, ExtendTopicForUserOptions, ExtendTopicQuestionForUserOptions } from './course-types';
+import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, UpdateGradeInstanceOptions, ExtendTopicForUserOptions, ExtendTopicQuestionForUserOptions, GetQuestionVersionDetailsOptions } from './course-types';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 import NotFoundError from '../../exceptions/not-found-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
@@ -21,6 +21,7 @@ import StudentGradeLockAction from '../../database/models/student-grade-lock-act
 import StudentGradeInstance from '../../database/models/student-grade-instance';
 import * as moment from 'moment';
 import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
+import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -443,6 +444,55 @@ class CourseRepository {
         }
     }
     
+    async isQuestionAnAssessment(questionId: number): Promise<boolean> {
+        const question = await this.getQuestion({id: questionId});
+        const topic = await this.getCourseTopic({id: question.courseTopicContentId});
+        return topic.topicTypeId === 2;
+    }
+
+    /**
+     * This function takes a questionId and a userId
+     * It fetches the current gradeInstance, if one exists - returning undefined if there are no current gradeInstances
+     * @param options: {questionId, userId}
+     */
+    async getCurrentInstanceForQuestion(options: GetQuestionVersionDetailsOptions): Promise<StudentGradeInstance | null> {
+        // requires a userId and a questionId
+        // questionId -> courseTopicContentId (unique, no query)
+        // questionId + userId -> StudentGrade (unique)
+        // topicId + userId -> StudentTopicAssessmentInfo (many, but only one current?)
+        // gradeId + studentTopicAssessmentInfoId -> GradeInstance
+        const question = await this.getQuestion({id: options.questionId});
+        const topicId = question.courseTopicContentId;
+        const studentGrade = await StudentGrade.findOne({
+            where: {
+                userId: options.userId,
+                courseWWTopicQuestionId: options.questionId,
+            }
+        });
+        if (_.isNil(studentGrade)) throw new IllegalArgumentException('No current version to get when there is no grade for this user.');
+
+        const assessmentInfo = await StudentTopicAssessmentInfo.findAll({
+            where: {
+                topicId,
+                userId: options.userId,
+            },
+            order: [
+                ['endTime', 'DESC'],
+            ]
+        });
+        if (_.isNil(assessmentInfo) || moment(assessmentInfo[0].endTime).isBefore(moment())) return null; // no current version available
+
+        const gradeInstance = await StudentGradeInstance.findOne({
+            where: {
+                studentGradeId: studentGrade.id,
+                studentTopicAssessmentInfoId: assessmentInfo[0].id,
+            }
+        });
+        if (_.isNil(gradeInstance)) throw new Error('Impossible! There is a current assessment without matching grade instance.');
+
+        return gradeInstance;
+    }
+
     async updateQuestions(options: UpdateQuestionsOptions): Promise<UpdateResult<CourseWWTopicQuestion>> {
         try {
             const updates = await CourseWWTopicQuestion.update(options.updates, {

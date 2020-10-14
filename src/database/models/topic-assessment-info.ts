@@ -6,9 +6,9 @@ interface TopicAssessmentInfoInterface {
     courseTopicContentId: number;
     duration: number;
     hardCutoff: boolean;
-    maxGradedAttemptsPerRandomization: number;
-    maxReRandomizations: number;
-    randomizationDelay: number;
+    maxGradedAttemptsPerVersion: number;
+    maxVersions: number;
+    versionDelay: number;
     hideHints: boolean;
     showItemizedResults: boolean;
     showTotalGradeImmediately: boolean;
@@ -21,9 +21,9 @@ export default class TopicAssessmentInfo extends Model implements TopicAssessmen
     public courseTopicContentId!: number;
     public duration!: number; // enforce IN MINUTES
     public hardCutoff!: boolean;
-    public maxGradedAttemptsPerRandomization!: number;
-    public maxReRandomizations!: number;
-    public randomizationDelay!: number; // for consistency do we also force MINUTES here?
+    public maxGradedAttemptsPerVersion!: number;
+    public maxVersions!: number;
+    public versionDelay!: number; // for consistency do we also force MINUTES here?
     public hideHints!: boolean;
     public showItemizedResults!: boolean;
     public showTotalGradeImmediately!: boolean;
@@ -90,20 +90,20 @@ TopicAssessmentInfo.init({
         allowNull: false,
         defaultValue: false
     },
-    maxGradedAttemptsPerRandomization: {
-        field: 'topic_assessment_info_max_graded_attempts_per_randomization',
+    maxGradedAttemptsPerVersion: {
+        field: 'topic_assessment_info_max_graded_attempts_per_version',
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0
     },
-    maxReRandomizations: {
-        field: 'topic_assessment_info_max_re_randomizations',
+    maxVersions: {
+        field: 'topic_assessment_info_max_versions',
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0,
     },
-    randomizationDelay: {
-        field: 'topic_assessment_info_randomization_delay',
+    versionDelay: {
+        field: 'topic_assessment_info_version_delay',
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0,

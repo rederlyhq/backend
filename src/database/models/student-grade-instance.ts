@@ -9,7 +9,7 @@ export interface StudentGradeInstanceQuestionOverridesInterface {
 
 export interface StudentGradeInstanceGradeOverridesInterface {
     randomSeed: number;
-    numAttempts: number;
+    // numAttempts: number;
     // This is a jsonb field so it could be any (from db)
     // Submitted in workbook used any so I'm going to keep it consistent here
     // If this is used for form data we will never know any info about what keys are available
@@ -27,14 +27,14 @@ export interface StudentGradeInstanceInterface {
     randomSeed: number;
     webworkQuestionPath: string;
     problemNumber: number;
-    bestScore: number; // the score from the highest-scoring exam submission
+    scoreForBestVersion: number; // the score from the highest-scoring exam submission
     overallBestScore: number; // the best score on this problem alone
     // Grade instances shouldn't be overwritten
     // effectiveScore: number;
     // Doesn't have dead date
     // legalScore: number;
     // Don't need other num attempts fields because there is no doing so after the fact?
-    numAttempts: number;
+    // numAttempts: number;
     // Don't need locked because it is very controlled
     // Don't need references to workbooks since there should be a relatively 1-1 relationship
     active: boolean;
@@ -57,9 +57,9 @@ export default class StudentGradeInstance extends Model implements StudentGradeI
     public randomSeed!: number;
     public webworkQuestionPath!: string;
     public problemNumber!: number;
-    public bestScore!: number;
+    public scoreForBestVersion!: number;
     public overallBestScore!: number;
-    public numAttempts!: number;
+    // public numAttempts!: number;
     public active!: boolean;
     // This is a jsonb field so it could be any (from db)
     // Submitted in workbook used any so I'm going to keep it consistent here
@@ -197,24 +197,24 @@ StudentGradeInstance.init({
         type: DataTypes.INTEGER,
         allowNull: false,
     },
-    bestScore: {
-        field: 'student_grade_instance_best_score',
+    scoreForBestVersion: {
+        field: 'student_grade_instance_score_for_best_version',
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0
     },
     overallBestScore: {
-        field: 'student_grade_isntance_overall_best_score',
+        field: 'student_grade_instance_overall_best_score',
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0
     },
-    numAttempts: {
-        field: 'student_grade_isntance_num_attempts',
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        defaultValue: 0
-    },
+    // numAttempts: {
+    //     field: 'student_grade_isntance_num_attempts',
+    //     type: DataTypes.INTEGER,
+    //     allowNull: false,
+    //     defaultValue: 0
+    // },
     active: {
         field: 'student_grade_instance_active',
         type: DataTypes.BOOLEAN,

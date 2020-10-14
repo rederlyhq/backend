@@ -38,7 +38,8 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
     public getStudentGradeInstances!: HasManyGetAssociationsMixin<StudentGradeInstance>;
 
     public readonly studentTopicQuestionOverride?: StudentTopicQuestionOverride[];
-    public readonly grades!: StudentGrade;
+    public readonly grades?: StudentGrade;
+    public gradeInstances?: StudentGradeInstance[];
 
     // timestamps!
     public readonly createdAt!: Date;

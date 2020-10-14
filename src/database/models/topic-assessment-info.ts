@@ -52,7 +52,7 @@ export default class TopicAssessmentInfo extends Model implements TopicAssessmen
         });
 
         TopicAssessmentInfo.hasMany(StudentTopicAssessmentOverride, {
-            foreignKey: 'studentTopicAssessmentInfoId',
+            foreignKey: 'topicAssessmentInfoId',
             sourceKey: 'id',
             as: 'studentTopicAssessmentOverride'
         });

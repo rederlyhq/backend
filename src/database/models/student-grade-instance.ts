@@ -7,6 +7,17 @@ export interface StudentGradeInstanceQuestionOverridesInterface {
     problemNumber: number;
 }
 
+export interface StudentGradeInstanceGradeOverridesInterface {
+    randomSeed: number;
+    numAttempts: number;
+    // This is a jsonb field so it could be any (from db)
+    // Submitted in workbook used any so I'm going to keep it consistent here
+    // If this is used for form data we will never know any info about what keys are available
+    // Might make sense to make this an unknown type since I don't think we will ever access the types
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    currentProblemState: any;
+}
+
 export interface StudentGradeInstanceInterface {
     id: number;
     studentGradeId: number;

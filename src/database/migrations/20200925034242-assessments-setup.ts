@@ -119,6 +119,12 @@ export default {
                     allowNull: false,
                     defaultValue: true
                 },
+                attemptsRemaining: {
+                    field: 'student_topic_assessment_info_attempts_remaining',
+                    type: DataTypes.INTEGER,
+                    allowNull: false,
+                    defaultValue: true
+                },
                 updatedAt: {
                     field: 'updated_at',
                     type: DataTypes.DATE,

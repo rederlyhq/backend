@@ -8,6 +8,7 @@ interface StudentTopicAssessmentInfoInterface {
     startTime: Date;
     endTime: Date;
     nextVersionAvailableTime: Date;
+    attemptsRemaining: number;
     active: boolean;
 }
 
@@ -18,6 +19,7 @@ export default class StudentTopicAssessmentInfo extends Model implements Student
     public startTime!: Date;
     public endTime!: Date;
     public nextVersionAvailableTime!: Date;
+    public attemptsRemaining!: number;
     public active!: boolean;
 
     public getUser!: BelongsToGetAssociationMixin<User>;
@@ -89,6 +91,12 @@ StudentTopicAssessmentInfo.init({
         type: DataTypes.DATE,
         allowNull: false,
         defaultValue: appSequelize.literal('NOW()')
+    },
+    attemptsRemaining: {
+        field: 'student_topic_assessment_info_attempts_remaining',
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: true
     },
     active: {
         field: 'student_topic_assessment_info_active',

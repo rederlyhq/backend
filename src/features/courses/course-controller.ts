@@ -117,8 +117,6 @@ class CourseController {
             });
         }
 
-        console.log(include);
-
         return CourseTopicContent.findOne({
             where: {
                 id,

@@ -119,11 +119,16 @@ export default {
                     allowNull: false,
                     defaultValue: true
                 },
-                attemptsRemaining: {
-                    field: 'student_topic_assessment_info_attempts_remaining',
+                numAttempts: {
+                    field: 'student_topic_assessment_info_num_attempts',
                     type: DataTypes.INTEGER,
                     allowNull: false,
-                    defaultValue: true
+                    defaultValue: 0
+                },
+                maxAttempts: {
+                    field: 'student_topic_assessment_info_num_attempts',
+                    type: DataTypes.INTEGER,
+                    allowNull: false,
                 },
                 updatedAt: {
                     field: 'updated_at',
@@ -366,7 +371,7 @@ export default {
                     autoIncrement: true,
                     primaryKey: true,
                 },
-                courseTopicContentId: {
+                topicAssessmentInfoId: {
                     field: 'topic_assessment_info_id',
                     type: DataTypes.INTEGER,
                     allowNull: false,
@@ -376,6 +381,18 @@ export default {
                     references: {
                         model: 'topic_assessment_info',
                         key: 'topic_assessment_info_id',
+                    },
+                },
+                studentTopicAssessmentInfoId: {
+                    field: 'student_topic_assessment_info_id',
+                    type: DataTypes.INTEGER,
+                    allowNull: false,
+                    // Defaults to cascade when generating the db, no action on migrations
+                    onUpdate: 'CASCADE',
+                    // Different from sequelize model, on models I do this with associations so I can use types
+                    references: {
+                        model: 'student_topic_assessment_info',
+                        key: 'student_topic_assessment_info_id',
                     },
                 },
                 userId: {

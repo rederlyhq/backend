@@ -2576,6 +2576,7 @@ class CourseController {
         const result = await StudentTopicAssessmentInfo.findOne({
             where: {
                 id,
+                active: true,
             },
         });
         if (_.isNil(result)) {
@@ -2590,7 +2591,7 @@ class CourseController {
             include.push({
                 model: StudentTopicAssessmentOverride,
                 as: 'studentTopicAssessmentOverride',
-                attributes: ['duration', 'maxVersions', 'versionDelay'],
+                attributes: ['duration', 'maxGradedAttemptsPerVersion', 'maxVersions', 'versionDelay'],
                 required: false,
                 where: {
                     active: true,
@@ -2760,7 +2761,6 @@ class CourseController {
                 grade,
                 instance,
                 weight: question.weight,
-                submitted: instance.currentProblemState,
             });
         });
 
@@ -2777,7 +2777,7 @@ class CourseController {
                 courseWWTopicQuestionId: result.grade.courseWWTopicQuestionId,
                 studentGradeInstanceId: result.instance.id, // shouldn't this workbook be tied to a grade instance?
                 randomSeed: result.instance.randomSeed,
-                submitted: rendererHelper.cleanRendererResponseForTheDatabase(result.submitted as RendererResponse),
+                submitted: rendererHelper.cleanRendererResponseForTheDatabase(result.questionResponse.form_data as RendererResponse),
                 result: result.questionResponse.problem_result.score,
                 time: new Date(),
                 wasLate: false,

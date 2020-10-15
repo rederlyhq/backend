@@ -287,9 +287,6 @@ export interface SubmittedAssessmentResultContext {
     grade: StudentGrade;
     instance: StudentGradeInstance;
     weight: number;
-    // This is coming from the renderer right now
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    submitted: any;
 }
 
 export interface ScoreAssessmentResult {

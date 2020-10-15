@@ -150,15 +150,11 @@ router.post('/topic',
     authenticationMiddleware,
     validate(createCourseTopicValidation),
     asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
-        try {
-            const newTopic = await courseController.createTopic({
-                ...req.body
-            });
-            // TODO handle not found case
-            next(httpResponse.Created('Course Topic created successfully', newTopic));
-        } catch (e) {
-            next(e);
-        }
+        const newTopic = await courseController.createTopic({
+            ...req.body
+        });
+
+        next(httpResponse.Created('Course Topic created successfully', newTopic));
     }));
 
 router.get('/grades',
@@ -205,7 +201,10 @@ router.get('/questions',
 
         let topic: CourseTopicContent | null = null;
         if(!_.isNil(req.query.courseTopicContentId)) {
-            topic = await courseController.getTopicById(req.query.courseTopicContentId, userId);
+            topic = await courseController.getTopicById({
+                id: req.query.courseTopicContentId,
+                userId,
+            });
             const overrideStartDate = topic.studentTopicOverride?.[0]?.startDate;
             const startDate = overrideStartDate ?? topic.startDate;
 
@@ -310,7 +309,7 @@ router.get('/assessment/topic/:id/start',
         }
         const user = await req.session.getUser();
 
-        let topic = await courseController.getTopicById(params.id); // includes StudentTopicOverrides
+        let topic = await courseController.getTopicById({id: params.id}); // includes TopicOverrides
         const topicInfo = await courseController.getTopicAssessmentInfoByTopicId({ topicId: topic.id, userId: user.id }); // ordered by startDate, includes overrides
         const studentVersions = await courseController.getStudentTopicAssessmentInfo({ topicId: topic.id, userId: user.id });
 
@@ -765,7 +764,7 @@ router.get('/topic/:id',
     // This is due to a typescript issue where the type mismatches extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetTopicRequest.body, GetTopicRequest.query, unknown>, _res: Response, next: NextFunction) => {
-        const result = await courseController.getTopicById(req.params.id, req.query.userId);
+        const result = await courseController.getTopicById({id: req.params.id, userId: req.query.userId, includeQuestions: req.query.includeQuestions});
         next(httpResponse.Ok('Fetched successfully', result));
     }));
 

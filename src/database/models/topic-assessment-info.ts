@@ -94,7 +94,7 @@ TopicAssessmentInfo.init({
         field: 'topic_assessment_info_max_graded_attempts_per_version',
         type: DataTypes.INTEGER,
         allowNull: false,
-        defaultValue: 0
+        defaultValue: 1,
     },
     maxVersions: {
         field: 'topic_assessment_info_max_versions',

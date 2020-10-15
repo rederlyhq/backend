@@ -22,7 +22,7 @@ import StudentGradeInstance from '../../database/models/student-grade-instance';
 import * as moment from 'moment';
 import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
-
+import TopicAssessmentInfo from '../../database/models/topic-assessment-info';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -209,6 +209,16 @@ class CourseRepository {
                 id: options.id,
                 active: true
             },
+            include: [
+                {
+                    model: TopicAssessmentInfo,
+                    as: 'topicAssessmentInfo',
+                    where: {
+                        active: true
+                    },
+                    required: false
+                }
+            ]
         });
         if (_.isNil(result)) {
             throw new NotFoundError('The requested topic does not exist');
@@ -256,7 +266,8 @@ class CourseRepository {
             checkDates = true
         } = options;
         if (checkDates) {
-            const dueDates = _.compact([options.updates.endDate?.toMoment(), options.updates.deadDate?.toMoment()]);
+            // The use of DeepPartial on the type causes toMoment to be nullable.
+            const dueDates = _.compact([options.updates.endDate?.toMoment?.(), options.updates.deadDate?.toMoment?.()]);
             // moment.min([]) returns right now, so if there are no due dates we def don't want to throw an error
             // Otherwise you can't set due dates in the past
             if (dueDates.length > 0 && moment.min(...dueDates).isBefore(moment())) {
@@ -265,6 +276,7 @@ class CourseRepository {
         }
         
         try {
+            // console.log(options);
             const updates = await CourseTopicContent.update(options.updates, {
                 where: {
                     ...options.where,
@@ -272,6 +284,19 @@ class CourseRepository {
                 },
                 returning: true,
             });
+
+            if (updates[0] === 1 && !_.isEmpty(options.updates.topicAssessmentInfo)) {
+                const updatedObj: CourseTopicContent = updates[1][0];
+                let toUpdate = await updatedObj.getTopicAssessmentInfo();
+                if (_.isNil(toUpdate)) {
+                    toUpdate = await TopicAssessmentInfo.create({
+                        courseTopicContentId: updatedObj.id
+                    });
+                }
+                _.assign(toUpdate, options.updates.topicAssessmentInfo);
+                toUpdate.save();
+            }
+
             return {
                 updatedCount: updates[0],
                 updatedRecords: updates[1],

@@ -81,6 +81,20 @@ export const updateCourseTopicValidation = {
         // active: Joi.boolean().optional(),
         // Cannot change which curriculum topic it was created from
         // curriculumTopicContentId: Joi.number().optional(),
+
+        // The following fields are only found on exams.
+        topicAssessmentInfo: Joi.object({
+            duration: Joi.number().optional().min(10),
+            maxGradedAttemptsPerRandomization: Joi.number().optional().min(1),
+            maxReRandomizations: Joi.number().optional().min(0),
+            randomizationDelay: Joi.number().optional().min(0),
+            hardCutoff: Joi.boolean().optional(),
+            hideHints: Joi.boolean().optional(),
+            showItemizedResults: Joi.boolean().optional(),
+            showTotalGradeImmediately: Joi.boolean().optional(),
+            hideProblemsAfterFinish: Joi.boolean().optional(),
+            randomizeOrder: Joi.boolean().optional(),
+        }).optional()
     },
     query: {},
 };
@@ -276,7 +290,8 @@ export const getTopicValidation = {
         id: Joi.number().required(),
     },
     query: {
-        userId: Joi.number().optional()
+        userId: Joi.number().optional(),
+        includeQuestions: Joi.boolean().optional(),
     },
     body: {},
 };

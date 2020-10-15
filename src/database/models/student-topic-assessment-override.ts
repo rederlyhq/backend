@@ -1,10 +1,12 @@
 import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize';
+import StudentTopicAssessmentInfo from './student-topic-assessment-info';
 import TopicAssessmentInfo from './topic-assessment-info';
 
 export interface StudentTopicAssessmentOverrideInterface {
     id: number;
-    courseTopicContentId: number;
+    topicAssessmentInfoId: number;
+    studentTopicAssessmentInfoId: number;
     userId: number;
     duration: number | null;
     maxGradedAttemptsPerVersion: number | null;
@@ -15,7 +17,9 @@ export interface StudentTopicAssessmentOverrideInterface {
 
 export default class StudentTopicAssessmentOverride extends Model implements StudentTopicAssessmentOverrideInterface {
     public id!: number;
-    public courseTopicContentId!: number;
+    // public courseTopicContentId!: number;
+    public topicAssessmentInfoId!: number;
+    public studentTopicAssessmentInfoId!: number;
     public userId!: number;
     public duration!: number | null;
     public maxGradedAttemptsPerVersion!: number | null;
@@ -40,7 +44,13 @@ export default class StudentTopicAssessmentOverride extends Model implements Stu
         StudentTopicAssessmentOverride.belongsTo(TopicAssessmentInfo, {
             foreignKey: 'topicAssessmentInfoId',
             targetKey: 'id',
-            as: 'studentGrade'
+            as: 'topicAssessmentInfo'
+        });
+
+        StudentTopicAssessmentOverride.belongsTo(StudentTopicAssessmentInfo, {
+            foreignKey: 'studentTopicAssessmentInfoId',
+            targetKey: 'id',
+            as: 'studentTopicAssessmentInfo'
         });
 
         StudentTopicAssessmentOverride.belongsTo(User, {
@@ -48,6 +58,7 @@ export default class StudentTopicAssessmentOverride extends Model implements Stu
             targetKey: 'id',
             as: 'user'
         });
+
         // CourseTopicContent.hasMany(CourseWWTopicQuestion, {
         //     foreignKey: 'courseTopicContentId',
         //     sourceKey: 'id',
@@ -66,6 +77,11 @@ StudentTopicAssessmentOverride.init({
     },
     topicAssessmentInfoId: {
         field: 'topic_assessment_info_id',
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
+    studentTopicAssessmentInfoId: {
+        field: 'student_topic_assessment_info_id',
         type: DataTypes.INTEGER,
         allowNull: false
     },

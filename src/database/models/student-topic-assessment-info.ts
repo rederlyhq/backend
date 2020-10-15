@@ -3,25 +3,29 @@ import appSequelize from '../app-sequelize';
 
 interface StudentTopicAssessmentInfoInterface {
     id: number;
-    courseTopicContentId: number;
+    topicAssessmentInfoId: number;
     userId: number;
     startTime: Date;
     endTime: Date;
     nextVersionAvailableTime: Date;
+    numAttempts: number;
+    maxAttempts: number;
     active: boolean;
 }
 
 export default class StudentTopicAssessmentInfo extends Model implements StudentTopicAssessmentInfoInterface {
     public id!: number;
-    public courseTopicContentId!: number;
+    public topicAssessmentInfoId!: number;
     public userId!: number;
     public startTime!: Date;
     public endTime!: Date;
     public nextVersionAvailableTime!: Date;
+    public numAttempts!: number;
+    public maxAttempts!: number;
     public active!: boolean;
 
     public getUser!: BelongsToGetAssociationMixin<User>;
-    public getTopic!: BelongsToGetAssociationMixin<CourseTopicContent>;
+    public getTopicAssessmentInfo!: BelongsToGetAssociationMixin<TopicAssessmentInfo>;
     public getStudentGradeInstances!: HasManyGetAssociationsMixin<StudentGradeInstance>;
 
     // timestamps!
@@ -34,10 +38,10 @@ export default class StudentTopicAssessmentInfo extends Model implements Student
     static createAssociations(): void {
         // This is a hack to add the associations later to avoid cyclic dependencies
         /* eslint-disable @typescript-eslint/no-use-before-define */
-        StudentTopicAssessmentInfo.belongsTo(CourseTopicContent, {
-            foreignKey: 'courseTopicContentId',
+        StudentTopicAssessmentInfo.belongsTo(TopicAssessmentInfo, {
+            foreignKey: 'topicAssessmentInfoId',
             targetKey: 'id',
-            as: 'studentGrade'
+            as: 'topicAssessmentInfo'
         });
 
         StudentTopicAssessmentInfo.belongsTo(User, {
@@ -62,8 +66,8 @@ StudentTopicAssessmentInfo.init({
         autoIncrement: true,
         primaryKey: true,
     },
-    courseTopicContentId: {
-        field: 'course_topic_content_id',
+    topicAssessmentInfoId: {
+        field: 'topic_assessment_info_id',
         type: DataTypes.INTEGER,
         allowNull: false
     },
@@ -90,6 +94,17 @@ StudentTopicAssessmentInfo.init({
         allowNull: false,
         defaultValue: appSequelize.literal('NOW()')
     },
+    numAttempts: {
+        field: 'student_topic_assessment_info_num_attempts',
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+    },
+    maxAttempts: {
+        field: 'student_topic_assessment_info_num_attempts',
+        type: DataTypes.INTEGER,
+        allowNull: false,
+    },
     active: {
         field: 'student_topic_assessment_info_active',
         type: DataTypes.BOOLEAN,
@@ -102,5 +117,5 @@ StudentTopicAssessmentInfo.init({
 });
 
 import User from './user';
-import CourseTopicContent from './course-topic-content';
 import StudentGradeInstance from './student-grade-instance';
+import TopicAssessmentInfo from './topic-assessment-info';

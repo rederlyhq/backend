@@ -397,3 +397,12 @@ export const createAssessmentVersionValidation = {
     query: {},
     body: {},
 };
+
+export const submitAssessmentVersionValidation = {
+    params: {
+        id: Joi.number().required(),
+        version: Joi.number().required(),
+    },
+    query: {},
+    body: {},
+};

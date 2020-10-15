@@ -7,7 +7,7 @@ import { WhereOptions } from 'sequelize/types';
 import CourseUnitContent from '../../database/models/course-unit-content';
 import CourseTopicContent, { CourseTopicContentInterface } from '../../database/models/course-topic-content';
 import Role from '../permissions/roles';
-import { OutputFormat } from '../../utilities/renderer-helper';
+import { OutputFormat, RendererResponse } from '../../utilities/renderer-helper';
 import { Moment } from 'moment';
 import { DetermineGradingRationaleResult } from '../../utilities/grading-helper';
 import StudentGradeInstance from '../../database/models/student-grade-instance';
@@ -27,10 +27,11 @@ export interface CourseListOptions {
     };
 }
 
-export interface GetQuestionOptions {
-    userId: number;
-    questionId: number;
-}
+// this is defined twice
+// export interface GetQuestionOptions {
+//     userId: number;
+//     questionId: number;
+// }
 
 export interface GetQuestionRepositoryOptions {
     id: number;
@@ -52,6 +53,17 @@ export interface GetTopicAssessmentInfoByTopicIdOptions {
 export interface GetStudentTopicAssessmentInfoOptions {
     topicId: number;
     userId: number;
+}
+
+export interface GetQuestionVersionDetailsOptions {
+    questionId: number;
+    userId: number;
+}
+
+export interface QuestionVersionDetails {
+    webworkQuestionPath: string;
+    problemNumber: number;
+    randomSeed: number;
 }
 
 // TODO make generic interface
@@ -260,6 +272,38 @@ export interface SubmitAnswerResult {
     studentWorkbook: StudentWorkbook | null;
 }
 
+// export interface SubmitAssessmentOptions {
+//     userId: number;
+//     studentTopicAssessmentInfoId: number;
+// }
+
+// export interface SubmitAssessmentResult {
+//     studentGrade: StudentGradeInstance;
+//     studentWorkbook: StudentWorkbook;
+// }
+
+export interface SubmittedAssessmentResultContext {
+    questionResponse: RendererResponse;
+    grade: StudentGrade;
+    instance: StudentGradeInstance;
+    weight: number;
+    // This is coming from the renderer right now
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    submitted: any;
+}
+
+export interface ScoreAssessmentResult {
+    problemScores: Array<number>;
+    bestVersionScore: number;
+    bestOverallVersion: number;
+}
+
+export interface SubmitAssessmentAnswerResult {
+    problemScores?: Array<number>;
+    bestVersionScore?: number;
+    bestOverallVersion?: number;
+}
+
 export interface FindMissingGradesResult {
     student: User;
     question: CourseWWTopicQuestion;
@@ -311,6 +355,7 @@ export interface CreateNewStudentTopicAssessmentInfoOptions {
     startTime: moment.Moment;
     endTime: moment.Moment;
     nextVersionAvailableTime: moment.Moment;
+    maxAttempts: number;
 }
 
 export interface GetQuestionsForThisAssessmentOptions {

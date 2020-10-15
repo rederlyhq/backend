@@ -22,6 +22,7 @@ export enum OutputFormat {
     SINGLE = 'single',
     SIMPLE = 'simple',
     STATIC = 'static',
+    ASSESS = 'nosubmit',
 }
 
 export interface GetProblemParameters {

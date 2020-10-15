@@ -119,6 +119,12 @@ export default {
                     allowNull: false,
                     defaultValue: true
                 },
+                attemptsRemaining: {
+                    field: 'student_topic_assessment_info_attempts_remaining',
+                    type: DataTypes.INTEGER,
+                    allowNull: false,
+                    defaultValue: true
+                },
                 updatedAt: {
                     field: 'updated_at',
                     type: DataTypes.DATE,
@@ -284,20 +290,20 @@ export default {
                     allowNull: false,
                     defaultValue: false
                 },
-                maxGradedAttemptsPerRandomization: {
-                    field: 'topic_assessment_info_max_graded_attempts_per_randomization',
+                maxGradedAttemptsPerVersion: {
+                    field: 'topic_assessment_info_max_graded_attempts_per_version',
                     type: DataTypes.INTEGER,
                     allowNull: false,
                     defaultValue: 0
                 },
-                maxReRandomizations: {
-                    field: 'topic_assessment_info_max_re_randomizations',
+                maxVersions: {
+                    field: 'topic_assessment_info_max_versions',
                     type: DataTypes.INTEGER,
                     allowNull: false,
                     defaultValue: 0,
                 },
-                randomizationDelay: {
-                    field: 'topic_assessment_info_randomization_delay',
+                versionDelay: {
+                    field: 'topic_assessment_info_version_delay',
                     type: DataTypes.INTEGER,
                     allowNull: false,
                     defaultValue: 0,
@@ -315,19 +321,19 @@ export default {
                     defaultValue: false
                 },
                 showTotalGradeImmediately: {
-                    field: 'topic_assessment_info_showTotalGradeImmediately',
+                    field: 'topic_assessment_info_show_total_grade_immediately',
                     type: DataTypes.BOOLEAN,
                     allowNull: false,
                     defaultValue: false
                 },
                 hideProblemsAfterFinish: {
-                    field: 'topic_assessment_info_hideProblemsAfterFinish',
+                    field: 'topic_assessment_info_hide_problems_after_finish',
                     type: DataTypes.BOOLEAN,
                     allowNull: false,
                     defaultValue: true
                 },
                 randomizeOrder: {
-                    field: 'topic_assessment_info_randomizeOrder',
+                    field: 'topic_assessment_info_randomize_order',
                     type: DataTypes.BOOLEAN,
                     allowNull: false,
                     defaultValue: true
@@ -389,18 +395,18 @@ export default {
                     type: DataTypes.INTEGER,
                     allowNull: true,
                 },
-                maxGradedAttemptsPerRandomization: {
-                    field: 'student_topic_assessment_override_max_graded_attempts_per_randomization',
+                maxGradedAttemptsPerVersion: {
+                    field: 'student_topic_assessment_override_max_graded_attempts_per_version',
                     type: DataTypes.INTEGER,
                     allowNull: true,
                 },
-                maxReRandomizations: {
-                    field: 'student_topic_assessment_override_max_re_randomizations',
+                maxVersions: {
+                    field: 'student_topic_assessment_override_max_versions',
                     type: DataTypes.INTEGER,
                     allowNull: true,
                 },
-                randomizationDelay: {
-                    field: 'student_topic_assessment_override_randomization_delay',
+                versionDelay: {
+                    field: 'student_topic_assessment_override_version_delay',
                     type: DataTypes.INTEGER,
                     allowNull: true,
                 },

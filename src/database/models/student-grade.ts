@@ -1,4 +1,4 @@
-import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin, HasOneGetAssociationMixin } from 'sequelize';
+import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 import * as _ from 'lodash';
 
@@ -54,24 +54,26 @@ export default class StudentGrade extends Model implements StudentGradeInterface
     public getUser!: BelongsToGetAssociationMixin<User>;
     public getQuestion!: BelongsToGetAssociationMixin<CourseWWTopicQuestion>;
     public getWorkbooks!: HasManyGetAssociationsMixin<StudentWorkbook>;
-    public getStudentGradeInstance!: HasOneGetAssociationMixin<StudentGradeInstance>;
+    public getStudentGradeInstances!: HasManyGetAssociationsMixin<StudentGradeInstance>;
     public getOverrides!: HasManyGetAssociationsMixin<StudentGradeOverride>;
 
     public readonly user!: User;
     public readonly courseWWTopicQuestion!: CourseWWTopicQuestion;
     public readonly workbooks?: Array<StudentWorkbook>;
-    public readonly gradeInstance?: StudentGradeInstance;
+    public readonly gradeInstances?: StudentGradeInstance[];
     public readonly overrides?: Array<StudentGradeOverride>;
 
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 
-    static getVersion = (obj: StudentGradeInterface, version: StudentGradeInstanceInterface): StudentGradeInterface => {
-        return _.assign({}, obj, version); // will override randomSeed, bestScore, numAttempts, and currentProblemState
+    static getVersion = (obj: StudentGradeInterface, version: StudentGradeInstanceGradeOverridesInterface): StudentGradeInterface => {
+        // Avoid cyclic dependencies
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        return _.assign({}, obj, version); // will override randomSeed, numAttempts, and currentProblemState ** do we want scores too?
     }
 
-    getVersion = (version: StudentGradeInstanceInterface): StudentGradeInterface => {
+    getVersion = (version: StudentGradeInstanceGradeOverridesInterface): StudentGradeInterface => {
         return StudentGrade.getVersion(this.get({ plain: true }) as StudentGradeInterface, version);
     }
 
@@ -272,5 +274,5 @@ StudentGrade.init({
 import CourseWWTopicQuestion from './course-ww-topic-question';
 import User from './user';
 import StudentWorkbook from './student-workbook';
-import StudentGradeInstance, { StudentGradeInstanceInterface } from './student-grade-instance';
+import StudentGradeInstance, { StudentGradeInstanceGradeOverridesInterface } from './student-grade-instance';
 import StudentGradeOverride from './student-grade-override';

@@ -7,9 +7,9 @@ export interface StudentTopicAssessmentOverrideInterface {
     courseTopicContentId: number;
     userId: number;
     duration: number | null;
-    maxGradedAttemptsPerRandomization: number | null;
-    maxReRandomizations: number | null;
-    randomizationDelay: number | null;
+    maxGradedAttemptsPerVersion: number | null;
+    maxVersions: number | null;
+    versionDelay: number | null;
     active: boolean;
 }
 
@@ -18,9 +18,9 @@ export default class StudentTopicAssessmentOverride extends Model implements Stu
     public courseTopicContentId!: number;
     public userId!: number;
     public duration!: number | null;
-    public maxGradedAttemptsPerRandomization!: number | null;
-    public maxReRandomizations!: number | null;
-    public randomizationDelay!: number | null;
+    public maxGradedAttemptsPerVersion!: number | null;
+    public maxVersions!: number | null;
+    public versionDelay!: number | null;
     public active!: boolean;
 
     // public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
@@ -79,18 +79,18 @@ StudentTopicAssessmentOverride.init({
         type: DataTypes.INTEGER,
         allowNull: true,
     },
-    maxGradedAttemptsPerRandomization: {
-        field: 'student_topic_assessment_override_max_graded_attempts_per_randomization',
+    maxGradedAttemptsPerVersion: {
+        field: 'student_topic_assessment_override_max_graded_attempts_per_version',
         type: DataTypes.INTEGER,
         allowNull: true,
     },
-    maxReRandomizations: {
-        field: 'student_topic_assessment_override_max_re_randomizations',
+    maxVersions: {
+        field: 'student_topic_assessment_override_max_versions',
         type: DataTypes.INTEGER,
         allowNull: true,
     },
-    randomizationDelay: {
-        field: 'student_topic_assessment_override_randomization_delay',
+    versionDelay: {
+        field: 'student_topic_assessment_override_version_delay',
         type: DataTypes.INTEGER,
         allowNull: true,
     },

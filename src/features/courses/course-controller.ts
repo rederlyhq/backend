@@ -81,7 +81,7 @@ class CourseController {
         });
     }
 
-    getTopicById(id: number, userId?: number): Promise<CourseTopicContent> {
+    getTopicById({id, userId, includeQuestions}: {id: number; userId?: number; includeQuestions?: boolean}): Promise<CourseTopicContent> {
         const include = [];
         include.push({
             model: TopicAssessmentInfo,
@@ -92,6 +92,7 @@ class CourseController {
                 courseTopicContentId: id,
             }
         });
+
         if (!_.isNil(userId)) {
             include.push({
                 model: StudentTopicOverride,
@@ -101,6 +102,17 @@ class CourseController {
                 where: {
                     active: true,
                     userId: userId
+                }
+            });
+        }
+
+        if (includeQuestions) {
+            include.push({
+                model: CourseWWTopicQuestion,
+                as: 'questions',
+                required: false,
+                where: {
+                    active: true,
                 }
             });
         }
@@ -449,7 +461,7 @@ class CourseController {
                 // Move the object out of the way for now, this is due to constraint issues
                 // TODO make unique index a deferable unique constraint and then make the transaction deferable
                 // NOTE: sequelize did not have a nice way of doing this on unique constraints that use the same key in a composite key
-                existingTopic.contentOrder = Constants.Database.MAX_INTEGER_VALUE;;
+                existingTopic.contentOrder = Constants.Database.MAX_INTEGER_VALUE;
                 await existingTopic.save();
                 updatesResults = await this.makeCourseTopicOrderAvailable({
                     sourceContentOrder,
@@ -1038,7 +1050,7 @@ class CourseController {
         // Currently we only need this fetch for student, small optimization to not call the db again
         if (!showSolutions) {
             if (_.isNil(topic)) {
-                topic = await this.getTopicById(courseQuestion.courseTopicContentId);
+                topic = await this.getTopicById({id: courseQuestion.courseTopicContentId});
             }
             showSolutions = moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days').isBefore(moment());
         }
@@ -2372,7 +2384,7 @@ class CourseController {
             };
             const questions = await CourseWWTopicQuestion.findAll(findOptions);
             if (!_.isNil(courseTopicContentId)){
-                const topic = await this.getTopicById(courseTopicContentId);
+                const topic = await this.getTopicById({id: courseTopicContentId});
                 // TODO remove assessment hardcoding
                 if (topic.topicTypeId === 2 && !_.isNil(userId)) {
                     questions.asyncForEach(async (question) => {
@@ -2383,7 +2395,7 @@ class CourseController {
                     });
                 } else {
                     questions.forEach( (question) => {
-                        if (!_.isNil(question.studentTopicQuestionOverride) && question.studentTopicQuestionOverride[0].active && !_.isNil(question.studentTopicQuestionOverride[0].maxAttempts)) {
+                        if (!_.isNil(question.studentTopicQuestionOverride) && !_.isNil(question.studentTopicQuestionOverride?.[0]) && question.studentTopicQuestionOverride[0].active && !_.isNil(question.studentTopicQuestionOverride[0].maxAttempts)) {
                             question.maxAttempts = question.studentTopicQuestionOverride[0].maxAttempts;
                         }
                     });

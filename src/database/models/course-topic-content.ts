@@ -1,4 +1,4 @@
-import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin, HasOneCreateAssociationMixin } from 'sequelize';
+import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin, HasOneCreateAssociationMixin, HasOneGetAssociationMixin, HasOneSetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 import * as _ from 'lodash';
 
@@ -35,8 +35,10 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
     public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
     public getTopicType!: BelongsToGetAssociationMixin<TopicType>;
     public getQuestions!: HasManyGetAssociationsMixin<CourseWWTopicQuestion>;
-    public getTopicAssessmentInfo!: HasOneCreateAssociationMixin<TopicAssessmentInfo>;
     public getStudentTopicOverride!: HasManyGetAssociationsMixin<StudentTopicOverride>;
+    // public createTopicAssessmentInfo!: HasOneCreateAssociationMixin<TopicAssessmentInfo>;
+    public getTopicAssessmentInfo!: HasOneGetAssociationMixin<TopicAssessmentInfo>;
+    // public setTopicAssessmentInfo!: HasOneSetAssociationMixin<TopicAssessmentInfo>;
 
     public readonly curriculumTopicContent!: CurriculumTopicContent;
     public readonly topicType!: TopicType;

@@ -266,7 +266,8 @@ class CourseRepository {
             checkDates = true
         } = options;
         if (checkDates) {
-            const dueDates = _.compact([options.updates.endDate?.toMoment?.(), options.updates?.deadDate?.toMoment?.()]);
+            // The use of DeepPartial on the type causes toMoment to be nullable.
+            const dueDates = _.compact([options.updates.endDate?.toMoment?.(), options.updates.deadDate?.toMoment?.()]);
             // moment.min([]) returns right now, so if there are no due dates we def don't want to throw an error
             // Otherwise you can't set due dates in the past
             if (dueDates.length > 0 && moment.min(...dueDates).isBefore(moment())) {

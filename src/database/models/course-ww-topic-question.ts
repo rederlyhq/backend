@@ -37,6 +37,7 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
     public getStudentTopicQuestionOverride!: HasManyGetAssociationsMixin<StudentTopicQuestionOverride>;
     public getStudentGradeInstances!: HasManyGetAssociationsMixin<StudentGradeInstance>;
 
+    public readonly courseQuestionAssessmentInfo?: CourseQuestionAssessmentInfo;
     public readonly studentTopicQuestionOverride?: StudentTopicQuestionOverride[];
     public readonly grades?: StudentGrade;
     public gradeInstances?: StudentGradeInstance[];
@@ -96,6 +97,12 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
             foreignKey: 'courseTopicQuestionId',
             sourceKey: 'id',
             as: 'studentTopicQuestionOverride'
+        });
+
+        CourseWWTopicQuestion.hasOne(CourseQuestionAssessmentInfo, {
+            foreignKey: 'courseTopicQuestionId',
+            sourceKey: 'id',
+            as: 'courseQuestionAssessmentInfo'
         });
         
         CourseWWTopicQuestion.hasMany(StudentGradeInstance, {

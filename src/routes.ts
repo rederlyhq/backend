@@ -41,7 +41,7 @@ router.use('/support', require('./features/support/support-route'));
 router.use('/version', expressAsyncHandler(async (_req: express.Request, _res: express.Response, next: express.NextFunction) => {
     const version = await versionPromise;
     next(httpResponse.Ok(null, {
-        // packageJson: version
+        packageJson: version
     }));
 }));
 module.exports = router;

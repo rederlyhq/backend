@@ -192,6 +192,11 @@ export const updateCourseTopicQuestionValidation = {
         // curriculumQuestionId: Joi.number().optional(),
         // Right now we don't support moving from one topic to another
         // courseTopicContentId: Joi.number().optional(),
+
+        courseQuestionAssessmentInfo: Joi.object({
+            randomSeedSet: Joi.array().items(Joi.number().min(0)).optional(),
+            additionalProblemPaths: Joi.array().items(Joi.string()).optional()
+        }).optional(),
     },
     query: {},
 };

@@ -249,6 +249,7 @@ export const getQuestionValidation = {
         workbookId: Joi.number().optional(),
         readonly: Joi.boolean().optional(),
         userId: Joi.number().optional(),
+        studentTopicAssessmentInfoId: Joi.number().optional(),
     },
     body: {}
 };

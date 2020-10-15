@@ -1085,7 +1085,7 @@ class CourseController {
         // grades/statistics may send workbookID => show problem with workbookID.form_data
         // problem page (not enrolled) will send questionID without userID => show problem with no form_data
         // problem page (enrolled, hw) will send questionID with userID => show problem with grades.currentProblemState
-        // problem page (enrolled, assess) will send 
+        // problem page (enrolled, assess) needs to check if the question belongs to an assessment: isQuestionAnAssessment() 
         const courseQuestion = await this.getQuestionRecord(options.questionId);
 
         if (_.isNil(courseQuestion)) {
@@ -1113,14 +1113,15 @@ class CourseController {
         // get studentGrade from workbook if workbookID, 
         // otherwise studentGrade from userID + questionID | null
         if(_.isNil(workbook)) {
-            // assessmentState is sent over in assessment setting (instead of workbook)
-            if (courseRepository.isQuestionAnAssessment(options.questionId)) {
+            // when no workbook is sent, the source of truth depends on whether question belongs to an assessment
+            const thisQuestionIsFromAnAssessment = await this.isQuestionAnAssessment(options.questionId);
+            if (thisQuestionIsFromAnAssessment) {
                 const gradeInstance = await courseRepository.getCurrentInstanceForQuestion({
                     questionId: options.questionId, 
                     userId: options.userId
                 }); 
 
-                if (_.isNil(gradeInstance)) throw new RederlyExtendedError('No current grade instance for this question.');
+                if (_.isNil(gradeInstance)) throw new RederlyExtendedError('No current grade instance for this assessment question.');
                 formData = gradeInstance.currentProblemState;
                 sourceFilePath = gradeInstance.webworkQuestionPath;
                 problemSeed = gradeInstance.randomSeed;
@@ -2702,6 +2703,38 @@ class CourseController {
             throw new WrappedError('Could not create new student grade instance', e);
         }
     }
+
+    async isQuestionAnAssessment(questionId: number): Promise<boolean> {
+        const question = await courseRepository.getQuestion({ id: questionId });
+        const topic = await courseRepository.getCourseTopic({ id: question.courseTopicContentId });
+        return topic.topicTypeId === 2;
+    }
+
+    /*
+    * Determine if a user is allowed to view a question 
+    * If the question belongs to an assessment, a studentTopicAssessmentInfoId is REQUIRED
+    */
+    async userCanViewQuestionId(user: User, questionId: number, studentTopicAssessmentInfoId?: number): Promise<boolean> {
+        if (user.roleId === Role.PROFESSOR || user.roleId === Role.ADMIN) return true;
+        const question = await courseRepository.getQuestion({ id: questionId });
+        const topic = await question.getTopic();
+        if (topic.topicTypeId === 1) {
+            return (topic.startDate.toMoment().isBefore(moment()));
+        } else if (topic.topicTypeId === 2) {
+            if (_.isNil(studentTopicAssessmentInfoId)) throw new WrappedError('Cannot tell if a user can view this question when a version id is not supplied');
+            const topicInfo = await topic.getTopicAssessmentInfo();
+            const studentTopicInfo = await this.getStudentTopicAssessmentInfoById(studentTopicAssessmentInfoId);
+            const topicIsLive = moment().isBetween(studentTopicInfo.startTime.toMoment(), studentTopicInfo.endTime.toMoment());
+            if (topicIsLive) {
+                return true;
+            } else {
+                // strike that -- reverse it ;)
+                return !topicInfo.hideProblemsAfterFinish;
+            }
+        }
+        // we should never get here - but if we do, then the answer is NO
+        return false;
+    };
 
     scoreAssessment = (results: SubmittedAssessmentResultContext[]): ScoreAssessmentResult => {
         let totalScore = 0;

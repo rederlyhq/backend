@@ -444,12 +444,6 @@ class CourseRepository {
         }
     }
     
-    async isQuestionAnAssessment(questionId: number): Promise<boolean> {
-        const question = await this.getQuestion({id: questionId});
-        const topic = await this.getCourseTopic({id: question.courseTopicContentId});
-        return topic.topicTypeId === 2;
-    }
-
     /**
      * This function takes a questionId and a userId
      * It fetches the current gradeInstance, if one exists - returning undefined if there are no current gradeInstances
@@ -480,7 +474,9 @@ class CourseRepository {
                 ['endTime', 'DESC'],
             ]
         });
-        if (_.isNil(assessmentInfo) || moment(assessmentInfo[0].endTime).isBefore(moment())) return null; // no current version available
+
+        // no versions created, or the most recent version timed out or was closed early
+        if (_.isNil(assessmentInfo) || moment(assessmentInfo[0].endTime).isBefore(moment()) || assessmentInfo[0].isClosed) return null; // no current version available
 
         const gradeInstance = await StudentGradeInstance.findOne({
             where: {

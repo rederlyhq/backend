@@ -583,6 +583,8 @@ router.get('/question/:id',
                     userId: req.query.userId,
                 });
             } else {
+                // check to see if we should allow this question to be viewed
+                // const questionBelongsToAnAssessment = await courseController.isQuestionAnAssessment(params.id);
                 // TODO handle not found case
                 question = await courseController.getQuestion({
                     questionId: params.id,

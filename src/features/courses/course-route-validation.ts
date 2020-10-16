@@ -273,7 +273,7 @@ export const getQuestionsValidation = {
     query: {
         userId: Joi.alternatives().try(Joi.string().valid('me').optional(), Joi.number().optional()).optional(),
         courseTopicContentId: Joi.number().optional(),
-
+        studentTopicAssessmentInfoId: Joi.number().optional(),
     },
     body: {}
 };

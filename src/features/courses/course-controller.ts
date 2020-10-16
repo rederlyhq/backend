@@ -104,6 +104,17 @@ class CourseController {
                     userId: userId
                 }
             });
+
+            include.push({
+                model: StudentTopicAssessmentInfo,
+                as: 'studentTopicAssessmentInfo',
+                required: false,
+                where: {
+                    active: true,
+                    courseTopicContentId: id,
+                    userId
+                }
+            });
         }
 
         if (includeQuestions) {
@@ -2723,8 +2734,8 @@ class CourseController {
     }
 
     /*
-    * Determine if a user is allowed to view a question 
-    * If the question belongs to an assessment, a studentTopicAssessmentInfoId is REQUIRED
+    * Determine if a user (student) is allowed to view a question -- profs+ => always true
+    * If the question belongs to an assessment, check for a current version unless a versionId is provided
     */
     async userCanViewQuestionId(user: User, questionId: number, studentTopicAssessmentInfoId?: number): Promise<boolean> {
         if (user.roleId === Role.PROFESSOR || user.roleId === Role.ADMIN) return true;
@@ -2733,10 +2744,17 @@ class CourseController {
         if (topic.topicTypeId === 1) {
             return (topic.startDate.toMoment().isBefore(moment()));
         } else if (topic.topicTypeId === 2) {
-            if (_.isNil(studentTopicAssessmentInfoId)) throw new WrappedError('Cannot tell if a user can view this question when a version id is not supplied');
+            let topicIsLive = false;
+            if (_.isNil(studentTopicAssessmentInfoId)) {
+                // specific version was not supplied - see if there's a live version for this question
+                const gradeInstance = await courseRepository.getCurrentInstanceForQuestion({questionId, userId: user.id});
+                topicIsLive = !_.isNil(gradeInstance); // if we got a current instance, then topic is live
+            } else {
+                const studentTopicInfo = await this.getStudentTopicAssessmentInfoById(studentTopicAssessmentInfoId);
+                topicIsLive = studentTopicInfo.isClosed === false && // isClosed might not be accurate when the assessment times out
+                    moment().isBetween(studentTopicInfo.startTime.toMoment(), studentTopicInfo.endTime.toMoment());
+            }
             const topicInfo = await topic.getTopicAssessmentInfo();
-            const studentTopicInfo = await this.getStudentTopicAssessmentInfoById(studentTopicAssessmentInfoId);
-            const topicIsLive = moment().isBetween(studentTopicInfo.startTime.toMoment(), studentTopicInfo.endTime.toMoment());
             if (topicIsLive) {
                 return true;
             } else {
@@ -2744,7 +2762,7 @@ class CourseController {
                 return !topicInfo.hideProblemsAfterFinish;
             }
         }
-        // we should never get here - but if we do, then the answer is NO
+        // we *should* never get here - but if we do, then the answer is NO
         return false;
     };
 

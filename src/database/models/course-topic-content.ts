@@ -1,4 +1,4 @@
-import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin, HasOneCreateAssociationMixin, HasOneGetAssociationMixin, HasOneSetAssociationMixin } from 'sequelize';
+import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin, HasOneGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 import * as _ from 'lodash';
 
@@ -45,6 +45,7 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
     public readonly questions?: CourseWWTopicQuestion[];
     public readonly studentTopicOverride?: StudentTopicOverride[];
     public readonly topicAssessmentInfo?: TopicAssessmentInfo;
+    public readonly studentTopicAssessmentInfo?: StudentTopicAssessmentInfo[];
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -198,3 +199,4 @@ import CourseUnitContent from './course-unit-content';
 import CourseWWTopicQuestion from './course-ww-topic-question';
 import TopicAssessmentInfo from './topic-assessment-info';
 import StudentTopicOverride, { StudentTopicOverrideOveridesInterface } from './student-topic-override';
+import StudentTopicAssessmentInfo from './student-topic-assessment-info';

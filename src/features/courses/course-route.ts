@@ -583,8 +583,9 @@ router.get('/question/:id',
                 });
             } else {
                 // check to see if we should allow this question to be viewed
-                // const questionBelongsToAnAssessment = await courseController.isQuestionAnAssessment(params.id);
-                // TODO handle not found case
+                const userCanViewQuestion = await courseController.userCanViewQuestionId(user, params.id, req.query.studentTopicAssessmentInfoId);
+                if (userCanViewQuestion === false) throw new Error('You are not permitted to view the problems after finishing.');
+                
                 question = await courseController.getQuestion({
                     questionId: params.id,
                     userId: session.userId,
@@ -629,7 +630,7 @@ router.post('/assessment/topic/:id/submit/:version',
             throw new Error('This assessment version has no attempts remaining.');
         }
 
-        const assessmentResult = await courseController.submitAssessmentAnswers(params.version, false);
+        const assessmentResult = await courseController.submitAssessmentAnswers(params.version, false); // false: wasAutoSubmitted
         next(httpResponse.Ok('Assessment submitted successfully', assessmentResult));
     }));
 

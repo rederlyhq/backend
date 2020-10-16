@@ -2681,7 +2681,7 @@ class CourseController {
         const problemOrder = (topicInfo.randomizeOrder) ? _.shuffle(Array(questions.length)) : Array(questions.length);
 
         await questions.asyncForEach(async (question, index) => {
-            const questionInfo = await question.getQuestionAssessmentInfo();
+            const questionInfo = await question.getCourseQuestionAssessmentInfo();
             const randomSeed = _.sample(questionInfo.randomSeedSet) ?? this.generateRandomSeed();
             const problemPaths = [question.webworkQuestionPath, ...questionInfo.additionalProblemPaths];
             const webworkQuestionPath = _.sample(problemPaths) ?? question.webworkQuestionPath; // coalesce required because _.sample() is string | undefined

@@ -23,6 +23,7 @@ import * as moment from 'moment';
 import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 import TopicAssessmentInfo from '../../database/models/topic-assessment-info';
+import CourseQuestionAssessmentInfo from '../../database/models/course-question-assessment-info';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -542,6 +543,14 @@ class CourseRepository {
                 },
                 returning: true,
             });
+
+            if (updates[0] === 1 && !_.isEmpty(options.updates.courseQuestionAssessmentInfo)) {
+                const updatedObj: CourseWWTopicQuestion = updates[1][0];
+                const toUpdate = await updatedObj.getCourseQuestionAssessmentInfo();
+                console.log('Found an exam question.', !_.isNil(toUpdate));
+                const res = await CourseQuestionAssessmentInfo.upsert({...toUpdate, ...options.updates.courseQuestionAssessmentInfo}, {returning: true});
+                console.log(res);
+            }
             return {
                 updatedCount: updates[0],
                 updatedRecords: updates[1],

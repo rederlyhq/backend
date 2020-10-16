@@ -548,8 +548,12 @@ class CourseRepository {
                 const updatedObj: CourseWWTopicQuestion = updates[1][0];
                 const toUpdate = await updatedObj.getCourseQuestionAssessmentInfo();
                 console.log('Found an exam question.', !_.isNil(toUpdate));
-                const res = await CourseQuestionAssessmentInfo.upsert({...toUpdate, ...options.updates.courseQuestionAssessmentInfo}, {returning: true});
+                const res = await CourseQuestionAssessmentInfo.upsert({
+                    courseWWTopicQuestionId: updatedObj.id,
+                    ...options.updates.courseQuestionAssessmentInfo
+                }, {returning: true});
                 console.log(res);
+                res[0].save();
             }
             return {
                 updatedCount: updates[0],

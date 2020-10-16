@@ -290,13 +290,13 @@ export interface SubmittedAssessmentResultContext {
 }
 
 export interface ScoreAssessmentResult {
-    problemScores: Array<number>;
+    problemScores: { [key: string]: number };
     bestVersionScore: number;
     bestOverallVersion: number;
 }
 
 export interface SubmitAssessmentAnswerResult {
-    problemScores?: Array<number>;
+    problemScores?: { [key: string]: number };
     bestVersionScore?: number;
     bestOverallVersion?: number;
 }

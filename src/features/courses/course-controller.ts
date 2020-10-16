@@ -2678,7 +2678,7 @@ class CourseController {
 
         let endTime = moment(startTime).add(topicInfo.duration, 'minutes');
         if (topicInfo.hardCutoff) {
-            endTime = moment.min(moment(topic.deadDate), moment(startTime).add(topicInfo.duration, 'minutes'));
+            endTime = moment.min(topic.deadDate.toMoment(), startTime.add(topicInfo.duration, 'minutes'));
         } 
 
         const nextVersionAvailableTime = moment(startTime).add(topicInfo.versionDelay, 'minutes');
@@ -2770,24 +2770,24 @@ class CourseController {
         let totalScore = 0;
         let bestVersionScore = 0;
         let bestOverallVersion = 0;
-        const problemScores: Array<number> = [];
+        let problemScores: { [key: string]: number } = {};
 
         results.forEach((result: SubmittedAssessmentResultContext) => {
             const { questionResponse, grade, instance, weight } = result;
             totalScore += weight * questionResponse.problem_result.score;
             bestVersionScore += weight * instance.scoreForBestVersion;
             bestOverallVersion += weight * grade.bestScore;
-            problemScores[result.instance.problemNumber] = result.questionResponse.problem_result.score * result.weight;
+            problemScores = {[result.instance.problemNumber.toString(10)]: result.questionResponse.problem_result.score * result.weight};
         });
 
-        problemScores[0] = totalScore; // scores indexed by problem number, total at [0]
+        problemScores = {total: totalScore}; // scores indexed by problem number, total at [0]
         return {problemScores, bestVersionScore: bestVersionScore, bestOverallVersion};
     }
 
     async submitAssessmentAnswers(studentTopicAssessmentInfoId: number, wasAutoSubmitted: boolean): Promise<SubmitAssessmentAnswerResult> {
         const studentTopicAssessmentInfo = await this.getStudentTopicAssessmentInfoById(studentTopicAssessmentInfoId);
         if (studentTopicAssessmentInfo.numAttempts >= studentTopicAssessmentInfo.maxAttempts) {
-            throw new WrappedError('Cannot submit assessment answers when there are no attempts remaining'); // sanity check, shouldn't happen
+            throw new IllegalArgumentException('Cannot submit assessment answers when there are no attempts remaining'); // sanity check, shouldn't happen
         }
         const topicInfo = await studentTopicAssessmentInfo.getTopicAssessmentInfo();
         const { showItemizedResults, showTotalGradeImmediately } = topicInfo;
@@ -2816,8 +2816,8 @@ class CourseController {
         });
 
         const { problemScores, bestVersionScore, bestOverallVersion } = this.scoreAssessment(questionResponses);
-        const isBestForThisVersion = problemScores[0] >= bestVersionScore;
-        const isBestOverallVersion = problemScores[0] >= bestOverallVersion;
+        const isBestForThisVersion = problemScores.total >= bestVersionScore;
+        const isBestOverallVersion = problemScores.total >= bestOverallVersion;
 
         await questionResponses.asyncForEach(async (result: SubmittedAssessmentResultContext) => {
 
@@ -2874,14 +2874,14 @@ class CourseController {
         await studentTopicAssessmentInfo.save();
 
         // use topic assessment info settings to decide what data is exposed to the frontend
-        let problemScoresReturn: Array<number> | undefined;
+        let problemScoresReturn: { [key: string]: number } | undefined;
         let bestVersionScoreReturn: number | undefined;
         let bestOverallVersionReturn: number | undefined;
         if (showTotalGradeImmediately){
             if (showItemizedResults) {
                 problemScoresReturn = problemScores;
             } else {
-                problemScoresReturn = [problemScores[0]];
+                problemScoresReturn = {total: problemScores.total};
                 bestOverallVersionReturn = bestVersionScore;
                 bestVersionScoreReturn = bestVersionScore;
             }

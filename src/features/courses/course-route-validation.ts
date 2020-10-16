@@ -85,9 +85,9 @@ export const updateCourseTopicValidation = {
         // The following fields are only found on exams.
         topicAssessmentInfo: Joi.object({
             duration: Joi.number().optional().min(10),
-            maxGradedAttemptsPerRandomization: Joi.number().optional().min(1),
-            maxReRandomizations: Joi.number().optional().min(0),
-            randomizationDelay: Joi.number().optional().min(0),
+            maxGradedAttemptsPerVersion: Joi.number().optional().min(0),
+            maxVersions: Joi.number().optional().min(0),
+            versionDelay: Joi.number().optional().min(0),
             hardCutoff: Joi.boolean().optional(),
             hideHints: Joi.boolean().optional(),
             showItemizedResults: Joi.boolean().optional(),
@@ -268,6 +268,7 @@ export const getQuestionValidation = {
         workbookId: Joi.number().optional(),
         readonly: Joi.boolean().optional(),
         userId: Joi.number().optional(),
+        studentTopicAssessmentInfoId: Joi.number().optional(),
     },
     body: {}
 };
@@ -276,7 +277,8 @@ export const getQuestionsValidation = {
     params: {},
     query: {
         userId: Joi.alternatives().try(Joi.string().valid('me').optional(), Joi.number().optional()).optional(),
-        courseTopicContentId: Joi.number().optional()
+        courseTopicContentId: Joi.number().optional(),
+        studentTopicAssessmentInfoId: Joi.number().optional(),
     },
     body: {}
 };

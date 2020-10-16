@@ -130,6 +130,18 @@ export default {
                     type: DataTypes.INTEGER,
                     allowNull: false,
                 },
+                isClean: {
+                    field: 'student_topic_assessment_info_is_clean',
+                    type: DataTypes.BOOLEAN,
+                    allowNull: false,
+                    defaultValue: false
+                },
+                isClosed: {
+                    field: 'student_topic_assessment_info_is_closed',
+                    type: DataTypes.BOOLEAN,
+                    allowNull: false,
+                    defaultValue: false
+                },
                 updatedAt: {
                     field: 'updated_at',
                     type: DataTypes.DATE,
@@ -217,19 +229,19 @@ export default {
                     defaultValue: 0
                 },
                 overallBestScore: {
-                    field: 'student_grade_isntance_overall_best_score',
+                    field: 'student_grade_instance_overall_best_score',
                     type: DataTypes.INTEGER,
                     allowNull: false,
                     defaultValue: 0
                 },
                 numAttempts: {
-                    field: 'student_grade_isntance_num_attempts',
+                    field: 'student_grade_instance_num_attempts',
                     type: DataTypes.INTEGER,
                     allowNull: false,
                     defaultValue: 0
                 },
                 active: {
-                    field: 'student_grade_isntance_active',
+                    field: 'student_grade_instance_active',
                     type: DataTypes.BOOLEAN,
                     allowNull: false,
                     defaultValue: true
@@ -344,7 +356,7 @@ export default {
                     defaultValue: true
                 },
                 active: {
-                    field: 'student_topic_override_active',
+                    field: 'topic_assessment_info_active',
                     type: DataTypes.BOOLEAN,
                     allowNull: false,
                     defaultValue: true
@@ -381,18 +393,6 @@ export default {
                     references: {
                         model: 'topic_assessment_info',
                         key: 'topic_assessment_info_id',
-                    },
-                },
-                studentTopicAssessmentInfoId: {
-                    field: 'student_topic_assessment_info_id',
-                    type: DataTypes.INTEGER,
-                    allowNull: false,
-                    // Defaults to cascade when generating the db, no action on migrations
-                    onUpdate: 'CASCADE',
-                    // Different from sequelize model, on models I do this with associations so I can use types
-                    references: {
-                        model: 'student_topic_assessment_info',
-                        key: 'student_topic_assessment_info_id',
                     },
                 },
                 userId: {

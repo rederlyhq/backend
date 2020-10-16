@@ -104,6 +104,17 @@ class CourseController {
                     userId: userId
                 }
             });
+
+            include.push({
+                model: StudentTopicAssessmentInfo,
+                as: 'studentTopicAssessmentInfo',
+                required: false,
+                where: {
+                    active: true,
+                    courseTopicContentId: id,
+                    userId
+                }
+            });
         }
 
         if (includeQuestions) {
@@ -116,8 +127,6 @@ class CourseController {
                 }
             });
         }
-
-        console.log(include);
 
         return CourseTopicContent.findOne({
             where: {
@@ -1099,7 +1108,7 @@ class CourseController {
         // grades/statistics may send workbookID => show problem with workbookID.form_data
         // problem page (not enrolled) will send questionID without userID => show problem with no form_data
         // problem page (enrolled, hw) will send questionID with userID => show problem with grades.currentProblemState
-        // problem page (enrolled, assess) will send 
+        // problem page (enrolled, assess) needs to check if the question belongs to an assessment: isQuestionAnAssessment() 
         const courseQuestion = await this.getQuestionRecord(options.questionId);
 
         if (_.isNil(courseQuestion)) {
@@ -1127,14 +1136,15 @@ class CourseController {
         // get studentGrade from workbook if workbookID, 
         // otherwise studentGrade from userID + questionID | null
         if(_.isNil(workbook)) {
-            // assessmentState is sent over in assessment setting (instead of workbook)
-            if (courseRepository.isQuestionAnAssessment(options.questionId)) {
+            // when no workbook is sent, the source of truth depends on whether question belongs to an assessment
+            const thisQuestionIsFromAnAssessment = await this.isQuestionAnAssessment(options.questionId);
+            if (thisQuestionIsFromAnAssessment) {
                 const gradeInstance = await courseRepository.getCurrentInstanceForQuestion({
                     questionId: options.questionId, 
                     userId: options.userId
                 }); 
 
-                if (_.isNil(gradeInstance)) throw new RederlyExtendedError('No current grade instance for this question.');
+                if (_.isNil(gradeInstance)) throw new RederlyExtendedError('No current grade instance for this assessment question.');
                 formData = gradeInstance.currentProblemState;
                 sourceFilePath = gradeInstance.webworkQuestionPath;
                 problemSeed = gradeInstance.randomSeed;
@@ -2578,6 +2588,7 @@ class CourseController {
         const result = await StudentTopicAssessmentInfo.findOne({
             where: {
                 id,
+                active: true,
             },
         });
         if (_.isNil(result)) {
@@ -2592,7 +2603,7 @@ class CourseController {
             include.push({
                 model: StudentTopicAssessmentOverride,
                 as: 'studentTopicAssessmentOverride',
-                attributes: ['duration', 'maxVersions', 'versionDelay'],
+                attributes: ['duration', 'maxGradedAttemptsPerVersion', 'maxVersions', 'versionDelay'],
                 required: false,
                 where: {
                     active: true,
@@ -2716,6 +2727,45 @@ class CourseController {
         }
     }
 
+    async isQuestionAnAssessment(questionId: number): Promise<boolean> {
+        const question = await courseRepository.getQuestion({ id: questionId });
+        const topic = await courseRepository.getCourseTopic({ id: question.courseTopicContentId });
+        return topic.topicTypeId === 2;
+    }
+
+    /*
+    * Determine if a user (student) is allowed to view a question -- profs+ => always true
+    * If the question belongs to an assessment, check for a current version unless a versionId is provided
+    */
+    async userCanViewQuestionId(user: User, questionId: number, studentTopicAssessmentInfoId?: number): Promise<boolean> {
+        if (user.roleId === Role.PROFESSOR || user.roleId === Role.ADMIN) return true;
+        const question = await courseRepository.getQuestion({ id: questionId });
+        const topic = await question.getTopic();
+        if (topic.topicTypeId === 1) {
+            return (topic.startDate.toMoment().isBefore(moment()));
+        } else if (topic.topicTypeId === 2) {
+            let topicIsLive = false;
+            if (_.isNil(studentTopicAssessmentInfoId)) {
+                // specific version was not supplied - see if there's a live version for this question
+                const gradeInstance = await courseRepository.getCurrentInstanceForQuestion({questionId, userId: user.id});
+                topicIsLive = !_.isNil(gradeInstance); // if we got a current instance, then topic is live
+            } else {
+                const studentTopicInfo = await this.getStudentTopicAssessmentInfoById(studentTopicAssessmentInfoId);
+                topicIsLive = studentTopicInfo.isClosed === false && // isClosed might not be accurate when the assessment times out
+                    moment().isBetween(studentTopicInfo.startTime.toMoment(), studentTopicInfo.endTime.toMoment());
+            }
+            const topicInfo = await topic.getTopicAssessmentInfo();
+            if (topicIsLive) {
+                return true;
+            } else {
+                // strike that -- reverse it ;)
+                return !topicInfo.hideProblemsAfterFinish;
+            }
+        }
+        // we *should* never get here - but if we do, then the answer is NO
+        return false;
+    };
+
     scoreAssessment = (results: SubmittedAssessmentResultContext[]): ScoreAssessmentResult => {
         let totalScore = 0;
         let bestVersionScore = 0;
@@ -2762,7 +2812,6 @@ class CourseController {
                 grade,
                 instance,
                 weight: question.weight,
-                submitted: instance.currentProblemState,
             });
         });
 
@@ -2779,7 +2828,7 @@ class CourseController {
                 courseWWTopicQuestionId: result.grade.courseWWTopicQuestionId,
                 studentGradeInstanceId: result.instance.id, // shouldn't this workbook be tied to a grade instance?
                 randomSeed: result.instance.randomSeed,
-                submitted: rendererHelper.cleanRendererResponseForTheDatabase(result.submitted as RendererResponse),
+                submitted: rendererHelper.cleanRendererResponseForTheDatabase(result.questionResponse.form_data as RendererResponse),
                 result: result.questionResponse.problem_result.score,
                 time: new Date(),
                 wasLate: false,

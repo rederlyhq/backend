@@ -209,12 +209,6 @@ StudentGradeInstance.init({
         allowNull: false,
         defaultValue: 0
     },
-    // numAttempts: {
-    //     field: 'student_grade_isntance_num_attempts',
-    //     type: DataTypes.INTEGER,
-    //     allowNull: false,
-    //     defaultValue: 0
-    // },
     active: {
         field: 'student_grade_instance_active',
         type: DataTypes.BOOLEAN,

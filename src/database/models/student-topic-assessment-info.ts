@@ -10,6 +10,8 @@ interface StudentTopicAssessmentInfoInterface {
     nextVersionAvailableTime: Date;
     numAttempts: number;
     maxAttempts: number;
+    isClean: boolean;
+    isClosed: boolean;
     active: boolean;
 }
 
@@ -22,6 +24,8 @@ export default class StudentTopicAssessmentInfo extends Model implements Student
     public nextVersionAvailableTime!: Date;
     public numAttempts!: number;
     public maxAttempts!: number;
+    public isClean!: boolean;
+    public isClosed!: boolean;
     public active!: boolean;
 
     public getUser!: BelongsToGetAssociationMixin<User>;
@@ -55,6 +59,7 @@ export default class StudentTopicAssessmentInfo extends Model implements Student
             sourceKey: 'id',
             as: 'studentGradeInstances'
         });
+
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }
@@ -104,6 +109,18 @@ StudentTopicAssessmentInfo.init({
         field: 'student_topic_assessment_info_num_attempts',
         type: DataTypes.INTEGER,
         allowNull: false,
+    },
+    isClean: {
+        field: 'student_topic_assessment_info_is_clean',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+    },
+    isClosed: {
+        field: 'student_topic_assessment_info_is_closed',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
     },
     active: {
         field: 'student_topic_assessment_info_active',

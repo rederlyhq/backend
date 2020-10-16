@@ -266,7 +266,8 @@ class CourseRepository {
             checkDates = true
         } = options;
         if (checkDates) {
-            const dueDates = _.compact([options.updates.endDate?.toMoment?.(), options.updates?.deadDate?.toMoment?.()]);
+            // The use of DeepPartial on the type causes toMoment to be nullable.
+            const dueDates = _.compact([options.updates.endDate?.toMoment?.(), options.updates.deadDate?.toMoment?.()]);
             // moment.min([]) returns right now, so if there are no due dates we def don't want to throw an error
             // Otherwise you can't set due dates in the past
             if (dueDates.length > 0 && moment.min(...dueDates).isBefore(moment())) {
@@ -468,12 +469,6 @@ class CourseRepository {
         }
     }
     
-    async isQuestionAnAssessment(questionId: number): Promise<boolean> {
-        const question = await this.getQuestion({id: questionId});
-        const topic = await this.getCourseTopic({id: question.courseTopicContentId});
-        return topic.topicTypeId === 2;
-    }
-
     /**
      * This function takes a questionId and a userId
      * It fetches the current gradeInstance, if one exists - returning undefined if there are no current gradeInstances
@@ -504,7 +499,9 @@ class CourseRepository {
                 ['endTime', 'DESC'],
             ]
         });
-        if (_.isNil(assessmentInfo) || moment(assessmentInfo[0].endTime).isBefore(moment())) return null; // no current version available
+
+        // no versions created, or the most recent version timed out or was closed early
+        if (_.isNil(assessmentInfo) || moment(assessmentInfo[0].endTime).isBefore(moment()) || assessmentInfo[0].isClosed) return null; // no current version available
 
         const gradeInstance = await StudentGradeInstance.findOne({
             where: {

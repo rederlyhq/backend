@@ -95,9 +95,6 @@ TopicAssessmentInfo.init({
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 1,
-        validate: {
-            min: 1
-        }
     },
     maxVersions: {
         field: 'topic_assessment_info_max_versions',

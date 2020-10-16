@@ -1,12 +1,9 @@
 import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize';
-import StudentTopicAssessmentInfo from './student-topic-assessment-info';
-import TopicAssessmentInfo from './topic-assessment-info';
 
 export interface StudentTopicAssessmentOverrideInterface {
     id: number;
     topicAssessmentInfoId: number;
-    studentTopicAssessmentInfoId: number;
     userId: number;
     duration: number | null;
     maxGradedAttemptsPerVersion: number | null;
@@ -19,7 +16,6 @@ export default class StudentTopicAssessmentOverride extends Model implements Stu
     public id!: number;
     // public courseTopicContentId!: number;
     public topicAssessmentInfoId!: number;
-    public studentTopicAssessmentInfoId!: number;
     public userId!: number;
     public duration!: number | null;
     public maxGradedAttemptsPerVersion!: number | null;
@@ -47,12 +43,6 @@ export default class StudentTopicAssessmentOverride extends Model implements Stu
             as: 'topicAssessmentInfo'
         });
 
-        StudentTopicAssessmentOverride.belongsTo(StudentTopicAssessmentInfo, {
-            foreignKey: 'studentTopicAssessmentInfoId',
-            targetKey: 'id',
-            as: 'studentTopicAssessmentInfo'
-        });
-
         StudentTopicAssessmentOverride.belongsTo(User, {
             foreignKey: 'userId',
             targetKey: 'id',
@@ -77,11 +67,6 @@ StudentTopicAssessmentOverride.init({
     },
     topicAssessmentInfoId: {
         field: 'topic_assessment_info_id',
-        type: DataTypes.INTEGER,
-        allowNull: false
-    },
-    studentTopicAssessmentInfoId: {
-        field: 'student_topic_assessment_info_id',
         type: DataTypes.INTEGER,
         allowNull: false
     },
@@ -122,3 +107,4 @@ StudentTopicAssessmentOverride.init({
 });
 
 import User from './user';
+import TopicAssessmentInfo from './topic-assessment-info';

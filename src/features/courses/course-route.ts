@@ -222,17 +222,18 @@ router.get('/questions',
                     return;
                 }
 
+                // get version info - descending by startTime
                 const versions = await courseController.getStudentTopicAssessmentInfo({userId: user.id, topicId: req.query.courseTopicContentId});
 
                 if (
                     topic.topicAssessmentInfo.hideProblemsAfterFinish &&
                     !_.isNil(versions[0]) && (
                         moment().isAfter(moment(versions[0].endTime)) ||
-                        topic.topicAssessmentInfo.maxGradedAttemptsPerVersion <= versions.length
+                        topic.topicAssessmentInfo.maxGradedAttemptsPerVersion <= versions[0].numAttempts // TODO: replace with versions[0].isFinished
                     ) &&
                     user.roleId === Role.STUDENT
                 ) {
-                    next(Boom.badRequest('You have completed this assessment and you are blocked from seeing the problems.'));
+                    next(Boom.badRequest('You have finished this version of the assessment and you are blocked from seeing the problems.'));
                     return;
                 }
             }
@@ -308,37 +309,45 @@ router.get('/assessment/topic/:id/start',
         }
         const user = await req.session.getUser();
 
-        const topic = await courseController.getTopicById({id: params.id}); // includes TopicOverrides
+        let topic = await courseController.getTopicById({id: params.id}); // includes TopicOverrides
         const topicInfo = await courseController.getTopicAssessmentInfoByTopicId({ topicId: topic.id, userId: user.id }); // ordered by startDate, includes overrides
-        const studentAssessments = await courseController.getStudentTopicAssessmentInfo({ topicId: topic.id, userId: user.id });
+        const studentVersions = await courseController.getStudentTopicAssessmentInfo({ topicId: topic.id, userId: user.id });
 
+        // deal with overrides
         const maxVersions = topicInfo.studentTopicAssessmentOverride?.[0]?.maxVersions ?? topicInfo.maxVersions;
+        if (!_.isNil(topic.studentTopicOverride)) {
+            topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
+        }
 
-        // TODO deal with possible overrides: duration, maxVersions, versionDelay
-        // do we possibly include nextVersionStartsAfter as an override?
-        // topic overrides: startDate/endDate
-        if (studentAssessments.length >= maxVersions) {
+        // if the assessment has not yet started, students cannot generate a version
+        if (new Date().getTime() < topic.startDate.getTime()) {
+            if (user.roleId === Role.STUDENT) {
+                next(Boom.badRequest(`The topic "${topic.name}" has not started yet.`));
+                return;
+            }
+        }
+
+        // check number of versions already used
+        if (studentVersions.length >= maxVersions) {
             if (user.roleId === Role.STUDENT) {
                 next(Boom.badRequest('You have no retakes remaining.'));
                 return;
             }
         }
 
-        if (studentAssessments[0] && new Date().getTime() < studentAssessments[0].nextVersionAvailableTime.getTime() ) {
+        // versions remaining, have we waited long enough?
+        if (studentVersions[0] && new Date().getTime() < studentVersions[0].nextVersionAvailableTime.getTime() ) {
             if (user.roleId === Role.STUDENT) {
                 // toLocaleString supports timezone, which we should maybe use?
-                next(Boom.badRequest(`Another version of this assessment will be available after ${studentAssessments[0].nextVersionAvailableTime.toLocaleString()}.`));
+                next(Boom.badRequest(`Another version of this assessment will be available after ${studentVersions[0].nextVersionAvailableTime.toLocaleString()}.`));
                 return;
             }
         }
 
-        // if the assessment has not yet started, there is no way to fail the above
-        if (new Date().getTime() < topic.startDate.getTime()) {
-            if (user.roleId === Role.STUDENT) {
-                next(Boom.badRequest(`The topic "${topic.name}" has not started yet.`));
-                return;
-            }
-            // what should we do about instructors - it will be a mess to allow simultaneous versions
+        // finally - *no one* should be able to create a version if there is already one "open"
+        // TODO: add check that the "open" version hasn't been flagged as "isClosed"
+        if (studentVersions[0] && new Date().getTime() < studentVersions[0].endTime.getTime()) {
+            next(Boom.badRequest('You already have an open version of this assessment.'));
         }
 
         try {
@@ -573,7 +582,10 @@ router.get('/question/:id',
                     userId: req.query.userId,
                 });
             } else {
-                // TODO handle not found case
+                // check to see if we should allow this question to be viewed
+                const userCanViewQuestion = await courseController.userCanViewQuestionId(user, params.id, req.query.studentTopicAssessmentInfoId);
+                if (userCanViewQuestion === false) throw new Error('You are not permitted to view the problems after finishing.');
+                
                 question = await courseController.getQuestion({
                     questionId: params.id,
                     userId: session.userId,
@@ -618,7 +630,7 @@ router.post('/assessment/topic/:id/submit/:version',
             throw new Error('This assessment version has no attempts remaining.');
         }
 
-        const assessmentResult = await courseController.submitAssessmentAnswers(params.version, false);
+        const assessmentResult = await courseController.submitAssessmentAnswers(params.version, false); // false: wasAutoSubmitted
         next(httpResponse.Ok('Assessment submitted successfully', assessmentResult));
     }));
 

@@ -47,7 +47,7 @@ export default class CourseQuestionAssessmentInfo extends Model implements Cours
 
 CourseQuestionAssessmentInfo.init({
     id: {
-        field: 'course_topic_assessment_info_id',
+        field: 'course_question_assessment_info_id',
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
@@ -58,25 +58,25 @@ CourseQuestionAssessmentInfo.init({
         allowNull: false
     },
     randomSeedSet: {
-        field: 'course_topic_assessment_info_random_seed_set',
+        field: 'course_question_assessment_info_random_seed_set',
         type: DataTypes.ARRAY(DataTypes.INTEGER),
         allowNull: false,
         defaultValue: []
     },
     additionalProblemPaths: {
-        field: 'course_topic_assessment_info_additional_problem_paths',
+        field: 'course_question_assessment_info_additional_problem_paths',
         type: DataTypes.ARRAY(DataTypes.TEXT),
         allowNull: false,
         defaultValue: []
     },
     active: {
-        field: 'course_topic_assessment_info_active',
+        field: 'course_question_assessment_info_active',
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: true,
     },
 }, {
-    tableName: 'course_topic_assessment_info',
+    tableName: 'course_question_assessment_info',
     sequelize: appSequelize, // this bit is important
 });
 

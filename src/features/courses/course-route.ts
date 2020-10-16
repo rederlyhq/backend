@@ -227,7 +227,7 @@ router.get('/questions',
 
                 if (
                     topic.topicAssessmentInfo.hideProblemsAfterFinish &&
-                    !_.isNil(versions[0]) && (
+                    versions.length > 0 && (
                         moment().isAfter(moment(versions[0].endTime)) ||
                         topic.topicAssessmentInfo.maxGradedAttemptsPerVersion <= versions[0].numAttempts // TODO: replace with versions[0].isFinished
                     ) &&
@@ -310,8 +310,12 @@ router.get('/assessment/topic/:id/start',
         const user = await req.session.getUser();
 
         let topic = await courseController.getTopicById({id: params.id}); // includes TopicOverrides
-        const topicInfo = await courseController.getTopicAssessmentInfoByTopicId({ topicId: topic.id, userId: user.id }); // ordered by startDate, includes overrides
-        const studentVersions = await courseController.getStudentTopicAssessmentInfo({ topicId: topic.id, userId: user.id });
+        const topicInfo = await courseController.getTopicAssessmentInfoByTopicId({ 
+            topicId: topic.id, 
+            userId: user.id }); // method result is ordered by startDate, includes overrides
+        const studentVersions = await courseController.getStudentTopicAssessmentInfo({ 
+            topicId: topic.id, 
+            userId: user.id });
 
         // deal with overrides
         const maxVersions = topicInfo.studentTopicAssessmentOverride?.[0]?.maxVersions ?? topicInfo.maxVersions;
@@ -350,17 +354,13 @@ router.get('/assessment/topic/:id/start',
             next(Boom.badRequest('You already have an open version of this assessment.'));
         }
 
-        try {
-            const versionInfo = await courseController.createGradeInstancesForAssessment({
-                topicId: topic.id, 
-                userId: user.id,
-            });
-            next(httpResponse.Ok('New version of this assessment created successfully', {
-                versionInfo,
-            }));
-        } catch (e) {
-            next(e);
-        }
+        const versionInfo = await courseController.createGradeInstancesForAssessment({
+            topicId: topic.id, 
+            userId: user.id,
+        });
+        next(httpResponse.Ok('New version of this assessment created successfully', {
+            versionInfo,
+        }));
     }));
 
 router.delete('/unit/:id',

@@ -3,7 +3,7 @@ import appSequelize from '../app-sequelize';
 
 interface CourseQuestionAssessmentInfoInterface {
     id: number;
-    courseTopicContentId: number;
+    courseWWTopicQuestionId: number;
     randomSeedSet: Array<number>;
     additionalProblemPaths: Array<string>;
     active: boolean;
@@ -11,7 +11,7 @@ interface CourseQuestionAssessmentInfoInterface {
 export default class CourseQuestionAssessmentInfo extends Model implements CourseQuestionAssessmentInfoInterface {
 
     public id!: number;
-    public courseTopicContentId!: number;
+    public courseWWTopicQuestionId!: number;
     public randomSeedSet!: Array<number>;
     public additionalProblemPaths!: Array<string>;
     public active!: boolean;
@@ -31,13 +31,13 @@ export default class CourseQuestionAssessmentInfo extends Model implements Cours
         // This is a hack to add the associations later to avoid cyclic dependencies
         /* eslint-disable @typescript-eslint/no-use-before-define */
         CourseQuestionAssessmentInfo.belongsTo(CourseWWTopicQuestion, {
-            foreignKey: 'courseTopicQuestionId',
+            foreignKey: 'courseWWTopicQuestionId',
             targetKey: 'id',
             as: 'courseTopicQuestion'
         });
 
         // CourseTopicContent.hasMany(CourseWWTopicQuestion, {
-        //     foreignKey: 'courseTopicContentId',
+        //     foreignKey: 'courseWWTopicQuestionId',
         //     sourceKey: 'id',
         //     as: 'questions'
         // });
@@ -52,7 +52,7 @@ CourseQuestionAssessmentInfo.init({
         autoIncrement: true,
         primaryKey: true,
     },
-    courseTopicContentId: {
+    courseWWTopicQuestionId: {
         field: 'course_topic_question_id',
         type: DataTypes.INTEGER,
         allowNull: false

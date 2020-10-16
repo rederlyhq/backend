@@ -5,11 +5,11 @@ export default {
         // Transactions are automatically use because a namespace is injected into sequelize when fetching configurations
         await queryInterface.sequelize.transaction(async () => {
             /**
-             * course_topic_assessment_info
+             * course_question_assessment_info
              */
             await queryInterface.createTable('course_question_assessment_info', {
                 id: {
-                    field: 'course_topic_assessment_info_id',
+                    field: 'course_question_assessment_info_id',
                     type: DataTypes.INTEGER,
                     autoIncrement: true,
                     primaryKey: true,
@@ -27,19 +27,19 @@ export default {
                     },
                 },
                 randomSeedSet: {
-                    field: 'course_topic_assessment_info_random_seed_set',
+                    field: 'course_question_assessment_info_random_seed_set',
                     type: DataTypes.ARRAY(DataTypes.INTEGER),
                     allowNull: false,
                     defaultValue: []
                 },
                 additionalProblemPaths: {
-                    field: 'course_topic_assessment_info_additional_problem_paths',
+                    field: 'course_question_assessment_info_additional_problem_paths',
                     type: DataTypes.ARRAY(DataTypes.TEXT),
                     allowNull: false,
                     defaultValue: []
                 },
                 active: {
-                    field: 'course_topic_assessment_info_active',
+                    field: 'course_question_assessment_info_active',
                     type: DataTypes.BOOLEAN,
                     allowNull: false,
                     defaultValue: true,

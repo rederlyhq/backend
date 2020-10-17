@@ -114,7 +114,7 @@ router.all('/hook',
 (req: any, res: any, next: any) => {
     count++;
     console.log(`hook hit ${count} times!`);
-    console.log(new Date());
+    console.log(new Date().toString());
     console.log(req.body);
     res.send('success');
 });

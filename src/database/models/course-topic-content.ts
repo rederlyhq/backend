@@ -45,7 +45,7 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
     public readonly questions?: CourseWWTopicQuestion[];
     public readonly studentTopicOverride?: StudentTopicOverride[];
     public readonly topicAssessmentInfo?: TopicAssessmentInfo;
-    public readonly studentTopicAssessmentInfo?: StudentTopicAssessmentInfo[];
+    public studentTopicAssessmentInfo?: StudentTopicAssessmentInfo;
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -107,6 +107,7 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
             sourceKey: 'id',
             as: 'topicAssessmentInfo'
         });
+
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }

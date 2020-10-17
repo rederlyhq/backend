@@ -57,11 +57,11 @@ export default {
             });
 
             /**
-             * student_topic_assessment_info
+             * topic_assessment_info
              */
-            await queryInterface.createTable('student_topic_assessment_info', {
+            await queryInterface.createTable('topic_assessment_info', {
                 id: {
-                    field: 'student_topic_assessment_info_id',
+                    field: 'topic_assessment_info_id',
                     type: DataTypes.INTEGER,
                     autoIncrement: true,
                     primaryKey: true,
@@ -76,6 +76,106 @@ export default {
                     references: {
                         model: 'course_topic_content',
                         key: 'course_topic_content_id',
+                    },
+                },
+                duration: {
+                    field: 'topic_assessment_info_duration',
+                    type: DataTypes.INTEGER,
+                    allowNull: false,
+                    defaultValue: 0
+                },
+                hardCutoff: {
+                    field: 'topic_assessment_info_hard_cutoff',
+                    type: DataTypes.BOOLEAN,
+                    allowNull: false,
+                    defaultValue: false
+                },
+                maxGradedAttemptsPerVersion: {
+                    field: 'topic_assessment_info_max_graded_attempts_per_version',
+                    type: DataTypes.INTEGER,
+                    allowNull: false,
+                    defaultValue: 0
+                },
+                maxVersions: {
+                    field: 'topic_assessment_info_max_versions',
+                    type: DataTypes.INTEGER,
+                    allowNull: false,
+                    defaultValue: 0,
+                },
+                versionDelay: {
+                    field: 'topic_assessment_info_version_delay',
+                    type: DataTypes.INTEGER,
+                    allowNull: false,
+                    defaultValue: 0,
+                },
+                hideHints: {
+                    field: 'topic_assessment_info_hide_hints',
+                    type: DataTypes.BOOLEAN,
+                    allowNull: false,
+                    defaultValue: false
+                },
+                showItemizedResults: {
+                    field: 'topic_assessment_info_show_itemized_results',
+                    type: DataTypes.BOOLEAN,
+                    allowNull: false,
+                    defaultValue: false
+                },
+                showTotalGradeImmediately: {
+                    field: 'topic_assessment_info_show_total_grade_immediately',
+                    type: DataTypes.BOOLEAN,
+                    allowNull: false,
+                    defaultValue: false
+                },
+                hideProblemsAfterFinish: {
+                    field: 'topic_assessment_info_hide_problems_after_finish',
+                    type: DataTypes.BOOLEAN,
+                    allowNull: false,
+                    defaultValue: true
+                },
+                randomizeOrder: {
+                    field: 'topic_assessment_info_randomize_order',
+                    type: DataTypes.BOOLEAN,
+                    allowNull: false,
+                    defaultValue: true
+                },
+                active: {
+                    field: 'topic_assessment_info_active',
+                    type: DataTypes.BOOLEAN,
+                    allowNull: false,
+                    defaultValue: true
+                },
+                updatedAt: {
+                    field: 'updated_at',
+                    type: DataTypes.DATE,
+                    allowNull: false,
+                },
+                createdAt: {
+                    field: 'created_at',
+                    type: DataTypes.DATE,
+                    allowNull: false,
+                },
+            });
+
+            /**
+             * student_topic_assessment_info
+             */
+            await queryInterface.createTable('student_topic_assessment_info', {
+                id: {
+                    field: 'student_topic_assessment_info_id',
+                    type: DataTypes.INTEGER,
+                    autoIncrement: true,
+                    primaryKey: true,
+                },
+                topicAssessmentInfoId: {
+                    field: 'topic_assessment_info_id',
+                    type: DataTypes.INTEGER,
+                    allowNull: false,
+                    // Defaults to cascade when generating the db, no action on migrations
+                    onUpdate: 'CASCADE',
+                    // Different from sequelize model, on models I do this with associations so I can use types
+                    references: {
+                        model: 'topic_assessment_info',
+                        key: 'topic_assessment_info_id',
                     },
                 },
                 userId: {
@@ -260,106 +360,6 @@ export default {
                     field: 'student_grade_instance_best_version_workbook_id',
                     type: DataTypes.INTEGER,
                     allowNull: true,
-                },
-                updatedAt: {
-                    field: 'updated_at',
-                    type: DataTypes.DATE,
-                    allowNull: false,
-                },
-                createdAt: {
-                    field: 'created_at',
-                    type: DataTypes.DATE,
-                    allowNull: false,
-                },
-            });
-
-            /**
-             * topic_assessment_info
-             */
-            await queryInterface.createTable('topic_assessment_info', {
-                id: {
-                    field: 'topic_assessment_info_id',
-                    type: DataTypes.INTEGER,
-                    autoIncrement: true,
-                    primaryKey: true,
-                },
-                courseTopicContentId: {
-                    field: 'course_topic_content_id',
-                    type: DataTypes.INTEGER,
-                    allowNull: false,
-                    // Defaults to cascade when generating the db, no action on migrations
-                    onUpdate: 'CASCADE',
-                    // Different from sequelize model, on models I do this with associations so I can use types
-                    references: {
-                        model: 'course_topic_content',
-                        key: 'course_topic_content_id',
-                    },
-                },
-                duration: {
-                    field: 'topic_assessment_info_duration',
-                    type: DataTypes.INTEGER,
-                    allowNull: false,
-                    defaultValue: 0
-                },
-                hardCutoff: {
-                    field: 'topic_assessment_info_hard_cutoff',
-                    type: DataTypes.BOOLEAN,
-                    allowNull: false,
-                    defaultValue: false
-                },
-                maxGradedAttemptsPerVersion: {
-                    field: 'topic_assessment_info_max_graded_attempts_per_version',
-                    type: DataTypes.INTEGER,
-                    allowNull: false,
-                    defaultValue: 0
-                },
-                maxVersions: {
-                    field: 'topic_assessment_info_max_versions',
-                    type: DataTypes.INTEGER,
-                    allowNull: false,
-                    defaultValue: 0,
-                },
-                versionDelay: {
-                    field: 'topic_assessment_info_version_delay',
-                    type: DataTypes.INTEGER,
-                    allowNull: false,
-                    defaultValue: 0,
-                },
-                hideHints: {
-                    field: 'topic_assessment_info_hide_hints',
-                    type: DataTypes.BOOLEAN,
-                    allowNull: false,
-                    defaultValue: false
-                },
-                showItemizedResults: {
-                    field: 'topic_assessment_info_show_itemized_results',
-                    type: DataTypes.BOOLEAN,
-                    allowNull: false,
-                    defaultValue: false
-                },
-                showTotalGradeImmediately: {
-                    field: 'topic_assessment_info_show_total_grade_immediately',
-                    type: DataTypes.BOOLEAN,
-                    allowNull: false,
-                    defaultValue: false
-                },
-                hideProblemsAfterFinish: {
-                    field: 'topic_assessment_info_hide_problems_after_finish',
-                    type: DataTypes.BOOLEAN,
-                    allowNull: false,
-                    defaultValue: true
-                },
-                randomizeOrder: {
-                    field: 'topic_assessment_info_randomize_order',
-                    type: DataTypes.BOOLEAN,
-                    allowNull: false,
-                    defaultValue: true
-                },
-                active: {
-                    field: 'topic_assessment_info_active',
-                    type: DataTypes.BOOLEAN,
-                    allowNull: false,
-                    defaultValue: true
                 },
                 updatedAt: {
                     field: 'updated_at',

@@ -24,6 +24,7 @@ import rendererHelper, { RENDERER_ENDPOINT, GetProblemParameters, RendererRespon
 import StudentGrade from '../../database/models/student-grade';
 import bodyParser = require('body-parser');
 import moment = require('moment');
+import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 
 const fileUpload = multer();
 
@@ -222,14 +223,20 @@ router.get('/questions',
                     return;
                 }
 
-                // get version info - descending by startTime
-                const versions = await courseController.getStudentTopicAssessmentInfo({userId: user.id, topicId: req.query.courseTopicContentId});
+                // get version info - descending by startTime unless specific id is included in query
+                let version: StudentTopicAssessmentInfo | undefined;
+                if (_.isNil(req.query.studentTopicAssessmentInfoId)) {
+                    const versions = await courseController.getStudentTopicAssessmentInfo({ userId: user.id, topicId: req.query.courseTopicContentId });
+                    if (versions.length === 0) next(Boom.badRequest('User has not started any versions of this assessment.'));
+                    version = versions[0];
+                } else {
+                    version = await courseController.getStudentTopicAssessmentInfoById(req.query.studentTopicAssessmentInfoId);
+                }
 
                 if (
-                    topic.topicAssessmentInfo.hideProblemsAfterFinish &&
-                    versions.length > 0 && (
-                        moment().isAfter(moment(versions[0].endTime)) ||
-                        topic.topicAssessmentInfo.maxGradedAttemptsPerVersion <= versions[0].numAttempts // TODO: replace with versions[0].isFinished
+                    topic.topicAssessmentInfo.hideProblemsAfterFinish && (
+                        moment().isAfter(moment(version.endTime)) ||
+                        topic.topicAssessmentInfo.maxGradedAttemptsPerVersion <= version.numAttempts // TODO: replace with versions[0].isFinished
                     ) &&
                     user.roleId === Role.STUDENT
                 ) {
@@ -237,7 +244,6 @@ router.get('/questions',
                     return;
                 }
             }
-
         }
 
         const questions = await courseController.getQuestions({

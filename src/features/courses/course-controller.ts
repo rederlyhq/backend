@@ -89,8 +89,8 @@ class CourseController {
             required: false,
             where: {
                 active: true,
-                courseTopicContentId: id,
-            }
+                // courseTopicContentId: id,
+            },
         });
 
         if (!_.isNil(userId)) {
@@ -102,17 +102,6 @@ class CourseController {
                 where: {
                     active: true,
                     userId: userId
-                }
-            });
-
-            include.push({
-                model: StudentTopicAssessmentInfo,
-                as: 'studentTopicAssessmentInfo',
-                required: false,
-                where: {
-                    active: true,
-                    courseTopicContentId: id,
-                    userId
                 }
             });
         }
@@ -1174,6 +1163,7 @@ class CourseController {
             role: options.role,
         });
 
+        // TODO; rework calculatedRendererParameters
         if (options.readonly) {
             calculatedRendererParameters.outputformat = OutputFormat.STATIC;
         }
@@ -2568,9 +2558,15 @@ class CourseController {
     }
 
     async getStudentTopicAssessmentInfo(options: GetStudentTopicAssessmentInfoOptions): Promise<StudentTopicAssessmentInfo[]> {
-        const result = await StudentTopicAssessmentInfo.findAll({
+        const topicInfo = await TopicAssessmentInfo.findOne({
             where: {
                 courseTopicContentId: options.topicId,
+            }
+        });
+        if (_.isNil(topicInfo)) throw new IllegalArgumentException('Requested student topic assessment info with a bad topic ID.');
+        const result = await StudentTopicAssessmentInfo.findAll({
+            where: {
+                topicAssessmentInfoId: topicInfo.id,
                 userId: options.userId,
                 active: true,
             },

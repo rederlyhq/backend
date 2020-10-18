@@ -2762,6 +2762,11 @@ class CourseController {
         return false;
     };
 
+    /*
+    * Determine if a user (student) is allowed to start a new version
+    * No one may start a new version if one is already open
+    * If the question belongs to an assessment, check for a current version unless a versionId is provided
+    */
     async canUserStartNewVersion(options: UserCanStartNewVersionOptions): Promise<UserCanStartNewVersionResult> {
         const {user, topicId} = options;
         let userCanStartNewVersion = true;
@@ -2772,7 +2777,7 @@ class CourseController {
             topicId: topicId,
             userId: user.id
         }); // method result is ordered by startDate, includes overrides
-        const studentVersions = await this.getStudentTopicAssessmentInfo({
+        const versions = await this.getStudentTopicAssessmentInfo({
             topicId: topicId,
             userId: user.id
         });
@@ -2783,35 +2788,30 @@ class CourseController {
             topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
         }
 
-        // if the assessment has not yet started, students cannot generate a version
-        if (new Date().getTime() < topic.startDate.getTime()) {
-            if (user.roleId === Role.STUDENT) {
+        // restrictions on start time, maximum versions, and version delay only apply to students
+        if (user.roleId === Role.STUDENT) {
+            // if the assessment has not yet started, students cannot generate a version
+            if (new Date().getTime() < topic.startDate.getTime()) {
                 message = `The topic "${topic.name}" has not started yet.`;
                 userCanStartNewVersion = false;
-            }
-        }
-
-        // check number of versions already used
-        if (studentVersions.length >= maxVersions) {
-            if (user.roleId === Role.STUDENT) {
+            } else
+            // check number of versions already used
+            if (versions.length >= maxVersions) {
                 message = 'You have no retakes remaining.';
                 userCanStartNewVersion = false;
-            }
-        }
-
-        // versions remaining, have we waited long enough?
-        if (studentVersions[0] && new Date().getTime() < studentVersions[0].nextVersionAvailableTime.getTime()) {
-            if (user.roleId === Role.STUDENT) {
+            } else 
+            // versions remaining, have we waited long enough?
+            if (versions[0] && new Date().getTime() < versions[0].nextVersionAvailableTime.getTime()) {
                 // toLocaleString supports timezone, which we should maybe use?
-                message = `Another version of this assessment will be available after ${studentVersions[0].nextVersionAvailableTime.toLocaleString()}.`;
+                message = `Another version of this assessment will be available after ${versions[0].nextVersionAvailableTime.toLocaleString()}.`;
                 userCanStartNewVersion = false;
             }
         }
 
         // finally - *no one* should be able to create a version if there is already one "open"
-        if (studentVersions[0] && 
-            studentVersions[0].isClosed === false && 
-            new Date().getTime() < studentVersions[0].endTime.getTime()
+        if (versions[0] &&  // user has a version (the most recent one)
+            versions[0].isClosed === false && // it has not been closed early
+            new Date().getTime() < versions[0].endTime.getTime() // and the time hasn't expired
         ) {
             message = 'You already have an open version of this assessment.';
             userCanStartNewVersion = false;

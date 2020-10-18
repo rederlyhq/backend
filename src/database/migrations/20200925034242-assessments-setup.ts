@@ -94,7 +94,7 @@ export default {
                     field: 'topic_assessment_info_max_graded_attempts_per_version',
                     type: DataTypes.INTEGER,
                     allowNull: false,
-                    defaultValue: 0
+                    defaultValue: 1
                 },
                 maxVersions: {
                     field: 'topic_assessment_info_max_versions',
@@ -136,7 +136,7 @@ export default {
                     field: 'topic_assessment_info_randomize_order',
                     type: DataTypes.BOOLEAN,
                     allowNull: false,
-                    defaultValue: true
+                    defaultValue: false
                 },
                 active: {
                     field: 'topic_assessment_info_active',
@@ -211,7 +211,8 @@ export default {
                 nextVersionAvailableTime: {
                     field: 'student_topic_assessment_info_next_version_time',
                     type: DataTypes.DATE,
-                    allowNull: true,
+                    allowNull: false,
+                    defaultValue: 'NOW()'
                 },
                 active: {
                     field: 'student_topic_assessment_info_active',
@@ -322,20 +323,19 @@ export default {
                     type: DataTypes.TEXT,
                     allowNull: false
                 },
-                bestScore: {
-                    field: 'student_grade_instance_best_score',
+                problemNumber: {
+                    field: 'student_grade_instance_problem_number',
+                    type: DataTypes.INTEGER,
+                    allowNull: false,
+                },
+                scoreForBestVersion: {
+                    field: 'student_grade_instance_score_for_best_version',
                     type: DataTypes.INTEGER,
                     allowNull: false,
                     defaultValue: 0
                 },
                 overallBestScore: {
                     field: 'student_grade_instance_overall_best_score',
-                    type: DataTypes.INTEGER,
-                    allowNull: false,
-                    defaultValue: 0
-                },
-                numAttempts: {
-                    field: 'student_grade_instance_num_attempts',
                     type: DataTypes.INTEGER,
                     allowNull: false,
                     defaultValue: 0

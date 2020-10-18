@@ -18,15 +18,12 @@ export interface StudentGradeInstanceGradeOverridesInterface {
     currentProblemState: any;
 }
 
-export interface StudentGradeInstanceInterface {
+export interface StudentGradeInstanceInterface extends StudentGradeInstanceQuestionOverridesInterface, StudentGradeInstanceGradeOverridesInterface {
     id: number;
     studentGradeId: number;
     // userId: number;
     // courseWWTopicQuestionId: number;
     studentTopicAssessmentInfoId: number;
-    randomSeed: number;
-    webworkQuestionPath: string;
-    problemNumber: number;
     scoreForBestVersion: number; // the score from the highest-scoring exam submission
     overallBestScore: number; // the best score on this problem alone
     // Grade instances shouldn't be overwritten
@@ -38,12 +35,6 @@ export interface StudentGradeInstanceInterface {
     // Don't need locked because it is very controlled
     // Don't need references to workbooks since there should be a relatively 1-1 relationship
     active: boolean;
-    // This is a jsonb field so it could be any (from db)
-    // Submitted in workbook used any so I'm going to keep it consistent here
-    // If this is used for form data we will never know any info about what keys are available
-    // Might make sense to make this an unknown type since I don't think we will ever access the types
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    currentProblemState: any;
     bestIndividualAttemptId: number;
     bestVersionAttemptId: number;
 }
@@ -173,12 +164,12 @@ StudentGradeInstance.init({
         allowNull: false,
     },
     bestIndividualAttemptId: {
-        field: 'best_individual_attempt_id',
+        field: 'student_grade_instance_best_individual_workbook_id',
         type: DataTypes.INTEGER,
         allowNull: true,
     },
     bestVersionAttemptId: {
-        field: 'best_version_attempt_id',
+        field: 'student_grade_instance_best_version_workbook_id',
         type: DataTypes.INTEGER,
         allowNull: true,
     },

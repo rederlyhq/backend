@@ -24,6 +24,7 @@ import rendererHelper, { RENDERER_ENDPOINT, GetProblemParameters, RendererRespon
 import StudentGrade from '../../database/models/student-grade';
 import bodyParser = require('body-parser');
 import moment = require('moment');
+import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 
 const fileUpload = multer();
 
@@ -222,22 +223,27 @@ router.get('/questions',
                     return;
                 }
 
-                // get version info - descending by startTime
-                const versions = await courseController.getStudentTopicAssessmentInfo({userId: user.id, topicId: req.query.courseTopicContentId});
+                // get version info - descending by startTime unless specific id is included in query
+                let versions: StudentTopicAssessmentInfo[] | undefined;
+                if (_.isNil(req.query.studentTopicAssessmentInfoId)) {
+                    versions = await courseController.getStudentTopicAssessmentInfo({ userId: user.id, topicId: req.query.courseTopicContentId });
+                    if (versions.length === 0) next(httpResponse.Ok('You have not started any versions of this assessment.', {questions: null, topic}));
+                } else {
+                    const version = await courseController.getStudentTopicAssessmentInfoById(req.query.studentTopicAssessmentInfoId);
+                    versions = [version];
+                }
+                topic.studentTopicAssessmentInfo = versions;
 
                 if (
-                    topic.topicAssessmentInfo.hideProblemsAfterFinish &&
-                    versions.length > 0 && (
+                    topic.topicAssessmentInfo.hideProblemsAfterFinish && (
                         moment().isAfter(moment(versions[0].endTime)) ||
                         topic.topicAssessmentInfo.maxGradedAttemptsPerVersion <= versions[0].numAttempts // TODO: replace with versions[0].isFinished
                     ) &&
                     user.roleId === Role.STUDENT
                 ) {
-                    next(Boom.badRequest('You have finished this version of the assessment and you are blocked from seeing the problems.'));
-                    return;
+                    next(httpResponse.Ok('You have finished this version of the assessment and you are blocked from seeing the problems.', {questions: null, topic}));
                 }
             }
-
         }
 
         const questions = await courseController.getQuestions({
@@ -309,55 +315,19 @@ router.get('/assessment/topic/:id/start',
         }
         const user = await req.session.getUser();
 
-        let topic = await courseController.getTopicById({id: params.id}); // includes TopicOverrides
-        const topicInfo = await courseController.getTopicAssessmentInfoByTopicId({ 
-            topicId: topic.id, 
-            userId: user.id }); // method result is ordered by startDate, includes overrides
-        const studentVersions = await courseController.getStudentTopicAssessmentInfo({ 
-            topicId: topic.id, 
-            userId: user.id });
+        // function returns boolean and IF the user is not allowed to start a new version, a reason is included
+        const {userCanStartNewVersion, message} = await courseController.canUserStartNewVersion({user, topicId: params.id});
 
-        // deal with overrides
-        const maxVersions = topicInfo.studentTopicAssessmentOverride?.[0]?.maxVersions ?? topicInfo.maxVersions;
-        if (!_.isNil(topic.studentTopicOverride)) {
-            topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
-        }
-
-        // if the assessment has not yet started, students cannot generate a version
-        if (new Date().getTime() < topic.startDate.getTime()) {
-            if (user.roleId === Role.STUDENT) {
-                next(Boom.badRequest(`The topic "${topic.name}" has not started yet.`));
-                return;
-            }
-        }
-
-        // check number of versions already used
-        if (studentVersions.length >= maxVersions) {
-            if (user.roleId === Role.STUDENT) {
-                next(Boom.badRequest('You have no retakes remaining.'));
-                return;
-            }
-        }
-
-        // versions remaining, have we waited long enough?
-        if (studentVersions[0] && new Date().getTime() < studentVersions[0].nextVersionAvailableTime.getTime() ) {
-            if (user.roleId === Role.STUDENT) {
-                // toLocaleString supports timezone, which we should maybe use?
-                next(Boom.badRequest(`Another version of this assessment will be available after ${studentVersions[0].nextVersionAvailableTime.toLocaleString()}.`));
-                return;
-            }
-        }
-
-        // finally - *no one* should be able to create a version if there is already one "open"
-        // TODO: add check that the "open" version hasn't been flagged as "isClosed"
-        if (studentVersions[0] && new Date().getTime() < studentVersions[0].endTime.getTime()) {
-            next(Boom.badRequest('You already have an open version of this assessment.'));
+        // will never have true + message
+        if (userCanStartNewVersion === false && !_.isNil(message)) {
+            next(Boom.badRequest(message));
         }
 
         const versionInfo = await courseController.createGradeInstancesForAssessment({
-            topicId: topic.id, 
+            topicId: params.id, 
             userId: user.id,
         });
+
         next(httpResponse.Ok('New version of this assessment created successfully', {
             versionInfo,
         }));

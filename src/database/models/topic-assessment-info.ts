@@ -34,6 +34,7 @@ export default class TopicAssessmentInfo extends Model implements TopicAssessmen
     // public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
 
     public readonly studentTopicAssessmentOverride?: StudentTopicAssessmentOverride[];
+    public readonly studentTopicAssessmentInfo?: StudentTopicAssessmentInfo;
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -55,6 +56,12 @@ export default class TopicAssessmentInfo extends Model implements TopicAssessmen
             foreignKey: 'topicAssessmentInfoId',
             sourceKey: 'id',
             as: 'studentTopicAssessmentOverride'
+        });
+
+        TopicAssessmentInfo.hasMany(StudentTopicAssessmentInfo, {
+            foreignKey: 'topicAssessmentInfoId',
+            sourceKey: 'id',
+            as: 'studentTopicAssessmentInfo'
         });
 
         // CourseTopicContent.hasMany(CourseWWTopicQuestion, {
@@ -139,7 +146,7 @@ TopicAssessmentInfo.init({
         defaultValue: false
     },
     active: {
-        field: 'student_topic_override_active',
+        field: 'topic_assessment_info_active',
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: true
@@ -150,4 +157,5 @@ TopicAssessmentInfo.init({
 });
 
 import CourseTopicContent from './course-topic-content';
+import StudentTopicAssessmentInfo from './student-topic-assessment-info';
 import StudentTopicAssessmentOverride from './student-topic-assessment-override';

@@ -81,20 +81,20 @@ StudentTopicAssessmentInfo.init({
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    startDate: {
-        field: 'student_topic_assessment_info_start_date',
+    startTime: {
+        field: 'student_topic_assessment_info_start_time',
         type: DataTypes.DATE,
         allowNull: false,
         defaultValue: appSequelize.literal('NOW()')
     },
-    endDate: {
-        field: 'student_topic_assessment_info_end_date',
+    endTime: {
+        field: 'student_topic_assessment_info_end_time',
         type: DataTypes.DATE,
         allowNull: false,
         defaultValue: appSequelize.literal('NOW()')
     },
     nextVersionAvailableTime: {
-        field: 'student_topic_assessment_info_next_version_date',
+        field: 'student_topic_assessment_info_next_version_time',
         type: DataTypes.DATE,
         allowNull: false,
         defaultValue: appSequelize.literal('NOW()')

@@ -224,25 +224,24 @@ router.get('/questions',
                 }
 
                 // get version info - descending by startTime unless specific id is included in query
-                let version: StudentTopicAssessmentInfo | undefined;
+                let versions: StudentTopicAssessmentInfo[] | undefined;
                 if (_.isNil(req.query.studentTopicAssessmentInfoId)) {
-                    const versions = await courseController.getStudentTopicAssessmentInfo({ userId: user.id, topicId: req.query.courseTopicContentId });
-                    if (versions.length === 0) next(httpResponse.Ok('User has not started any versions of this assessment.', {questions: null, topic}));
-                    version = versions[0];
+                    versions = await courseController.getStudentTopicAssessmentInfo({ userId: user.id, topicId: req.query.courseTopicContentId });
+                    if (versions.length === 0) next(httpResponse.Ok('You have not started any versions of this assessment.', {questions: null, topic}));
                 } else {
-                    version = await courseController.getStudentTopicAssessmentInfoById(req.query.studentTopicAssessmentInfoId);
+                    const version = await courseController.getStudentTopicAssessmentInfoById(req.query.studentTopicAssessmentInfoId);
+                    versions = [version];
                 }
-                topic.studentTopicAssessmentInfo = version;
+                topic.studentTopicAssessmentInfo = versions;
 
                 if (
                     topic.topicAssessmentInfo.hideProblemsAfterFinish && (
-                        moment().isAfter(moment(version.endTime)) ||
-                        topic.topicAssessmentInfo.maxGradedAttemptsPerVersion <= version.numAttempts // TODO: replace with versions[0].isFinished
+                        moment().isAfter(moment(versions[0].endTime)) ||
+                        topic.topicAssessmentInfo.maxGradedAttemptsPerVersion <= versions[0].numAttempts // TODO: replace with versions[0].isFinished
                     ) &&
                     user.roleId === Role.STUDENT
                 ) {
-                    next(Boom.badRequest('You have finished this version of the assessment and you are blocked from seeing the problems.'));
-                    return;
+                    next(httpResponse.Ok('You have finished this version of the assessment and you are blocked from seeing the problems.', {questions: null, topic}));
                 }
             }
         }

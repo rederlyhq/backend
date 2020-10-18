@@ -272,15 +272,15 @@ export interface SubmitAnswerResult {
     studentWorkbook: StudentWorkbook | null;
 }
 
-// export interface SubmitAssessmentOptions {
-//     userId: number;
-//     studentTopicAssessmentInfoId: number;
-// }
+export interface UserCanStartNewVersionOptions {
+    user: User;
+    topicId: number;
+}
 
-// export interface SubmitAssessmentResult {
-//     studentGrade: StudentGradeInstance;
-//     studentWorkbook: StudentWorkbook;
-// }
+export interface UserCanStartNewVersionResult {
+    userCanStartNewVersion: boolean;
+    message?: string;
+}
 
 export interface SubmittedAssessmentResultContext {
     questionResponse: RendererResponse;

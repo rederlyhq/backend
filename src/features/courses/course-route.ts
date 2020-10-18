@@ -227,11 +227,12 @@ router.get('/questions',
                 let version: StudentTopicAssessmentInfo | undefined;
                 if (_.isNil(req.query.studentTopicAssessmentInfoId)) {
                     const versions = await courseController.getStudentTopicAssessmentInfo({ userId: user.id, topicId: req.query.courseTopicContentId });
-                    if (versions.length === 0) next(Boom.badRequest('User has not started any versions of this assessment.'));
+                    if (versions.length === 0) next(httpResponse.Ok('User has not started any versions of this assessment.', {questions: null, topic}));
                     version = versions[0];
                 } else {
                     version = await courseController.getStudentTopicAssessmentInfoById(req.query.studentTopicAssessmentInfoId);
                 }
+                topic.studentTopicAssessmentInfo = version;
 
                 if (
                     topic.topicAssessmentInfo.hideProblemsAfterFinish && (
@@ -315,55 +316,19 @@ router.get('/assessment/topic/:id/start',
         }
         const user = await req.session.getUser();
 
-        let topic = await courseController.getTopicById({id: params.id}); // includes TopicOverrides
-        const topicInfo = await courseController.getTopicAssessmentInfoByTopicId({ 
-            topicId: topic.id, 
-            userId: user.id }); // method result is ordered by startDate, includes overrides
-        const studentVersions = await courseController.getStudentTopicAssessmentInfo({ 
-            topicId: topic.id, 
-            userId: user.id });
+        // function returns boolean and IF the user is not allowed to start a new version, a reason is included
+        const {userCanStartNewVersion, message} = await courseController.canUserStartNewVersion({user, topicId: params.id});
 
-        // deal with overrides
-        const maxVersions = topicInfo.studentTopicAssessmentOverride?.[0]?.maxVersions ?? topicInfo.maxVersions;
-        if (!_.isNil(topic.studentTopicOverride)) {
-            topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
-        }
-
-        // if the assessment has not yet started, students cannot generate a version
-        if (new Date().getTime() < topic.startDate.getTime()) {
-            if (user.roleId === Role.STUDENT) {
-                next(Boom.badRequest(`The topic "${topic.name}" has not started yet.`));
-                return;
-            }
-        }
-
-        // check number of versions already used
-        if (studentVersions.length >= maxVersions) {
-            if (user.roleId === Role.STUDENT) {
-                next(Boom.badRequest('You have no retakes remaining.'));
-                return;
-            }
-        }
-
-        // versions remaining, have we waited long enough?
-        if (studentVersions[0] && new Date().getTime() < studentVersions[0].nextVersionAvailableTime.getTime() ) {
-            if (user.roleId === Role.STUDENT) {
-                // toLocaleString supports timezone, which we should maybe use?
-                next(Boom.badRequest(`Another version of this assessment will be available after ${studentVersions[0].nextVersionAvailableTime.toLocaleString()}.`));
-                return;
-            }
-        }
-
-        // finally - *no one* should be able to create a version if there is already one "open"
-        // TODO: add check that the "open" version hasn't been flagged as "isClosed"
-        if (studentVersions[0] && new Date().getTime() < studentVersions[0].endTime.getTime()) {
-            next(Boom.badRequest('You already have an open version of this assessment.'));
+        // will never have true + message
+        if (userCanStartNewVersion === false && !_.isNil(message)) {
+            next(Boom.badRequest(message));
         }
 
         const versionInfo = await courseController.createGradeInstancesForAssessment({
-            topicId: topic.id, 
+            topicId: params.id, 
             userId: user.id,
         });
+
         next(httpResponse.Ok('New version of this assessment created successfully', {
             versionInfo,
         }));

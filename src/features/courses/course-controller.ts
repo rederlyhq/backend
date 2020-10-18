@@ -16,7 +16,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, CreateNewStudentTopicAssessmentInfoOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, CreateNewStudentTopicAssessmentInfoOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -2762,6 +2762,67 @@ class CourseController {
         return false;
     };
 
+    async canUserStartNewVersion(options: UserCanStartNewVersionOptions): Promise<UserCanStartNewVersionResult> {
+        const {user, topicId} = options;
+        let userCanStartNewVersion = true;
+        let message = '';
+
+        let topic = await this.getTopicById({ id: topicId }); // includes TopicOverrides
+        const topicInfo = await this.getTopicAssessmentInfoByTopicId({
+            topicId: topicId,
+            userId: user.id
+        }); // method result is ordered by startDate, includes overrides
+        const studentVersions = await this.getStudentTopicAssessmentInfo({
+            topicId: topicId,
+            userId: user.id
+        });
+
+        // deal with overrides
+        const maxVersions = topicInfo.studentTopicAssessmentOverride?.[0]?.maxVersions ?? topicInfo.maxVersions;
+        if (!_.isNil(topic.studentTopicOverride)) {
+            topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
+        }
+
+        // if the assessment has not yet started, students cannot generate a version
+        if (new Date().getTime() < topic.startDate.getTime()) {
+            if (user.roleId === Role.STUDENT) {
+                message = `The topic "${topic.name}" has not started yet.`;
+                userCanStartNewVersion = false;
+            }
+        }
+
+        // check number of versions already used
+        if (studentVersions.length >= maxVersions) {
+            if (user.roleId === Role.STUDENT) {
+                message = 'You have no retakes remaining.';
+                userCanStartNewVersion = false;
+            }
+        }
+
+        // versions remaining, have we waited long enough?
+        if (studentVersions[0] && new Date().getTime() < studentVersions[0].nextVersionAvailableTime.getTime()) {
+            if (user.roleId === Role.STUDENT) {
+                // toLocaleString supports timezone, which we should maybe use?
+                message = `Another version of this assessment will be available after ${studentVersions[0].nextVersionAvailableTime.toLocaleString()}.`;
+                userCanStartNewVersion = false;
+            }
+        }
+
+        // finally - *no one* should be able to create a version if there is already one "open"
+        if (studentVersions[0] && 
+            studentVersions[0].isClosed === false && 
+            new Date().getTime() < studentVersions[0].endTime.getTime()
+        ) {
+            message = 'You already have an open version of this assessment.';
+            userCanStartNewVersion = false;
+        }
+
+        return {
+            userCanStartNewVersion,
+            message
+        };
+    }
+
     scoreAssessment = (results: SubmittedAssessmentResultContext[]): ScoreAssessmentResult => {
         let totalScore = 0;
         let bestVersionScore = 0;
@@ -2773,10 +2834,10 @@ class CourseController {
             totalScore += weight * questionResponse.problem_result.score;
             bestVersionScore += weight * instance.scoreForBestVersion;
             bestOverallVersion += weight * grade.bestScore;
-            problemScores = {[result.instance.problemNumber.toString(10)]: result.questionResponse.problem_result.score * result.weight};
+            problemScores[result.instance.problemNumber.toString(10)] = result.questionResponse.problem_result.score * result.weight;
         });
 
-        problemScores = {total: totalScore}; // scores indexed by problem number, total at [0]
+        problemScores = {total: totalScore};
         return {problemScores, bestVersionScore: bestVersionScore, bestOverallVersion};
     }
 

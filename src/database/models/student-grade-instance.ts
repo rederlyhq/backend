@@ -64,7 +64,7 @@ export default class StudentGradeInstance extends Model implements StudentGradeI
 
 
     public getUser!: BelongsToGetAssociationMixin<User>;
-    public getQuestion!: BelongsToGetAssociationMixin<CourseWWTopicQuestion>;
+    // public getQuestion!: BelongsToGetAssociationMixin<CourseWWTopicQuestion>;
     public getGrade!: BelongsToGetAssociationMixin<StudentGrade>;
     public getWorkbooks!: HasManyGetAssociationsMixin<StudentWorkbook>;
     public getStudentAssessmentInfo!: BelongsToGetAssociationMixin<StudentTopicAssessmentInfo>;
@@ -91,12 +91,6 @@ export default class StudentGradeInstance extends Model implements StudentGradeI
             foreignKey: 'userId',
             targetKey: 'id',
             as: 'user'
-        });
-
-        StudentGradeInstance.belongsTo(CourseWWTopicQuestion, {
-            foreignKey: 'courseWWTopicQuestionId',
-            targetKey: 'id',
-            as: 'question'
         });
 
         StudentGradeInstance.belongsTo(StudentGrade, {
@@ -212,7 +206,6 @@ StudentGradeInstance.init({
 });
 
 import StudentGrade from './student-grade';
-import CourseWWTopicQuestion from './course-ww-topic-question';
 import StudentTopicAssessmentInfo from './student-topic-assessment-info';
 import StudentWorkbook from './student-workbook';
 import User from './user';

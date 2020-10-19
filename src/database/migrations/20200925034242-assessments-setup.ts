@@ -230,7 +230,7 @@ export default {
                     defaultValue: 0
                 },
                 maxAttempts: {
-                    field: 'student_topic_assessment_info_num_attempts',
+                    field: 'student_topic_assessment_info_max_attempts',
                     type: DataTypes.INTEGER,
                     allowNull: false,
                 },

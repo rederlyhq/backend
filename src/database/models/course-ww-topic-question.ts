@@ -103,12 +103,6 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
             sourceKey: 'id',
             as: 'studentGradeInstance'
         });
-
-        CourseWWTopicQuestion.hasOne(CourseQuestionAssessmentInfo, {
-            foreignKey: 'courseWWTopicQuestionId',
-            sourceKey: 'id',
-            as: 'courseQuestionAssessmentInfo'
-        });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }

@@ -2388,7 +2388,7 @@ class CourseController {
                 const topic = await this.getTopicById({id: courseTopicContentId});
                 // TODO remove assessment hardcoding
                 if (topic.topicTypeId === 2 && !_.isNil(userId)) {
-                    questions.asyncForEach(async (question) => {
+                    await questions.asyncForEach(async (question) => {
                         if (_.isNil(question.grades)) throw new RederlyExtendedError('Impossible! Found an assessment question without a grade.');
                         const version = await courseRepository.getCurrentInstanceForQuestion({questionId: question.id, userId});
                         question.webworkQuestionPath = version?.webworkQuestionPath ?? question.webworkQuestionPath;
@@ -2560,7 +2560,7 @@ class CourseController {
     async getStudentTopicAssessmentInfo(options: GetStudentTopicAssessmentInfoOptions): Promise<StudentTopicAssessmentInfo[]> {
         const topicInfo = await TopicAssessmentInfo.findOne({
             where: {
-                courseTopicContentId: options.topicId,
+                id: options.topicAssessmentInfoId,
             }
         });
         if (_.isNil(topicInfo)) throw new IllegalArgumentException('Requested student topic assessment info with a bad topic ID.');
@@ -2802,7 +2802,7 @@ class CourseController {
             userId: user.id
         }); // method result is ordered by startDate, includes overrides
         const versions = await this.getStudentTopicAssessmentInfo({
-            topicId: topicId,
+            topicAssessmentInfoId: topicInfo.id,
             userId: user.id
         });
 
@@ -2877,8 +2877,8 @@ class CourseController {
 
         const questionResponses = [] as SubmittedAssessmentResultContext[];
         await studentGradeInstances.asyncForEach(async (instance) => {
-            const question = await instance.getQuestion(); // getting this just for weight -- will save queries later
             const grade = await instance.getGrade(); // passing studentGrade, studentGradeInstance, and questionResponse for grading
+            const question = await grade.getQuestion(); // getting this just for weight -- will save queries later
 
             const getProblemParams: GetProblemParameters = {
                 formURL: '/', // we don't care about this - no one sees the rendered version

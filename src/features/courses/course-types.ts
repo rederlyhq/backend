@@ -51,7 +51,7 @@ export interface GetTopicAssessmentInfoByTopicIdOptions {
 }
 
 export interface GetStudentTopicAssessmentInfoOptions {
-    topicId: number;
+    topicAssessmentInfoId: number;
     userId: number;
 }
 

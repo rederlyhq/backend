@@ -34,7 +34,7 @@ export default class TopicAssessmentInfo extends Model implements TopicAssessmen
     // public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
 
     public readonly studentTopicAssessmentOverride?: StudentTopicAssessmentOverride[];
-    public readonly studentTopicAssessmentInfo?: StudentTopicAssessmentInfo;
+    public readonly studentTopicAssessmentInfo?: StudentTopicAssessmentInfo[];
 
     // timestamps!
     public readonly createdAt!: Date;

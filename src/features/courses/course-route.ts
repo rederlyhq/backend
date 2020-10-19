@@ -226,7 +226,7 @@ router.get('/questions',
                 // get version info - descending by startTime unless specific id is included in query
                 let versions: StudentTopicAssessmentInfo[] | undefined;
                 if (_.isNil(req.query.studentTopicAssessmentInfoId)) {
-                    versions = await courseController.getStudentTopicAssessmentInfo({ userId: user.id, topicAssessmentInfoId: topic.topicAssessmentInfo.id });
+                    versions = _.orderBy(topic.topicAssessmentInfo.studentTopicAssessmentInfo, ['startTime'],'desc');
                     if (_.isNil(versions) || versions.length === 0) {
                         next(httpResponse.Ok('You have not started any versions of this assessment.', {questions: null, topic}));
                         return;
@@ -235,7 +235,6 @@ router.get('/questions',
                     const version = await courseController.getStudentTopicAssessmentInfoById(req.query.studentTopicAssessmentInfoId);
                     versions = [version];
                 }
-                topic.studentTopicAssessmentInfo = versions;
 
                 if (
                     topic.topicAssessmentInfo.hideProblemsAfterFinish && (

@@ -83,16 +83,7 @@ class CourseController {
 
     getTopicById({id, userId, includeQuestions}: {id: number; userId?: number; includeQuestions?: boolean}): Promise<CourseTopicContent> {
         const include = [];
-        include.push({
-            model: TopicAssessmentInfo,
-            as: 'topicAssessmentInfo',
-            required: false,
-            where: {
-                active: true,
-                // courseTopicContentId: id,
-            },
-        });
-
+        const subInclude = [];
         if (!_.isNil(userId)) {
             include.push({
                 model: StudentTopicOverride,
@@ -103,6 +94,17 @@ class CourseController {
                     active: true,
                     userId: userId
                 }
+            });
+            subInclude.push({
+                model: StudentTopicAssessmentInfo,
+                as: 'studentTopicAssessmentInfo',
+                where: {
+                    active: true,
+                    userId,
+                },
+                // order: [
+                //     [StudentTopicAssessmentInfo, 'startTime', 'DESC'],
+                // ]
             });
         }
 
@@ -116,6 +118,17 @@ class CourseController {
                 }
             });
         }
+
+        include.push({
+            model: TopicAssessmentInfo,
+            as: 'topicAssessmentInfo',
+            required: false,
+            where: {
+                active: true,
+                // courseTopicContentId: id,
+            },
+            include: subInclude
+        });
 
         return CourseTopicContent.findOne({
             where: {

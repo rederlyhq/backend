@@ -207,7 +207,7 @@ StudentGradeInstance.init({
         defaultValue: true
     },
     currentProblemState: {
-        field: 'student_grade_current_problem_state',
+        field: 'student_grade_instance_current_problem_state',
         type: DataTypes.JSONB,
         allowNull: true,
     },

@@ -153,11 +153,6 @@ StudentGradeInstance.init({
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    courseWWTopicQuestionId: {
-        field: 'course_topic_question_id',
-        type: DataTypes.INTEGER,
-        allowNull: false,
-    },
     studentTopicAssessmentInfoId: {
         field: 'student_topic_assessment_info_id',
         type: DataTypes.INTEGER,

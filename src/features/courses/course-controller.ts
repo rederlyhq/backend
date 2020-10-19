@@ -2645,7 +2645,8 @@ class CourseController {
     // does this actually belong in course-repository?
     async createStudentTopicAssessmentInfo(options: CreateNewStudentTopicAssessmentInfoOptions): Promise<StudentTopicAssessmentInfo> {
         const { 
-            courseTopicContentId,
+            userId,
+            topicAssessmentInfoId,
             startTime,
             endTime,
             nextVersionAvailableTime,
@@ -2653,7 +2654,8 @@ class CourseController {
         } = options;
         try {
             return await StudentTopicAssessmentInfo.create({
-                courseTopicContentId,
+                userId,
+                topicAssessmentInfoId,
                 startTime,
                 endTime,
                 nextVersionAvailableTime,
@@ -2678,34 +2680,55 @@ class CourseController {
         } 
 
         const nextVersionAvailableTime = moment(startTime).add(topicInfo.versionDelay, 'minutes');
-        const problemOrder = (topicInfo.randomizeOrder) ? _.shuffle(Array(questions.length)) : Array(questions.length);
+        const problemOrder = (topicInfo.randomizeOrder) ? _.shuffle([...Array(10).keys()]) : [...Array(10).keys()];
+
+        const studentTopicAssessmentInfo = await this.createStudentTopicAssessmentInfo({
+            userId,
+            topicAssessmentInfoId: topicInfo.id,
+            startTime,
+            endTime,
+            nextVersionAvailableTime,
+            maxAttempts: topicInfo.maxGradedAttemptsPerVersion,
+        });
 
         await questions.asyncForEach(async (question, index) => {
-            const questionInfo = await question.getQuestionAssessmentInfo();
-            const randomSeed = _.sample(questionInfo.randomSeedSet) ?? this.generateRandomSeed();
-            const problemPaths = [question.webworkQuestionPath, ...questionInfo.additionalProblemPaths];
-            const webworkQuestionPath = _.sample(problemPaths) ?? question.webworkQuestionPath; // coalesce required because _.sample() is string | undefined
+            const questionInfo = await question.getCourseQuestionAssessmentInfo();
+            const questionGrade = await StudentGrade.findOne({
+                where: {
+                    userId,
+                    courseWWTopicQuestionId: question.id,
+                    active: true
+                }
+            });
+            if (_.isNil(questionGrade)) throw new WrappedError(`Question id: ${question.id} has no corresponding grade.`);
+            let randomSeed: number | undefined;
+            let webworkQuestionPath: string | undefined;
+            if (_.isNil(questionInfo)) {
+                randomSeed = this.generateRandomSeed();
+                webworkQuestionPath = question.webworkQuestionPath;
+            } else {
+                randomSeed = _.sample(questionInfo.randomSeedSet) ?? this.generateRandomSeed(); // coalesce should NEVER happen - but TS doesn't recognize that _.sample(nonEmptyArray) will not return undefined
+                const problemPaths = [...new Set([question.webworkQuestionPath, ...questionInfo.additionalProblemPaths])]; // Set removes duplicates
+                webworkQuestionPath = _.sample(problemPaths) ?? question.webworkQuestionPath; // same coalesce chicanery to mollify TS _.sample() is string | undefined
+            }
             await this.createNewStudentGradeInstance({
-                courseTopicQuestionId: question.id,
+                studentGradeId: questionGrade.id,
+                studentTopicAssessmentInfoId: studentTopicAssessmentInfo.id,
                 webworkQuestionPath,
                 randomSeed,
                 userId,
                 problemNumber: problemOrder[index],
             });
         });
-        return await this.createStudentTopicAssessmentInfo({
-            courseTopicContentId: topicId,
-            startTime,
-            endTime,
-            nextVersionAvailableTime,
-            maxAttempts: topicInfo.maxGradedAttemptsPerVersion,
-        });
+
+        return studentTopicAssessmentInfo;
     }
 
    async createNewStudentGradeInstance(options: CreateNewStudentGradeInstanceOptions): Promise<StudentGradeInstance> {
         const {
             userId,
-            courseTopicQuestionId,
+            studentGradeId,
+            studentTopicAssessmentInfoId,
             webworkQuestionPath,
             randomSeed,
             problemNumber
@@ -2713,7 +2736,8 @@ class CourseController {
         try {
             return await StudentGradeInstance.create({
                 userId,
-                courseWWTopicQuestionId: courseTopicQuestionId,
+                studentGradeId,
+                studentTopicAssessmentInfoId,
                 webworkQuestionPath,
                 randomSeed,
                 problemNumber,

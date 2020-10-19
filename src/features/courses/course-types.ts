@@ -341,14 +341,16 @@ export interface CreateNewStudentGradeOptions {
 
 export interface CreateNewStudentGradeInstanceOptions {
     userId: number;
-    courseTopicQuestionId: number;
+    studentGradeId: number;
+    studentTopicAssessmentInfoId: number;
     webworkQuestionPath: string;
     randomSeed: number;
     problemNumber: number;
 }
 
 export interface CreateNewStudentTopicAssessmentInfoOptions {
-    courseTopicContentId: number;
+    userId: number;
+    topicAssessmentInfoId: number;
     startTime: moment.Moment;
     endTime: moment.Moment;
     nextVersionAvailableTime: moment.Moment;

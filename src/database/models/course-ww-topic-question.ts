@@ -33,7 +33,7 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
     
     public getTopic!: BelongsToGetAssociationMixin<CourseTopicContent>;
     public getGrades!: HasManyGetAssociationsMixin<StudentGrade>;
-    public getQuestionAssessmentInfo!: HasOneGetAssociationMixin<CourseQuestionAssessmentInfo>;
+    public getCourseQuestionAssessmentInfo!: HasOneGetAssociationMixin<CourseQuestionAssessmentInfo>;
     public getStudentTopicQuestionOverride!: HasManyGetAssociationsMixin<StudentTopicQuestionOverride>;
     public getStudentGradeInstances!: HasManyGetAssociationsMixin<StudentGradeInstance>;
 
@@ -102,6 +102,12 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
             foreignKey: 'courseWWTopicQuestionId',
             sourceKey: 'id',
             as: 'studentGradeInstance'
+        });
+
+        CourseWWTopicQuestion.hasOne(CourseQuestionAssessmentInfo, {
+            foreignKey: 'courseWWTopicQuestionId',
+            sourceKey: 'id',
+            as: 'courseQuestionAssessmentInfo'
         });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }

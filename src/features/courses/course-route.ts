@@ -227,7 +227,10 @@ router.get('/questions',
                 let versions: StudentTopicAssessmentInfo[] | undefined;
                 if (_.isNil(req.query.studentTopicAssessmentInfoId)) {
                     versions = await courseController.getStudentTopicAssessmentInfo({ userId: user.id, topicId: req.query.courseTopicContentId });
-                    if (versions.length === 0) next(httpResponse.Ok('You have not started any versions of this assessment.', {questions: null, topic}));
+                    if (_.isNil(versions) || versions.length === 0) {
+                        next(httpResponse.Ok('You have not started any versions of this assessment.', {questions: null, topic}));
+                        return;
+                    }
                 } else {
                     const version = await courseController.getStudentTopicAssessmentInfoById(req.query.studentTopicAssessmentInfoId);
                     versions = [version];

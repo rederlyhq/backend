@@ -444,7 +444,7 @@ class CourseRepository {
     async getQuestionsFromTopicId(options: GetQuestionRepositoryOptions): Promise<CourseWWTopicQuestion[]> {
         const result = await CourseWWTopicQuestion.findAll({
             where: {
-                id: options.id,
+                courseTopicContentId: options.id,
                 active: true
             },
         });

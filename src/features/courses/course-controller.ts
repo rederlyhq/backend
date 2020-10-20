@@ -84,16 +84,7 @@ class CourseController {
 
     getTopicById({id, userId, includeQuestions}: {id: number; userId?: number; includeQuestions?: boolean}): Promise<CourseTopicContent> {
         const include = [];
-        include.push({
-            model: TopicAssessmentInfo,
-            as: 'topicAssessmentInfo',
-            required: false,
-            where: {
-                active: true,
-                // courseTopicContentId: id,
-            },
-        });
-
+        const subInclude = [];
         if (!_.isNil(userId)) {
             include.push({
                 model: StudentTopicOverride,
@@ -104,6 +95,17 @@ class CourseController {
                     active: true,
                     userId: userId
                 }
+            });
+            subInclude.push({
+                model: StudentTopicAssessmentInfo,
+                as: 'studentTopicAssessmentInfo',
+                where: {
+                    active: true,
+                    userId,
+                },
+                // order: [
+                //     [StudentTopicAssessmentInfo, 'startTime', 'DESC'],
+                // ]
             });
         }
 
@@ -125,6 +127,17 @@ class CourseController {
                 }]
             });
         }
+
+        include.push({
+            model: TopicAssessmentInfo,
+            as: 'topicAssessmentInfo',
+            required: false,
+            where: {
+                active: true,
+                // courseTopicContentId: id,
+            },
+            include: subInclude
+        });
 
         return CourseTopicContent.findOne({
             where: {
@@ -2397,7 +2410,7 @@ class CourseController {
                 const topic = await this.getTopicById({id: courseTopicContentId});
                 // TODO remove assessment hardcoding
                 if (topic.topicTypeId === 2 && !_.isNil(userId)) {
-                    questions.asyncForEach(async (question) => {
+                    await questions.asyncForEach(async (question) => {
                         if (_.isNil(question.grades)) throw new RederlyExtendedError('Impossible! Found an assessment question without a grade.');
                         const version = await courseRepository.getCurrentInstanceForQuestion({questionId: question.id, userId});
                         question.webworkQuestionPath = version?.webworkQuestionPath ?? question.webworkQuestionPath;
@@ -2569,7 +2582,7 @@ class CourseController {
     async getStudentTopicAssessmentInfo(options: GetStudentTopicAssessmentInfoOptions): Promise<StudentTopicAssessmentInfo[]> {
         const topicInfo = await TopicAssessmentInfo.findOne({
             where: {
-                courseTopicContentId: options.topicId,
+                id: options.topicAssessmentInfoId,
             }
         });
         if (_.isNil(topicInfo)) throw new IllegalArgumentException('Requested student topic assessment info with a bad topic ID.');
@@ -2654,7 +2667,8 @@ class CourseController {
     // does this actually belong in course-repository?
     async createStudentTopicAssessmentInfo(options: CreateNewStudentTopicAssessmentInfoOptions): Promise<StudentTopicAssessmentInfo> {
         const { 
-            courseTopicContentId,
+            userId,
+            topicAssessmentInfoId,
             startTime,
             endTime,
             nextVersionAvailableTime,
@@ -2662,7 +2676,8 @@ class CourseController {
         } = options;
         try {
             return await StudentTopicAssessmentInfo.create({
-                courseTopicContentId,
+                userId,
+                topicAssessmentInfoId,
                 startTime,
                 endTime,
                 nextVersionAvailableTime,
@@ -2687,34 +2702,55 @@ class CourseController {
         } 
 
         const nextVersionAvailableTime = moment(startTime).add(topicInfo.versionDelay, 'minutes');
-        const problemOrder = (topicInfo.randomizeOrder) ? _.shuffle(Array(questions.length)) : Array(questions.length);
+        const problemOrder = (topicInfo.randomizeOrder) ? _.shuffle([...Array(10).keys()]) : [...Array(10).keys()];
+
+        const studentTopicAssessmentInfo = await this.createStudentTopicAssessmentInfo({
+            userId,
+            topicAssessmentInfoId: topicInfo.id,
+            startTime,
+            endTime,
+            nextVersionAvailableTime,
+            maxAttempts: topicInfo.maxGradedAttemptsPerVersion,
+        });
 
         await questions.asyncForEach(async (question, index) => {
             const questionInfo = await question.getCourseQuestionAssessmentInfo();
-            const randomSeed = _.sample(questionInfo.randomSeedSet) ?? this.generateRandomSeed();
-            const problemPaths = [question.webworkQuestionPath, ...questionInfo.additionalProblemPaths];
-            const webworkQuestionPath = _.sample(problemPaths) ?? question.webworkQuestionPath; // coalesce required because _.sample() is string | undefined
+            const questionGrade = await StudentGrade.findOne({
+                where: {
+                    userId,
+                    courseWWTopicQuestionId: question.id,
+                    active: true
+                }
+            });
+            if (_.isNil(questionGrade)) throw new WrappedError(`Question id: ${question.id} has no corresponding grade.`);
+            let randomSeed: number | undefined;
+            let webworkQuestionPath: string | undefined;
+            if (_.isNil(questionInfo)) {
+                randomSeed = this.generateRandomSeed();
+                webworkQuestionPath = question.webworkQuestionPath;
+            } else {
+                randomSeed = _.sample(questionInfo.randomSeedSet) ?? this.generateRandomSeed(); // coalesce should NEVER happen - but TS doesn't recognize that _.sample(nonEmptyArray) will not return undefined
+                const problemPaths = [...new Set([question.webworkQuestionPath, ...questionInfo.additionalProblemPaths])]; // Set removes duplicates
+                webworkQuestionPath = _.sample(problemPaths) ?? question.webworkQuestionPath; // same coalesce chicanery to mollify TS _.sample() is string | undefined
+            }
             await this.createNewStudentGradeInstance({
-                courseTopicQuestionId: question.id,
+                studentGradeId: questionGrade.id,
+                studentTopicAssessmentInfoId: studentTopicAssessmentInfo.id,
                 webworkQuestionPath,
                 randomSeed,
                 userId,
                 problemNumber: problemOrder[index],
             });
         });
-        return await this.createStudentTopicAssessmentInfo({
-            courseTopicContentId: topicId,
-            startTime,
-            endTime,
-            nextVersionAvailableTime,
-            maxAttempts: topicInfo.maxGradedAttemptsPerVersion,
-        });
+
+        return studentTopicAssessmentInfo;
     }
 
    async createNewStudentGradeInstance(options: CreateNewStudentGradeInstanceOptions): Promise<StudentGradeInstance> {
         const {
             userId,
-            courseTopicQuestionId,
+            studentGradeId,
+            studentTopicAssessmentInfoId,
             webworkQuestionPath,
             randomSeed,
             problemNumber
@@ -2722,7 +2758,8 @@ class CourseController {
         try {
             return await StudentGradeInstance.create({
                 userId,
-                courseWWTopicQuestionId: courseTopicQuestionId,
+                studentGradeId,
+                studentTopicAssessmentInfoId,
                 webworkQuestionPath,
                 randomSeed,
                 problemNumber,
@@ -2787,7 +2824,7 @@ class CourseController {
             userId: user.id
         }); // method result is ordered by startDate, includes overrides
         const versions = await this.getStudentTopicAssessmentInfo({
-            topicId: topicId,
+            topicAssessmentInfoId: topicInfo.id,
             userId: user.id
         });
 
@@ -2862,8 +2899,8 @@ class CourseController {
 
         const questionResponses = [] as SubmittedAssessmentResultContext[];
         await studentGradeInstances.asyncForEach(async (instance) => {
-            const question = await instance.getQuestion(); // getting this just for weight -- will save queries later
             const grade = await instance.getGrade(); // passing studentGrade, studentGradeInstance, and questionResponse for grading
+            const question = await grade.getQuestion(); // getting this just for weight -- will save queries later
 
             const getProblemParams: GetProblemParameters = {
                 formURL: '/', // we don't care about this - no one sees the rendered version

@@ -88,6 +88,12 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
             as: 'curriculumQuestion'
         });
 
+        CourseWWTopicQuestion.hasOne(CourseQuestionAssessmentInfo, {
+            foreignKey: 'courseWWTopicQuestionId',
+            sourceKey: 'id',
+            as: 'courseQuestionAssessmentInfo'
+        });
+        
         CourseWWTopicQuestion.hasMany(StudentGrade, {
             foreignKey: 'courseWWTopicQuestionId',
             sourceKey: 'id',
@@ -98,18 +104,6 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
             foreignKey: 'courseTopicQuestionId',
             sourceKey: 'id',
             as: 'studentTopicQuestionOverride'
-        });
-
-        CourseWWTopicQuestion.hasOne(CourseQuestionAssessmentInfo, {
-            foreignKey: 'courseTopicQuestionId',
-            sourceKey: 'id',
-            as: 'courseQuestionAssessmentInfo'
-        });
-        
-        CourseWWTopicQuestion.hasMany(StudentGradeInstance, {
-            foreignKey: 'courseWWTopicQuestionId',
-            sourceKey: 'id',
-            as: 'studentGradeInstance'
         });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }

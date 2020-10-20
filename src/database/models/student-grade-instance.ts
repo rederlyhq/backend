@@ -64,7 +64,7 @@ export default class StudentGradeInstance extends Model implements StudentGradeI
 
 
     public getUser!: BelongsToGetAssociationMixin<User>;
-    public getQuestion!: BelongsToGetAssociationMixin<CourseWWTopicQuestion>;
+    // public getQuestion!: BelongsToGetAssociationMixin<CourseWWTopicQuestion>;
     public getGrade!: BelongsToGetAssociationMixin<StudentGrade>;
     public getWorkbooks!: HasManyGetAssociationsMixin<StudentWorkbook>;
     public getStudentAssessmentInfo!: BelongsToGetAssociationMixin<StudentTopicAssessmentInfo>;
@@ -93,12 +93,6 @@ export default class StudentGradeInstance extends Model implements StudentGradeI
             as: 'user'
         });
 
-        StudentGradeInstance.belongsTo(CourseWWTopicQuestion, {
-            foreignKey: 'courseWWTopicQuestionId',
-            targetKey: 'id',
-            as: 'question'
-        });
-
         StudentGradeInstance.belongsTo(StudentGrade, {
             foreignKey: 'studentGradeId',
             targetKey: 'id',
@@ -115,7 +109,6 @@ export default class StudentGradeInstance extends Model implements StudentGradeI
             foreignKey: 'studentGradeInstanceId',
             sourceKey: 'id',
             as: 'workbooks',
-            constraints: false,
         });
 
         StudentGradeInstance.belongsTo(StudentWorkbook, {
@@ -152,11 +145,6 @@ StudentGradeInstance.init({
         field: 'user_id',
         type: DataTypes.INTEGER,
         allowNull: false
-    },
-    courseWWTopicQuestionId: {
-        field: 'course_topic_question_id',
-        type: DataTypes.INTEGER,
-        allowNull: false,
     },
     studentTopicAssessmentInfoId: {
         field: 'student_topic_assessment_info_id',
@@ -207,7 +195,7 @@ StudentGradeInstance.init({
         defaultValue: true
     },
     currentProblemState: {
-        field: 'student_grade_current_problem_state',
+        field: 'student_grade_instance_current_problem_state',
         type: DataTypes.JSONB,
         allowNull: true,
     },
@@ -217,7 +205,6 @@ StudentGradeInstance.init({
 });
 
 import StudentGrade from './student-grade';
-import CourseWWTopicQuestion from './course-ww-topic-question';
 import StudentTopicAssessmentInfo from './student-topic-assessment-info';
 import StudentWorkbook from './student-workbook';
 import User from './user';

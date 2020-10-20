@@ -212,6 +212,7 @@ export default {
                     field: 'student_topic_assessment_info_next_version_time',
                     type: DataTypes.DATE,
                     allowNull: false,
+                    // Incorrect type on sequelize
                     // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
                     // @ts-ignore
                     defaultValue: queryInterface.sequelize.literal('NOW()')
@@ -229,7 +230,7 @@ export default {
                     defaultValue: 0
                 },
                 maxAttempts: {
-                    field: 'student_topic_assessment_info_num_attempts',
+                    field: 'student_topic_assessment_info_max_attempts',
                     type: DataTypes.INTEGER,
                     allowNull: false,
                 },
@@ -289,18 +290,6 @@ export default {
                     references: {
                         model: 'users',
                         key: 'user_id',
-                    },
-                },
-                courseWWTopicQuestionId: {
-                    field: 'course_topic_question_id',
-                    type: DataTypes.INTEGER,
-                    allowNull: false,
-                    // Defaults to cascade when generating the db, no action on migrations
-                    onUpdate: 'CASCADE',
-                    // Different from sequelize model, on models I do this with associations so I can use types
-                    references: {
-                        model: 'course_topic_question',
-                        key: 'course_topic_question_id',
                     },
                 },
                 studentTopicAssessmentInfoId: {

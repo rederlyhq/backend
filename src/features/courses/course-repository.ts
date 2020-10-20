@@ -410,6 +410,16 @@ class CourseRepository {
         return result + 1;
     }
 
+    async getTopicAssessmentInfoByTopicId(topicId: number): Promise<TopicAssessmentInfo> {
+        const result = await TopicAssessmentInfo.findOne({
+            where: {
+                courseTopicContentId: topicId,
+                active: true,
+            }
+        });
+        if (_.isNil(result)) throw new WrappedError(`There is no topic assessment info for topic id: ${topicId}`);
+        return result;
+    }
     /* ************************* ************************* */
     /* ******************** Questions ******************** */
     /* ************************* ************************* */
@@ -445,7 +455,7 @@ class CourseRepository {
     async getQuestionsFromTopicId(options: GetQuestionRepositoryOptions): Promise<CourseWWTopicQuestion[]> {
         const result = await CourseWWTopicQuestion.findAll({
             where: {
-                id: options.id,
+                courseTopicContentId: options.id,
                 active: true
             },
         });
@@ -483,6 +493,7 @@ class CourseRepository {
         // gradeId + studentTopicAssessmentInfoId -> GradeInstance
         const question = await this.getQuestion({id: options.questionId});
         const topicId = question.courseTopicContentId;
+        const topicInfo = await this.getTopicAssessmentInfoByTopicId(topicId);
         const studentGrade = await StudentGrade.findOne({
             where: {
                 userId: options.userId,
@@ -493,7 +504,7 @@ class CourseRepository {
 
         const assessmentInfo = await StudentTopicAssessmentInfo.findAll({
             where: {
-                topicId,
+                topicAssessmentInfoId: topicInfo.id,
                 userId: options.userId,
             },
             order: [

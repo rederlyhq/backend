@@ -57,7 +57,7 @@ const limiter = rateLimit({
     skip: (req: Request): boolean => {
         const { path: reqPath } = req;
         if (!baseUrlRegex.test(reqPath)) {
-            logger.error(`A request a come in that did not meet the baseURL, this should not be possible! ${reqPath}`);
+            logger.error(`A request came in that did not match the baseURL; this should not be possible!`, reqPath);
         }
 
         let result = false;

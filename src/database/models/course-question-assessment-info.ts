@@ -1,7 +1,7 @@
 import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
-interface CourseQuestionAssessmentInfoInterface {
+export interface CourseQuestionAssessmentInfoInterface {
     id: number;
     courseWWTopicQuestionId: number;
     randomSeedSet: Array<number>;

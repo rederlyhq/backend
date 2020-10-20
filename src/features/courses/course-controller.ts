@@ -38,6 +38,7 @@ import StudentGradeOverride from '../../database/models/student-grade-override';
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 import StudentTopicAssessmentOverride from '../../database/models/student-topic-assessment-override';
 import TopicAssessmentInfo from '../../database/models/topic-assessment-info';
+import CourseQuestionAssessmentInfo from '../../database/models/course-question-assessment-info';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -113,7 +114,15 @@ class CourseController {
                 required: false,
                 where: {
                     active: true,
-                }
+                },
+                include: [{
+                    model: CourseQuestionAssessmentInfo,
+                    as: 'courseQuestionAssessmentInfo',
+                    required: false,
+                    where: {
+                        active: true,
+                    }
+                }]
             });
         }
 

@@ -212,7 +212,9 @@ export default {
                     field: 'student_topic_assessment_info_next_version_time',
                     type: DataTypes.DATE,
                     allowNull: false,
-                    defaultValue: 'NOW()'
+                    // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+                    // @ts-ignore
+                    defaultValue: queryInterface.sequelize.literal('NOW()')
                 },
                 active: {
                     field: 'student_topic_assessment_info_active',

@@ -17,6 +17,7 @@ export interface CourseWWTopicQuestionInterface {
     curriculumQuestionId: number;
     createdAt: Date;
     updatedAt: Date;
+    courseQuestionAssessmentInfo?: CourseQuestionAssessmentInfo;
 }
 
 export default class CourseWWTopicQuestion extends Model implements CourseWWTopicQuestionInterface {
@@ -37,7 +38,7 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
     public getStudentTopicQuestionOverride!: HasManyGetAssociationsMixin<StudentTopicQuestionOverride>;
     public getStudentGradeInstances!: HasManyGetAssociationsMixin<StudentGradeInstance>;
 
-    public readonly courseQuestionAssessmentInfo?: CourseQuestionAssessmentInfo;
+    public courseQuestionAssessmentInfo?: CourseQuestionAssessmentInfo;
     public readonly studentTopicQuestionOverride?: StudentTopicQuestionOverride[];
     public readonly grades?: StudentGrade;
     public gradeInstances?: StudentGradeInstance[];

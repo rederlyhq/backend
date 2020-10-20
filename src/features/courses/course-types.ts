@@ -7,11 +7,13 @@ import { WhereOptions } from 'sequelize/types';
 import CourseUnitContent from '../../database/models/course-unit-content';
 import CourseTopicContent, { CourseTopicContentInterface } from '../../database/models/course-topic-content';
 import Role from '../permissions/roles';
-import { OutputFormat } from '../../utilities/renderer-helper';
+import { OutputFormat, RendererResponse } from '../../utilities/renderer-helper';
 import { Moment } from 'moment';
 import { DetermineGradingRationaleResult } from '../../utilities/grading-helper';
+import StudentGradeInstance from '../../database/models/student-grade-instance';
 import StudentTopicOverride from '../../database/models/student-topic-override';
 import StudentTopicQuestionOverride from '../../database/models/student-topic-question-override';
+import { DeepPartial } from '../../utilities/typescript-helpers';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -25,10 +27,11 @@ export interface CourseListOptions {
     };
 }
 
-export interface GetQuestionOptions {
-    userId: number;
-    questionId: number;
-}
+// this is defined twice
+// export interface GetQuestionOptions {
+//     userId: number;
+//     questionId: number;
+// }
 
 export interface GetQuestionRepositoryOptions {
     id: number;
@@ -39,6 +42,28 @@ export interface GetCourseTopicRepositoryOptions {
     id: number;
     // For overrides
     userId?: number;
+}
+
+export interface GetTopicAssessmentInfoByTopicIdOptions {
+    topicId: number;
+    // For overrides
+    userId?: number;
+}
+
+export interface GetStudentTopicAssessmentInfoOptions {
+    topicAssessmentInfoId: number;
+    userId: number;
+}
+
+export interface GetQuestionVersionDetailsOptions {
+    questionId: number;
+    userId: number;
+}
+
+export interface QuestionVersionDetails {
+    webworkQuestionPath: string;
+    problemNumber: number;
+    randomSeed: number;
 }
 
 // TODO make generic interface
@@ -53,7 +78,7 @@ export interface UpdateTopicOptions {
     // Updates can take any form, i.e. I can have problemNumber: { [sequelize.OP.gte]: 0 } or sequelize.literal
     // TODO further investigation if there is any way for the suggested type to show but allow other values
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    updates: Partial<CourseTopicContent>;
+    updates: DeepPartial<CourseTopicContent>;
     checkDates?: boolean;
 }
 
@@ -139,6 +164,14 @@ export interface UpdateGradeOptions {
         id: number;
     };
     updates: Partial<StudentGrade>;
+    initiatingUserId: number;
+}
+
+export interface UpdateGradeInstanceOptions {
+    where: {
+        id: number;
+    };
+    updates: Partial<StudentGradeInstance>;
     initiatingUserId: number;
 }
 
@@ -239,6 +272,35 @@ export interface SubmitAnswerResult {
     studentWorkbook: StudentWorkbook | null;
 }
 
+export interface UserCanStartNewVersionOptions {
+    user: User;
+    topicId: number;
+}
+
+export interface UserCanStartNewVersionResult {
+    userCanStartNewVersion: boolean;
+    message?: string;
+}
+
+export interface SubmittedAssessmentResultContext {
+    questionResponse: RendererResponse;
+    grade: StudentGrade;
+    instance: StudentGradeInstance;
+    weight: number;
+}
+
+export interface ScoreAssessmentResult {
+    problemScores: { [key: string]: number };
+    bestVersionScore: number;
+    bestOverallVersion: number;
+}
+
+export interface SubmitAssessmentAnswerResult {
+    problemScores?: { [key: string]: number };
+    bestVersionScore?: number;
+    bestOverallVersion?: number;
+}
+
 export interface FindMissingGradesResult {
     student: User;
     question: CourseWWTopicQuestion;
@@ -275,6 +337,33 @@ export interface CreateGradesForQuestionOptions {
 export interface CreateNewStudentGradeOptions {
     userId: number;
     courseTopicQuestionId: number;
+}
+
+export interface CreateNewStudentGradeInstanceOptions {
+    userId: number;
+    studentGradeId: number;
+    studentTopicAssessmentInfoId: number;
+    webworkQuestionPath: string;
+    randomSeed: number;
+    problemNumber: number;
+}
+
+export interface CreateNewStudentTopicAssessmentInfoOptions {
+    userId: number;
+    topicAssessmentInfoId: number;
+    startTime: moment.Moment;
+    endTime: moment.Moment;
+    nextVersionAvailableTime: moment.Moment;
+    maxAttempts: number;
+}
+
+export interface GetQuestionsForThisAssessmentOptions {
+    topicId: number;
+}
+
+export interface CreateGradeInstancesForAssessmentOptions {
+    userId: number;
+    topicId: number;
 }
 
 export interface CreateQuestionsForTopicFromDefFileContentOptions {

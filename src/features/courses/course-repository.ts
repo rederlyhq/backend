@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import WrappedError from '../../exceptions/wrapped-error';
 import { Constants } from '../../constants';
-import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, ExtendTopicForUserOptions, ExtendTopicQuestionForUserOptions } from './course-types';
+import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, UpdateGradeInstanceOptions, ExtendTopicForUserOptions, ExtendTopicQuestionForUserOptions, GetQuestionVersionDetailsOptions } from './course-types';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 import NotFoundError from '../../exceptions/not-found-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
@@ -18,9 +18,11 @@ import StudentTopicOverride from '../../database/models/student-topic-override';
 import StudentTopicQuestionOverride from '../../database/models/student-topic-question-override';
 import StudentGradeOverride from '../../database/models/student-grade-override';
 import StudentGradeLockAction from '../../database/models/student-grade-lock-action';
+import StudentGradeInstance from '../../database/models/student-grade-instance';
 import * as moment from 'moment';
 import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
-
+import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
+import TopicAssessmentInfo from '../../database/models/topic-assessment-info';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -207,6 +209,16 @@ class CourseRepository {
                 id: options.id,
                 active: true
             },
+            include: [
+                {
+                    model: TopicAssessmentInfo,
+                    as: 'topicAssessmentInfo',
+                    where: {
+                        active: true
+                    },
+                    required: false
+                }
+            ]
         });
         if (_.isNil(result)) {
             throw new NotFoundError('The requested topic does not exist');
@@ -254,7 +266,8 @@ class CourseRepository {
             checkDates = true
         } = options;
         if (checkDates) {
-            const dueDates = _.compact([options.updates.endDate?.toMoment(), options.updates.deadDate?.toMoment()]);
+            // The use of DeepPartial on the type causes toMoment to be nullable.
+            const dueDates = _.compact([options.updates.endDate?.toMoment?.(), options.updates.deadDate?.toMoment?.()]);
             // moment.min([]) returns right now, so if there are no due dates we def don't want to throw an error
             // Otherwise you can't set due dates in the past
             if (dueDates.length > 0 && moment.min(...dueDates).isBefore(moment())) {
@@ -263,6 +276,7 @@ class CourseRepository {
         }
         
         try {
+            // console.log(options);
             const updates = await CourseTopicContent.update(options.updates, {
                 where: {
                     ...options.where,
@@ -270,6 +284,19 @@ class CourseRepository {
                 },
                 returning: true,
             });
+
+            if (updates[0] === 1 && !_.isEmpty(options.updates.topicAssessmentInfo)) {
+                const updatedObj: CourseTopicContent = updates[1][0];
+                let toUpdate = await updatedObj.getTopicAssessmentInfo();
+                if (_.isNil(toUpdate)) {
+                    toUpdate = await TopicAssessmentInfo.create({
+                        courseTopicContentId: updatedObj.id
+                    });
+                }
+                _.assign(toUpdate, options.updates.topicAssessmentInfo);
+                toUpdate.save();
+            }
+
             return {
                 updatedCount: updates[0],
                 updatedRecords: updates[1],
@@ -382,6 +409,16 @@ class CourseRepository {
         return result + 1;
     }
 
+    async getTopicAssessmentInfoByTopicId(topicId: number): Promise<TopicAssessmentInfo> {
+        const result = await TopicAssessmentInfo.findOne({
+            where: {
+                courseTopicContentId: topicId,
+                active: true,
+            }
+        });
+        if (_.isNil(result)) throw new WrappedError(`There is no topic assessment info for topic id: ${topicId}`);
+        return result;
+    }
     /* ************************* ************************* */
     /* ******************** Questions ******************** */
     /* ************************* ************************* */
@@ -414,6 +451,19 @@ class CourseRepository {
         return result;
     }
 
+    async getQuestionsFromTopicId(options: GetQuestionRepositoryOptions): Promise<CourseWWTopicQuestion[]> {
+        const result = await CourseWWTopicQuestion.findAll({
+            where: {
+                courseTopicContentId: options.id,
+                active: true
+            },
+        });
+        if (_.isNil(result)) {
+            throw new NotFoundError('Questions requested from a non-existent topic');
+        }
+        return result;
+    }
+
     private checkQuestionError(e: Error): void {
         if (e instanceof BaseError === false) {
             throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
@@ -429,6 +479,52 @@ class CourseRepository {
         }
     }
     
+    /**
+     * This function takes a questionId and a userId
+     * It fetches the current gradeInstance, if one exists - returning undefined if there are no current gradeInstances
+     * @param options: {questionId, userId}
+     */
+    async getCurrentInstanceForQuestion(options: GetQuestionVersionDetailsOptions): Promise<StudentGradeInstance | null> {
+        // requires a userId and a questionId
+        // questionId -> courseTopicContentId (unique, no query)
+        // questionId + userId -> StudentGrade (unique)
+        // topicId + userId -> StudentTopicAssessmentInfo (many, but only one current?)
+        // gradeId + studentTopicAssessmentInfoId -> GradeInstance
+        const question = await this.getQuestion({id: options.questionId});
+        const topicId = question.courseTopicContentId;
+        const topicInfo = await this.getTopicAssessmentInfoByTopicId(topicId);
+        const studentGrade = await StudentGrade.findOne({
+            where: {
+                userId: options.userId,
+                courseWWTopicQuestionId: options.questionId,
+            }
+        });
+        if (_.isNil(studentGrade)) throw new IllegalArgumentException('No current version to get when there is no grade for this user.');
+
+        const assessmentInfo = await StudentTopicAssessmentInfo.findAll({
+            where: {
+                topicAssessmentInfoId: topicInfo.id,
+                userId: options.userId,
+            },
+            order: [
+                ['endTime', 'DESC'],
+            ]
+        });
+
+        // no versions created, or the most recent version timed out or was closed early
+        if (_.isNil(assessmentInfo) || moment(assessmentInfo[0].endTime).isBefore(moment()) || assessmentInfo[0].isClosed) return null; // no current version available
+
+        const gradeInstance = await StudentGradeInstance.findOne({
+            where: {
+                studentGradeId: studentGrade.id,
+                studentTopicAssessmentInfoId: assessmentInfo[0].id,
+            }
+        });
+        if (_.isNil(gradeInstance)) throw new Error('Impossible! There is a current assessment without matching grade instance.');
+
+        return gradeInstance;
+    }
+
     async updateQuestions(options: UpdateQuestionsOptions): Promise<UpdateResult<CourseWWTopicQuestion>> {
         try {
             const updates = await CourseWWTopicQuestion.update(options.updates, {
@@ -531,6 +627,26 @@ class CourseRepository {
     async updateGrade(options: UpdateGradeOptions): Promise<UpdateResult<StudentGrade>> {
         try {
             const updates = await StudentGrade.update(options.updates, {
+                where: {
+                    ...options.where,
+                    active: true
+                },
+                returning: true,
+            });
+            return {
+                updatedCount: updates[0],
+                updatedRecords: updates[1],
+            };
+        } catch (e) {
+            // this.checkGradeError(e);
+            throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
+        }
+    }
+
+    // this essentially replicates updateGrade -- seems unnecessary, but the tables are different
+    async updateGradeInstance(options: UpdateGradeInstanceOptions): Promise<UpdateResult<StudentGradeInstance>> {
+        try {
+            const updates = await StudentGradeInstance.update(options.updates, {
                 where: {
                     ...options.where,
                     active: true

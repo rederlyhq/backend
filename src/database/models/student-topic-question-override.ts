@@ -67,33 +67,33 @@ export default class StudentTopicQuestionOverride extends Model implements Stude
 
 StudentTopicQuestionOverride.init({
     id: {
-      field: 'student_topic_question_override_id',
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
+        field: 'student_topic_question_override_id',
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
     },
     courseTopicQuestionId: {
-      field: 'course_topic_question_id',
-      type: DataTypes.INTEGER,
-      allowNull: false
+        field: 'course_topic_question_id',
+        type: DataTypes.INTEGER,
+        allowNull: false
     },
     userId: {
-      field: 'user_id',
-      type: DataTypes.INTEGER,
-      allowNull: false
+        field: 'user_id',
+        type: DataTypes.INTEGER,
+        allowNull: false
     },
     maxAttempts: {
-      field: 'student_topic_question_override_max_attempts',
-      type: DataTypes.INTEGER,
-      allowNull: true,
+        field: 'student_topic_question_override_max_attempts',
+        type: DataTypes.INTEGER,
+        allowNull: true,
     },
     active: {
-      field: 'student_topic_question_override_active',
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: true
+        field: 'student_topic_question_override_active',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true
     },
-  }, {
+}, {
     tableName: 'student_topic_question_override',
     sequelize: appSequelize, // this bit is important
 });

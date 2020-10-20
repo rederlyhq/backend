@@ -81,6 +81,20 @@ export const updateCourseTopicValidation = {
         // active: Joi.boolean().optional(),
         // Cannot change which curriculum topic it was created from
         // curriculumTopicContentId: Joi.number().optional(),
+
+        // The following fields are only found on exams.
+        topicAssessmentInfo: Joi.object({
+            duration: Joi.number().optional().min(10),
+            maxGradedAttemptsPerVersion: Joi.number().optional().min(0),
+            maxVersions: Joi.number().optional().min(0),
+            versionDelay: Joi.number().optional().min(0),
+            hardCutoff: Joi.boolean().optional(),
+            hideHints: Joi.boolean().optional(),
+            showItemizedResults: Joi.boolean().optional(),
+            showTotalGradeImmediately: Joi.boolean().optional(),
+            hideProblemsAfterFinish: Joi.boolean().optional(),
+            randomizeOrder: Joi.boolean().optional(),
+        }).optional()
     },
     query: {},
 };
@@ -196,6 +210,19 @@ export const updateGradeValidation = {
     query: {},
 };
 
+export const updateGradeInstanceValidation = {
+    params: {
+        id: Joi.number().required()
+    },
+    body: {
+        locked: Joi.boolean().optional(), // removable?
+        currentProblemState: Joi.any().optional()
+        // Deletes are one directional and soft
+        // active: Joi.boolean().optional(),
+    },
+    query: {},
+};
+
 export const createCourseTopicQuestionValidation = {
     params: {},
     body: {
@@ -236,6 +263,7 @@ export const getQuestionValidation = {
         workbookId: Joi.number().optional(),
         readonly: Joi.boolean().optional(),
         userId: Joi.number().optional(),
+        studentTopicAssessmentInfoId: Joi.number().optional(),
     },
     body: {}
 };
@@ -244,7 +272,8 @@ export const getQuestionsValidation = {
     params: {},
     query: {
         userId: Joi.alternatives().try(Joi.string().valid('me').optional(), Joi.number().optional()).optional(),
-        courseTopicContentId: Joi.number().optional()
+        courseTopicContentId: Joi.number().optional(),
+        studentTopicAssessmentInfoId: Joi.number().optional(),
     },
     body: {}
 };
@@ -263,7 +292,8 @@ export const getTopicValidation = {
         id: Joi.number().required(),
     },
     query: {
-        userId: Joi.number().optional()
+        userId: Joi.number().optional(),
+        includeQuestions: Joi.boolean().optional(),
     },
     body: {},
 };
@@ -359,5 +389,22 @@ export const getProblemsValidation = {
         courseTopicContentId: Joi.number().optional(),
         userId: Joi.number().optional(),
     },
+    body: {},
+};
+
+export const createAssessmentVersionValidation = {
+    params: {
+        id: Joi.number().required(),
+    },
+    query: {},
+    body: {},
+};
+
+export const submitAssessmentVersionValidation = {
+    params: {
+        id: Joi.number().required(),
+        version: Joi.number().required(),
+    },
+    query: {},
     body: {},
 };

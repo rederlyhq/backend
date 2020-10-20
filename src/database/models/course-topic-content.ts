@@ -1,4 +1,4 @@
-import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin } from 'sequelize';
+import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin, HasOneGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 import * as _ from 'lodash';
 
@@ -32,16 +32,20 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
     public deadDate!: Date;
     public partialExtend!: boolean;
 
-
     public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
     public getTopicType!: BelongsToGetAssociationMixin<TopicType>;
     public getQuestions!: HasManyGetAssociationsMixin<CourseWWTopicQuestion>;
     public getStudentTopicOverride!: HasManyGetAssociationsMixin<StudentTopicOverride>;
+    // public createTopicAssessmentInfo!: HasOneCreateAssociationMixin<TopicAssessmentInfo>;
+    public getTopicAssessmentInfo!: HasOneGetAssociationMixin<TopicAssessmentInfo>;
+    // public setTopicAssessmentInfo!: HasOneSetAssociationMixin<TopicAssessmentInfo>;
 
     public readonly curriculumTopicContent!: CurriculumTopicContent;
     public readonly topicType!: TopicType;
     public readonly questions?: CourseWWTopicQuestion[];
     public readonly studentTopicOverride?: StudentTopicOverride[];
+    public readonly topicAssessmentInfo?: TopicAssessmentInfo;
+    public studentTopicAssessmentInfo?: StudentTopicAssessmentInfo[];
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -97,6 +101,13 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
             sourceKey: 'id',
             as: 'studentTopicOverride'
         });
+
+        CourseTopicContent.hasOne(TopicAssessmentInfo, {
+            foreignKey: 'courseTopicContentId',
+            sourceKey: 'id',
+            as: 'topicAssessmentInfo'
+        });
+
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }
@@ -187,4 +198,6 @@ import CurriculumTopicContent from './curriculum-topic-content';
 import TopicType from './topic-type';
 import CourseUnitContent from './course-unit-content';
 import CourseWWTopicQuestion from './course-ww-topic-question';
+import TopicAssessmentInfo from './topic-assessment-info';
 import StudentTopicOverride, { StudentTopicOverrideOveridesInterface } from './student-topic-override';
+import StudentTopicAssessmentInfo from './student-topic-assessment-info';

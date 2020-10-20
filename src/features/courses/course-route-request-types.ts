@@ -89,6 +89,12 @@ export namespace UpdateGradeRequest {
     export type body = Joi.extractType<typeof validations.updateGradeValidation.body>;
 };
 
+export namespace UpdateGradeInstanceRequest {
+    export type params = Joi.extractType<typeof validations.updateGradeInstanceValidation.params>;
+    export type query = Joi.extractType<typeof validations.updateGradeInstanceValidation.query>;
+    export type body = Joi.extractType<typeof validations.updateGradeInstanceValidation.body>;
+};
+
 export namespace CreateCourseTopicQuestionRequest {
     export type params = Joi.extractType<typeof validations.createCourseTopicQuestionValidation.params>;
     export type query = Joi.extractType<typeof validations.createCourseTopicQuestionValidation.query>;
@@ -183,4 +189,16 @@ export namespace GetProblemsRequest {
     export type params = Joi.extractType<typeof validations.getProblemsValidation.params>;
     export type query = Joi.extractType<typeof validations.getProblemsValidation.query>;
     export type body = Joi.extractType<typeof validations.getProblemsValidation.body>;
+};
+
+export namespace CreateAssessmentVersionRequest {
+    export type params = Joi.extractType<typeof validations.createAssessmentVersionValidation.params>;
+    export type query = Joi.extractType<typeof validations.createAssessmentVersionValidation.query>;
+    export type body = Joi.extractType<typeof validations.createAssessmentVersionValidation.body>;
+};
+
+export namespace SubmitAssessmentVersionRequest {
+    export type params = Joi.extractType<typeof validations.submitAssessmentVersionValidation.params>;
+    export type query = Joi.extractType<typeof validations.submitAssessmentVersionValidation.query>;
+    export type body = Joi.extractType<typeof validations.submitAssessmentVersionValidation.body>;
 };

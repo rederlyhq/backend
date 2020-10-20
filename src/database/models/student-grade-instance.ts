@@ -62,7 +62,6 @@ export default class StudentGradeInstance extends Model implements StudentGradeI
     public bestIndividualAttemptId!: number;
     public bestVersionAttemptId!: number;
 
-
     public getUser!: BelongsToGetAssociationMixin<User>;
     // public getQuestion!: BelongsToGetAssociationMixin<CourseWWTopicQuestion>;
     public getGrade!: BelongsToGetAssociationMixin<StudentGrade>;

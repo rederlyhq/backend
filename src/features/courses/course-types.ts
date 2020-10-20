@@ -309,6 +309,7 @@ export interface FindMissingGradesResult {
 export interface GetQuestionsOptions {
     courseTopicContentId?: number;
     userId?: number;
+    studentTopicAssessmentInfoId?: number;
 }
 
 export interface GetQuestionsThatRequireGradesForUserOptions {

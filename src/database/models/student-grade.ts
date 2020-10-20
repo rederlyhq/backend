@@ -54,7 +54,7 @@ export default class StudentGrade extends Model implements StudentGradeInterface
     public getUser!: BelongsToGetAssociationMixin<User>;
     public getQuestion!: BelongsToGetAssociationMixin<CourseWWTopicQuestion>;
     public getWorkbooks!: HasManyGetAssociationsMixin<StudentWorkbook>;
-    public getStudentGradeInstances!: HasManyGetAssociationsMixin<StudentGradeInstance>;
+    public getGradeInstances!: HasManyGetAssociationsMixin<StudentGradeInstance>;
     public getOverrides!: HasManyGetAssociationsMixin<StudentGradeOverride>;
 
     public readonly user!: User;
@@ -129,7 +129,7 @@ export default class StudentGrade extends Model implements StudentGradeInterface
         StudentGrade.hasMany(StudentGradeInstance, {
             foreignKey: 'studentGradeId',
             sourceKey: 'id',
-            as: 'gradeInstance',
+            as: 'gradeInstances',
             constraints: false
         });
 

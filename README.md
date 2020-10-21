@@ -94,3 +94,9 @@
 | LOGGING_LEVEL | Fallback logging level for values below that are not provided | debug |
 | LOGGING_LEVEL_FOR_FILE | The logging level for use with the file, pass null to turn off file logging | LOGGING_LEVEL |
 | LOGGING_LEVEL_FOR_CONSOLE | The logging level for use with the console, pass null to turn off console logging | LOGGING_LEVEL |
+
+##### Scheduler
+
+| Environment variable | Description | Default value |
+| --- | --- | --- |
+| SCHEDULER_BASE_PATH | The url to the scheduler | http://localhost:3003 |

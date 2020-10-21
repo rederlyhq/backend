@@ -149,9 +149,8 @@ export class SchedulerHelper {
 }
 
 const schedulerHelper = new SchedulerHelper({
-    // apiKey: 'b85363e0f3876895b02b2dc630f09626'
+    // Not implemented
     apiKey: '9cb638fda0429506a2a6afd23accaa52',
-    // baseURL: 'http://ec2-18-223-247-120.us-east-2.compute.amazonaws.com:3012'
-    baseURL: DEFAULT_SCHEDULER_URL
+    baseURL: configurations.scheduler.basePath
 });
 export default schedulerHelper;

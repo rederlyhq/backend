@@ -2372,6 +2372,8 @@ class CourseController {
             const include: sequelize.IncludeOptions[] = [];
             const subInclude: sequelize.IncludeOptions[] = [];
 
+            // a student-grade-instances cannot exist without corresponding student-topic-assessment-info
+            // and vice versa -- they are created in the same transaction
             if (!_.isNil(studentTopicAssessmentInfoId)) {
                 subInclude.push({
                     model: StudentGradeInstance,
@@ -2425,9 +2427,10 @@ class CourseController {
                     await questions.asyncForEach(async (question) => {
                         if (_.isNil(question.grades)) throw new RederlyExtendedError('Impossible! Found an assessment question without a grade.');
                         const version = await courseRepository.getCurrentInstanceForQuestion({questionId: question.id, userId});
-                        question.webworkQuestionPath = version?.webworkQuestionPath ?? question.webworkQuestionPath;
-                        question.grades.randomSeed = version?.randomSeed ?? question.grades.randomSeed;
-                        question.problemNumber = version?.problemNumber ?? question.problemNumber;
+                        if (!_.isNil(version)){
+                            question.grades[0].getVersion(version);
+                            question.getVersion(version);
+                        }
                     });
                 } else {
                     questions.forEach( (question) => {

@@ -254,6 +254,14 @@ export interface GetQuestionOptions {
     readonly?: boolean;
 };
 
+export interface PreviewQuestionOptions {
+    webworkQuestionPath: string;
+    role: Role;
+    problemSeed?: number;
+    formURL: string;
+    formData: { [key: string]: unknown };
+};
+
 export interface GetQuestionResult {
     // We don't know what the renderer might respond
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

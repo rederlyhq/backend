@@ -282,6 +282,15 @@ export const getQuestionValidation = {
     body: {}
 };
 
+export const previewQuestionValidation = {
+    params: {},
+    query: {},
+    body: {
+        webworkQuestionPath: Joi.string().required(),
+        problemSeed: Joi.number().min(0).optional()
+    }
+};
+
 export const getQuestionsValidation = {
     params: {},
     query: {

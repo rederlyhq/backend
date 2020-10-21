@@ -5,6 +5,7 @@ export default class User extends Model {
   public id!: number; // Note that the `null assertion` `!` is required in strict mode.
   public active!: boolean;
   public universityId!: number;
+  // TODO: Make this an enum when adding administrators.
   public roleId!: number;
   public firstName!: string;
   public lastName!: string;

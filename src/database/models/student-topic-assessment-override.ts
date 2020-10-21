@@ -49,11 +49,6 @@ export default class StudentTopicAssessmentOverride extends Model implements Stu
             as: 'user'
         });
 
-        // CourseTopicContent.hasMany(CourseWWTopicQuestion, {
-        //     foreignKey: 'courseTopicContentId',
-        //     sourceKey: 'id',
-        //     as: 'questions'
-        // });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }

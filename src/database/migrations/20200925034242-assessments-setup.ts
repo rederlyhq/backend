@@ -321,13 +321,13 @@ export default {
                 },
                 scoreForBestVersion: {
                     field: 'student_grade_instance_score_for_best_version',
-                    type: DataTypes.INTEGER,
+                    type: DataTypes.FLOAT,
                     allowNull: false,
                     defaultValue: 0
                 },
                 overallBestScore: {
                     field: 'student_grade_instance_overall_best_score',
-                    type: DataTypes.INTEGER,
+                    type: DataTypes.FLOAT,
                     allowNull: false,
                     defaultValue: 0
                 },

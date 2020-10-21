@@ -9,7 +9,6 @@ export interface StudentGradeInstanceQuestionOverridesInterface {
 
 export interface StudentGradeInstanceGradeOverridesInterface {
     randomSeed: number;
-    // numAttempts: number;
     // This is a jsonb field so it could be any (from db)
     // Submitted in workbook used any so I'm going to keep it consistent here
     // If this is used for form data we will never know any info about what keys are available
@@ -22,18 +21,9 @@ export interface StudentGradeInstanceInterface extends StudentGradeInstanceQuest
     id: number;
     studentGradeId: number;
     // userId: number;
-    // courseWWTopicQuestionId: number;
     studentTopicAssessmentInfoId: number;
     scoreForBestVersion: number; // the score from the highest-scoring exam submission
     overallBestScore: number; // the best score on this problem alone
-    // Grade instances shouldn't be overwritten
-    // effectiveScore: number;
-    // Doesn't have dead date
-    // legalScore: number;
-    // Don't need other num attempts fields because there is no doing so after the fact?
-    // numAttempts: number;
-    // Don't need locked because it is very controlled
-    // Don't need references to workbooks since there should be a relatively 1-1 relationship
     active: boolean;
     bestIndividualAttemptId: number;
     bestVersionAttemptId: number;
@@ -43,14 +33,12 @@ export default class StudentGradeInstance extends Model implements StudentGradeI
     public id!: number;
     public studentGradeId!: number;
     // public userId!: number;
-    // public courseWWTopicQuestionId!: number;
     public studentTopicAssessmentInfoId!: number;
     public randomSeed!: number;
     public webworkQuestionPath!: string;
     public problemNumber!: number;
     public scoreForBestVersion!: number;
     public overallBestScore!: number;
-    // public numAttempts!: number;
     public active!: boolean;
     // This is a jsonb field so it could be any (from db)
     // Submitted in workbook used any so I'm going to keep it consistent here
@@ -63,7 +51,6 @@ export default class StudentGradeInstance extends Model implements StudentGradeI
     public bestVersionAttemptId!: number;
 
     public getUser!: BelongsToGetAssociationMixin<User>;
-    // public getQuestion!: BelongsToGetAssociationMixin<CourseWWTopicQuestion>;
     public getGrade!: BelongsToGetAssociationMixin<StudentGrade>;
     public getWorkbooks!: HasManyGetAssociationsMixin<StudentWorkbook>;
     public getStudentAssessmentInfo!: BelongsToGetAssociationMixin<StudentTopicAssessmentInfo>;
@@ -177,13 +164,13 @@ StudentGradeInstance.init({
     },
     scoreForBestVersion: {
         field: 'student_grade_instance_score_for_best_version',
-        type: DataTypes.INTEGER,
+        type: DataTypes.FLOAT,
         allowNull: false,
         defaultValue: 0
     },
     overallBestScore: {
         field: 'student_grade_instance_overall_best_score',
-        type: DataTypes.INTEGER,
+        type: DataTypes.FLOAT,
         allowNull: false,
         defaultValue: 0
     },

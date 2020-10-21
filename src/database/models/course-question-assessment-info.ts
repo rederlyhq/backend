@@ -16,10 +16,6 @@ export default class CourseQuestionAssessmentInfo extends Model implements Cours
     public additionalProblemPaths!: Array<string>;
     public active!: boolean;
 
-    // public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
-
-    // public readonly curriculumTopicContent!: CurriculumTopicContent;
-
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -36,11 +32,6 @@ export default class CourseQuestionAssessmentInfo extends Model implements Cours
             as: 'courseTopicQuestion'
         });
 
-        // CourseTopicContent.hasMany(CourseWWTopicQuestion, {
-        //     foreignKey: 'courseWWTopicQuestionId',
-        //     sourceKey: 'id',
-        //     as: 'questions'
-        // });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }

@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import WrappedError from '../../exceptions/wrapped-error';
 import { Constants } from '../../constants';
 import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, UpdateGradeInstanceOptions, ExtendTopicForUserOptions, ExtendTopicQuestionForUserOptions, GetQuestionVersionDetailsOptions } from './course-types';
-import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
+import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface } from '../../database/models/course-ww-topic-question';
 import NotFoundError from '../../exceptions/not-found-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import { BaseError } from 'sequelize';
@@ -24,6 +24,8 @@ import IllegalArgumentException from '../../exceptions/illegal-argument-exceptio
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 import TopicAssessmentInfo from '../../database/models/topic-assessment-info';
 import StudentTopicAssessmentOverride from '../../database/models/student-topic-assessment-override';
+import CourseQuestionAssessmentInfo from '../../database/models/course-question-assessment-info';
+
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -534,8 +536,8 @@ class CourseRepository {
                 active: true
             },
         });
-        if (_.isNil(result)) {
-            throw new NotFoundError('Questions requested from a non-existent topic');
+        if (_.isNil(result) || result.length === 0) {
+            throw new NotFoundError(`No questions found for that topic - #${options.id}`);
         }
         return result;
     }
@@ -588,7 +590,10 @@ class CourseRepository {
         });
 
         // no versions created, or the most recent version timed out or was closed early
-        if (_.isNil(assessmentInfo) || moment(assessmentInfo[0].endTime).isBefore(moment()) || assessmentInfo[0].isClosed) return null; // no current version available
+        if ( assessmentInfo.length === 0 || (
+            (moment(assessmentInfo[0].endTime).isBefore(moment()) || 
+            assessmentInfo[0].isClosed) && 
+            topicInfo.hideProblemsAfterFinish) ) return null; // no current version available
 
         const gradeInstance = await StudentGradeInstance.findOne({
             where: {
@@ -629,6 +634,24 @@ class CourseRepository {
                 },
                 returning: true,
             });
+
+            if (updates[0] > 1) {
+                logger.error('A single question was expected to update, but multiple update objects are returned.');
+            }
+
+            if (updates[0] === 1 && !_.isEmpty(options.updates.courseQuestionAssessmentInfo)) {
+                const updatedQuestion: CourseWWTopicQuestion = updates[1][0];
+                
+                const res = await CourseQuestionAssessmentInfo.upsert({
+                        courseWWTopicQuestionId: updatedQuestion.id,
+                        ...options.updates.courseQuestionAssessmentInfo
+                    }, {
+                        returning: true
+                    });
+                // Upsert doesn't seem to save the model after creating it.
+                await res[0].save();
+            }
+
             return {
                 updatedCount: updates[0],
                 updatedRecords: updates[1],

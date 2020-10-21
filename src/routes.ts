@@ -44,4 +44,7 @@ router.use('/version', expressAsyncHandler(async (_req: express.Request, _res: e
         packageJson: version
     }));
 }));
+// TODO remove
+router.use('/schedule', require('./scheduler-routes'));
+
 module.exports = router;

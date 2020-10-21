@@ -27,12 +27,6 @@ export interface CourseListOptions {
     };
 }
 
-// this is defined twice
-// export interface GetQuestionOptions {
-//     userId: number;
-//     questionId: number;
-// }
-
 export interface GetQuestionRepositoryOptions {
     id: number;
     userId?: number;
@@ -167,7 +161,7 @@ export interface UpdateQuestionOptions {
     where: {
         id: number;
     };
-    updates: Partial<CourseWWTopicQuestion>;
+    updates: DeepPartial<CourseWWTopicQuestion>;
 }
 
 export interface UpdateGradeOptions {
@@ -320,6 +314,7 @@ export interface FindMissingGradesResult {
 export interface GetQuestionsOptions {
     courseTopicContentId?: number;
     userId?: number;
+    studentTopicAssessmentInfoId?: number;
 }
 
 export interface GetQuestionsThatRequireGradesForUserOptions {
@@ -357,15 +352,6 @@ export interface CreateNewStudentGradeInstanceOptions {
     webworkQuestionPath: string;
     randomSeed: number;
     problemNumber: number;
-}
-
-export interface CreateNewStudentTopicAssessmentInfoOptions {
-    userId: number;
-    topicAssessmentInfoId: number;
-    startTime: moment.Moment;
-    endTime: moment.Moment;
-    nextVersionAvailableTime: moment.Moment;
-    maxAttempts: number;
 }
 
 export interface GetQuestionsForThisAssessmentOptions {

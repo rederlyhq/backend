@@ -156,7 +156,7 @@ export interface UpdateQuestionOptions {
     where: {
         id: number;
     };
-    updates: Partial<CourseWWTopicQuestion>;
+    updates: DeepPartial<CourseWWTopicQuestion>;
 }
 
 export interface UpdateGradeOptions {

@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import WrappedError from '../../exceptions/wrapped-error';
 import { Constants } from '../../constants';
 import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, UpdateGradeInstanceOptions, ExtendTopicForUserOptions, ExtendTopicQuestionForUserOptions, GetQuestionVersionDetailsOptions } from './course-types';
-import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
+import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface } from '../../database/models/course-ww-topic-question';
 import NotFoundError from '../../exceptions/not-found-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import { BaseError } from 'sequelize';
@@ -23,6 +23,7 @@ import * as moment from 'moment';
 import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 import TopicAssessmentInfo from '../../database/models/topic-assessment-info';
+import CourseQuestionAssessmentInfo, { CourseQuestionAssessmentInfoInterface } from '../../database/models/course-question-assessment-info';
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -553,6 +554,24 @@ class CourseRepository {
                 },
                 returning: true,
             });
+
+            if (updates[0] > 1) {
+                logger.error('A single question was expected to update, but multiple update objects are returned.');
+            }
+
+            if (updates[0] === 1 && !_.isEmpty(options.updates.courseQuestionAssessmentInfo)) {
+                const updatedQuestion: CourseWWTopicQuestion = updates[1][0];
+                
+                const res = await CourseQuestionAssessmentInfo.upsert({
+                        courseWWTopicQuestionId: updatedQuestion.id,
+                        ...options.updates.courseQuestionAssessmentInfo
+                    }, {
+                        returning: true
+                    });
+                // Upsert doesn't seem to save the model after creating it.
+                await res[0].save();
+            }
+
             return {
                 updatedCount: updates[0],
                 updatedRecords: updates[1],

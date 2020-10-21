@@ -556,7 +556,7 @@ class CourseRepository {
             });
 
             if (updates[0] > 1) {
-                console.error('A single question was expected to update, but multiple update objects are returned.');
+                logger.error('A single question was expected to update, but multiple update objects are returned.');
             }
 
             if (updates[0] === 1 && !_.isEmpty(options.updates.courseQuestionAssessmentInfo)) {

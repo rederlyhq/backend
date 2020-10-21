@@ -270,11 +270,13 @@ router.put('/topic/extend',
 
         const updatesResult = await courseController.extendTopicForUser({
             where: {
-                ...query,
+                courseTopicContentId: query.courseTopicContentId,
+                userId: query.userId
             },
-            updates: {
-                ...body
-            }
+            assessmentWhere: {
+                topicAssessmentInfoId: query.topicAssessmentInfoId
+            },
+            updates: body,
         });
         // TODO handle not found case
         next(httpResponse.Ok('Extended topic successfully', updatesResult));

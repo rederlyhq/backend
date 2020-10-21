@@ -102,13 +102,22 @@ export const updateCourseTopicValidation = {
 export const extendCourseTopicForUserValidation = {
     params: {},
     body: {
-        startDate: Joi.date().optional(),
-        endDate: Joi.date().optional(),
-        deadDate: Joi.date().optional()
+        extensions: Joi.object({
+            startDate: Joi.date().optional(),
+            endDate: Joi.date().optional(),
+            deadDate: Joi.date().optional()    
+        }).optional(),
+        studentTopicAssessmentOverride: Joi.object({
+            versionDelay: Joi.number(),
+            duration: Joi.number(),
+            maxVersions: Joi.number(),
+            maxGradedAttemptsPerVersion: Joi.number(),
+        }).optional()
     },
     query: {
         courseTopicContentId: Joi.number().required(),
-        userId: Joi.number().required()
+        userId: Joi.number().required(),
+        topicAssessmentInfoId: Joi.number().optional()
     },
 };
 

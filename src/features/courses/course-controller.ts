@@ -108,6 +108,16 @@ class CourseController {
                 //     [StudentTopicAssessmentInfo, 'startTime', 'DESC'],
                 // ]
             });
+
+            subInclude.push({
+                model: StudentTopicAssessmentOverride,
+                as: 'studentTopicAssessmentOverride',
+                required: false,
+                where: {
+                    active: true,
+                    userId,
+                },
+            });
         }
 
         if (includeQuestions) {
@@ -528,15 +538,16 @@ class CourseController {
         });
     }
 
-    async extendTopicForUser(options: ExtendTopicForUserOptions): Promise<UpsertResult<StudentTopicOverride>> {
+    async extendTopicForUser(options: ExtendTopicForUserOptions): Promise<{extendTopicResult: UpsertResult<StudentTopicOverride>; extendTopicAssessmentResult: UpsertResult<StudentTopicAssessmentOverride>}> {
         return useDatabaseTransaction(async () =>  {
-            const result = await courseRepository.extendTopicByUser(options);
-            if (result.updatedRecords.length > 0) {
+            const extendTopicResult = await courseRepository.extendTopicByUser(options);
+            const extendTopicAssessmentResult = await courseRepository.extendTopicAssessmentByUser(options);
+            if (extendTopicResult.updatedRecords.length > 0) {
                 const topic = await courseRepository.getCourseTopic({
                     id: options.where.courseTopicContentId
                 });
-                const newOverride = result.updatedRecords[0];
-                const originalOverride: StudentTopicOverrideInterface = result.original as StudentTopicOverrideInterface;
+                const newOverride = extendTopicResult.updatedRecords[0];
+                const originalOverride: StudentTopicOverrideInterface = extendTopicResult.original as StudentTopicOverrideInterface;
                 
                 const originalTopic: CourseTopicContentInterface = topic.getWithOverrides(originalOverride);
                 const newTopic: CourseTopicContentInterface = topic.getWithOverrides(newOverride);
@@ -553,7 +564,10 @@ class CourseController {
                     }
                 });
             }
-            return result;
+            return {
+                extendTopicResult,
+                extendTopicAssessmentResult
+            };
         });
     }
 
@@ -1336,6 +1350,12 @@ class CourseController {
     }: ReGradeTopicOptions): Promise<void> => {
         let minDate: Date | undefined;
         if (skipIfPossible) {
+            // Skip exams
+            // TODO enums
+            if (topic.topicTypeId === 2) {
+                return;
+            }
+
             if (!_.isNil(originalTopic) && !_.isNil(newTopic)) {
                 const {
                     endDate: originalEndDate,

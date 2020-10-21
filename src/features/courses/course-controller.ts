@@ -16,7 +16,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, CreateNewStudentTopicAssessmentInfoOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UpdateGradeInstanceOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UpdateGradeInstanceOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -98,6 +98,7 @@ class CourseController {
             subInclude.push({
                 model: StudentTopicAssessmentInfo,
                 as: 'studentTopicAssessmentInfo',
+                required: false,
                 where: {
                     active: true,
                     userId,
@@ -1161,7 +1162,7 @@ class CourseController {
                     userId: options.userId
                 }); 
 
-                if (_.isNil(gradeInstance)) throw new RederlyExtendedError('No current grade instance for this assessment question.');
+                if (_.isNil(gradeInstance)) throw new IllegalArgumentException('No current grade instance for this assessment question.');
                 formData = gradeInstance.currentProblemState;
                 sourceFilePath = gradeInstance.webworkQuestionPath;
                 problemSeed = gradeInstance.randomSeed;
@@ -2678,24 +2679,9 @@ class CourseController {
     }
 
     // does this actually belong in course-repository?
-    async createStudentTopicAssessmentInfo(options: CreateNewStudentTopicAssessmentInfoOptions): Promise<StudentTopicAssessmentInfo> {
-        const { 
-            userId,
-            topicAssessmentInfoId,
-            startTime,
-            endTime,
-            nextVersionAvailableTime,
-            maxAttempts
-        } = options;
+    async createStudentTopicAssessmentInfo(options: Partial<StudentTopicAssessmentInfo>): Promise<StudentTopicAssessmentInfo> {
         try {
-            return await StudentTopicAssessmentInfo.create({
-                userId,
-                topicAssessmentInfoId,
-                startTime,
-                endTime,
-                nextVersionAvailableTime,
-                maxAttempts
-            });
+            return await StudentTopicAssessmentInfo.create(options);
         } catch (e) {
             throw new WrappedError('Could not create new Student Topic Assessment info for this topic', e);
         }
@@ -2711,7 +2697,7 @@ class CourseController {
 
         let endTime = moment(startTime).add(topicInfo.duration, 'minutes');
         if (topicInfo.hardCutoff) {
-            endTime = moment.min(topic.deadDate.toMoment(), startTime.add(topicInfo.duration, 'minutes'));
+            endTime = moment.min(topic.endDate.toMoment(), endTime);
         } 
 
         const nextVersionAvailableTime = moment(startTime).add(topicInfo.versionDelay, 'minutes');
@@ -2721,9 +2707,9 @@ class CourseController {
         const studentTopicAssessmentInfo = await this.createStudentTopicAssessmentInfo({
             userId,
             topicAssessmentInfoId: topicInfo.id,
-            startTime,
-            endTime,
-            nextVersionAvailableTime,
+            startTime: startTime.toDate(),
+            endTime: endTime.toDate(),
+            nextVersionAvailableTime: nextVersionAvailableTime.toDate(),
             maxAttempts: topicInfo.maxGradedAttemptsPerVersion,
         });
 
@@ -2792,6 +2778,7 @@ class CourseController {
     /*
     * Determine if a user (student) is allowed to view a question -- profs+ => always true
     * If the question belongs to an assessment, check for a current version unless a versionId is provided
+    * TODO: include current instance in return object, include message in return object (replace/extend getCurrentInstanceForQuestion)
     */
     async userCanViewQuestionId(user: User, questionId: number, studentTopicAssessmentInfoId?: number): Promise<boolean> {
         if (user.roleId === Role.PROFESSOR || user.roleId === Role.ADMIN) return true;
@@ -2854,14 +2841,16 @@ class CourseController {
             if (new Date().getTime() < topic.startDate.getTime()) {
                 message = `The topic "${topic.name}" has not started yet.`;
                 userCanStartNewVersion = false;
-            } else
+            } else if (versions.length >= maxVersions) {
             // check number of versions already used
-            if (versions.length >= maxVersions) {
+                if (versions[0].isClosed !== true) {
+                    versions[0].isClosed = true;
+                    versions[0].save();
+                }
                 message = 'You have no retakes remaining.';
                 userCanStartNewVersion = false;
-            } else 
+            } else if (versions[0] && new Date().getTime() < versions[0].nextVersionAvailableTime.getTime()) {
             // versions remaining, have we waited long enough?
-            if (versions[0] && new Date().getTime() < versions[0].nextVersionAvailableTime.getTime()) {
                 // toLocaleString supports timezone, which we should maybe use?
                 message = `Another version of this assessment will be available after ${versions[0].nextVersionAvailableTime.toLocaleString()}.`;
                 userCanStartNewVersion = false;
@@ -2988,6 +2977,10 @@ class CourseController {
 
         //reduce the number of attempts remaining
         studentTopicAssessmentInfo.numAttempts++;
+        // close the version if student has maxed out their attempts
+        if (studentTopicAssessmentInfo.numAttempts === studentTopicAssessmentInfo.maxAttempts) {
+            studentTopicAssessmentInfo.isClosed = true;
+        }
         await studentTopicAssessmentInfo.save();
 
         // use topic assessment info settings to decide what data is exposed to the frontend
@@ -2995,8 +2988,8 @@ class CourseController {
         let bestVersionScoreReturn: number | undefined;
         let bestOverallVersionReturn: number | undefined;
         if (showTotalGradeImmediately){
-            bestOverallVersionReturn = Math.max(bestVersionScore, problemScores.total);
-            bestVersionScoreReturn = Math.max(bestOverallVersion, problemScores.total);
+            bestVersionScoreReturn = Math.max(bestVersionScore, problemScores.total);
+            bestOverallVersionReturn = Math.max(bestOverallVersion, problemScores.total);
             if (showItemizedResults) {
                 problemScoresReturn = problemScores;
             } else {

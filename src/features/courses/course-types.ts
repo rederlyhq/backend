@@ -27,12 +27,6 @@ export interface CourseListOptions {
     };
 }
 
-// this is defined twice
-// export interface GetQuestionOptions {
-//     userId: number;
-//     questionId: number;
-// }
-
 export interface GetQuestionRepositoryOptions {
     id: number;
     userId?: number;
@@ -347,15 +341,6 @@ export interface CreateNewStudentGradeInstanceOptions {
     webworkQuestionPath: string;
     randomSeed: number;
     problemNumber: number;
-}
-
-export interface CreateNewStudentTopicAssessmentInfoOptions {
-    userId: number;
-    topicAssessmentInfoId: number;
-    startTime: moment.Moment;
-    endTime: moment.Moment;
-    nextVersionAvailableTime: moment.Moment;
-    maxAttempts: number;
 }
 
 export interface GetQuestionsForThisAssessmentOptions {

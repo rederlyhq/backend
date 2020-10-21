@@ -458,8 +458,8 @@ class CourseRepository {
                 active: true
             },
         });
-        if (_.isNil(result)) {
-            throw new NotFoundError('Questions requested from a non-existent topic');
+        if (_.isNil(result) || result.length === 0) {
+            throw new NotFoundError(`No questions found for that topic - #${options.id}`);
         }
         return result;
     }
@@ -512,7 +512,10 @@ class CourseRepository {
         });
 
         // no versions created, or the most recent version timed out or was closed early
-        if (_.isNil(assessmentInfo) || moment(assessmentInfo[0].endTime).isBefore(moment()) || assessmentInfo[0].isClosed) return null; // no current version available
+        if ( assessmentInfo.length === 0 || (
+            (moment(assessmentInfo[0].endTime).isBefore(moment()) || 
+            assessmentInfo[0].isClosed) && 
+            topicInfo.hideProblemsAfterFinish) ) return null; // no current version available
 
         const gradeInstance = await StudentGradeInstance.findOne({
             where: {

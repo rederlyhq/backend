@@ -25,6 +25,7 @@ import StudentGrade from '../../database/models/student-grade';
 import bodyParser = require('body-parser');
 import moment = require('moment');
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
+import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
 
 const fileUpload = multer();
 
@@ -227,7 +228,7 @@ router.get('/questions',
                 // get version info - descending by startTime unless specific id is included in query
                 if (_.isNil(req.query.studentTopicAssessmentInfoId)) {
                     // _.orderBy puts in ascending order
-                    const versions = _.orderBy(topic.topicAssessmentInfo.studentTopicAssessmentInfo, ['startTime']).reverse();
+                    const versions = _.orderBy(topic.topicAssessmentInfo.studentTopicAssessmentInfo, ['startTime'], ['desc']);
                     if (_.isNil(versions) || versions.length === 0) {
                         next(httpResponse.Ok('You have not started any versions of this assessment.', {questions: null, topic}));
                         return;
@@ -240,7 +241,8 @@ router.get('/questions',
                 if (
                     topic.topicAssessmentInfo.hideProblemsAfterFinish && (
                         moment().isAfter(moment(version.endTime)) ||
-                        topic.topicAssessmentInfo.maxGradedAttemptsPerVersion <= version.numAttempts // TODO: replace with versions[0].isFinished
+                        version.isClosed ||
+                        version.maxAttempts <= version.numAttempts 
                     ) &&
                     user.roleId === Role.STUDENT
                 ) {
@@ -325,7 +327,7 @@ router.get('/assessment/topic/:id/start',
 
         // will never have true + message
         if (userCanStartNewVersion === false && !_.isNil(message)) {
-            next(httpResponse.Ok(message));
+            throw new IllegalArgumentException(message);
         }
 
         const versionInfo = await courseController.createGradeInstancesForAssessment({
@@ -333,9 +335,7 @@ router.get('/assessment/topic/:id/start',
             userId: user.id,
         });
 
-        next(httpResponse.Ok('New version of this assessment created successfully', {
-            versionInfo,
-        }));
+        next(httpResponse.Ok('New version of this assessment created successfully', versionInfo));
     }));
 
 router.delete('/unit/:id',
@@ -628,7 +628,7 @@ router.post('/assessment/topic/:id/submit/:version',
         }
 
         if (studentTopicAssessmentInfo.numAttempts >= studentTopicAssessmentInfo.maxAttempts) {
-            throw new Error('This assessment version has no attempts remaining.');
+            throw new IllegalArgumentException('This assessment version has no attempts remaining.');
         }
 
         const assessmentResult = await courseController.submitAssessmentAnswers(params.version, false); // false: wasAutoSubmitted

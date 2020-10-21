@@ -64,11 +64,6 @@ export default class TopicAssessmentInfo extends Model implements TopicAssessmen
             as: 'studentTopicAssessmentInfo'
         });
 
-        // CourseTopicContent.hasMany(CourseWWTopicQuestion, {
-        //     foreignKey: 'courseTopicContentId',
-        //     sourceKey: 'id',
-        //     as: 'questions'
-        // });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }

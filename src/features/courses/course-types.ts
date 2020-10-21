@@ -107,10 +107,21 @@ export interface ExtendTopicForUserOptions {
         courseTopicContentId: number;
         userId: number;
     };
+    assessmentWhere?: {
+        topicAssessmentInfoId?: number;
+    };
     updates: {
-        startDate?: Date;
-        endDate?: Date;
-        deadDate?: Date;
+        extensions?: {
+            startDate?: Date;
+            endDate?: Date;
+            deadDate?: Date;    
+        };
+        studentTopicAssessmentOverride?: {
+            duration?: number;
+            maxGradedAttemptsPerVersion?: number;
+            maxVersions?: number;
+            versionDelay?: number;
+        };
     };
     checkDates?: boolean;
 }
@@ -150,7 +161,7 @@ export interface UpdateQuestionOptions {
     where: {
         id: number;
     };
-    updates: Partial<CourseWWTopicQuestion>;
+    updates: DeepPartial<CourseWWTopicQuestion>;
 }
 
 export interface UpdateGradeOptions {

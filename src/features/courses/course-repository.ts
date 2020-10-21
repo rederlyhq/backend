@@ -23,6 +23,9 @@ import * as moment from 'moment';
 import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 import TopicAssessmentInfo from '../../database/models/topic-assessment-info';
+import StudentTopicAssessmentOverride from '../../database/models/student-topic-assessment-override';
+import CourseQuestionAssessmentInfo from '../../database/models/course-question-assessment-info';
+
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
@@ -312,7 +315,7 @@ class CourseRepository {
             checkDates = true
         } = options;
         if (checkDates) {
-            const dueDates = _.compact([options.updates.endDate?.toMoment(), options.updates.deadDate?.toMoment()]);
+            const dueDates = _.compact([options.updates.extensions?.endDate?.toMoment(), options.updates.extensions?.deadDate?.toMoment()]);
             // moment.min([]) returns right now, so if there are no due dates we def don't want to throw an error
             // Otherwise you can't set due dates in the past
             if (dueDates.length > 0 && moment.min(...dueDates).isBefore(moment())) {
@@ -325,7 +328,7 @@ class CourseRepository {
             const original = found?.get({ plain: true });
             
             if (!found) {
-                const newExtension = await StudentTopicOverride.create({...options.where, ...options.updates}, {validate: true});
+                const newExtension = await StudentTopicOverride.create({...options.where, ...options.updates.extensions}, {validate: true});
 
                 return {
                     createdNewEntry: true,
@@ -333,7 +336,8 @@ class CourseRepository {
                     updatedRecords: [newExtension],
                 };
             } else {
-                const updates = await StudentTopicOverride.update(options.updates, {
+                // TODO we weren't checking before that there were actually changes to be made, we should however check first and duck out if there are no changes
+                const updates = await StudentTopicOverride.update(options.updates.extensions ?? {}, {
                     where: {
                         ...options.where,
                         active: true
@@ -350,6 +354,80 @@ class CourseRepository {
             }
         } catch (e) {
             throw new WrappedError(`Could not extend topic for ${options.where}`, e);
+        }
+    }
+
+    async extendTopicAssessmentByUser(options: ExtendTopicForUserOptions): Promise<UpsertResult<StudentTopicAssessmentOverride>> {
+        const { studentTopicAssessmentOverride } = options.updates;
+        if (_.isNil(studentTopicAssessmentOverride) || _.isEmpty(studentTopicAssessmentOverride)) {
+            logger.debug('No student topic assessment override provided, skipping');
+            return {
+                createdNewEntry: false,
+                updatedCount: 0,
+                updatedRecords: [],
+                original: undefined,
+            };
+        }
+
+        if (
+            _.isNil(options.assessmentWhere) ||
+            _.isNil(options.assessmentWhere.topicAssessmentInfoId)
+        ) {
+            throw new IllegalArgumentException('Cannot extend an assessment topic without topicAssessmentInfoId');
+        }
+        
+        try {
+            const found = await StudentTopicAssessmentOverride.findOne({
+                where: {
+                    userId: options.where.userId,
+                    active: true
+                },
+                include: [{
+                    model: TopicAssessmentInfo,
+                    as: 'topicAssessmentInfo',
+                    attributes: [],
+                    where: {
+                        courseTopicContentId: options.where.courseTopicContentId
+                    }
+                }]
+            });
+            const original = found?.get({ plain: true });
+            
+            if (!found) {
+                logger.debug('Assessment override not found... creating');
+                const newExtension = await StudentTopicAssessmentOverride.create({
+                    userId: options.where.userId, 
+                    ...options.assessmentWhere,
+                    ...options.updates.studentTopicAssessmentOverride
+                }, {validate: true});
+
+                return {
+                    createdNewEntry: true,
+                    updatedCount: 1,
+                    updatedRecords: [newExtension],
+                };
+            } else {
+                logger.debug('Assessment override found... updating');
+                // TODO we weren't checking before that there were actually changes to be made, we should however check first and duck out if there are no changes
+                const updates = await StudentTopicAssessmentOverride.update(options.updates.studentTopicAssessmentOverride ?? {}, {
+                    where: {
+                        userId: options.where.userId, 
+                        // Used spread initially but nil check did not persist (from top of function)
+                        topicAssessmentInfoId: options.assessmentWhere.topicAssessmentInfoId,
+                        active: true
+                    },
+                    returning: true,
+                });
+
+                return {
+                    createdNewEntry: false,
+                    updatedCount: updates[0],
+                    updatedRecords: updates[1],
+                    original,
+                };
+            }
+        } catch (e) {
+            throw new WrappedError(`Could not extend topic assessment for ${JSON.stringify(options.where)}`, e);
         }
     }
 
@@ -556,6 +634,24 @@ class CourseRepository {
                 },
                 returning: true,
             });
+
+            if (updates[0] > 1) {
+                logger.error('A single question was expected to update, but multiple update objects are returned.');
+            }
+
+            if (updates[0] === 1 && !_.isEmpty(options.updates.courseQuestionAssessmentInfo)) {
+                const updatedQuestion: CourseWWTopicQuestion = updates[1][0];
+                
+                const res = await CourseQuestionAssessmentInfo.upsert({
+                        courseWWTopicQuestionId: updatedQuestion.id,
+                        ...options.updates.courseQuestionAssessmentInfo
+                    }, {
+                        returning: true
+                    });
+                // Upsert doesn't seem to save the model after creating it.
+                await res[0].save();
+            }
+
             return {
                 updatedCount: updates[0],
                 updatedRecords: updates[1],

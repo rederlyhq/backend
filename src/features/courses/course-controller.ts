@@ -107,6 +107,16 @@ class CourseController {
                 //     [StudentTopicAssessmentInfo, 'startTime', 'DESC'],
                 // ]
             });
+
+            subInclude.push({
+                model: StudentTopicAssessmentOverride,
+                as: 'studentTopicAssessmentOverride',
+                required: false,
+                where: {
+                    active: true,
+                    userId,
+                },
+            });
         }
 
         if (includeQuestions) {

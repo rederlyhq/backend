@@ -339,7 +339,7 @@ router.get('/assessment/topic/end/:id',
         // }
 
         version.isClosed = true;
-        version.save();
+        await version.save();
         next(httpResponse.Ok('Assessment version has been closed.'));
     }));
 

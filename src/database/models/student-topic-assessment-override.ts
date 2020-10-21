@@ -1,14 +1,18 @@
 import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize';
+import * as _ from 'lodash';
 
-export interface StudentTopicAssessmentOverrideInterface {
-    id: number;
-    topicAssessmentInfoId: number;
-    userId: number;
+export interface StudentTopicAssessmentOverrideOverridesInterface {
     duration: number | null;
     maxGradedAttemptsPerVersion: number | null;
     maxVersions: number | null;
     versionDelay: number | null;
+}
+
+export interface StudentTopicAssessmentOverrideInterface extends StudentTopicAssessmentOverrideOverridesInterface {
+    id: number;
+    topicAssessmentInfoId: number;
+    userId: number;
     active: boolean;
 }
 
@@ -31,6 +35,13 @@ export default class StudentTopicAssessmentOverride extends Model implements Stu
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 
+    static getOverrides = (obj: StudentTopicAssessmentOverrideOverridesInterface): StudentTopicAssessmentOverrideOverridesInterface => {
+        return _.pick(obj, 'duration', 'maxGradedAttemptsPerVersion', 'maxVersions', 'versionDelay');
+    }
+
+    getOverrides = (): StudentTopicAssessmentOverrideOverridesInterface => {
+        return StudentTopicAssessmentOverride.getOverrides(this);
+    }
     static constraints = {
     }
 

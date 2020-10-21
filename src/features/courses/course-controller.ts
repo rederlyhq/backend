@@ -2456,10 +2456,9 @@ class CourseController {
                     await questions.asyncForEach(async (question) => {
                         if (_.isNil(question.grades)) throw new RederlyExtendedError('Impossible! Found an assessment question without a grade.');
                         const version = await courseRepository.getCurrentInstanceForQuestion({questionId: question.id, userId});
-                        if (!_.isNil(version)){
-                            question.grades[0].getVersion(version);
-                            question.getVersion(version);
-                        }
+                        question.webworkQuestionPath = version?.webworkQuestionPath ?? question.webworkQuestionPath;
+                        question.grades[0].randomSeed = version?.randomSeed ?? question.grades[0].randomSeed;
+                        question.problemNumber = version?.problemNumber ?? question.problemNumber;
                     });
                 } else {
                     questions.forEach( (question) => {
@@ -2852,17 +2851,22 @@ class CourseController {
         let message = '';
 
         let topic = await this.getTopicById({ id: topicId }); // includes TopicOverrides
-        const topicInfo = await this.getTopicAssessmentInfoByTopicId({
+        if (!_.isNil(topic.studentTopicOverride)) {
+            topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
+        }
+
+        let topicInfo = await this.getTopicAssessmentInfoByTopicId({
             topicId: topicId,
             userId: user.id
-        }); // method result is ordered by startDate, includes overrides
+        }); 
+        if (!_.isNil(topicInfo.studentTopicAssessmentOverride)) {
+            topicInfo = topicInfo.getWithOverrides(topicInfo.studentTopicAssessmentOverride[0]) as TopicAssessmentInfo;
+        }
         const versions = await this.getStudentTopicAssessmentInfo({
             topicAssessmentInfoId: topicInfo.id,
             userId: user.id
         });
 
-        // deal with overrides
-        const maxVersions = topicInfo.studentTopicAssessmentOverride?.[0]?.maxVersions ?? topicInfo.maxVersions;
         if (!_.isNil(topic.studentTopicOverride)) {
             topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
         }
@@ -2873,7 +2877,7 @@ class CourseController {
             if (new Date().getTime() < topic.startDate.getTime()) {
                 message = `The topic "${topic.name}" has not started yet.`;
                 userCanStartNewVersion = false;
-            } else if (versions.length >= maxVersions) {
+            } else if (versions.length >= topicInfo.maxVersions) {
             // check number of versions already used
                 if (versions[0].isClosed !== true) {
                     versions[0].isClosed = true;

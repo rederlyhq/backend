@@ -14,7 +14,7 @@ import * as _ from 'lodash';
 import configurations from '../../configurations';
 import WrappedError from '../../exceptions/wrapped-error';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
-import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest, ExtendCourseTopicQuestionRequest, CreateAssessmentVersionRequest, SubmitAssessmentVersionRequest } from './course-route-request-types';
+import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest, ExtendCourseTopicQuestionRequest, CreateAssessmentVersionRequest, SubmitAssessmentVersionRequest, UpdateGradeInstanceRequest } from './course-route-request-types';
 import Boom = require('boom');
 import { Constants } from '../../constants';
 import CourseTopicContent from '../../database/models/course-topic-content';
@@ -25,6 +25,7 @@ import StudentGrade from '../../database/models/student-grade';
 import bodyParser = require('body-parser');
 import moment = require('moment');
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
+import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
 
 const fileUpload = multer();
 
@@ -201,6 +202,7 @@ router.get('/questions',
         }
 
         let topic: CourseTopicContent | null = null;
+        let version: StudentTopicAssessmentInfo | undefined;
         if(!_.isNil(req.query.courseTopicContentId)) {
             topic = await courseController.getTopicById({
                 id: req.query.courseTopicContentId,
@@ -224,22 +226,23 @@ router.get('/questions',
                 }
 
                 // get version info - descending by startTime unless specific id is included in query
-                let versions: StudentTopicAssessmentInfo[] | undefined;
                 if (_.isNil(req.query.studentTopicAssessmentInfoId)) {
-                    versions = _.orderBy(topic.topicAssessmentInfo.studentTopicAssessmentInfo, ['startTime'],'desc');
+                    // _.orderBy puts in ascending order
+                    const versions = _.orderBy(topic.topicAssessmentInfo.studentTopicAssessmentInfo, ['startTime'], ['desc']);
                     if (_.isNil(versions) || versions.length === 0) {
                         next(httpResponse.Ok('You have not started any versions of this assessment.', {questions: null, topic}));
                         return;
                     }
+                    version = versions[0];
                 } else {
-                    const version = await courseController.getStudentTopicAssessmentInfoById(req.query.studentTopicAssessmentInfoId);
-                    versions = [version];
+                    version = await courseController.getStudentTopicAssessmentInfoById(req.query.studentTopicAssessmentInfoId);
                 }
 
                 if (
                     topic.topicAssessmentInfo.hideProblemsAfterFinish && (
-                        moment().isAfter(moment(versions[0].endTime)) ||
-                        topic.topicAssessmentInfo.maxGradedAttemptsPerVersion <= versions[0].numAttempts // TODO: replace with versions[0].isFinished
+                        moment().isAfter(moment(version.endTime)) ||
+                        version.isClosed ||
+                        version.maxAttempts <= version.numAttempts 
                     ) &&
                     user.roleId === Role.STUDENT
                 ) {
@@ -251,7 +254,8 @@ router.get('/questions',
 
         const questions = await courseController.getQuestions({
             userId: userId,
-            courseTopicContentId: req.query.courseTopicContentId
+            courseTopicContentId: req.query.courseTopicContentId,
+            studentTopicAssessmentInfoId: req.query.studentTopicAssessmentInfoId ?? version?.id,
         });
 
         next(httpResponse.Ok(null, {
@@ -323,7 +327,7 @@ router.get('/assessment/topic/:id/start',
 
         // will never have true + message
         if (userCanStartNewVersion === false && !_.isNil(message)) {
-            next(Boom.badRequest(message));
+            throw new IllegalArgumentException(message);
         }
 
         const versionInfo = await courseController.createGradeInstancesForAssessment({
@@ -331,9 +335,7 @@ router.get('/assessment/topic/:id/start',
             userId: user.id,
         });
 
-        next(httpResponse.Ok('New version of this assessment created successfully', {
-            versionInfo,
-        }));
+        next(httpResponse.Ok('New version of this assessment created successfully', versionInfo));
     }));
 
 router.delete('/unit/:id',
@@ -434,9 +436,35 @@ router.put('/question/grade/:id',
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
-        
+
         const params = req.params as UpdateCourseTopicQuestionRequest.params;
         const updatesResult = await courseController.updateGrade({
+            where: {
+                id: params.id
+            },
+            updates: {
+                ...req.body
+            },
+            initiatingUserId: req.session.userId
+        });
+        next(httpResponse.Ok('Updated grade successfully', {
+            updatesResult,
+            updatesCount: updatesResult.updatedCount
+        }));
+    }));
+
+router.put('/question/grade/instance/:id',
+    authenticationMiddleware,
+    validate(updateGradeValidation),
+    // This is to work around "extractMap" error
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateGradeInstanceRequest.body, UpdateGradeInstanceRequest.query>, _res: Response, next: NextFunction) => {
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+
+        const params = req.params as UpdateGradeInstanceRequest.params;
+        const updatesResult = await courseController.updateGradeInstance({
             where: {
                 id: params.id
             },
@@ -600,7 +628,7 @@ router.post('/assessment/topic/:id/submit/:version',
         }
 
         if (studentTopicAssessmentInfo.numAttempts >= studentTopicAssessmentInfo.maxAttempts) {
-            throw new Error('This assessment version has no attempts remaining.');
+            throw new IllegalArgumentException('This assessment version has no attempts remaining.');
         }
 
         const assessmentResult = await courseController.submitAssessmentAnswers(params.version, false); // false: wasAutoSubmitted

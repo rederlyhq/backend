@@ -17,6 +17,8 @@ COPY . ./
 
 #COPY . ./
 RUN npm run build
+# Needs to be before prune since it uses sequelize-cli
+RUN npm run sequelize:built:migrations
 RUN npm prune --production
 
 # The instructions for second stage

@@ -105,5 +105,8 @@ export default {
         loggingLevel,
         loggingLevelForFile,
         loggingLevelForConsole
+    },
+    scheduler: {
+        basePath: _.defaultTo(process.env.SCHEDULER_BASE_PATH,'http://localhost:3003'),
     }
 };

@@ -1,7 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import * as path from 'path';
-
-const DEFAULT_SCHEDULER_URL = 'http://localhost:3003';
+import configurations from '../configurations';
 
 const BASE_PATH = '';
 const SET_JOB_ENDPOINT = path.posix.join(BASE_PATH, '/set_job/');
@@ -12,7 +11,7 @@ const DELETE_EVENT_ENDPOINT = path.posix.join(BASE_PATH, '/delete_job/');
 
 export interface SchedulerHelperConfigurations {
     apiKey: string;
-    baseURL?: string;
+    baseURL: string;
 };
 
 export enum HttpMethod {
@@ -21,15 +20,12 @@ export enum HttpMethod {
 }
 
 export interface WebHookScheduleEvent {
-    // NOT IMPLEMENTED ON SCHEDULER SIDE
-    method: HttpMethod;
     url: string;
-    // NOT IMPLEMENTED ON SCHEDULER SIDE
-    headers?: string;
     data?: unknown;
-    // NOT IMPLEMENTED ON SCHEDULER SIDE
+    // NOT IMPLEMENTED ON SCHEDULER SIDE (all below this line)
+    method?: HttpMethod;
+    headers?: string;
     timeout?: number;
-    // NOT IMPLEMENTED ON SCHEDULER SIDE
     sslCertBypass?: boolean;
 };
 
@@ -54,7 +50,7 @@ export class SchedulerHelper {
     
     constructor({
         apiKey,
-        baseURL = DEFAULT_SCHEDULER_URL
+        baseURL,
     }: SchedulerHelperConfigurations) {
         this.apiKey = apiKey;
         this.axios = axios.create({
@@ -116,7 +112,7 @@ export class SchedulerHelper {
         id,
         time,
         webHookScheduleEvent: {
-            method,
+            method = HttpMethod.POST,
             url,
             data,
             headers = 'User-Agent: NULL',
@@ -149,9 +145,8 @@ export class SchedulerHelper {
 }
 
 const schedulerHelper = new SchedulerHelper({
-    // apiKey: 'b85363e0f3876895b02b2dc630f09626'
+    // Not implemented
     apiKey: '9cb638fda0429506a2a6afd23accaa52',
-    // baseURL: 'http://ec2-18-223-247-120.us-east-2.compute.amazonaws.com:3012'
-    baseURL: DEFAULT_SCHEDULER_URL
+    baseURL: configurations.scheduler.basePath
 });
 export default schedulerHelper;

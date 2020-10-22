@@ -19,6 +19,7 @@
     "extend": "^3.0.2",
     "form-data": "^3.0.0",
     "jira-client": "^6.18.0",
+    "joi-extract-type": "^15.0.8",
     "lodash": "^4.17.19",
     "moment": "^2.27.0",
     "morgan": "^1.10.0",
@@ -30,8 +31,8 @@
     "pg": "^8.3.0",
     "qs": "^6.9.4",
     "sequelize": "^5.22.3",
+    "url-join": "^4.0.1",
     "uuid": "^7.0.3",
-    "joi-extract-type": "^15.0.8",
     "winston": "^3.3.3"
   },
   "devDependencies": {
@@ -58,6 +59,7 @@
     "@types/passport-local": "^1.0.33",
     "@types/qs": "^6.9.4",
     "@types/sequelize": "^4.28.9",
+    "@types/url-join": "^4.0.0",
     "@types/uuid": "^7.0.4",
     "@types/validator": "^13.1.0",
     "@types/winston": "^2.4.4",

@@ -39,6 +39,11 @@ import StudentTopicAssessmentInfo from '../../database/models/student-topic-asse
 import StudentTopicAssessmentOverride from '../../database/models/student-topic-assessment-override';
 import TopicAssessmentInfo from '../../database/models/topic-assessment-info';
 import CourseQuestionAssessmentInfo from '../../database/models/course-question-assessment-info';
+import schedulerHelper from '../../utilities/scheduler-helper';
+import configurations from '../../configurations';
+// Had an error using standard import
+// cspell:disable-next-line -- urljoin is the name of the library
+import urljoin = require('url-join');
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -2734,62 +2739,90 @@ class CourseController {
     }
 
     async createGradeInstancesForAssessment(options: CreateGradeInstancesForAssessmentOptions): Promise<StudentTopicAssessmentInfo> {
-        const { topicId, userId } = options;
-        const topic = await courseRepository.getCourseTopic({id: topicId});
-        const topicInfo = await topic.getTopicAssessmentInfo(); // order by startDate 
-
-        const questions = await courseRepository.getQuestionsFromTopicId({id:topicId});
-        const startTime = moment().add(1,'minute'); // 1 minute should cover any delay in creating records before a student can actually begin
-
-        let endTime = moment(startTime).add(topicInfo.duration, 'minutes');
-        if (topicInfo.hardCutoff) {
-            endTime = moment.min(topic.endDate.toMoment(), endTime);
-        } 
-
-        const nextVersionAvailableTime = moment(startTime).add(topicInfo.versionDelay, 'minutes');
-        // in trying to be clever about shuffling the order, don't forget to shift from 0..n-1 to 1..n
-        const problemOrder = (topicInfo.randomizeOrder) ? _.shuffle([...Array(10).keys()]) : [...Array(10).keys()];
-
-        const studentTopicAssessmentInfo = await this.createStudentTopicAssessmentInfo({
-            userId,
-            topicAssessmentInfoId: topicInfo.id,
-            startTime: startTime.toDate(),
-            endTime: endTime.toDate(),
-            nextVersionAvailableTime: nextVersionAvailableTime.toDate(),
-            maxAttempts: topicInfo.maxGradedAttemptsPerVersion,
-        });
-
-        await questions.asyncForEach(async (question, index) => {
-            const questionInfo = await question.getCourseQuestionAssessmentInfo();
-            const questionGrade = await StudentGrade.findOne({
-                where: {
-                    userId,
-                    courseWWTopicQuestionId: question.id,
-                    active: true
-                }
-            });
-            if (_.isNil(questionGrade)) throw new WrappedError(`Question id: ${question.id} has no corresponding grade.`);
-            let randomSeed: number | undefined;
-            let webworkQuestionPath: string | undefined;
-            if (_.isNil(questionInfo)) {
-                randomSeed = this.generateRandomSeed();
-                webworkQuestionPath = question.webworkQuestionPath;
-            } else {
-                randomSeed = _.sample(questionInfo.randomSeedSet) ?? this.generateRandomSeed(); // coalesce should NEVER happen - but TS doesn't recognize that _.sample(nonEmptyArray) will not return undefined
-                const problemPaths = [...new Set([question.webworkQuestionPath, ...questionInfo.additionalProblemPaths])]; // Set removes duplicates
-                webworkQuestionPath = _.sample(problemPaths) ?? question.webworkQuestionPath; // same coalesce chicanery to mollify TS _.sample() is string | undefined
-            }
-            await this.createNewStudentGradeInstance({
-                studentGradeId: questionGrade.id,
-                studentTopicAssessmentInfoId: studentTopicAssessmentInfo.id,
-                webworkQuestionPath,
-                randomSeed,
+        return useDatabaseTransaction(async (): Promise<StudentTopicAssessmentInfo> => {
+            const { topicId, userId } = options;
+            const topic = await courseRepository.getCourseTopic({id: topicId});
+            const topicInfo = await topic.getTopicAssessmentInfo(); // order by startDate 
+    
+            const questions = await courseRepository.getQuestionsFromTopicId({id:topicId});
+            const startTime = moment().add(1,'minute'); // 1 minute should cover any delay in creating records before a student can actually begin
+    
+            let endTime = moment(startTime).add(topicInfo.duration, 'minutes');
+            if (topicInfo.hardCutoff) {
+                endTime = moment.min(topic.endDate.toMoment(), endTime);
+            } 
+    
+            const nextVersionAvailableTime = moment(startTime).add(topicInfo.versionDelay, 'minutes');
+            // in trying to be clever about shuffling the order, don't forget to shift from 0..n-1 to 1..n
+            const problemOrder = (topicInfo.randomizeOrder) ? _.shuffle([...Array(10).keys()]) : [...Array(10).keys()];
+    
+            const studentTopicAssessmentInfo = await this.createStudentTopicAssessmentInfo({
                 userId,
-                problemNumber: problemOrder[index]+1, // problemOrder starts from 0
+                topicAssessmentInfoId: topicInfo.id,
+                startTime: startTime.toDate(),
+                endTime: endTime.toDate(),
+                nextVersionAvailableTime: nextVersionAvailableTime.toDate(),
+                maxAttempts: topicInfo.maxGradedAttemptsPerVersion,
             });
-        });
 
-        return studentTopicAssessmentInfo;
+            await questions.asyncForEach(async (question, index) => {
+                const questionInfo = await question.getCourseQuestionAssessmentInfo();
+                const questionGrade = await StudentGrade.findOne({
+                    where: {
+                        userId,
+                        courseWWTopicQuestionId: question.id,
+                        active: true
+                    }
+                });
+                if (_.isNil(questionGrade)) throw new WrappedError(`Question id: ${question.id} has no corresponding grade.`);
+                let randomSeed: number | undefined;
+                let webworkQuestionPath: string | undefined;
+                if (_.isNil(questionInfo)) {
+                    randomSeed = this.generateRandomSeed();
+                    webworkQuestionPath = question.webworkQuestionPath;
+                } else {
+                    randomSeed = _.sample(questionInfo.randomSeedSet) ?? this.generateRandomSeed(); // coalesce should NEVER happen - but TS doesn't recognize that _.sample(nonEmptyArray) will not return undefined
+                    const problemPaths = [...new Set([question.webworkQuestionPath, ...questionInfo.additionalProblemPaths])]; // Set removes duplicates
+                    webworkQuestionPath = _.sample(problemPaths) ?? question.webworkQuestionPath; // same coalesce chicanery to mollify TS _.sample() is string | undefined
+                }
+                await this.createNewStudentGradeInstance({
+                    studentGradeId: questionGrade.id,
+                    studentTopicAssessmentInfoId: studentTopicAssessmentInfo.id,
+                    webworkQuestionPath,
+                    randomSeed,
+                    userId,
+                    problemNumber: problemOrder[index]+1, // problemOrder starts from 0
+                });
+            });
+
+            try {
+                let autoSubmitURL: string | undefined;
+                if(_.isNil(options.requestURL)) {
+                    logger.error('requestURL is nil for auto submit');
+                    // TODO configuration backup?
+                } else {
+                    // cspell:disable-next-line -- urljoin is the name of the library
+                    autoSubmitURL = urljoin(options.requestURL, configurations.server.basePath, `/courses/assessment/topic/${topicId}/submit/${studentTopicAssessmentInfo.id}/auto`);
+                }
+    
+                if (_.isNil(autoSubmitURL)) {
+                    logger.error(`Could not determine the url for auto submit for studentTopicAssessmentInfo: ${studentTopicAssessmentInfo.id}`);
+                } else {
+                    await schedulerHelper.setJob({
+                        id: studentTopicAssessmentInfo.id.toString(),
+                        time: endTime.toDate(),
+                        webHookScheduleEvent: {
+                            url: autoSubmitURL,
+                            data: {}
+                        }
+                    });                    
+                }
+            } catch(e) {
+                logger.error(`Could not create scheduler job for studentTopicAssessmentInfo ${studentTopicAssessmentInfo.id}`, e);
+            }
+    
+            return studentTopicAssessmentInfo;
+        });
     }
 
    async createNewStudentGradeInstance(options: CreateNewStudentGradeInstanceOptions): Promise<StudentGradeInstance> {

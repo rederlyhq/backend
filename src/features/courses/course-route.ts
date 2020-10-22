@@ -26,6 +26,7 @@ import bodyParser = require('body-parser');
 import moment = require('moment');
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
+import logger from '../../utilities/logger';
 import ForbiddenError from '../../exceptions/forbidden-error';
 
 const fileUpload = multer();
@@ -336,6 +337,7 @@ router.get('/assessment/topic/:id/start',
         const versionInfo = await courseController.createGradeInstancesForAssessment({
             topicId: params.id, 
             userId: user.id,
+            requestURL: req.headers['rederly-origin'] as string | undefined // need this because it incorrectly thinks it can be an array
         });
 
         next(httpResponse.Ok('New version of this assessment created successfully', versionInfo));
@@ -609,6 +611,28 @@ router.get('/question/:id',
         } catch (e) {
             next(e);
         }
+    }));
+
+router.post('/assessment/topic/:id/submit/:version/auto',
+    validate(submitAssessmentVersionValidation),
+    // This is a typescript workaround since it tries to use the type extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, unknown, SubmitAssessmentVersionRequest.body, SubmitAssessmentVersionRequest.query>, _res: Response, next: NextFunction) => {
+        const params = req.params as SubmitAssessmentVersionRequest.params;
+
+        const studentTopicAssessmentInfo = await courseController.getStudentTopicAssessmentInfoById(params.version);
+
+        if (studentTopicAssessmentInfo.numAttempts >= studentTopicAssessmentInfo.maxAttempts) {
+            logger.error('This assessment version has no attempts remaining but was auto submitted.', JSON.stringify({
+                assessmentVersionId: params.version,
+                topicId: params.id
+            }));
+            // Can't give an error response or the scheduler might try again
+            next(httpResponse.Ok('Skipped'));
+        }
+
+        const assessmentResult = await courseController.submitAssessmentAnswers(params.version, true); // false: wasAutoSubmitted
+        next(httpResponse.Ok('Assessment submitted successfully', assessmentResult));
     }));
 
 //TODO: Probably move this up?

@@ -1220,7 +1220,6 @@ class CourseController {
             if (studentGrade.courseWWTopicQuestionId !== options.questionId) {
                 throw new NotFoundError('The workbook you have requested does not belong to the question provided');
             }
-            numIncorrect = workbook.submitted.problem_state.num_of_incorrect_ans;
             formData = workbook.submitted.form_data;
         }
 
@@ -2881,6 +2880,13 @@ class CourseController {
                     userId,
                     problemNumber: problemOrder[index]+1, // problemOrder starts from 0
                 });
+
+                // for assessments, 
+                // numAttempts on a StudentGrade should refer to the number of versions the student has tried
+                // do we use StudentGrade.numExtendedAttempts for number of versions generated?
+                // or is that a confusing abuse of data?
+                // questionGrade.numExtendedAttempts++; 
+                // await questionGrade.save();
             });
 
             try {
@@ -3100,6 +3106,9 @@ class CourseController {
     
             await questionResponses.asyncForEach(async (result: SubmittedAssessmentResultContext) => {
     
+                if (_.isNil(result.instance.id)) {
+                    throw new Error('the grade instance ID cannot be empty');
+                }
                 // create workbook for attempt
                 const workbook = await StudentWorkbook.create({
                     studentGradeId: result.grade.id,
@@ -3143,12 +3152,17 @@ class CourseController {
     
                 // const versionAverage = (incoming.instance.averageScore * incoming.instance.numAttempts + incoming.questionResponse.problem_result.score)/(incoming.instance.numAttempts + 1);
     
+                if (studentTopicAssessmentInfo.numAttempts === 0) {
+                    // this is the student's first submission for this version -- 
+                    // update StudentGrade numAttempts to reflect the number of versions that were actually attempted
+                    result.grade.numAttempts++;
+                }
                 // save updates
                 await result.grade.save();
                 await result.instance.save();
             });
     
-            //reduce the number of attempts remaining
+            // update the number of attempts for this version
             studentTopicAssessmentInfo.numAttempts++;
             // close the version if student has maxed out their attempts
             if (studentTopicAssessmentInfo.numAttempts === studentTopicAssessmentInfo.maxAttempts) {

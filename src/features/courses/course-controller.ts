@@ -2785,7 +2785,7 @@ class CourseController {
                     // TODO configuration backup?
                 } else {
                     // cspell:disable-next-line -- urljoin is the name of the library
-                    autoSubmitURL = urljoin(options.requestURL, configurations.server.basePath, `/assessment/topic/${topicId}/submit/${studentTopicAssessmentInfo.id}/auto`);
+                    autoSubmitURL = urljoin(options.requestURL, configurations.server.basePath, `/courses/assessment/topic/${topicId}/submit/${studentTopicAssessmentInfo.id}/auto`);
                 }
     
                 if (_.isNil(autoSubmitURL)) {
@@ -2803,7 +2803,6 @@ class CourseController {
             } catch(e) {
                 logger.error(`Could not create scheduler job for studentTopicAssessmentInfo ${studentTopicAssessmentInfo.id}`, e);
             }
-    
     
             return studentTopicAssessmentInfo;
         });

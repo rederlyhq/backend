@@ -44,7 +44,7 @@ router.use('/version', expressAsyncHandler(async (_req: express.Request, _res: e
         packageJson: version
     }));
 }));
-// TODO remove
-router.use('/schedule', require('./scheduler-routes'));
+// Dev routes for testing the scheduler, if your using this remember to uncomment the white lister for it as well in server.ts limiter
+// router.use('/schedule', require('./scheduler-routes'));
 
 module.exports = router;

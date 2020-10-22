@@ -16,7 +16,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UpdateGradeInstanceOptions, PreviewQuestionOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -44,6 +44,7 @@ import configurations from '../../configurations';
 // Had an error using standard import
 // cspell:disable-next-line -- urljoin is the name of the library
 import urljoin = require('url-join');
+import userController from '../users/user-controller';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -2422,6 +2423,77 @@ class CourseController {
         });
     }
 
+    async canUserGetQuestions(options: CanUserGetQuestionsOptions): Promise<CanUserGetQuestionsResult> {
+        const {userId, courseTopicContentId, studentTopicAssessmentInfoId} = options;
+        let message = '';
+
+        let topic: CourseTopicContent | null = null;
+        let version: StudentTopicAssessmentInfo | null = null;
+
+        const user = await userController.getUserById(userId);
+
+        if (_.isNil(courseTopicContentId)) {
+            message = 'Sure, why not?';
+            return {message, userCanGetQuestions: true, topic, version};
+        } else {
+            topic = await this.getTopicById({
+                id: courseTopicContentId,
+                userId,
+            });
+            if (_.isNil(topic)) {
+                message = 'No topic found with that id.';
+                return { message, userCanGetQuestions: false, topic, version };
+            }
+            // const overrideStartDate = topic.studentTopicOverride?.[0]?.startDate;
+            // const startDate = overrideStartDate ?? topic.startDate;
+            if (!_.isNil(topic.studentTopicOverride) && !_.isEmpty(topic.studentTopicOverride)) {
+                topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
+            }
+
+            const userRole = user.roleId;
+            if (moment().isBefore(topic.startDate)) {
+                if (userRole === Role.STUDENT) {
+                    message = `The topic "${topic.name}" has not started yet.`;
+                    return { message, userCanGetQuestions: false, topic, version };
+                }
+            }
+
+            if (topic.topicTypeId === 2 && !_.isNil(userId)) {
+                if (_.isNil(topic.topicAssessmentInfo)) {
+                    throw new NotFoundError('Topic is an assessment, but does not have corresponding assessment info. This should never happen.');
+                }
+
+                // get version info - descending by startTime unless specific id is included in query
+                if (_.isNil(studentTopicAssessmentInfoId)) {
+                    // _.orderBy puts in ascending order
+                    const versions = _.orderBy(topic.topicAssessmentInfo.studentTopicAssessmentInfo, ['startTime'], ['desc']);
+                    if (_.isNil(versions) || versions.length === 0) {
+                        message = 'You have not started any versions of this assessment.';
+                        // TODO return topic?
+                        return { message, userCanGetQuestions: false, topic, version };
+                    }
+                    version = versions[0];
+                } else {
+                    version = await this.getStudentTopicAssessmentInfoById(studentTopicAssessmentInfoId);
+                }
+
+                if (
+                    topic.topicAssessmentInfo.hideProblemsAfterFinish && (
+                        moment().isAfter(moment(version.endTime)) ||
+                        version.isClosed ||
+                        version.maxAttempts <= version.numAttempts
+                    ) &&
+                    userRole === Role.STUDENT
+                ) {
+                    message = 'You have finished this version of the assessment and you are blocked from seeing the problems.';
+                    // TODO return topic?
+                    return { message, userCanGetQuestions: false, topic, version };
+                }
+            }
+        }
+
+        return { message, userCanGetQuestions: true, topic, version };
+    }
     async getQuestions(options: GetQuestionsOptions): Promise<CourseWWTopicQuestion[]> {
         const {
             courseTopicContentId,
@@ -2914,7 +2986,10 @@ class CourseController {
         let userCanStartNewVersion = true;
         let message = '';
 
-        let topic = await this.getTopicById({ id: topicId }); // includes TopicOverrides
+        let topic = await this.getTopicById({ 
+            id: topicId, 
+            userId: user.id 
+        }); // includes TopicOverrides
         if (!_.isNil(topic.studentTopicOverride) && topic.studentTopicOverride.length > 0) {
             topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
         }
@@ -2926,30 +3001,27 @@ class CourseController {
         if (!_.isNil(topicInfo.studentTopicAssessmentOverride) && topicInfo.studentTopicAssessmentOverride.length > 0) {
             topicInfo = topicInfo.getWithOverrides(topicInfo.studentTopicAssessmentOverride[0]) as TopicAssessmentInfo;
         }
+
         const versions = await this.getStudentTopicAssessmentInfo({
             topicAssessmentInfoId: topicInfo.id,
             userId: user.id
         });
 
-        if (!_.isNil(topic.studentTopicOverride)) {
-            topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
-        }
-
         // restrictions on start time, maximum versions, and version delay only apply to students
         if (user.roleId === Role.STUDENT) {
             // if the assessment has not yet started, students cannot generate a version
-            if (new Date().getTime() < topic.startDate.getTime()) {
+            if ( moment().isBefore(topic.startDate.toMoment()) ) {
                 message = `The topic "${topic.name}" has not started yet.`;
                 userCanStartNewVersion = false;
             } else if (versions.length >= topicInfo.maxVersions) {
             // check number of versions already used
                 if (versions[0].isClosed !== true) {
                     versions[0].isClosed = true;
-                    versions[0].save();
+                    await versions[0].save();
                 }
                 message = 'You have no retakes remaining.';
                 userCanStartNewVersion = false;
-            } else if (versions[0] && new Date().getTime() < versions[0].nextVersionAvailableTime.getTime()) {
+            } else if (versions[0] && moment().isBefore(versions[0].nextVersionAvailableTime.toMoment())) {
             // versions remaining, have we waited long enough?
                 // toLocaleString supports timezone, which we should maybe use?
                 message = `Another version of this assessment will be available after ${versions[0].nextVersionAvailableTime.toLocaleString()}.`;
@@ -2960,7 +3032,7 @@ class CourseController {
         // finally - *no one* should be able to create a version if there is already one "open"
         if (versions[0] &&  // user has a version (the most recent one)
             versions[0].isClosed === false && // it has not been closed early
-            new Date().getTime() < versions[0].endTime.getTime() // and the time hasn't expired
+            moment().isBefore(versions[0].endTime.toMoment()) // and the time hasn't expired
         ) {
             message = 'You already have an open version of this assessment.';
             userCanStartNewVersion = false;

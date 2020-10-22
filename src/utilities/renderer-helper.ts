@@ -33,7 +33,7 @@ export interface GetProblemParameters {
     outputformat?: OutputFormat;
     problemSource?: boolean;
     format?: string;
-    lanugage?: string;
+    language?: string;
     showHints?: boolean;
     showSolutions?: boolean | number;
     permissionLevel?: number | number;
@@ -192,7 +192,7 @@ class RendererHelper {
         formURL,
         baseURL = '/',
         outputformat,
-        lanugage,
+        language,
         showHints,
         showSolutions,
         permissionLevel,
@@ -212,7 +212,7 @@ class RendererHelper {
             baseURL,
             outputformat,
             format,
-            lanugage,
+            language,
             showHints: _.isNil(showHints) ? undefined : Number(showHints),
             showSolutions: Number(showSolutions),
             permissionLevel,

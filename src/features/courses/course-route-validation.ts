@@ -423,6 +423,14 @@ export const createAssessmentVersionValidation = {
     body: {},
 };
 
+export const endAssessmentVersionValidation = {
+    params: {
+        id: Joi.number().required(),
+    },
+    query: {},
+    body: {},
+};
+
 export const submitAssessmentVersionValidation = {
     params: {
         id: Joi.number().required(),

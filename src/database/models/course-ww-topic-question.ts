@@ -40,8 +40,7 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
 
     public courseQuestionAssessmentInfo?: CourseQuestionAssessmentInfo;
     public readonly studentTopicQuestionOverride?: StudentTopicQuestionOverride[];
-    public readonly grades?: StudentGrade;
-    public gradeInstances?: StudentGradeInstance[];
+    public readonly grades?: StudentGrade[];
 
     // timestamps!
     public readonly createdAt!: Date;

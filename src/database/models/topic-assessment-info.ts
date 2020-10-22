@@ -1,14 +1,18 @@
+import * as _ from 'lodash';
 import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
-interface TopicAssessmentInfoInterface {
+interface TopicAssessmentInfoOverridesInterface {
+    duration: number;
+    maxVersions: number;
+    maxGradedAttemptsPerVersion: number;
+    versionDelay: number;
+}
+
+interface TopicAssessmentInfoInterface extends TopicAssessmentInfoOverridesInterface {
     id: number;
     courseTopicContentId: number;
-    duration: number;
     hardCutoff: boolean;
-    maxGradedAttemptsPerVersion: number;
-    maxVersions: number;
-    versionDelay: number;
     hideHints: boolean;
     showItemizedResults: boolean;
     showTotalGradeImmediately: boolean;
@@ -39,6 +43,16 @@ export default class TopicAssessmentInfo extends Model implements TopicAssessmen
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
+
+    static getWithOverrides = (obj: TopicAssessmentInfoInterface, overrides: StudentTopicAssessmentOverrideOverridesInterface): TopicAssessmentInfoInterface => {
+        // Avoid cyclic dependencies
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        return _.assign({}, obj, StudentTopicAssessmentOverride.getOverrides(overrides));
+    }
+
+    getWithOverrides = (overrides: StudentTopicAssessmentOverrideOverridesInterface): TopicAssessmentInfoInterface => {
+        return TopicAssessmentInfo.getWithOverrides(this.get({ plain: true }) as TopicAssessmentInfoInterface, overrides);
+    }
 
     static constraints = {
     }
@@ -153,4 +167,4 @@ TopicAssessmentInfo.init({
 
 import CourseTopicContent from './course-topic-content';
 import StudentTopicAssessmentInfo from './student-topic-assessment-info';
-import StudentTopicAssessmentOverride from './student-topic-assessment-override';
+import StudentTopicAssessmentOverride, { StudentTopicAssessmentOverrideOverridesInterface } from './student-topic-assessment-override';

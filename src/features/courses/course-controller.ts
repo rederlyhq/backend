@@ -2423,6 +2423,8 @@ class CourseController {
             const include: sequelize.IncludeOptions[] = [];
             const subInclude: sequelize.IncludeOptions[] = [];
 
+            // a student-grade-instances cannot exist without corresponding student-topic-assessment-info
+            // and vice versa -- they are created in the same transaction
             if (!_.isNil(studentTopicAssessmentInfoId)) {
                 subInclude.push({
                     model: StudentGradeInstance,
@@ -2474,10 +2476,10 @@ class CourseController {
                 // TODO remove assessment hardcoding -- userId nil-check is for TS
                 if (topic.topicTypeId === 2 && !_.isNil(userId)) {
                     await questions.asyncForEach(async (question) => {
-                        if (_.isNil(question.grades)) throw new RederlyExtendedError('Impossible! Found an assessment question without a grade.');
+                        if (_.isNil(question.grades) || question.grades.length === 0) throw new RederlyExtendedError('Impossible! Found an assessment question without a grade.');
                         const version = await courseRepository.getCurrentInstanceForQuestion({questionId: question.id, userId});
                         question.webworkQuestionPath = version?.webworkQuestionPath ?? question.webworkQuestionPath;
-                        question.grades.randomSeed = version?.randomSeed ?? question.grades.randomSeed;
+                        question.grades[0].randomSeed = version?.randomSeed ?? question.grades[0].randomSeed;
                         question.problemNumber = version?.problemNumber ?? question.problemNumber;
                     });
                 } else {
@@ -2899,17 +2901,22 @@ class CourseController {
         let message = '';
 
         let topic = await this.getTopicById({ id: topicId }); // includes TopicOverrides
-        const topicInfo = await this.getTopicAssessmentInfoByTopicId({
+        if (!_.isNil(topic.studentTopicOverride) && topic.studentTopicOverride.length > 0) {
+            topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
+        }
+
+        let topicInfo = await this.getTopicAssessmentInfoByTopicId({
             topicId: topicId,
             userId: user.id
-        }); // method result is ordered by startDate, includes overrides
+        }); 
+        if (!_.isNil(topicInfo.studentTopicAssessmentOverride) && topicInfo.studentTopicAssessmentOverride.length > 0) {
+            topicInfo = topicInfo.getWithOverrides(topicInfo.studentTopicAssessmentOverride[0]) as TopicAssessmentInfo;
+        }
         const versions = await this.getStudentTopicAssessmentInfo({
             topicAssessmentInfoId: topicInfo.id,
             userId: user.id
         });
 
-        // deal with overrides
-        const maxVersions = topicInfo.studentTopicAssessmentOverride?.[0]?.maxVersions ?? topicInfo.maxVersions;
         if (!_.isNil(topic.studentTopicOverride)) {
             topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
         }
@@ -2920,7 +2927,7 @@ class CourseController {
             if (new Date().getTime() < topic.startDate.getTime()) {
                 message = `The topic "${topic.name}" has not started yet.`;
                 userCanStartNewVersion = false;
-            } else if (versions.length >= maxVersions) {
+            } else if (versions.length >= topicInfo.maxVersions) {
             // check number of versions already used
                 if (versions[0].isClosed !== true) {
                     versions[0].isClosed = true;

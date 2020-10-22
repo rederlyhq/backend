@@ -1216,11 +1216,6 @@ class CourseController {
             calculatedRendererParameters.outputformat = OutputFormat.STATIC;
         }
 
-        // I do not like hardcoding the topicTypeId...
-        if (options.topic?.topicTypeId === 2) {
-            calculatedRendererParameters.outputformat = OutputFormat.ASSESS;
-        }
-
         let showCorrectAnswers = false;
         if (options.role === Role.PROFESSOR && !_.isNil(workbook)) {
             showCorrectAnswers = true;

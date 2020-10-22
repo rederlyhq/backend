@@ -36,7 +36,7 @@ export default class StudentTopicAssessmentOverride extends Model implements Stu
     public readonly updatedAt!: Date;
 
     static getOverrides = (obj: StudentTopicAssessmentOverrideOverridesInterface): StudentTopicAssessmentOverrideOverridesInterface => {
-        return _.pick(obj, 'duration', 'maxGradedAttemptsPerVersion', 'maxVersions', 'versionDelay');
+        return _.pick(obj, ['duration', 'maxGradedAttemptsPerVersion', 'maxVersions', 'versionDelay']);
     }
 
     getOverrides = (): StudentTopicAssessmentOverrideOverridesInterface => {

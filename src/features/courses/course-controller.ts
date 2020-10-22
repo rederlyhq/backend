@@ -2454,7 +2454,7 @@ class CourseController {
                 // TODO remove assessment hardcoding -- userId nil-check is for TS
                 if (topic.topicTypeId === 2 && !_.isNil(userId)) {
                     await questions.asyncForEach(async (question) => {
-                        if (_.isNil(question.grades)) throw new RederlyExtendedError('Impossible! Found an assessment question without a grade.');
+                        if (_.isNil(question.grades) || question.grades.length === 0) throw new RederlyExtendedError('Impossible! Found an assessment question without a grade.');
                         const version = await courseRepository.getCurrentInstanceForQuestion({questionId: question.id, userId});
                         question.webworkQuestionPath = version?.webworkQuestionPath ?? question.webworkQuestionPath;
                         question.grades[0].randomSeed = version?.randomSeed ?? question.grades[0].randomSeed;
@@ -2851,7 +2851,7 @@ class CourseController {
         let message = '';
 
         let topic = await this.getTopicById({ id: topicId }); // includes TopicOverrides
-        if (!_.isNil(topic.studentTopicOverride)) {
+        if (!_.isNil(topic.studentTopicOverride) && topic.studentTopicOverride.length > 0) {
             topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
         }
 
@@ -2859,7 +2859,7 @@ class CourseController {
             topicId: topicId,
             userId: user.id
         }); 
-        if (!_.isNil(topicInfo.studentTopicAssessmentOverride)) {
+        if (!_.isNil(topicInfo.studentTopicAssessmentOverride) && topicInfo.studentTopicAssessmentOverride.length > 0) {
             topicInfo = topicInfo.getWithOverrides(topicInfo.studentTopicAssessmentOverride[0]) as TopicAssessmentInfo;
         }
         const versions = await this.getStudentTopicAssessmentInfo({

@@ -130,6 +130,7 @@ export const determineGradingRationale = ({
         willGetCreditReason = WillGetCreditReason.NO_ATTEMPTS_EXCEEDED;
     } else if (areSolutionsAvailable) {
         willGetCreditReason = WillGetCreditReason.NO_SOLUTIONS_AVAILABLE;
+        logger.error('If solutions are available the credit reason should not be able to be NO_SOLUTIONS_AVAILABLE, should be NO_ATTEMPT_NOT_RECORDED');
     } else if (isExpired) {
         willGetCreditReason = WillGetCreditReason.NO_EXPIRED;
     }

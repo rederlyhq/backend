@@ -44,10 +44,38 @@ if (configurations.server.logAccess) {
     }));    
 }
 
+const generatePathRegex = (pathRegex: string): RegExp => new RegExp(`^${basePath}${pathRegex}$`);
+const baseUrlRegex = generatePathRegex('.*');
+const rateLimiterWhiteList: Array<RegExp> = [
+    // Dev route, comment in if you are using scheduler test routes
+    // generatePathRegex('/schedule/hook'),
+    generatePathRegex('/courses/assessment/topic/\\d+/submit/\\d+/auto'),
+];
+
 const limiter = rateLimit({
     windowMs: windowLength,
     max: maxRequests,
-    handler: (req, res, next) => next(Boom.tooManyRequests())
+    handler: (_req, _res, next) => next(Boom.tooManyRequests()),
+    skip: (req: Request): boolean => {
+        const { path: reqPath } = req;
+        if (!baseUrlRegex.test(reqPath)) {
+            logger.error('A request came in that did not match the baseURL; this should not be possible!', reqPath);
+        }
+
+        let result = false;
+        rateLimiterWhiteList.some((r: RegExp): boolean => {
+            if (r.test(reqPath)) {
+                logger.debug(`${reqPath} bypasses rate limiting`);
+                result = true;
+                // break out of forEach
+                return true;
+            }
+            // keep going
+            return false;
+        });
+
+        return result;
+    }
 });
 
 app.use(limiter);

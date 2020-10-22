@@ -1,9 +1,26 @@
 // TODO rename file
 
-import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
+import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin, HasOneGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
+import * as _ from 'lodash';
 
-export default class CourseWWTopicQuestion extends Model {
+export interface CourseWWTopicQuestionInterface {
+    id: number;
+    courseTopicContentId: number;
+    problemNumber: number;
+    webworkQuestionPath: string;
+    weight: number;
+    maxAttempts: number;
+    hidden: boolean;
+    active: boolean;
+    optional: boolean;
+    curriculumQuestionId: number;
+    createdAt: Date;
+    updatedAt: Date;
+    courseQuestionAssessmentInfo?: CourseQuestionAssessmentInfo;
+}
+
+export default class CourseWWTopicQuestion extends Model implements CourseWWTopicQuestionInterface {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
     public courseTopicContentId!: number;
     public problemNumber!: number;
@@ -16,11 +33,38 @@ export default class CourseWWTopicQuestion extends Model {
     public curriculumQuestionId!: number;
     
     public getTopic!: BelongsToGetAssociationMixin<CourseTopicContent>;
-    public studentTopicQuestionOverride?: StudentTopicQuestionOverride[];
+    public getGrades!: HasManyGetAssociationsMixin<StudentGrade>;
+    public getCourseQuestionAssessmentInfo!: HasOneGetAssociationMixin<CourseQuestionAssessmentInfo>;
+    public getStudentTopicQuestionOverride!: HasManyGetAssociationsMixin<StudentTopicQuestionOverride>;
+    public getStudentGradeInstances!: HasManyGetAssociationsMixin<StudentGradeInstance>;
+
+    public courseQuestionAssessmentInfo?: CourseQuestionAssessmentInfo;
+    public readonly studentTopicQuestionOverride?: StudentTopicQuestionOverride[];
+    public readonly grades?: StudentGrade[];
 
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
+
+    static getWithOverrides = (obj: CourseWWTopicQuestionInterface, overrides: StudentTopicQuestionOverrideOverridesInterface): CourseWWTopicQuestionInterface => {
+        // Avoid cyclic dependencies
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        return _.assign({}, obj, StudentTopicQuestionOverride.getOverrides(overrides));
+    }
+
+    getWithOverrides = (overrides: StudentTopicQuestionOverrideOverridesInterface): CourseWWTopicQuestionInterface => {
+        return CourseWWTopicQuestion.getWithOverrides(this.get({ plain: true }) as CourseWWTopicQuestionInterface, overrides);
+    }
+
+    static getVersion = (obj: CourseWWTopicQuestionInterface, version: StudentGradeInstanceInterface): CourseWWTopicQuestionInterface => {
+        // Avoid cyclic dependencies
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        return _.assign({}, obj, StudentGradeInstance.getQuestionOverrides(version)); // will override problemNumber and webworkQuestionPath
+    }
+
+    getVersion = (version: StudentGradeInstance): CourseWWTopicQuestionInterface => {
+        return CourseWWTopicQuestion.getVersion(this.get({ plain: true }) as CourseWWTopicQuestionInterface, version);
+    }
 
     static constraints = {
         uniqueOrderPerTopic: 'course_topic_question--problem_number-topic_id',
@@ -43,6 +87,12 @@ export default class CourseWWTopicQuestion extends Model {
             as: 'curriculumQuestion'
         });
 
+        CourseWWTopicQuestion.hasOne(CourseQuestionAssessmentInfo, {
+            foreignKey: 'courseWWTopicQuestionId',
+            sourceKey: 'id',
+            as: 'courseQuestionAssessmentInfo'
+        });
+        
         CourseWWTopicQuestion.hasMany(StudentGrade, {
             foreignKey: 'courseWWTopicQuestionId',
             sourceKey: 'id',
@@ -54,7 +104,6 @@ export default class CourseWWTopicQuestion extends Model {
             sourceKey: 'id',
             as: 'studentTopicQuestionOverride'
         });
-        
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }
@@ -130,4 +179,6 @@ CourseWWTopicQuestion.init({
 import CourseTopicContent from './course-topic-content';
 import StudentGrade from './student-grade';
 import CurriculumWWTopicQuestion from './curriculum-ww-topic-question';
-import StudentTopicQuestionOverride from './student-topic-question-override';
+import CourseQuestionAssessmentInfo from './course-question-assessment-info';
+import StudentTopicQuestionOverride, { StudentTopicQuestionOverrideOverridesInterface } from './student-topic-question-override';
+import StudentGradeInstance, { StudentGradeInstanceInterface } from './student-grade-instance';

@@ -4,7 +4,7 @@ import appSequelize from '../app-sequelize';
 // TODO move this interface into module so other modules can use it
 export interface StudentGradeOverrideInterface {
   id: number;
-  gradeId: number;
+  studentGradeId: number;
   initiatingUserId: number;
   newValue: number;
 
@@ -14,7 +14,7 @@ export interface StudentGradeOverrideInterface {
 
 export default class StudentGradeOverride extends Model implements StudentGradeOverrideInterface {
   public id!: number;
-  public gradeId!: number;
+  public studentGradeId!: number;
   public initiatingUserId!: number;
   public newValue!: number;
   public active!: boolean;

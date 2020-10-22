@@ -1,13 +1,19 @@
 import StudentGrade from '../../database/models/student-grade';
 import StudentWorkbook from '../../database/models/student-workbook';
 import User from '../../database/models/user';
-import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
+import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface } from '../../database/models/course-ww-topic-question';
 import Course from '../../database/models/course';
 import { WhereOptions } from 'sequelize/types';
 import CourseUnitContent from '../../database/models/course-unit-content';
-import CourseTopicContent from '../../database/models/course-topic-content';
+import CourseTopicContent, { CourseTopicContentInterface } from '../../database/models/course-topic-content';
 import Role from '../permissions/roles';
-import { OutputFormat } from '../../utilities/renderer-helper';
+import { OutputFormat, RendererResponse } from '../../utilities/renderer-helper';
+import { Moment } from 'moment';
+import { DetermineGradingRationaleResult } from '../../utilities/grading-helper';
+import StudentGradeInstance from '../../database/models/student-grade-instance';
+import StudentTopicOverride from '../../database/models/student-topic-override';
+import StudentTopicQuestionOverride from '../../database/models/student-topic-question-override';
+import { DeepPartial } from '../../utilities/typescript-helpers';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -21,11 +27,6 @@ export interface CourseListOptions {
     };
 }
 
-export interface GetQuestionOptions {
-    userId: number;
-    questionId: number;
-}
-
 export interface GetQuestionRepositoryOptions {
     id: number;
     userId?: number;
@@ -35,6 +36,28 @@ export interface GetCourseTopicRepositoryOptions {
     id: number;
     // For overrides
     userId?: number;
+}
+
+export interface GetTopicAssessmentInfoByTopicIdOptions {
+    topicId: number;
+    // For overrides
+    userId?: number;
+}
+
+export interface GetStudentTopicAssessmentInfoOptions {
+    topicAssessmentInfoId: number;
+    userId: number;
+}
+
+export interface GetQuestionVersionDetailsOptions {
+    questionId: number;
+    userId: number;
+}
+
+export interface QuestionVersionDetails {
+    webworkQuestionPath: string;
+    problemNumber: number;
+    randomSeed: number;
 }
 
 // TODO make generic interface
@@ -49,7 +72,8 @@ export interface UpdateTopicOptions {
     // Updates can take any form, i.e. I can have problemNumber: { [sequelize.OP.gte]: 0 } or sequelize.literal
     // TODO further investigation if there is any way for the suggested type to show but allow other values
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    updates: Partial<CourseTopicContent> | any;
+    updates: DeepPartial<CourseTopicContent>;
+    checkDates?: boolean;
 }
 
 export interface UpdateCourseUnitsOptions {
@@ -83,11 +107,23 @@ export interface ExtendTopicForUserOptions {
         courseTopicContentId: number;
         userId: number;
     };
-    updates: {
-        startDate?: Date;
-        endDate?: Date;
-        deadDate?: Date;
+    assessmentWhere?: {
+        topicAssessmentInfoId?: number;
     };
+    updates: {
+        extensions?: {
+            startDate?: Date;
+            endDate?: Date;
+            deadDate?: Date;    
+        };
+        studentTopicAssessmentOverride?: {
+            duration?: number;
+            maxGradedAttemptsPerVersion?: number;
+            maxVersions?: number;
+            versionDelay?: number;
+        };
+    };
+    checkDates?: boolean;
 }
 
 export interface UpdateUnitOptions {
@@ -125,7 +161,7 @@ export interface UpdateQuestionOptions {
     where: {
         id: number;
     };
-    updates: Partial<CourseWWTopicQuestion>;
+    updates: DeepPartial<CourseWWTopicQuestion>;
 }
 
 export interface UpdateGradeOptions {
@@ -133,6 +169,15 @@ export interface UpdateGradeOptions {
         id: number;
     };
     updates: Partial<StudentGrade>;
+    initiatingUserId: number;
+}
+
+export interface UpdateGradeInstanceOptions {
+    where: {
+        id: number;
+    };
+    updates: Partial<StudentGradeInstance>;
+    initiatingUserId: number;
 }
 
 export interface UpdateQuestionsOptions {
@@ -209,6 +254,14 @@ export interface GetQuestionOptions {
     readonly?: boolean;
 };
 
+export interface PreviewQuestionOptions {
+    webworkQuestionPath: string;
+    role: Role;
+    problemSeed?: number;
+    formURL: string;
+    formData: { [key: string]: unknown };
+};
+
 export interface GetQuestionResult {
     // We don't know what the renderer might respond
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -222,11 +275,43 @@ export interface SubmitAnswerOptions {
     // This is coming from the renderer right now
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     submitted: any;
+    // Use this field to be programmatically submit answers
+    // Used for testing as of now
+    timeOfSubmission?: Date;
 }
 
 export interface SubmitAnswerResult {
     studentGrade: StudentGrade | null;
     studentWorkbook: StudentWorkbook | null;
+}
+
+export interface UserCanStartNewVersionOptions {
+    user: User;
+    topicId: number;
+}
+
+export interface UserCanStartNewVersionResult {
+    userCanStartNewVersion: boolean;
+    message?: string;
+}
+
+export interface SubmittedAssessmentResultContext {
+    questionResponse: RendererResponse;
+    grade: StudentGrade;
+    instance: StudentGradeInstance;
+    weight: number;
+}
+
+export interface ScoreAssessmentResult {
+    problemScores: { [key: string]: number };
+    bestVersionScore: number;
+    bestOverallVersion: number;
+}
+
+export interface SubmitAssessmentAnswerResult {
+    problemScores?: { [key: string]: number };
+    bestVersionScore?: number;
+    bestOverallVersion?: number;
 }
 
 export interface FindMissingGradesResult {
@@ -237,6 +322,7 @@ export interface FindMissingGradesResult {
 export interface GetQuestionsOptions {
     courseTopicContentId?: number;
     userId?: number;
+    studentTopicAssessmentInfoId?: number;
 }
 
 export interface GetQuestionsThatRequireGradesForUserOptions {
@@ -265,6 +351,25 @@ export interface CreateGradesForQuestionOptions {
 export interface CreateNewStudentGradeOptions {
     userId: number;
     courseTopicQuestionId: number;
+}
+
+export interface CreateNewStudentGradeInstanceOptions {
+    userId: number;
+    studentGradeId: number;
+    studentTopicAssessmentInfoId: number;
+    webworkQuestionPath: string;
+    randomSeed: number;
+    problemNumber: number;
+}
+
+export interface GetQuestionsForThisAssessmentOptions {
+    topicId: number;
+}
+
+export interface CreateGradeInstancesForAssessmentOptions {
+    userId: number;
+    topicId: number;
+    requestURL?: string;
 }
 
 export interface CreateQuestionsForTopicFromDefFileContentOptions {
@@ -299,8 +404,78 @@ export interface GetCalculatedRendererParamsResponse {
     showSolutions: number;
 }
 
+export interface GradeOptions {
+    studentGrade: StudentGrade;
+    topic: CourseTopicContent;
+    question: CourseWWTopicQuestion;
+
+    solutionDate: moment.Moment;
+
+    newScore: number;
+
+    submitted: unknown;
+
+    timeOfSubmission: moment.Moment;
+    workbook?: StudentWorkbook;
+
+    override?: {
+        useOverride?: boolean;
+        topicOverride?: StudentTopicOverride | null;
+        questionOverride?: StudentTopicQuestionOverride | null;
+    };
+}
+
+export interface GradeResult {
+    gradingRationale: DetermineGradingRationaleResult;
+    gradeUpdates: Partial<StudentGrade>;
+    score: number;
+}
+
 export interface PostQuestionMeta {
     rendererParams: GetCalculatedRendererParamsResponse;
     studentGrade?: StudentGrade | null;
     courseQuestion: CourseWWTopicQuestion;
+}
+
+export interface SetGradeFromSubmissionOptions {
+    studentGrade: StudentGrade;
+    workbook?: StudentWorkbook;
+    gradeResult: GradeResult;
+    submitted: unknown;
+    timeOfSubmission? : Moment;
+}
+
+export interface ReGradeTopicOptions {
+    topic: CourseTopicContent;
+    userId?: number;
+    topicOverride?: StudentTopicOverride;
+    skipContext?: {
+        skipIfPossible?: boolean;
+        newTopic?: CourseTopicContentInterface;
+        originalTopic?: CourseTopicContentInterface;
+    };
+}
+
+export interface ReGradeQuestionOptions {
+    question: CourseWWTopicQuestion;
+    topic?: CourseTopicContent;
+    userId?: number;
+    minDate?: Date;
+    topicOverride?: StudentTopicOverride;
+    questionOverride?: StudentTopicQuestionOverride;
+    skipContext?: {
+        skipIfPossible?: boolean;
+        newQuestion?: CourseWWTopicQuestionInterface;
+        originalQuestion?: CourseWWTopicQuestionInterface;
+    };
+}
+
+export interface ReGradeStudentGradeOptions {
+    studentGrade: StudentGrade;
+    topic?: CourseTopicContent;
+    question?: CourseWWTopicQuestion;
+    workbooks?: Array<StudentWorkbook>;
+    minDate?: Date;
+    topicOverride?: StudentTopicOverride;
+    questionOverride?: StudentTopicQuestionOverride;
 }

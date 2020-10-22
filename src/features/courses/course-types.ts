@@ -361,6 +361,7 @@ export interface GetQuestionsForThisAssessmentOptions {
 export interface CreateGradeInstancesForAssessmentOptions {
     userId: number;
     topicId: number;
+    requestURL?: string;
 }
 
 export interface CreateQuestionsForTopicFromDefFileContentOptions {

@@ -39,6 +39,11 @@ import StudentTopicAssessmentInfo from '../../database/models/student-topic-asse
 import StudentTopicAssessmentOverride from '../../database/models/student-topic-assessment-override';
 import TopicAssessmentInfo from '../../database/models/topic-assessment-info';
 import CourseQuestionAssessmentInfo from '../../database/models/course-question-assessment-info';
+import schedulerHelper from '../../utilities/scheduler-helper';
+import configurations from '../../configurations';
+// Had an error using standard import
+// cspell:disable-next-line -- urljoin is the name of the library
+import urljoin = require('url-join');
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -2772,7 +2777,34 @@ class CourseController {
                     problemNumber: problemOrder[index]+1, // problemOrder starts from 0
                 });
             });
+
+            try {
+                let autoSubmitURL: string | undefined;
+                if(_.isNil(options.requestURL)) {
+                    logger.error('requestURL is nil for auto submit');
+                    // TODO configuration backup?
+                } else {
+                    // cspell:disable-next-line -- urljoin is the name of the library
+                    autoSubmitURL = urljoin(options.requestURL, configurations.server.basePath, `/assessment/topic/${topicId}/submit/${studentTopicAssessmentInfo.id}/auto`);
+                }
+    
+                if (_.isNil(autoSubmitURL)) {
+                    logger.error(`Could not determine the url for auto submit for studentTopicAssessmentInfo: ${studentTopicAssessmentInfo.id}`);
+                } else {
+                    await schedulerHelper.setJob({
+                        id: studentTopicAssessmentInfo.id.toString(),
+                        time: endTime.toDate(),
+                        webHookScheduleEvent: {
+                            url: autoSubmitURL,
+                            data: {}
+                        }
+                    });                    
+                }
+            } catch(e) {
+                logger.error(`Could not create scheduler job for studentTopicAssessmentInfo ${studentTopicAssessmentInfo.id}`, e);
             }
+    
+    
             return studentTopicAssessmentInfo;
         });
     }

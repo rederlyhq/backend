@@ -94,6 +94,7 @@
     "sequelize": "npm run build && sequelize",
     "sequelize:migrations": "npm run sequelize -- db:migrate",
     "sequelize:migrations:devundo": "npm run sequelize -- db:migrate:undo:all --to 20200925034242-assessments-setup.js",
+    "sequelize:built:migrations": "sequelize -- db:migrate",
     "lint": "eslint src/ --ext .ts",
     "clean": "if [ -d ts-built ]; then rm -r ts-built; fi;"
   },

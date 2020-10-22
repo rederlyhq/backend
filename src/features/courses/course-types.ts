@@ -14,6 +14,7 @@ import StudentGradeInstance from '../../database/models/student-grade-instance';
 import StudentTopicOverride from '../../database/models/student-topic-override';
 import StudentTopicQuestionOverride from '../../database/models/student-topic-question-override';
 import { DeepPartial } from '../../utilities/typescript-helpers';
+import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -323,6 +324,19 @@ export interface GetQuestionsOptions {
     courseTopicContentId?: number;
     userId?: number;
     studentTopicAssessmentInfoId?: number;
+}
+
+export interface CanUserGetQuestionsOptions { 
+    userId: number; 
+    courseTopicContentId?: number; 
+    studentTopicAssessmentInfoId?: number; 
+}
+
+export interface CanUserGetQuestionsResult { 
+    message: string; 
+    userCanGetQuestions: boolean; 
+    topic: CourseTopicContent | null; 
+    version: StudentTopicAssessmentInfo | null;
 }
 
 export interface GetQuestionsThatRequireGradesForUserOptions {

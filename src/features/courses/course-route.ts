@@ -17,14 +17,11 @@ import { RederlyExpressRequest } from '../../extensions/rederly-express-request'
 import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest, ExtendCourseTopicQuestionRequest, CreateAssessmentVersionRequest, SubmitAssessmentVersionRequest, UpdateGradeInstanceRequest, EndAssessmentVersionRequest, PreviewQuestionRequest } from './course-route-request-types';
 import Boom = require('boom');
 import { Constants } from '../../constants';
-import CourseTopicContent from '../../database/models/course-topic-content';
 import Role from '../permissions/roles';
 import { PostQuestionMeta } from './course-types';
 import rendererHelper, { RENDERER_ENDPOINT, GetProblemParameters, RendererResponse } from '../../utilities/renderer-helper';
 import StudentGrade from '../../database/models/student-grade';
 import bodyParser = require('body-parser');
-import moment = require('moment');
-import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
 import logger from '../../utilities/logger';
 import ForbiddenError from '../../exceptions/forbidden-error';
@@ -203,55 +200,29 @@ router.get('/questions',
             userId = userIdInput;
         }
 
-        let topic: CourseTopicContent | null = null;
-        let version: StudentTopicAssessmentInfo | undefined;
-        if(!_.isNil(req.query.courseTopicContentId)) {
-            topic = await courseController.getTopicById({
-                id: req.query.courseTopicContentId,
-                userId,
-            });
-            const overrideStartDate = topic.studentTopicOverride?.[0]?.startDate;
-            const startDate = overrideStartDate ?? topic.startDate;
+        if (_.isNil(userId)) {
+            throw new WrappedError('It is impossible for userId to still be undefined here.');
+        }
 
-            const user = await req.session.getUser();
-            if (moment().isBefore(startDate)) {
-                if (user.roleId === Role.STUDENT) {
-                    next(Boom.badRequest(`The topic "${topic.name}" has not started yet.`));
-                    return;
-                }
+        const {
+            message, 
+            userCanGetQuestions, 
+            topic, 
+            version
+        } = await courseController.canUserGetQuestions({
+            userId,
+            courseTopicContentId: req.query.courseTopicContentId,
+            studentTopicAssessmentInfoId: req.query.studentTopicAssessmentInfoId,
+        });
+
+        // TODO fix frontend error handling around assessments when canGetQuestions is false
+        if (userCanGetQuestions === false) {
+            if (_.isNil(topic)){
+                next(Boom.badRequest(message));
+            } else {
+                next(httpResponse.Ok(message, {topic}));
             }
-
-            if (topic?.topicTypeId === 2 && !_.isNil(userId)) {
-                if (_.isNil(topic.topicAssessmentInfo)){
-                    next(Boom.badRequest('Topic is an assessment, but does not have corresponding assessment info. This should never happen.'));
-                    return;
-                }
-
-                // get version info - descending by startTime unless specific id is included in query
-                if (_.isNil(req.query.studentTopicAssessmentInfoId)) {
-                    // _.orderBy puts in ascending order
-                    const versions = _.orderBy(topic.topicAssessmentInfo.studentTopicAssessmentInfo, ['startTime'], ['desc']);
-                    if (_.isNil(versions) || versions.length === 0) {
-                        next(httpResponse.Ok('You have not started any versions of this assessment.', {questions: null, topic}));
-                        return;
-                    }
-                    version = versions[0];
-                } else {
-                    version = await courseController.getStudentTopicAssessmentInfoById(req.query.studentTopicAssessmentInfoId);
-                }
-
-                if (
-                    topic.topicAssessmentInfo.hideProblemsAfterFinish && (
-                        moment().isAfter(moment(version.endTime)) ||
-                        version.isClosed ||
-                        version.maxAttempts <= version.numAttempts 
-                    ) &&
-                    user.roleId === Role.STUDENT
-                ) {
-                    next(httpResponse.Ok('You have finished this version of the assessment and you are blocked from seeing the problems.', {questions: null, topic}));
-                    return;
-                }
-            }
+            return;
         }
 
         const questions = await courseController.getQuestions({
@@ -271,22 +242,22 @@ router.put('/topic/extend',
     validate(extendCourseTopicForUserValidation),
     asyncHandler(
         async (req: RederlyExpressRequest<ExtendCourseTopicForUserRequest.params, ExtendCourseTopicForUserRequest.body, ExtendCourseTopicForUserRequest.query, unknown>, _res: Response, next: NextFunction) => {
-        const query = req.query as ExtendCourseTopicForUserRequest.query;
-        const body = req.body as ExtendCourseTopicForUserRequest.body;
+            const query = req.query as ExtendCourseTopicForUserRequest.query;
+            const body = req.body as ExtendCourseTopicForUserRequest.body;
 
-        const updatesResult = await courseController.extendTopicForUser({
-            where: {
-                courseTopicContentId: query.courseTopicContentId,
-                userId: query.userId
-            },
-            assessmentWhere: {
-                topicAssessmentInfoId: query.topicAssessmentInfoId
-            },
-            updates: body,
-        });
-        // TODO handle not found case
-        next(httpResponse.Ok('Extended topic successfully', updatesResult));
-    }));
+            const updatesResult = await courseController.extendTopicForUser({
+                where: {
+                    courseTopicContentId: query.courseTopicContentId,
+                    userId: query.userId
+                },
+                assessmentWhere: {
+                    topicAssessmentInfoId: query.topicAssessmentInfoId
+                },
+                updates: body,
+            });
+            // TODO handle not found case
+            next(httpResponse.Ok('Extended topic successfully', updatesResult));
+        }));
 
 router.put('/topic/:id',
     authenticationMiddleware,
@@ -357,7 +328,7 @@ router.get('/assessment/topic/:id/start',
         const user = await req.session.getUser();
 
         // function returns boolean and IF the user is not allowed to start a new version, a reason is included
-        const {userCanStartNewVersion, message} = await courseController.canUserStartNewVersion({user, topicId: params.id});
+        const { userCanStartNewVersion, message } = await courseController.canUserStartNewVersion({ user, topicId: params.id });
 
         // will never have true + message
         if (userCanStartNewVersion === false && !_.isNil(message)) {
@@ -365,7 +336,7 @@ router.get('/assessment/topic/:id/start',
         }
 
         const versionInfo = await courseController.createGradeInstancesForAssessment({
-            topicId: params.id, 
+            topicId: params.id,
             userId: user.id,
             requestURL: req.headers['rederly-origin'] as string | undefined // need this because it incorrectly thinks it can be an array
         });
@@ -515,24 +486,24 @@ router.put('/question/grade/instance/:id',
     }));
 
 router.put('/question/extend',
-authenticationMiddleware,
-validate(extendCourseTopicQuestionValidation),
-// This is due to a typescript issue where the type mismatches extractMap
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-asyncHandler(async (req: RederlyExpressRequest<any, ExtendCourseTopicQuestionRequest.body, unknown, any, unknown>, _res: Response, next: NextFunction) => {
-    const query = req.query as ExtendCourseTopicQuestionRequest.query;
-    const body = req.body as ExtendCourseTopicQuestionRequest.body;
-    
-    const extensions = await courseController.extendQuestionForUser({
-        where: {
-            ...query
-        },
-        updates: {
-            ...body
-        }
-    });
-    next(httpResponse.Ok('Extended topic successfully', extensions));
-}));
+    authenticationMiddleware,
+    validate(extendCourseTopicQuestionValidation),
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, ExtendCourseTopicQuestionRequest.body, unknown, any, unknown>, _res: Response, next: NextFunction) => {
+        const query = req.query as ExtendCourseTopicQuestionRequest.query;
+        const body = req.body as ExtendCourseTopicQuestionRequest.body;
+
+        const extensions = await courseController.extendQuestionForUser({
+            where: {
+                ...query
+            },
+            updates: {
+                ...body
+            }
+        });
+        next(httpResponse.Ok('Extended topic successfully', extensions));
+    }));
 
 router.put('/question/:id',
     authenticationMiddleware,
@@ -621,7 +592,7 @@ router.get('/question/:id',
                 // check to see if we should allow this question to be viewed
                 const userCanViewQuestion = await courseController.userCanViewQuestionId(user, params.id, req.query.studentTopicAssessmentInfoId);
                 if (userCanViewQuestion === false) throw new Error('You are not permitted to view the problems after finishing.');
-                
+
                 question = await courseController.getQuestion({
                     questionId: params.id,
                     userId: session.userId,
@@ -667,7 +638,7 @@ router.post('/assessment/topic/:id/submit/:version/auto',
 
 //TODO: Probably move this up?
 router.post('/preview',
-    authenticationMiddleware,    
+    authenticationMiddleware,
     // TODO investigate if this is a problem
     // if the body were to be consumed it should hang here
     bodyParser.raw({
@@ -728,7 +699,7 @@ router.post('/preview',
         // Can't use unknown due to restrictions on the type from express
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         proxyReqPathResolver: (req: RederlyExpressRequest<any, unknown, unknown, unknown, PostQuestionMeta>) => {
-            if(_.isNil(req.meta)) {
+            if (_.isNil(req.meta)) {
                 throw new Error('Previously fetched metadata is nil');
             }
             const params: GetProblemParameters = {
@@ -747,7 +718,7 @@ router.post('/preview',
                 throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
             }
 
-            if(_.isNil(userReq.meta)) {
+            if (_.isNil(userReq.meta)) {
                 throw new Error('Previously fetched metadata is nil');
             }
 
@@ -842,7 +813,7 @@ router.post('/question/:id',
             rendererParams,
             // TODO investigate why having full sequelize model causes proxy to hang
             // maybe meta is a reserved field?
-            studentGrade: studentGrade?.get({ plain: true}) as StudentGrade,
+            studentGrade: studentGrade?.get({ plain: true }) as StudentGrade,
             courseQuestion: question
         };
         next();
@@ -851,7 +822,7 @@ router.post('/question/:id',
         // Can't use unknown due to restrictions on the type from express
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         proxyReqPathResolver: (req: RederlyExpressRequest<any, unknown, unknown, unknown, PostQuestionMeta>) => {
-            if(_.isNil(req.meta)) {
+            if (_.isNil(req.meta)) {
                 throw new Error('Previously fetched metadata is nil');
             }
             const params: GetProblemParameters = {
@@ -870,7 +841,7 @@ router.post('/question/:id',
                 throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
             }
 
-            if(_.isNil(userReq.meta)) {
+            if (_.isNil(userReq.meta)) {
                 throw new Error('Previously fetched metadata is nil');
             }
 
@@ -931,13 +902,13 @@ router.get('/',
 
 // This returns information about a specific topic. Currently, it only 
 // returns extension information if a specific user is passed.
-router.get('/topic/:id', 
+router.get('/topic/:id',
     authenticationMiddleware,
     validate(getTopicValidation),
     // This is due to a typescript issue where the type mismatches extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetTopicRequest.body, GetTopicRequest.query, unknown>, _res: Response, next: NextFunction) => {
-        const result = await courseController.getTopicById({id: req.params.id, userId: req.query.userId, includeQuestions: req.query.includeQuestions});
+        const result = await courseController.getTopicById({ id: req.params.id, userId: req.query.userId, includeQuestions: req.query.includeQuestions });
         next(httpResponse.Ok('Fetched successfully', result));
     }));
 
@@ -1016,7 +987,7 @@ router.post('/enroll/:code',
         }
     }));
 
-router.delete('/enroll', 
+router.delete('/enroll',
     authenticationMiddleware,
     validate(deleteEnrollmentValidation),
     asyncHandler(async (req: RederlyExpressRequest<DeleteEnrollmentRequest.params, unknown, DeleteEnrollmentRequest.body, DeleteEnrollmentRequest.query>, _res: Response, next: NextFunction) => {

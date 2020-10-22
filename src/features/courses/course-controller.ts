@@ -2773,14 +2773,6 @@ class CourseController {
                 });
             });
             }
-            await this.createNewStudentGradeInstance({
-                studentGradeId: questionGrade.id,
-                studentTopicAssessmentInfoId: studentTopicAssessmentInfo.id,
-                webworkQuestionPath,
-                randomSeed,
-                userId,
-                problemNumber: problemOrder[index]+1, // problemOrder starts from 0
-            });
             return studentTopicAssessmentInfo;
         });
     }

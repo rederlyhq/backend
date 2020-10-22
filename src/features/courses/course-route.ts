@@ -613,7 +613,12 @@ router.get('/question/:id',
 
 //TODO: Probably move this up?
 router.post('/preview',
-    authenticationMiddleware,
+    authenticationMiddleware,    
+    // TODO investigate if this is a problem
+    // if the body were to be consumed it should hang here
+    bodyParser.raw({
+        type: '*/*'
+    }),
     validate(previewQuestionValidation),
     // This is a typescript workaround since it tries to use the type extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -625,11 +630,31 @@ router.post('/preview',
         const user = await req.session.getUser();
         if (user.roleId === Role.STUDENT) throw new ForbiddenError('Preview is not available.');
 
-        const body = req.body as PreviewQuestionRequest.body;
+        const query = req.query as PreviewQuestionRequest.query;
+        if (!_.isNil(req.body) && !_.isEmpty(req.body)) {
+            req.meta = {
+                rendererParams: {
+                    outputformat: rendererHelper.getOutputFormatForRole(Role.PROFESSOR),
+                    permissionLevel: rendererHelper.getPermissionForRole(Role.PROFESSOR),
+                    showSolutions: Number(1),
+                },
+                studentGrade: {
+                    numAttempts: 0,
+                    randomSeed: query.problemSeed,
+                },
+                courseQuestion: {
+                    webworkQuestionPath: query.webworkQuestionPath
+                },
+            };
+            return next();
+        }
+        if (_.isNil(query.webworkQuestionPath)) {
+            throw new Error('Missing required field');
+        }
         try {
             const question = await courseController.previewQuestion({
-                webworkQuestionPath: body.webworkQuestionPath,
-                problemSeed: body.problemSeed,
+                webworkQuestionPath: query.webworkQuestionPath,
+                problemSeed: query.problemSeed,
                 formURL: req.originalUrl,
                 formData: {},
                 role: user.roleId,
@@ -643,6 +668,58 @@ router.post('/preview',
             // res.send(question.rendererData.renderedHTML);
         } catch (e) {
             next(e);
+        }
+    }),
+    proxy(configurations.renderer.url, {
+        // Can't use unknown due to restrictions on the type from express
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        proxyReqPathResolver: (req: RederlyExpressRequest<any, unknown, unknown, unknown, PostQuestionMeta>) => {
+            if(_.isNil(req.meta)) {
+                throw new Error('Previously fetched metadata is nil');
+            }
+            const params: GetProblemParameters = {
+                format: 'json',
+                formURL: req.originalUrl,
+                baseURL: '/',
+                ...req.meta?.rendererParams,
+                numIncorrect: req.meta.studentGrade?.numAttempts
+            };
+            return `${RENDERER_ENDPOINT}?${qs.stringify(params)}`;
+        },
+        // Can't use unknown due to restrictions on the type from express
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        userResDecorator: async (_proxyRes, proxyResData, userReq: RederlyExpressRequest<any, unknown, unknown, unknown, PostQuestionMeta>) => {
+            if (_.isNil(userReq.session)) {
+                throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+            }
+
+            if(_.isNil(userReq.meta)) {
+                throw new Error('Previously fetched metadata is nil');
+            }
+
+
+            let rendererResponse: RendererResponse | null = null;
+            try {
+                rendererResponse = await rendererHelper.parseRendererResponse(proxyResData.toString('utf8'), {
+                    questionPath: userReq.meta.courseQuestion.webworkQuestionPath,
+                    questionRandomSeed: userReq.meta.studentGrade?.randomSeed
+                });
+            } catch (e) {
+                throw new WrappedError(`Error parsing data response from renderer on question ${userReq.meta?.studentGrade?.courseWWTopicQuestionId} for grade ${userReq.meta?.studentGrade?.id}`, e);
+            }
+
+            // There is no way to get next callback, however anything thrown will get sent to next
+            // Using the below line will responde with a 201 the way we do in our routes
+            throw httpResponse.Ok('Answer submitted for question', {
+                rendererData: rendererHelper.cleanRendererResponseForTheResponse(rendererResponse),
+            });
+
+            // If testing renderer integration from the browser without the front end simply return the rendered html
+            // To do so first uncomment the below return and comment out the above throw
+            // Also when in the browser console add your auth token (`document.cookie = "sessionToken=UUID;`)
+            // Don't forget to do this in get as well
+            // TODO switch back to json response, right now we don't use the extra data and the iframe implementation requires html passed back
+            // return data.renderedHTML;
         }
     }));
 

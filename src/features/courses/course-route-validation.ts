@@ -284,11 +284,11 @@ export const getQuestionValidation = {
 
 export const previewQuestionValidation = {
     params: {},
-    query: {},
-    body: {
-        webworkQuestionPath: Joi.string().required(),
-        problemSeed: Joi.number().min(0).optional()
-    }
+    query: {
+        webworkQuestionPath: Joi.string().optional(),
+        problemSeed: Joi.number().min(0).optional(),
+    },
+    body: null,
 };
 
 export const getQuestionsValidation = {

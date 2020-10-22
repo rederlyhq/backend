@@ -31,6 +31,7 @@ import NotFoundError from '../../exceptions/not-found-error';
 import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
 import ForbiddenError from '../../exceptions/forbidden-error';
 import RederlyExtendedError from '../../exceptions/rederly-extended-error';
+import StudentGradeInstance from '../../database/models/student-grade-instance';
 
 const {
     sessionLife
@@ -222,6 +223,10 @@ class UserController {
             sequelizeGradeInclude.include.push({
                 model: StudentWorkbook,
                 as: 'workbooks'
+            });
+            sequelizeGradeInclude.include.push({
+                model: StudentGradeInstance,
+                as: 'gradeInstances'
             });
         }
 

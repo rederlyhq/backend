@@ -302,9 +302,15 @@ export interface UserCanStartNewVersionOptions {
     topicId: number;
 }
 
+export interface UserCanStartNewVersionResultData {
+    status: string;
+    nextAvailableStartTime?: Date;
+}
+
 export interface UserCanStartNewVersionResult {
     userCanStartNewVersion: boolean;
     message?: string;
+    data: UserCanStartNewVersionResultData;
 }
 
 export interface SubmittedAssessmentResultContext {

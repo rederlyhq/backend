@@ -112,7 +112,7 @@ app.use(basePath, router);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
 app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
     if (obj instanceof AlreadyExistsError || obj instanceof NotFoundError || obj instanceof IllegalArgumentException) {
-        next(Boom.badRequest(obj.message));
+        next(Boom.badRequest(obj.message, obj.data));
     } else if (obj instanceof ForbiddenError) {
         next(Boom.forbidden());
     } else {
@@ -126,7 +126,10 @@ app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
 app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
     if (obj.output) {
-        return res.status(obj.output.statusCode).json(obj.output.payload);
+        return res.status(obj.output.statusCode).json({
+            data: obj.data,
+            ...obj.output.payload
+        });
     }
     else if (obj.statusCode) {
         return res.status(obj.statusCode).json(obj);

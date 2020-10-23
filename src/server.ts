@@ -78,9 +78,6 @@ const limiter = rateLimit({
     handler: (_req, _res, next) => next(Boom.tooManyRequests()),
     skip: (req: Request): boolean => {
         const { path: reqPath } = req;
-        if (!baseUrlRegex.test(reqPath)) {
-            logger.error('A request came in that did not match the baseURL; this should not be possible!', reqPath);
-        }
 
         let result = false;
         rateLimiterWhiteList.some((r: RegExp): boolean => {
@@ -140,7 +137,7 @@ app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
         logger.error(`${rederlyReference} - ${obj.stack}`);
         const data: ErrorResponse = {
             statusCode: 500,
-            status: 'Interal Server Error',
+            status: 'Internal Server Error',
             rederlyReference
         };
 

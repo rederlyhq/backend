@@ -16,7 +16,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -2953,12 +2953,19 @@ class CourseController {
     * If the question belongs to an assessment, check for a current version unless a versionId is provided
     * TODO: include current instance in return object, include message in return object (replace/extend getCurrentInstanceForQuestion)
     */
-    async userCanViewQuestionId(user: User, questionId: number, studentTopicAssessmentInfoId?: number): Promise<boolean> {
-        if (user.roleId === Role.PROFESSOR || user.roleId === Role.ADMIN) return true;
+    async canUserViewQuestionId(options: CanUserViewQuestionIdOptions): Promise<CanUserViewQuestionIdResult> {
+        const { user, questionId, studentTopicAssessmentInfoId } = options;
+        let message = '';
+        if (user.roleId === Role.PROFESSOR || user.roleId === Role.ADMIN) return {userCanViewQuestion: true, message};
         const question = await courseRepository.getQuestion({ id: questionId });
         const topic = await question.getTopic();
         if (topic.topicTypeId === 1) {
-            return (topic.startDate.toMoment().isBefore(moment()));
+            if (topic.startDate.toMoment().isBefore(moment())) {
+                message = `${topic.name} hasn't started yet.`;
+                return { userCanViewQuestion: false, message };
+            } else {
+                return { userCanViewQuestion: true, message };
+            }
         } else if (topic.topicTypeId === 2) {
             let topicIsLive = false;
             if (_.isNil(studentTopicAssessmentInfoId)) {
@@ -2972,14 +2979,19 @@ class CourseController {
             }
             const topicInfo = await topic.getTopicAssessmentInfo();
             if (topicIsLive) {
-                return true;
+                return { userCanViewQuestion: true, message };
             } else {
-                // strike that -- reverse it ;)
-                return !topicInfo.hideProblemsAfterFinish;
+                if (topicInfo.hideProblemsAfterFinish) {
+                    message = `${topic.name} does not allow problems to be viewed after completion`;
+                    return { userCanViewQuestion: false, message };
+                } else {
+                    return { userCanViewQuestion: true, message };
+                }
             }
         }
         // we *should* never get here - but if we do, then the answer is NO
-        return false;
+        logger.error(`User #${user.id} asked to view question #${questionId} and the answer was undetermined.`);
+        return { userCanViewQuestion: false, message};
     };
 
     /*

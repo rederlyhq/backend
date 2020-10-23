@@ -193,7 +193,7 @@ router.get('/questions',
                 const session = req.session;
                 userId = session.userId;
             } else {
-                next(Boom.badRequest('userIdInput as a string must be the value `me`'));
+                throw new IllegalArgumentException('userIdInput as a string must be the value `me`');
                 return;
             }
         } else if (typeof userIdInput === 'number') {
@@ -218,7 +218,7 @@ router.get('/questions',
         // TODO fix frontend error handling around assessments when canGetQuestions is false
         if (userCanGetQuestions === false) {
             if (_.isNil(topic)){
-                next(Boom.badRequest(message));
+                throw new WrappedError(message);
             } else {
                 next(httpResponse.Ok(message, {topic}));
             }
@@ -590,8 +590,16 @@ router.get('/question/:id',
                 });
             } else {
                 // check to see if we should allow this question to be viewed
-                const userCanViewQuestion = await courseController.userCanViewQuestionId(user, params.id, req.query.studentTopicAssessmentInfoId);
-                if (userCanViewQuestion === false) throw new Error('You are not permitted to view the problems after finishing.');
+                const {
+                    userCanViewQuestion, 
+                    message
+                } = await courseController.canUserViewQuestionId({
+                    user, 
+                    questionId: params.id, 
+                    studentTopicAssessmentInfoId: 
+                    req.query.studentTopicAssessmentInfoId});
+                    
+                if (userCanViewQuestion === false) throw new WrappedError(message);
 
                 question = await courseController.getQuestion({
                     questionId: params.id,

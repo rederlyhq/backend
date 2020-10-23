@@ -328,11 +328,11 @@ router.get('/assessment/topic/:id/start',
         const user = await req.session.getUser();
 
         // function returns boolean and IF the user is not allowed to start a new version, a reason is included
-        const { userCanStartNewVersion, message } = await courseController.canUserStartNewVersion({ user, topicId: params.id });
+        const { userCanStartNewVersion, message, data } = await courseController.canUserStartNewVersion({ user, topicId: params.id });
 
         // will never have true + message
         if (userCanStartNewVersion === false && !_.isNil(message)) {
-            throw new IllegalArgumentException(message);
+            throw new IllegalArgumentException(message, data);
         }
 
         const versionInfo = await courseController.createGradeInstancesForAssessment({

@@ -2841,7 +2841,7 @@ class CourseController {
     
             const nextVersionAvailableTime = moment(startTime).add(topicInfo.versionDelay, 'minutes');
             // in trying to be clever about shuffling the order, don't forget to shift from 0..n-1 to 1..n
-            const problemOrder = (topicInfo.randomizeOrder) ? _.shuffle([...Array(10).keys()]) : [...Array(10).keys()];
+            const problemOrder = (topicInfo.randomizeOrder) ? _.shuffle([...Array(questions.length).keys()]) : [...Array(questions.length).keys()];
     
             const studentTopicAssessmentInfo = await this.createStudentTopicAssessmentInfo({
                 userId,

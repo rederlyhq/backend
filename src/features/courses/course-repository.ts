@@ -559,7 +559,7 @@ class CourseRepository {
     
     /**
      * This function takes a questionId and a userId
-     * It fetches the current gradeInstance, if one exists - returning undefined if there are no current gradeInstances
+     * It fetches the current gradeInstance, if one exists - returning null if there are no current gradeInstances
      * @param options: {questionId, userId}
      */
     async getCurrentInstanceForQuestion(options: GetQuestionVersionDetailsOptions): Promise<StudentGradeInstance | null> {

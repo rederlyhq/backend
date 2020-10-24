@@ -218,7 +218,7 @@ router.get('/questions',
         // TODO fix frontend error handling around assessments when canGetQuestions is false
         if (userCanGetQuestions === false) {
             if (_.isNil(topic)){
-                throw new WrappedError(message);
+                throw new IllegalArgumentException(message);
             } else {
                 next(httpResponse.Ok(message, {topic}));
             }

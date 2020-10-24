@@ -260,7 +260,7 @@ class RendererHelper {
             const errorMessagePrefix = 'Get problem from renderer error';
             if(isAxiosError(e)) {
                 if (e.response?.status === 404) {
-                    logger.error(`Question path ${sourceFilePath} not found by the renderer`);
+                    logger.warn(`Question path ${sourceFilePath} not found by the renderer`);
                     throw new NotFoundError('Problem path not found');
                 }
                 // TODO cleanup error handling, data might be lengthy

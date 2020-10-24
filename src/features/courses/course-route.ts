@@ -218,7 +218,7 @@ router.get('/questions',
         // TODO fix frontend error handling around assessments when canGetQuestions is false
         if (userCanGetQuestions === false) {
             if (_.isNil(topic)){
-                throw new WrappedError(message);
+                throw new IllegalArgumentException(message);
             } else {
                 next(httpResponse.Ok(message, {topic}));
             }
@@ -627,21 +627,26 @@ router.post('/assessment/topic/:id/submit/:version/auto',
     // This is a typescript workaround since it tries to use the type extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, unknown, SubmitAssessmentVersionRequest.body, SubmitAssessmentVersionRequest.query>, _res: Response, next: NextFunction) => {
-        const params = req.params as SubmitAssessmentVersionRequest.params;
+        try {
+            const params = req.params as SubmitAssessmentVersionRequest.params;
 
-        const studentTopicAssessmentInfo = await courseController.getStudentTopicAssessmentInfoById(params.version);
-
-        if (studentTopicAssessmentInfo.numAttempts >= studentTopicAssessmentInfo.maxAttempts) {
-            logger.error('This assessment version has no attempts remaining but was auto submitted.', JSON.stringify({
-                assessmentVersionId: params.version,
-                topicId: params.id
-            }));
-            // Can't give an error response or the scheduler might try again
-            next(httpResponse.Ok('Skipped'));
+            const studentTopicAssessmentInfo = await courseController.getStudentTopicAssessmentInfoById(params.version);
+    
+            if (studentTopicAssessmentInfo.numAttempts >= studentTopicAssessmentInfo.maxAttempts) {
+                logger.warn('This assessment version has no attempts remaining but was auto submitted.', JSON.stringify({
+                    assessmentVersionId: params.version,
+                    topicId: params.id
+                }));
+                // Can't give an error response or the scheduler might try again
+                next(httpResponse.Ok('Skipped'));
+            }
+    
+            const assessmentResult = await courseController.submitAssessmentAnswers(params.version, true); // false: wasAutoSubmitted
+            next(httpResponse.Ok('Assessment submitted successfully', assessmentResult));    
+        } catch (e) {
+            logger.error('Auto submit ran into uncaught error', e);
+            throw e;
         }
-
-        const assessmentResult = await courseController.submitAssessmentAnswers(params.version, true); // false: wasAutoSubmitted
-        next(httpResponse.Ok('Assessment submitted successfully', assessmentResult));
     }));
 
 //TODO: Probably move this up?

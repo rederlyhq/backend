@@ -2510,7 +2510,7 @@ class CourseController {
                 subInclude.push({
                     model: StudentGradeInstance,
                     as: 'gradeInstances',
-                    required: true,
+                    required: false,
                     where: {
                         studentTopicAssessmentInfoId,
                     },
@@ -2556,12 +2556,18 @@ class CourseController {
                 const topic = await this.getTopicById({id: courseTopicContentId});
                 // TODO remove assessment hardcoding -- userId nil-check is for TS
                 if (topic.topicTypeId === 2 && !_.isNil(userId)) {
-                    await questions.asyncForEach(async (question) => {
+                    questions.forEach( (question, index, questions) => {
                         if (_.isNil(question.grades) || question.grades.length === 0) throw new RederlyExtendedError('Impossible! Found an assessment question without a grade.');
-                        const version = await courseRepository.getCurrentInstanceForQuestion({questionId: question.id, userId});
-                        question.webworkQuestionPath = version?.webworkQuestionPath ?? question.webworkQuestionPath;
-                        question.grades[0].randomSeed = version?.randomSeed ?? question.grades[0].randomSeed;
-                        question.problemNumber = version?.problemNumber ?? question.problemNumber;
+                        const version = question.grades[0].gradeInstances?.[0];
+                        // TODO: prevent adding problems to an exam once versions have been generated
+                        if (_.isNil(version)) {
+                            questions.splice(index, 1);
+                            logger.error(`Topic #${topic.id}: Assessment version has a problem (${question.id}) with grade #${question.grades[0]} but no grade instance`);
+                        } else {
+                            question.webworkQuestionPath = version?.webworkQuestionPath ?? question.webworkQuestionPath;
+                            question.grades[0].randomSeed = version?.randomSeed ?? question.grades[0].randomSeed;
+                            question.problemNumber = version?.problemNumber ?? question.problemNumber;
+                        }
                     });
                 } else {
                     questions.forEach( (question) => {
@@ -3204,6 +3210,15 @@ class CourseController {
                     problemScoresReturn = {total: problemScores.total};
                 }
             }
+
+            try {
+                await schedulerHelper.deleteJob({
+                    id: studentTopicAssessmentInfo.id.toString()
+                });
+            } catch (e) {
+                logger.error(`Failed to delete job ${studentTopicAssessmentInfo.id}`, e);
+            }
+
             return { problemScores: problemScoresReturn, bestVersionScore: bestVersionScoreReturn, bestOverallVersion: bestOverallVersionReturn};
         });
     };

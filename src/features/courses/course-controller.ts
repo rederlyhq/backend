@@ -2513,7 +2513,7 @@ class CourseController {
                     required: true,
                     where: {
                         studentTopicAssessmentInfoId,
-                    }
+                    },
                 });
             }
             if (!_.isNil(userId)) {
@@ -2960,7 +2960,7 @@ class CourseController {
         const question = await courseRepository.getQuestion({ id: questionId });
         const topic = await question.getTopic();
         if (topic.topicTypeId === 1) {
-            if (topic.startDate.toMoment().isBefore(moment())) {
+            if (topic.startDate.toMoment().isAfter(moment())) {
                 message = `${topic.name} hasn't started yet.`;
                 return { userCanViewQuestion: false, message };
             } else {

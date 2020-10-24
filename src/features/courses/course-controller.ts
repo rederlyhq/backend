@@ -2556,7 +2556,7 @@ class CourseController {
                 const topic = await this.getTopicById({id: courseTopicContentId});
                 // TODO remove assessment hardcoding -- userId nil-check is for TS
                 if (topic.topicTypeId === 2 && !_.isNil(userId)) {
-                    await questions.forEach( (question, index, questions) => {
+                    questions.forEach( (question, index, questions) => {
                         if (_.isNil(question.grades) || question.grades.length === 0) throw new RederlyExtendedError('Impossible! Found an assessment question without a grade.');
                         const version = question.grades[0].gradeInstances?.[0];
                         // TODO: prevent adding problems to an exam once versions have been generated

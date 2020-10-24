@@ -286,14 +286,31 @@ export interface SubmitAnswerResult {
     studentWorkbook: StudentWorkbook | null;
 }
 
+export interface CanUserViewQuestionIdOptions {
+    user: User;
+    questionId: number;
+    studentTopicAssessmentInfoId?: number;
+}
+
+export interface CanUserViewQuestionIdResult {
+    userCanViewQuestion: boolean;
+    message: string;
+}
+
 export interface UserCanStartNewVersionOptions {
     user: User;
     topicId: number;
 }
 
+export interface UserCanStartNewVersionResultData {
+    status: string;
+    nextAvailableStartTime?: Date;
+}
+
 export interface UserCanStartNewVersionResult {
     userCanStartNewVersion: boolean;
     message?: string;
+    data: UserCanStartNewVersionResultData;
 }
 
 export interface SubmittedAssessmentResultContext {

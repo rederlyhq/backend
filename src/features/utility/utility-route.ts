@@ -53,7 +53,7 @@ asyncHandler(async (req: RederlyExpressRequest<ClientLogRequest.params, unknown,
     req.body.logs.forEach((log: unknown) => {
         // TODO grab the log level from the object?
         // Should not bloat this with anything but errors
-        logger.error(JSON.stringify(log));
+        logger.error(`Client Log: ${JSON.stringify(log)}`);
     });
     next(httpResponse.Ok('Logged'));
 }));

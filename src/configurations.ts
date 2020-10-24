@@ -64,6 +64,8 @@ export default {
             maxRequests: fromIntValue(process.env.SERVER_LIMITER_MAX_REQUESTS, 100),
         },
         logAccess: _.defaultTo(fromBooleanField(process.env.SERVER_LOG_ACCESS), true),
+        logInvalidlyPrefixedRequests: _.defaultTo(fromBooleanField(process.env.SERVER_LOG_INVALIDLY_PREFIXED_REQUESTS), true),
+        blockInvalidlyPrefixedRequests: _.defaultTo(fromBooleanField(process.env.SERVER_BLOCK_INVALIDLY_PREFIXED_REQUESTS), true),
     },
     db: {
         host: _.defaultTo(process.env.DB_HOST, 'localhost'),

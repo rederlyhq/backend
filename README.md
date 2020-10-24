@@ -24,6 +24,8 @@
 | --- | --- | --- |
 | SERVER_PORT | The port the server listens for requests on | 3000 |
 | SERVER_BASE_PATH | The prefix for all path (i.e. `/rederly/api` | /backend-api |
+| SERVER_LOG_INVALIDLY_PREFIXED_REQUESTS | Should there be an extra warning log when bad requests come in | true |
+| SERVER_BLOCK_INVALIDLY_PREFIXED_REQUESTS | Should the socket be closed and end prematurely | true |
 
 ##### Limiter
 | Environment variable | Description | Default value |

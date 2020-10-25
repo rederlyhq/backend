@@ -45,6 +45,7 @@ import configurations from '../../configurations';
 // cspell:disable-next-line -- urljoin is the name of the library
 import urljoin = require('url-join');
 import userController from '../users/user-controller';
+import AttemptsExceededException from '../../exceptions/attempts-exceeded-exception';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -3099,7 +3100,8 @@ class CourseController {
         return useDatabaseTransaction(async (): Promise<SubmitAssessmentAnswerResult> => {
             const studentTopicAssessmentInfo = await this.getStudentTopicAssessmentInfoById(studentTopicAssessmentInfoId);
             if (studentTopicAssessmentInfo.numAttempts >= studentTopicAssessmentInfo.maxAttempts) {
-                throw new IllegalArgumentException('Cannot submit assessment answers when there are no attempts remaining'); // sanity check, shouldn't happen
+                // This can happen with auto submit if delete job task was not successful
+                throw new AttemptsExceededException('Cannot submit assessment answers when there are no attempts remaining');
             }
             const topicInfo = await studentTopicAssessmentInfo.getTopicAssessmentInfo();
             const { showItemizedResults, showTotalGradeImmediately } = topicInfo;

@@ -427,6 +427,7 @@ export interface GetCalculatedRendererParamsOptions {
     role: Role;
     topic?: CourseTopicContent;
     courseQuestion: CourseWWTopicQuestion;
+    gradeInstance?: StudentGradeInstance;
 }
 
 export interface GetCalculatedRendererParamsResponse {

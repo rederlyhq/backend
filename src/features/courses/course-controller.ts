@@ -3213,13 +3213,14 @@ class CourseController {
                 }
             }
 
-            try {
-                await schedulerHelper.deleteJob({
-                    id: studentTopicAssessmentInfo.id.toString()
-                });
-            } catch (e) {
-                logger.error(`Failed to delete job ${studentTopicAssessmentInfo.id}`, e);
-            }
+            // TODO move this to finish job
+            // try {
+            //     await schedulerHelper.deleteJob({
+            //         id: studentTopicAssessmentInfo.id.toString()
+            //     });
+            // } catch (e) {
+            //     logger.error(`Failed to delete job ${studentTopicAssessmentInfo.id}`, e);
+            // }
 
             return { problemScores: problemScoresReturn, bestVersionScore: bestVersionScoreReturn, bestOverallVersion: bestOverallVersionReturn};
         });

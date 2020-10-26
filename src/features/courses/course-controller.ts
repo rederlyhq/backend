@@ -1225,7 +1225,7 @@ class CourseController {
                 problemSeed = studentGrade.randomSeed;
                 numIncorrect = studentGrade.numAttempts;
             } else {
-                gradeInstance = await workbook.getStudentGradeInstance();
+                gradeInstance = await courseRepository.getStudentGradeInstance({id: workbook.studentGradeInstanceId});
                 if (_.isNil(gradeInstance)) throw new NotFoundError(`workbook ${workbook.id} has grade instance ${workbook.studentGradeInstanceId} which could not be found`);
                 sourceFilePath = gradeInstance.webworkQuestionPath;
                 problemSeed = gradeInstance.randomSeed;

@@ -562,7 +562,7 @@ class CourseRepository {
      * It fetches the current gradeInstance, if one exists - returning null if there are no current gradeInstances
      * @param options: {questionId, userId}
      */
-    async getCurrentInstanceForQuestion(options: GetQuestionVersionDetailsOptions): Promise<StudentGradeInstance | null> {
+    async getCurrentInstanceForQuestion(options: GetQuestionVersionDetailsOptions): Promise<StudentGradeInstance | undefined> {
         // requires a userId and a questionId
         // questionId -> courseTopicContentId (unique, no query)
         // questionId + userId -> StudentGrade (unique)
@@ -585,7 +585,7 @@ class CourseRepository {
                 userId: options.userId,
             },
             order: [
-                ['endTime', 'DESC'],
+                ['id', 'DESC'], // this is admittedly bad, but 'endTime', 'DESC' was not sorting properly
             ]
         });
 
@@ -593,7 +593,7 @@ class CourseRepository {
         if ( assessmentInfo.length === 0 || (
             (moment(assessmentInfo[0].endTime).isBefore(moment()) || 
             assessmentInfo[0].isClosed) && 
-            topicInfo.hideProblemsAfterFinish) ) return null; // no current version available
+            topicInfo.hideProblemsAfterFinish) ) return; // no current version available
 
         const gradeInstance = await StudentGradeInstance.findOne({
             where: {

@@ -88,7 +88,7 @@ export default class StudentGradeInstance extends Model implements StudentGradeI
         StudentGradeInstance.belongsTo(StudentTopicAssessmentInfo, {
             foreignKey: 'studentTopicAssessmentInfoId',
             targetKey: 'id',
-            as: 'info',
+            as: 'studentAssessmentInfo',
         });
 
         StudentGradeInstance.hasMany(StudentWorkbook, {

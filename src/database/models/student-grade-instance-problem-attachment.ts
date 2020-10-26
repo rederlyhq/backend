@@ -34,7 +34,7 @@ export default class StudentGradeInstanceProblemAttachment extends Model impleme
         StudentGradeInstanceProblemAttachment.belongsTo(StudentGradeInstance, {
             foreignKey: 'studentGradeInstanceId',
             targetKey: 'id',
-            as: 'studentGrade'
+            as: 'studentGradeInstance'
         });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }

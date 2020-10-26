@@ -50,6 +50,10 @@ export interface GetStudentTopicAssessmentInfoOptions {
     userId: number;
 }
 
+export interface GetStudentGradeInstanceOptions {
+    id: number;
+}
+
 export interface GetQuestionVersionDetailsOptions {
     questionId: number;
     userId: number;

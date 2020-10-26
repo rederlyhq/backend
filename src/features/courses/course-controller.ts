@@ -110,9 +110,6 @@ class CourseController {
                     active: true,
                     userId,
                 },
-                // order: [
-                //     [StudentTopicAssessmentInfo, 'startTime', 'DESC'],
-                // ]
             });
 
             subInclude.push({
@@ -2842,11 +2839,23 @@ class CourseController {
     async createGradeInstancesForAssessment(options: CreateGradeInstancesForAssessmentOptions): Promise<StudentTopicAssessmentInfo> {
         return useDatabaseTransaction(async (): Promise<StudentTopicAssessmentInfo> => {
             const { topicId, userId } = options;
-            const topic = await courseRepository.getCourseTopic({id: topicId});
-            const topicInfo = await topic.getTopicAssessmentInfo(); // order by startDate 
+            // get topic with user overrides
+            let topic = await this.getTopicById({id: topicId, userId});
+            if (!_.isNil(topic.studentTopicOverride) && !_.isEmpty(topic.studentTopicOverride)) {
+                topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
+            }
+
+            // get topic assessment info with user overrides
+            let topicInfo = topic.topicAssessmentInfo;
+            if (_.isNil(topicInfo)) {
+                throw new IllegalArgumentException(`Tried to create grade instances for topic ${topic.id} without topic assessment info`);
+            }
+            if (!_.isNil(topicInfo.studentTopicAssessmentOverride) && !_.isEmpty(topicInfo.studentTopicAssessmentOverride)) {
+                topicInfo = topicInfo.getWithOverrides(topicInfo.studentTopicAssessmentOverride[0]) as TopicAssessmentInfo;
+            }
     
             const questions = await courseRepository.getQuestionsFromTopicId({id:topicId});
-            const startTime = moment().add(1,'minute'); // 1 minute should cover any delay in creating records before a student can actually begin
+            const startTime = moment().add(1,'minute'); // should cover any delay in creating records before a student can actually begin
     
             let endTime = moment(startTime).add(topicInfo.duration, 'minutes');
             if (topicInfo.hardCutoff) {
@@ -3181,6 +3190,8 @@ class CourseController {
                     if (isBestOverallVersion) {
                         // update grade: bestScore, lastInfluencingLegalAttemptId? (or do we forego workbooks on grades for assessments because of grade instances)
                         result.grade.bestScore = result.questionResponse.problem_result.score;
+                        result.grade.legalScore = result.questionResponse.problem_result.score;
+                        result.grade.effectiveScore = result.questionResponse.problem_result.score;
                         result.grade.lastInfluencingAttemptId = workbook.id;
                     }
                 }

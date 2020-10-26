@@ -2568,7 +2568,7 @@ class CourseController {
                         // TODO: prevent adding problems to an exam once versions have been generated
                         if (_.isNil(version)) {
                             questions.splice(index, 1);
-                            logger.error(`Topic #${topic.id}: Assessment version has a problem (${question.id}) with grade #${question.grades[0]} but no grade instance`);
+                            logger.error(`Topic #${topic.id}: Assessment version has a problem (${question.id}) with grade #${question.grades[0].id} but no grade instance`);
                         } else {
                             question.webworkQuestionPath = version?.webworkQuestionPath ?? question.webworkQuestionPath;
                             question.grades[0].randomSeed = version?.randomSeed ?? question.grades[0].randomSeed;
@@ -2840,19 +2840,27 @@ class CourseController {
     async createGradeInstancesForAssessment(options: CreateGradeInstancesForAssessmentOptions): Promise<StudentTopicAssessmentInfo> {
         return useDatabaseTransaction(async (): Promise<StudentTopicAssessmentInfo> => {
             const { topicId, userId } = options;
-            // get topic with user overrides
+            // overrides will strip includes down to raw values -- no methods
             let topic = await this.getTopicById({id: topicId, userId});
-            if (!_.isNil(topic.studentTopicOverride) && !_.isEmpty(topic.studentTopicOverride)) {
-                topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
-            }
-
-            // get topic assessment info with user overrides
             let topicInfo = topic.topicAssessmentInfo;
             if (_.isNil(topicInfo)) {
                 throw new IllegalArgumentException(`Tried to create grade instances for topic ${topic.id} without topic assessment info`);
             }
-            if (!_.isNil(topicInfo.studentTopicAssessmentOverride) && !_.isEmpty(topicInfo.studentTopicAssessmentOverride)) {
-                topicInfo = topicInfo.getWithOverrides(topicInfo.studentTopicAssessmentOverride[0]) as TopicAssessmentInfo;
+
+            // apply user overrides to topic
+            if (!_.isNil(topic.studentTopicOverride) && !_.isEmpty(topic.studentTopicOverride)) {
+                topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
+            }
+
+            // apply user overrides to version
+            const studentTopicAssessmentOverrideId = topicInfo?.studentTopicAssessmentOverride?.[0].id;
+            // we have the studentTopicAssessmentOverride object, but this extra step is
+            // needed because sequelize truncates when nested include namespaces get too long
+            // {minifyAliases: true} introduced in sequelize-5.18 
+            // https://github.com/sequelize/sequelize/pull/11095
+            if (!_.isNil(studentTopicAssessmentOverrideId)) {
+                const studentTopicAssessmentOverride = await courseRepository.getStudentTopicAssessmentOverride(studentTopicAssessmentOverrideId);
+                topicInfo = topicInfo.getWithOverrides(studentTopicAssessmentOverride) as TopicAssessmentInfo;
             }
     
             const questions = await courseRepository.getQuestionsFromTopicId({id:topicId});

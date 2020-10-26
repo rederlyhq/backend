@@ -2568,7 +2568,7 @@ class CourseController {
                         // TODO: prevent adding problems to an exam once versions have been generated
                         if (_.isNil(version)) {
                             questions.splice(index, 1);
-                            logger.error(`Topic #${topic.id}: Assessment version has a problem (${question.id}) with grade #${question.grades[0]} but no grade instance`);
+                            logger.error(`Topic #${topic.id}: Assessment version has a problem (${question.id}) with grade #${question.grades[0].id} but no grade instance`);
                         } else {
                             question.webworkQuestionPath = version?.webworkQuestionPath ?? question.webworkQuestionPath;
                             question.grades[0].randomSeed = version?.randomSeed ?? question.grades[0].randomSeed;

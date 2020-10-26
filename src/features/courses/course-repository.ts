@@ -497,6 +497,22 @@ class CourseRepository {
         if (_.isNil(result)) throw new WrappedError(`There is no topic assessment info for topic id: ${topicId}`);
         return result;
     }
+
+    async getStudentTopicAssessmentOverride(id: number): Promise<StudentTopicAssessmentOverride> {
+        try {
+            const override = await StudentTopicAssessmentOverride.findOne({
+                where: {
+                    id,
+                    active: true
+                }
+            });
+            if (_.isNil(override)) throw new Error(`Could not find student topic override ${id}`);
+            return override;
+        } catch (e) {
+            throw new WrappedError(`Failed while finding student topic override ${id}`);
+        }
+    }
+
     /* ************************* ************************* */
     /* ******************** Questions ******************** */
     /* ************************* ************************* */

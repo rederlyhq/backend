@@ -1,0 +1,66 @@
+import { Model, DataTypes } from 'sequelize';
+import appSequelize from '../app-sequelize';
+import StudentGradeProblemAttachment from './student-grade-problem-attachment';
+
+interface ProblemAttachmentInterface {
+    id: number;
+    url: string;
+    userLocalFilename: string;
+    createdAt: Date;
+    updatedAt: Date;
+    active: boolean;
+}
+
+export default class ProblemAttachment extends Model implements ProblemAttachmentInterface {
+    public id!: number;
+    public url!: string;
+    public userLocalFilename!: string;
+    public active!: boolean;
+    
+    // timestamps!
+    public readonly createdAt!: Date;
+    public readonly updatedAt!: Date;
+
+    static constraints = {
+    }
+
+    static createAssociations(): void {
+        // This is a hack to add the associations later to avoid cyclic dependencies
+        /* eslint-disable @typescript-eslint/no-use-before-define */
+        ProblemAttachment.hasMany(StudentGradeProblemAttachment, {
+            as: 'studentGradeProblemAttachments',
+            foreignKey: 'problemAttachmentId',
+            sourceKey: 'id'
+        });
+
+        /* eslint-enable @typescript-eslint/no-use-before-define */
+    }
+}
+
+ProblemAttachment.init({
+    id: {
+        field: 'problem_attachment_id',
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+    },
+    url: {
+        field: 'problem_attachment_url',
+        type: DataTypes.TEXT,
+        allowNull: false
+    },
+    userLocalFilename: {
+        field: 'problem_attachment_user_local_filename',
+        type: DataTypes.TEXT,
+        allowNull: false
+    },
+    active: {
+        field: 'problem_attachment_active',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true
+    },
+}, {
+    tableName: 'problem_attachment',
+    sequelize: appSequelize, // this bit is important
+});

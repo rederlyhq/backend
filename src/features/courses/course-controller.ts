@@ -1220,6 +1220,16 @@ class CourseController {
             if (studentGrade.courseWWTopicQuestionId !== options.questionId) {
                 throw new NotFoundError('The workbook you have requested does not belong to the question provided');
             }
+            // make sure to grab the right path & seed if this is an assessment workbook!
+            if (_.isNil(workbook.studentGradeInstanceId)) {
+                problemSeed = studentGrade.randomSeed;
+                numIncorrect = studentGrade.numAttempts;
+            } else {
+                gradeInstance = await workbook.getStudentGradeInstance();
+                if (_.isNil(gradeInstance)) throw new NotFoundError(`workbook ${workbook.id} has grade instance ${workbook.studentGradeInstanceId} which could not be found`);
+                sourceFilePath = gradeInstance.webworkQuestionPath;
+                problemSeed = gradeInstance.randomSeed;
+            }
             formData = workbook.submitted.form_data;
         }
 

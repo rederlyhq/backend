@@ -92,7 +92,8 @@ TopicAssessmentInfo.init({
     courseTopicContentId: {
         field: 'course_topic_content_id',
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,
+        unique: true,
     },
     duration: {
         field: 'topic_assessment_info_duration',

@@ -47,7 +47,6 @@ CourseQuestionAssessmentInfo.init({
         field: 'course_topic_question_id',
         type: DataTypes.INTEGER,
         allowNull: false,
-        unique: true,
     },
     randomSeedSet: {
         field: 'course_question_assessment_info_random_seed_set',

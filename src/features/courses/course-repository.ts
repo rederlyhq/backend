@@ -288,18 +288,30 @@ class CourseRepository {
                 returning: true,
             });
 
-            if (updates[0] === 1 && !_.isEmpty(options.updates.topicAssessmentInfo)) {
+            if (updates[0] === 1 && 
+                !_.isUndefined(options.updates.topicAssessmentInfo) && 
+                !_.isEmpty(options.updates.topicAssessmentInfo)) {
+
                 const updatedObj: CourseTopicContent = updates[1][0];
-                let toUpdate = await updatedObj.getTopicAssessmentInfo();
-                if (_.isNil(toUpdate)) {
-                    toUpdate = await TopicAssessmentInfo.create({
-                        courseTopicContentId: updatedObj.id
+
+                const assessmentUpdates = await TopicAssessmentInfo.update(
+                    options.updates.topicAssessmentInfo,
+                    {
+                        where: {
+                            courseTopicContentId: updatedObj.id
+                        },
+                        returning: true,
+                    });
+
+                if (assessmentUpdates[0] === 0) {
+                    await TopicAssessmentInfo.create({
+                        courseTopicContentId: updatedObj.id,
+                        ...options.updates.topicAssessmentInfo
                     });
                 }
-                _.assign(toUpdate, options.updates.topicAssessmentInfo);
-                toUpdate.save();
             }
 
+            // TODO: Update to return Assessment Info object
             return {
                 updatedCount: updates[0],
                 updatedRecords: updates[1],
@@ -666,19 +678,28 @@ class CourseRepository {
                 logger.error('A single question was expected to update, but multiple update objects are returned.');
             }
 
-            if (updates[0] === 1 && !_.isEmpty(options.updates.courseQuestionAssessmentInfo)) {
+            if (updates[0] === 1 &&
+                !_.isEmpty(options.updates.courseQuestionAssessmentInfo) &&
+                !_.isUndefined(options.updates.courseQuestionAssessmentInfo)) {
                 const updatedQuestion: CourseWWTopicQuestion = updates[1][0];
-                
-                const res = await CourseQuestionAssessmentInfo.upsert({
+
+                const assessmentUpdates = await CourseQuestionAssessmentInfo.update(
+                    options.updates.courseQuestionAssessmentInfo, {
+                    where: {
+                        courseWWTopicQuestionId: updatedQuestion.id,
+                    },
+                    returning: true
+                });
+
+                // Update failed, create new record.
+                if (assessmentUpdates[0] === 0) {
+                    await CourseQuestionAssessmentInfo.create({
                         courseWWTopicQuestionId: updatedQuestion.id,
                         ...options.updates.courseQuestionAssessmentInfo
-                    }, {
-                        returning: true
                     });
-                // Upsert doesn't seem to save the model after creating it.
-                await res[0].save();
+                }
             }
-
+            // TODO: Update to return Assessment Info object
             return {
                 updatedCount: updates[0],
                 updatedRecords: updates[1],

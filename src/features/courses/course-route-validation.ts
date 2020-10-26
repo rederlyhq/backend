@@ -439,3 +439,11 @@ export const submitAssessmentVersionValidation = {
     query: {},
     body: {},
 };
+
+export const gradeAssessmentValidation = {
+    params: {
+        id: Joi.number().required(),
+    },
+    query: {},
+    body: {},
+};

@@ -45,6 +45,7 @@ import configurations from '../../configurations';
 // cspell:disable-next-line -- urljoin is the name of the library
 import urljoin = require('url-join');
 import userController from '../users/user-controller';
+import AttemptsExceededException from '../../exceptions/attempts-exceeded-exception';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -110,9 +111,6 @@ class CourseController {
                     active: true,
                     userId,
                 },
-                // order: [
-                //     [StudentTopicAssessmentInfo, 'startTime', 'DESC'],
-                // ]
             });
 
             subInclude.push({
@@ -1104,9 +1102,11 @@ class CourseController {
     async getCalculatedRendererParams({
         role,
         topic,
+        gradeInstance,
         courseQuestion
     }: GetCalculatedRendererParamsOptions): Promise<GetCalculatedRendererParamsResponse> {
         let showSolutions = role !== Role.STUDENT;
+        let outputFormat: OutputFormat | undefined;
         // Currently we only need this fetch for student, small optimization to not call the db again
         if (!showSolutions) {
             if (_.isNil(topic)) {
@@ -1114,8 +1114,12 @@ class CourseController {
             }
             showSolutions = moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days').isBefore(moment());
         }
+        if (!_.isNil(gradeInstance)) {
+            const version = await gradeInstance.getStudentAssessmentInfo();
+            outputFormat = (version.isClosed || version.endTime.toMoment().isBefore(moment())) ? OutputFormat.STATIC : OutputFormat.ASSESS;
+        }
         return {
-            outputformat: rendererHelper.getOutputFormatForRole(role),
+            outputformat: outputFormat ?? rendererHelper.getOutputFormatForRole(role),
             permissionLevel: rendererHelper.getPermissionForRole(role),
             showSolutions: Number(showSolutions),
         };
@@ -1164,11 +1168,6 @@ class CourseController {
             throw new NotFoundError('Could not find the question in the database');
         }
 
-        const calculatedRendererParameters = await this.getCalculatedRendererParams({
-            courseQuestion,
-            role: options.role,
-        });
-
         let workbook: StudentWorkbook | null = null;
         if(!_.isNil(options.workbookId)) {
             workbook = await courseRepository.getWorkbookById(options.workbookId);
@@ -1187,13 +1186,15 @@ class CourseController {
         let problemSeed: number | undefined;
         let sourceFilePath = courseQuestion.webworkQuestionPath;
 
+        let gradeInstance: StudentGradeInstance | undefined;
+
         // get studentGrade from workbook if workbookID, 
         // otherwise studentGrade from userID + questionID | null
         if(_.isNil(workbook)) {
             // when no workbook is sent, the source of truth depends on whether question belongs to an assessment
             const thisQuestionIsFromAnAssessment = await this.isQuestionAnAssessment(options.questionId);
             if (thisQuestionIsFromAnAssessment) {
-                const gradeInstance = await courseRepository.getCurrentInstanceForQuestion({
+                gradeInstance = await courseRepository.getCurrentInstanceForQuestion({
                     questionId: options.questionId, 
                     userId: options.userId
                 }); 
@@ -1202,7 +1203,6 @@ class CourseController {
                 formData = gradeInstance.currentProblemState;
                 sourceFilePath = gradeInstance.webworkQuestionPath;
                 problemSeed = gradeInstance.randomSeed;
-                calculatedRendererParameters.outputformat = OutputFormat.ASSESS;
             } else {
                 const studentGrade = await StudentGrade.findOne({
                     where: {
@@ -1222,6 +1222,12 @@ class CourseController {
             }
             formData = workbook.submitted.form_data;
         }
+
+        const calculatedRendererParameters = await this.getCalculatedRendererParams({
+            courseQuestion,
+            role: options.role,
+            gradeInstance
+        });
 
         // TODO; rework calculatedRendererParameters
         if (options.readonly) {
@@ -2834,11 +2840,23 @@ class CourseController {
     async createGradeInstancesForAssessment(options: CreateGradeInstancesForAssessmentOptions): Promise<StudentTopicAssessmentInfo> {
         return useDatabaseTransaction(async (): Promise<StudentTopicAssessmentInfo> => {
             const { topicId, userId } = options;
-            const topic = await courseRepository.getCourseTopic({id: topicId});
-            const topicInfo = await topic.getTopicAssessmentInfo(); // order by startDate 
+            // get topic with user overrides
+            let topic = await this.getTopicById({id: topicId, userId});
+            if (!_.isNil(topic.studentTopicOverride) && !_.isEmpty(topic.studentTopicOverride)) {
+                topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
+            }
+
+            // get topic assessment info with user overrides
+            let topicInfo = topic.topicAssessmentInfo;
+            if (_.isNil(topicInfo)) {
+                throw new IllegalArgumentException(`Tried to create grade instances for topic ${topic.id} without topic assessment info`);
+            }
+            if (!_.isNil(topicInfo.studentTopicAssessmentOverride) && !_.isEmpty(topicInfo.studentTopicAssessmentOverride)) {
+                topicInfo = topicInfo.getWithOverrides(topicInfo.studentTopicAssessmentOverride[0]) as TopicAssessmentInfo;
+            }
     
             const questions = await courseRepository.getQuestionsFromTopicId({id:topicId});
-            const startTime = moment().add(1,'minute'); // 1 minute should cover any delay in creating records before a student can actually begin
+            const startTime = moment().add(1,'minute'); // should cover any delay in creating records before a student can actually begin
     
             let endTime = moment(startTime).add(topicInfo.duration, 'minutes');
             if (topicInfo.hardCutoff) {
@@ -3099,7 +3117,8 @@ class CourseController {
         return useDatabaseTransaction(async (): Promise<SubmitAssessmentAnswerResult> => {
             const studentTopicAssessmentInfo = await this.getStudentTopicAssessmentInfoById(studentTopicAssessmentInfoId);
             if (studentTopicAssessmentInfo.numAttempts >= studentTopicAssessmentInfo.maxAttempts) {
-                throw new IllegalArgumentException('Cannot submit assessment answers when there are no attempts remaining'); // sanity check, shouldn't happen
+                // This can happen with auto submit if delete job task was not successful
+                throw new AttemptsExceededException('Cannot submit assessment answers when there are no attempts remaining');
             }
             const topicInfo = await studentTopicAssessmentInfo.getTopicAssessmentInfo();
             const { showItemizedResults, showTotalGradeImmediately } = topicInfo;
@@ -3143,7 +3162,7 @@ class CourseController {
                     courseWWTopicQuestionId: result.grade.courseWWTopicQuestionId,
                     studentGradeInstanceId: result.instance.id, // shouldn't this workbook be tied to a grade instance?
                     randomSeed: result.instance.randomSeed,
-                    submitted: rendererHelper.cleanRendererResponseForTheDatabase(result.questionResponse.form_data as RendererResponse),
+                    submitted: rendererHelper.cleanRendererResponseForTheDatabase(result.questionResponse),
                     result: result.questionResponse.problem_result.score,
                     time: new Date(),
                     wasLate: false,
@@ -3173,6 +3192,8 @@ class CourseController {
                     if (isBestOverallVersion) {
                         // update grade: bestScore, lastInfluencingLegalAttemptId? (or do we forego workbooks on grades for assessments because of grade instances)
                         result.grade.bestScore = result.questionResponse.problem_result.score;
+                        result.grade.legalScore = result.questionResponse.problem_result.score;
+                        result.grade.effectiveScore = result.questionResponse.problem_result.score;
                         result.grade.lastInfluencingAttemptId = workbook.id;
                     }
                 }
@@ -3211,13 +3232,14 @@ class CourseController {
                 }
             }
 
-            try {
-                await schedulerHelper.deleteJob({
-                    id: studentTopicAssessmentInfo.id.toString()
-                });
-            } catch (e) {
-                logger.error(`Failed to delete job ${studentTopicAssessmentInfo.id}`, e);
-            }
+            // TODO move this to finish job
+            // try {
+            //     await schedulerHelper.deleteJob({
+            //         id: studentTopicAssessmentInfo.id.toString()
+            //     });
+            // } catch (e) {
+            //     logger.error(`Failed to delete job ${studentTopicAssessmentInfo.id}`, e);
+            // }
 
             return { problemScores: problemScoresReturn, bestVersionScore: bestVersionScoreReturn, bestOverallVersion: bestOverallVersionReturn};
         });

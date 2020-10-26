@@ -25,6 +25,7 @@ import bodyParser = require('body-parser');
 import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
 import logger from '../../utilities/logger';
 import ForbiddenError from '../../exceptions/forbidden-error';
+import AttemptsExceededException from '../../exceptions/attempts-exceeded-exception';
 
 const fileUpload = multer();
 
@@ -599,7 +600,7 @@ router.get('/question/:id',
                     studentTopicAssessmentInfoId: 
                     req.query.studentTopicAssessmentInfoId});
                     
-                if (userCanViewQuestion === false) throw new WrappedError(message);
+                if (userCanViewQuestion === false) throw new IllegalArgumentException(message);
 
                 question = await courseController.getQuestion({
                     questionId: params.id,
@@ -627,25 +628,21 @@ router.post('/assessment/topic/:id/submit/:version/auto',
     // This is a typescript workaround since it tries to use the type extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, unknown, SubmitAssessmentVersionRequest.body, SubmitAssessmentVersionRequest.query>, _res: Response, next: NextFunction) => {
+        const params = req.params as SubmitAssessmentVersionRequest.params;
         try {
-            const params = req.params as SubmitAssessmentVersionRequest.params;
-
-            const studentTopicAssessmentInfo = await courseController.getStudentTopicAssessmentInfoById(params.version);
-    
-            if (studentTopicAssessmentInfo.numAttempts >= studentTopicAssessmentInfo.maxAttempts) {
+            const assessmentResult = await courseController.submitAssessmentAnswers(params.version, true); // false: wasAutoSubmitted
+            next(httpResponse.Ok('Assessment submitted successfully', assessmentResult));
+        } catch (e) {
+            if (e instanceof AttemptsExceededException) {
                 logger.warn('This assessment version has no attempts remaining but was auto submitted.', JSON.stringify({
                     assessmentVersionId: params.version,
                     topicId: params.id
                 }));
-                // Can't give an error response or the scheduler might try again
-                next(httpResponse.Ok('Skipped'));
+                next(httpResponse.Ok('Attempts exceeded skipping auto submit'));
+            } else {
+                logger.error('Auto submit ran into uncaught error', e);
+                throw e;    
             }
-    
-            const assessmentResult = await courseController.submitAssessmentAnswers(params.version, true); // false: wasAutoSubmitted
-            next(httpResponse.Ok('Assessment submitted successfully', assessmentResult));    
-        } catch (e) {
-            logger.error('Auto submit ran into uncaught error', e);
-            throw e;
         }
     }));
 

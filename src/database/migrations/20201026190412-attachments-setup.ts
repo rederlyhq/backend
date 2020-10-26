@@ -194,10 +194,10 @@ export default {
     down: async (queryInterface: QueryInterface): Promise<void> => {
         // Transactions are automatically use because a namespace is injected into sequelize when fetching configurations
         await queryInterface.sequelize.transaction(async () => {
-            await queryInterface.dropTable('problem_attachment');
             await queryInterface.dropTable('student_workbook_problem_attachment');
             await queryInterface.dropTable('student_grade_problem_attachment');
             await queryInterface.dropTable('student_grade_instance_problem_attachment');
+            await queryInterface.dropTable('problem_attachment');
         });
     }
 };

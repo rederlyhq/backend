@@ -16,12 +16,17 @@ import CourseTopicContent from './models/course-topic-content';
 import TopicType from './models/topic-type';
 import CourseWWTopicQuestion from './models/course-ww-topic-question';
 import StudentGrade from './models/student-grade';
+import StudentGradeInstance from './models/student-grade-instance';
 import StudentWorkbook from './models/student-workbook';
 import Curriculum from './models/curriculum';
 import StudentGradeLockAction from './models/student-grade-lock-action';
 import StudentGradeOverride from './models/student-grade-override';
 import StudentTopicOverride from './models/student-topic-override';
 import StudentTopicQuestionOverride from './models/student-topic-question-override';
+import StudentTopicAssessmentOverride from './models/student-topic-assessment-override';
+import StudentTopicAssessmentInfo from './models/student-topic-assessment-info';
+import TopicAssessmentInfo from './models/topic-assessment-info';
+import CourseQuestionAssessmentInfo from './models/course-question-assessment-info';
 
 export const sync = async (): Promise<void> => {
     try {
@@ -49,11 +54,16 @@ const models = [
     TopicType,
     CourseWWTopicQuestion,
     StudentGrade,
+    StudentGradeInstance,
     StudentWorkbook,
     StudentGradeLockAction,
     StudentGradeOverride,
     StudentTopicOverride,
-    StudentTopicQuestionOverride
+    StudentTopicQuestionOverride,
+    CourseQuestionAssessmentInfo,
+    StudentTopicAssessmentInfo,
+    StudentTopicAssessmentOverride,
+    TopicAssessmentInfo
 ];
 
 // TODO fix this

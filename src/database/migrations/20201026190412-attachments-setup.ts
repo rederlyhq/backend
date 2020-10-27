@@ -11,8 +11,8 @@ export default {
                     autoIncrement: true,
                     primaryKey: true,
                 },
-                url: {
-                    field: 'problem_attachment_url',
+                cloudFilename: {
+                    field: 'problem_attachment_cloud_filename',
                     type: DataTypes.TEXT,
                     allowNull: false
                 },

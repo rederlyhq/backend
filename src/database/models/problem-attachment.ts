@@ -3,7 +3,7 @@ import appSequelize from '../app-sequelize';
 
 interface ProblemAttachmentInterface {
     id: number;
-    url: string;
+    cloudFilename: string;
     userLocalFilename: string;
     createdAt: Date;
     updatedAt: Date;
@@ -12,7 +12,7 @@ interface ProblemAttachmentInterface {
 
 export default class ProblemAttachment extends Model implements ProblemAttachmentInterface {
     public id!: number;
-    public url!: string;
+    public cloudFilename!: string;
     public userLocalFilename!: string;
     public active!: boolean;
     
@@ -54,12 +54,12 @@ ProblemAttachment.init({
         autoIncrement: true,
         primaryKey: true,
     },
-    url: {
-        field: 'problem_attachment_url',
+    cloudFileName: {
+        field: 'problem_attachment_cloud_filename',
         type: DataTypes.TEXT,
         allowNull: false
     },
-    userLocalFilename: {
+    userFilename: {
         field: 'problem_attachment_user_local_filename',
         type: DataTypes.TEXT,
         allowNull: false

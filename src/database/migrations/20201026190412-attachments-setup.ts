@@ -53,7 +53,7 @@ export default {
                 allowNull: false,
                 // Defaults to cascade when generating the db, no action on migrations
                 onUpdate: 'CASCADE',
-                onDelete: 'CASCADE',
+                onDelete: 'NO ACTION',
                 // Different from sequelize model, on models I do this with associations so I can use types
                 references: {
                     model: 'student_workbook',
@@ -104,7 +104,7 @@ export default {
                 allowNull: false,
                 // Defaults to cascade when generating the db, no action on migrations
                 onUpdate: 'CASCADE',
-                onDelete: 'CASCADE',
+                onDelete: 'NO ACTION',
                 // Different from sequelize model, on models I do this with associations so I can use types
                 references: {
                     model: 'student_grade',
@@ -156,7 +156,7 @@ export default {
                 allowNull: false,
                 // Defaults to cascade when generating the db, no action on migrations
                 onUpdate: 'CASCADE',
-                onDelete: 'CASCADE',
+                onDelete: 'NO ACTION',
                 // Different from sequelize model, on models I do this with associations so I can use types
                 references: {
                     model: 'student_grade_instance',

@@ -531,4 +531,5 @@ export interface GetAssessmentForGradingOptions {
 
 export interface GetAssessmentForGradingResult {
     problems: CourseWWTopicQuestion[];
+    topic: CourseTopicContent;
 }

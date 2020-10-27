@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import WrappedError from '../../exceptions/wrapped-error';
 import { Constants } from '../../constants';
-import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, UpdateGradeInstanceOptions, ExtendTopicForUserOptions, ExtendTopicQuestionForUserOptions, GetQuestionVersionDetailsOptions, GetStudentGradeInstanceOptions } from './course-types';
+import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, UpdateGradeInstanceOptions, ExtendTopicForUserOptions, ExtendTopicQuestionForUserOptions, GetQuestionVersionDetailsOptions, GetStudentGradeInstanceOptions, GetStudentGradeOptions } from './course-types';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 import NotFoundError from '../../exceptions/not-found-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
@@ -26,6 +26,9 @@ import TopicAssessmentInfo from '../../database/models/topic-assessment-info';
 import StudentTopicAssessmentOverride from '../../database/models/student-topic-assessment-override';
 import CourseQuestionAssessmentInfo from '../../database/models/course-question-assessment-info';
 import ProblemAttachment from '../../database/models/problem-attachment';
+import StudentGradeProblemAttachment from '../../database/models/student-grade-problem-attachment';
+import StudentGradeInstanceProblemAttachment from '../../database/models/student-grade-instance-problem-attachment';
+import StudentWorkbookProblemAttachment from '../../database/models/student-workbook-problem-attachment';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -586,6 +589,17 @@ class CourseRepository {
         }
     }
     
+    async getStudentGrade(options: GetStudentGradeOptions): Promise<StudentGrade | null> {
+        const result = await StudentGrade.findOne({
+            where: {
+                id: options.id,
+                active:true
+            }
+        });
+        if (_.isNil(result)) throw new NotFoundError(`Requested grade #${options.id} not found`);
+        return result;
+    }
+
     async getStudentGradeInstance(options: GetStudentGradeInstanceOptions): Promise<StudentGradeInstance> {
         const result = await StudentGradeInstance.findOne({
             where: {
@@ -878,6 +892,18 @@ class CourseRepository {
 
     createAttachment(obj: Partial<ProblemAttachment>): Promise<ProblemAttachment> {
         return ProblemAttachment.create(obj);
+    }
+
+    createStudentGradeProblemAttachment(obj: Partial<StudentGradeProblemAttachment>): Promise<StudentGradeProblemAttachment> {
+        return StudentGradeProblemAttachment.create(obj);
+    }
+
+    createStudentGradeInstanceProblemAttachment(obj: Partial<StudentGradeInstanceProblemAttachment>): Promise<StudentGradeInstanceProblemAttachment> {
+        return StudentGradeInstanceProblemAttachment.create(obj);
+    }
+
+    createStudentWorkbookProblemAttachment(obj: Partial<StudentWorkbookProblemAttachment>): Promise<StudentWorkbookProblemAttachment> {
+        return StudentWorkbookProblemAttachment.create(obj);
     }
 }
 

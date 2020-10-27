@@ -1028,8 +1028,11 @@ router.post('/attachments',
     authenticationMiddleware,
     validate(postAttachmentValidation),
     asyncHandler(async (req: RederlyExpressRequest<PostAttachmentRequest.params, unknown, PostAttachmentRequest.body, PostAttachmentRequest.query>, _res: Response, next: NextFunction) => {
+        // TODO permission to check if user has access to the provided grade or grade instance
         const result = await courseController.createAttachment({
-            obj: req.body
+            obj: req.body.attachment,
+            studentGradeId: req.body.studentGradeId,
+            studentGradeInstanceId: req.body.studentGradeInstanceId
         });
         next(httpResponse.Ok('Attachment record created', result));
     }));

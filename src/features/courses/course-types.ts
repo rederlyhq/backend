@@ -55,6 +55,10 @@ export interface GetStudentGradeInstanceOptions {
     id: number;
 }
 
+export interface GetStudentGradeOptions {
+    id: number;
+}
+
 export interface GetQuestionVersionDetailsOptions {
     questionId: number;
     userId: number;
@@ -519,4 +523,6 @@ export interface ReGradeStudentGradeOptions {
 
 export interface CreateAttachmentOptions {
     obj: Partial<ProblemAttachment>;
+    studentGradeId?: number;
+    studentGradeInstanceId?: number;
 }

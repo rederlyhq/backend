@@ -47,6 +47,7 @@ import urljoin = require('url-join');
 import userController from '../users/user-controller';
 import AttemptsExceededException from '../../exceptions/attempts-exceeded-exception';
 import ProblemAttachment from '../../database/models/problem-attachment';
+import RederlyError from '../../exceptions/rederly-error';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -3270,9 +3271,52 @@ class CourseController {
     };
 
     async createAttachment({
-        obj
+        obj,
+        studentGradeId,
+        studentGradeInstanceId
     }: CreateAttachmentOptions): Promise<ProblemAttachment> {
-        return courseRepository.createAttachment(obj);
+        return useDatabaseTransaction(async (): Promise<ProblemAttachment> => {
+            if (_.isNil(studentGradeId) === _.isNil(studentGradeInstanceId)) {
+                throw new IllegalArgumentException('Student grade XOR student grade instance id must be supplied');
+            }
+
+            if(!_.isNil(studentGradeInstanceId)) {
+                if(!_.isNil(studentGradeId)) {
+                    throw new IllegalArgumentException('This should not be possible since _.isNil student grade id and student grade instance id cannot be equal');
+                }
+                const studentGradeInstance = await courseRepository.getStudentGradeInstance({
+                    id: studentGradeInstanceId
+                });
+                studentGradeId = studentGradeInstance.studentGradeId;
+            }
+
+            const result = await courseRepository.createAttachment(obj);
+
+            /**
+             * Currently this could and should be validated by the constraint
+             * however that causes gaps in ids which I know we aren't too worried about
+             * furthermore we will need to fetch the grade anyway for permissions so why not throw it in for now
+             */
+            if(_.isNil(studentGradeId)) throw new RederlyError('Based on above logic this is not possible, however use strict did not pick up on that');
+            // on failure this will throw an error and bubble up
+            await courseRepository.getStudentGrade({
+                id: studentGradeId
+            });
+
+            await courseRepository.createStudentGradeProblemAttachment({
+                problemAttachmentId: result.id,
+                studentGradeId: studentGradeId
+            });
+
+            if(!_.isNil(studentGradeInstanceId)) {
+                await courseRepository.createStudentGradeInstanceProblemAttachment({
+                    problemAttachmentId: result.id,
+                    studentGradeInstanceId: studentGradeInstanceId
+                });
+            }
+
+            return result;
+        });
     }
 }
 

@@ -226,3 +226,9 @@ export namespace PostAttachmentRequest {
     export type query = Joi.extractType<typeof validations.postAttachmentValidation.query>;
     export type body = Joi.extractType<typeof validations.postAttachmentValidation.body>;
 };
+
+export namespace ListAttachmentsRequest {
+    export type params = Joi.extractType<typeof validations.listAttachmentsValidation.params>;
+    export type query = Joi.extractType<typeof validations.listAttachmentsValidation.query>;
+    export type body = Joi.extractType<typeof validations.listAttachmentsValidation.body>;
+};

@@ -15,6 +15,7 @@ import StudentTopicOverride from '../../database/models/student-topic-override';
 import StudentTopicQuestionOverride from '../../database/models/student-topic-question-override';
 import { DeepPartial } from '../../utilities/typescript-helpers';
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
+import ProblemAttachment from '../../database/models/problem-attachment';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -514,4 +515,8 @@ export interface ReGradeStudentGradeOptions {
     minDate?: Date;
     topicOverride?: StudentTopicOverride;
     questionOverride?: StudentTopicQuestionOverride;
+}
+
+export interface CreateAttachmentOptions {
+    obj: Partial<ProblemAttachment>;
 }

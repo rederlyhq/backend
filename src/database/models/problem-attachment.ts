@@ -59,7 +59,7 @@ ProblemAttachment.init({
         type: DataTypes.TEXT,
         allowNull: false
     },
-    userFilename: {
+    userLocalFilename: {
         field: 'problem_attachment_user_local_filename',
         type: DataTypes.TEXT,
         allowNull: false

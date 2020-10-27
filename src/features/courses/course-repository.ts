@@ -25,6 +25,7 @@ import StudentTopicAssessmentInfo from '../../database/models/student-topic-asse
 import TopicAssessmentInfo from '../../database/models/topic-assessment-info';
 import StudentTopicAssessmentOverride from '../../database/models/student-topic-assessment-override';
 import CourseQuestionAssessmentInfo from '../../database/models/course-question-assessment-info';
+import ProblemAttachment from '../../database/models/problem-attachment';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -873,6 +874,10 @@ class CourseRepository {
         } catch (e) {
             throw new WrappedError(`Could not extend question for ${options.where}`, e);
         }
+    }
+
+    createAttachment(obj: Partial<ProblemAttachment>): Promise<ProblemAttachment> {
+        return ProblemAttachment.create(obj);
     }
 }
 

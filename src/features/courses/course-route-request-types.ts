@@ -220,3 +220,9 @@ export namespace GetAttachmentPresignedURLRequest {
     export type query = Joi.extractType<typeof validations.getAttachmentPresignedURLValidation.query>;
     export type body = Joi.extractType<typeof validations.getAttachmentPresignedURLValidation.body>;
 };
+
+export namespace PostAttachmentRequest {
+    export type params = Joi.extractType<typeof validations.postAttachmentValidation.params>;
+    export type query = Joi.extractType<typeof validations.postAttachmentValidation.query>;
+    export type body = Joi.extractType<typeof validations.postAttachmentValidation.body>;
+};

@@ -445,3 +445,12 @@ export const getAttachmentPresignedURLValidation = {
     query: {},
     body: {},
 };
+
+export const postAttachmentValidation = {
+    params: {},
+    query: {},
+    body: {
+        cloudFileName: Joi.string().required(),
+        userLocalFilename: Joi.string().required(),
+    },
+};

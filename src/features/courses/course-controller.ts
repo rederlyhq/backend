@@ -2863,14 +2863,19 @@ class CourseController {
             }
 
             // apply user overrides to version
-            const studentTopicAssessmentOverrideId = topicInfo?.studentTopicAssessmentOverride?.[0].id;
-            // we have the studentTopicAssessmentOverride object, but this extra step is
-            // needed because sequelize truncates when nested include namespaces get too long
-            // {minifyAliases: true} introduced in sequelize-5.18 
-            // https://github.com/sequelize/sequelize/pull/11095
-            if (!_.isNil(studentTopicAssessmentOverrideId)) {
-                const studentTopicAssessmentOverride = await courseRepository.getStudentTopicAssessmentOverride(studentTopicAssessmentOverrideId);
-                topicInfo = topicInfo.getWithOverrides(studentTopicAssessmentOverride) as TopicAssessmentInfo;
+            if (!_.isNil(topicInfo) && 
+                !_.isNil(topicInfo.studentTopicAssessmentOverride) &&
+                !_.isEmpty(topicInfo.studentTopicAssessmentOverride)
+            ){
+                const studentTopicAssessmentOverrideId = topicInfo.studentTopicAssessmentOverride[0].id;
+                // we have the studentTopicAssessmentOverride object, but this extra step is
+                // needed because sequelize truncates when nested include namespaces get too long
+                // {minifyAliases: true} introduced in sequelize-5.18 
+                // https://github.com/sequelize/sequelize/pull/11095
+                if (!_.isNil(studentTopicAssessmentOverrideId)) {
+                    const studentTopicAssessmentOverride = await courseRepository.getStudentTopicAssessmentOverride(studentTopicAssessmentOverrideId);
+                    topicInfo = topicInfo.getWithOverrides(studentTopicAssessmentOverride) as TopicAssessmentInfo;
+                }
             }
     
             const questions = await courseRepository.getQuestionsFromTopicId({id:topicId});

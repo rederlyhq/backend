@@ -53,7 +53,7 @@ export default {
                 allowNull: false,
                 // Defaults to cascade when generating the db, no action on migrations
                 onUpdate: 'CASCADE',
-                onDelete: 'NO ACTION',
+                // onDelete: 'NO ACTION',
                 // Different from sequelize model, on models I do this with associations so I can use types
                 references: {
                     model: 'student_workbook',
@@ -104,7 +104,7 @@ export default {
                 allowNull: false,
                 // Defaults to cascade when generating the db, no action on migrations
                 onUpdate: 'CASCADE',
-                onDelete: 'NO ACTION',
+                onDelete: 'CASCADE',
                 // Different from sequelize model, on models I do this with associations so I can use types
                 references: {
                     model: 'student_grade',
@@ -118,7 +118,7 @@ export default {
                 allowNull: false,
                 // Defaults to cascade when generating the db, no action on migrations
                 onUpdate: 'CASCADE',
-                onDelete: 'NO ACTION',
+                onDelete: 'SET DEFAULT',
                 // Different from sequelize model, on models I do this with associations so I can use types
                 references: {
                     model: 'problem_attachment',
@@ -156,7 +156,7 @@ export default {
                 allowNull: false,
                 // Defaults to cascade when generating the db, no action on migrations
                 onUpdate: 'CASCADE',
-                onDelete: 'NO ACTION',
+                onDelete: 'RESTRICT',
                 // Different from sequelize model, on models I do this with associations so I can use types
                 references: {
                     model: 'student_grade_instance',
@@ -170,7 +170,7 @@ export default {
                 allowNull: false,
                 // Defaults to cascade when generating the db, no action on migrations
                 onUpdate: 'CASCADE',
-                onDelete: 'NO ACTION',
+                onDelete: 'SET NULL',
                 // Different from sequelize model, on models I do this with associations so I can use types
                 references: {
                     model: 'problem_attachment',

@@ -214,3 +214,9 @@ export namespace SubmitAssessmentVersionRequest {
     export type query = Joi.extractType<typeof validations.submitAssessmentVersionValidation.query>;
     export type body = Joi.extractType<typeof validations.submitAssessmentVersionValidation.body>;
 };
+
+export namespace GetAttachmentPresignedURLRequest {
+    export type params = Joi.extractType<typeof validations.getAttachmentPresignedURLValidation.params>;
+    export type query = Joi.extractType<typeof validations.getAttachmentPresignedURLValidation.query>;
+    export type body = Joi.extractType<typeof validations.getAttachmentPresignedURLValidation.body>;
+};

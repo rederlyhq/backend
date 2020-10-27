@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import WrappedError from '../../exceptions/wrapped-error';
 import { Constants } from '../../constants';
-import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, UpdateGradeInstanceOptions, ExtendTopicForUserOptions, ExtendTopicQuestionForUserOptions, GetQuestionVersionDetailsOptions, GetCourseOptions } from './course-types';
+import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, UpdateGradeInstanceOptions, ExtendTopicForUserOptions, ExtendTopicQuestionForUserOptions, GetQuestionVersionDetailsOptions, GetStudentGradeInstanceOptions, GetCourseOptions } from './course-types';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 import NotFoundError from '../../exceptions/not-found-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
@@ -303,18 +303,30 @@ class CourseRepository {
                 returning: true,
             });
 
-            if (updates[0] === 1 && !_.isEmpty(options.updates.topicAssessmentInfo)) {
+            if (updates[0] === 1 && 
+                !_.isUndefined(options.updates.topicAssessmentInfo) && 
+                !_.isEmpty(options.updates.topicAssessmentInfo)) {
+
                 const updatedObj: CourseTopicContent = updates[1][0];
-                let toUpdate = await updatedObj.getTopicAssessmentInfo();
-                if (_.isNil(toUpdate)) {
-                    toUpdate = await TopicAssessmentInfo.create({
-                        courseTopicContentId: updatedObj.id
+
+                const assessmentUpdates = await TopicAssessmentInfo.update(
+                    options.updates.topicAssessmentInfo,
+                    {
+                        where: {
+                            courseTopicContentId: updatedObj.id
+                        },
+                        returning: true,
+                    });
+
+                if (assessmentUpdates[0] === 0) {
+                    await TopicAssessmentInfo.create({
+                        courseTopicContentId: updatedObj.id,
+                        ...options.updates.topicAssessmentInfo
                     });
                 }
-                _.assign(toUpdate, options.updates.topicAssessmentInfo);
-                toUpdate.save();
             }
 
+            // TODO: Update to return Assessment Info object
             return {
                 updatedCount: updates[0],
                 updatedRecords: updates[1],
@@ -512,6 +524,22 @@ class CourseRepository {
         if (_.isNil(result)) throw new WrappedError(`There is no topic assessment info for topic id: ${topicId}`);
         return result;
     }
+
+    async getStudentTopicAssessmentOverride(id: number): Promise<StudentTopicAssessmentOverride> {
+        try {
+            const override = await StudentTopicAssessmentOverride.findOne({
+                where: {
+                    id,
+                    active: true
+                }
+            });
+            if (_.isNil(override)) throw new Error(`Could not find student topic override ${id}`);
+            return override;
+        } catch (e) {
+            throw new WrappedError(`Failed while finding student topic override ${id}`);
+        }
+    }
+
     /* ************************* ************************* */
     /* ******************** Questions ******************** */
     /* ************************* ************************* */
@@ -572,6 +600,17 @@ class CourseRepository {
         }
     }
     
+    async getStudentGradeInstance(options: GetStudentGradeInstanceOptions): Promise<StudentGradeInstance> {
+        const result = await StudentGradeInstance.findOne({
+            where: {
+                id: options.id,
+                active:true
+            }
+        });
+        if (_.isNil(result)) throw new NotFoundError(`Requested grade instance #${options.id} not found`);
+        return result;
+    }
+
     /**
      * This function takes a questionId and a userId
      * It fetches the current gradeInstance, if one exists - returning null if there are no current gradeInstances
@@ -654,19 +693,28 @@ class CourseRepository {
                 logger.error('A single question was expected to update, but multiple update objects are returned.');
             }
 
-            if (updates[0] === 1 && !_.isEmpty(options.updates.courseQuestionAssessmentInfo)) {
+            if (updates[0] === 1 &&
+                !_.isEmpty(options.updates.courseQuestionAssessmentInfo) &&
+                !_.isUndefined(options.updates.courseQuestionAssessmentInfo)) {
                 const updatedQuestion: CourseWWTopicQuestion = updates[1][0];
-                
-                const res = await CourseQuestionAssessmentInfo.upsert({
+
+                const assessmentUpdates = await CourseQuestionAssessmentInfo.update(
+                    options.updates.courseQuestionAssessmentInfo, {
+                    where: {
+                        courseWWTopicQuestionId: updatedQuestion.id,
+                    },
+                    returning: true
+                });
+
+                // Update failed, create new record.
+                if (assessmentUpdates[0] === 0) {
+                    await CourseQuestionAssessmentInfo.create({
                         courseWWTopicQuestionId: updatedQuestion.id,
                         ...options.updates.courseQuestionAssessmentInfo
-                    }, {
-                        returning: true
                     });
-                // Upsert doesn't seem to save the model after creating it.
-                await res[0].save();
+                }
             }
-
+            // TODO: Update to return Assessment Info object
             return {
                 updatedCount: updates[0],
                 updatedRecords: updates[1],

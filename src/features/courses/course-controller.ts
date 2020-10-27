@@ -1220,6 +1220,16 @@ class CourseController {
             if (studentGrade.courseWWTopicQuestionId !== options.questionId) {
                 throw new NotFoundError('The workbook you have requested does not belong to the question provided');
             }
+            // make sure to grab the right path & seed if this is an assessment workbook!
+            if (_.isNil(workbook.studentGradeInstanceId)) {
+                problemSeed = studentGrade.randomSeed;
+                numIncorrect = studentGrade.numAttempts;
+            } else {
+                gradeInstance = await courseRepository.getStudentGradeInstance({id: workbook.studentGradeInstanceId});
+                if (_.isNil(gradeInstance)) throw new NotFoundError(`workbook ${workbook.id} has grade instance ${workbook.studentGradeInstanceId} which could not be found`);
+                sourceFilePath = gradeInstance.webworkQuestionPath;
+                problemSeed = gradeInstance.randomSeed;
+            }
             formData = workbook.submitted.form_data;
         }
 
@@ -2568,7 +2578,7 @@ class CourseController {
                         // TODO: prevent adding problems to an exam once versions have been generated
                         if (_.isNil(version)) {
                             questions.splice(index, 1);
-                            logger.error(`Topic #${topic.id}: Assessment version has a problem (${question.id}) with grade #${question.grades[0]} but no grade instance`);
+                            logger.error(`Topic #${topic.id}: Assessment version has a problem (${question.id}) with grade #${question.grades[0].id} but no grade instance`);
                         } else {
                             question.webworkQuestionPath = version?.webworkQuestionPath ?? question.webworkQuestionPath;
                             question.grades[0].randomSeed = version?.randomSeed ?? question.grades[0].randomSeed;
@@ -2840,19 +2850,32 @@ class CourseController {
     async createGradeInstancesForAssessment(options: CreateGradeInstancesForAssessmentOptions): Promise<StudentTopicAssessmentInfo> {
         return useDatabaseTransaction(async (): Promise<StudentTopicAssessmentInfo> => {
             const { topicId, userId } = options;
-            // get topic with user overrides
+            // overrides will strip includes down to raw values -- no methods
             let topic = await this.getTopicById({id: topicId, userId});
-            if (!_.isNil(topic.studentTopicOverride) && !_.isEmpty(topic.studentTopicOverride)) {
-                topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
-            }
-
-            // get topic assessment info with user overrides
             let topicInfo = topic.topicAssessmentInfo;
             if (_.isNil(topicInfo)) {
                 throw new IllegalArgumentException(`Tried to create grade instances for topic ${topic.id} without topic assessment info`);
             }
-            if (!_.isNil(topicInfo.studentTopicAssessmentOverride) && !_.isEmpty(topicInfo.studentTopicAssessmentOverride)) {
-                topicInfo = topicInfo.getWithOverrides(topicInfo.studentTopicAssessmentOverride[0]) as TopicAssessmentInfo;
+
+            // apply user overrides to topic
+            if (!_.isNil(topic.studentTopicOverride) && !_.isEmpty(topic.studentTopicOverride)) {
+                topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
+            }
+
+            // apply user overrides to version
+            if (!_.isNil(topicInfo) && 
+                !_.isNil(topicInfo.studentTopicAssessmentOverride) &&
+                !_.isEmpty(topicInfo.studentTopicAssessmentOverride)
+            ){
+                const studentTopicAssessmentOverrideId = topicInfo.studentTopicAssessmentOverride[0].id;
+                // we have the studentTopicAssessmentOverride object, but this extra step is
+                // needed because sequelize truncates when nested include namespaces get too long
+                // {minifyAliases: true} introduced in sequelize-5.18 
+                // https://github.com/sequelize/sequelize/pull/11095
+                if (!_.isNil(studentTopicAssessmentOverrideId)) {
+                    const studentTopicAssessmentOverride = await courseRepository.getStudentTopicAssessmentOverride(studentTopicAssessmentOverrideId);
+                    topicInfo = topicInfo.getWithOverrides(studentTopicAssessmentOverride) as TopicAssessmentInfo;
+                }
             }
     
             const questions = await courseRepository.getQuestionsFromTopicId({id:topicId});
@@ -3194,6 +3217,7 @@ class CourseController {
                         result.grade.bestScore = result.questionResponse.problem_result.score;
                         result.grade.legalScore = result.questionResponse.problem_result.score;
                         result.grade.effectiveScore = result.questionResponse.problem_result.score;
+                        result.grade.partialCreditBestScore = result.questionResponse.problem_result.score;
                         result.grade.lastInfluencingAttemptId = workbook.id;
                     }
                 }
@@ -3244,14 +3268,13 @@ class CourseController {
             return { problemScores: problemScoresReturn, bestVersionScore: bestVersionScoreReturn, bestOverallVersion: bestOverallVersionReturn};
         });
     };
-
     async canUserGradeAssessment({
         user,
         topicId
     }: CanUserGradeAssessmentOptions): Promise<boolean> {
-        const topic = await courseRepository.getCourseTopic({id: topicId});
-        const unit = await courseRepository.getCourseUnit({id: topic.courseUnitContentId});
-        const course = await courseRepository.getCourse({id: unit.courseId});
+        const topic = await courseRepository.getCourseTopic({ id: topicId });
+        const unit = await courseRepository.getCourseUnit({ id: topic.courseUnitContentId });
+        const course = await courseRepository.getCourse({ id: unit.courseId });
         return (user.id === course.instructorId);
     }
 
@@ -3269,7 +3292,7 @@ class CourseController {
                 include: [{
                     model: StudentGrade,
                     as: 'grades',
-                    include : [{
+                    include: [{
                         model: StudentWorkbook,
                         as: 'workbooks',
                         required: false,
@@ -3284,6 +3307,7 @@ class CourseController {
             throw new WrappedError(`Topic #${topicId} failed to retrieve problems for grading assessment.`, e);
         }
     }
+
 }
 
 export const courseController = new CourseController();

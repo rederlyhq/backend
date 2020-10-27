@@ -439,3 +439,9 @@ export const submitAssessmentVersionValidation = {
     query: {},
     body: {},
 };
+
+export const getAttachmentPresignedURLValidation = {
+    params: {},
+    query: {},
+    body: {},
+};

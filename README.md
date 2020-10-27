@@ -102,3 +102,10 @@
 | Environment variable | Description | Default value |
 | --- | --- | --- |
 | SCHEDULER_BASE_PATH | The url to the scheduler | http://localhost:3003 |
+
+##### Attachments
+| Environment variable | Description | Default value |
+| --- | --- | --- |
+| ATTACHMENTS_PRESIGNED_URL_BASE_URL | The base url to fetch the presigned url from for uploads (i.e. `http://example.com`/base/path) | '' |
+| ATTACHMENTS_PRESIGNED_URL_BASE_PATH | The base path to fetch the presigned url for uploads (i.e. http://example.com`/base/path`) | '' |
+| ATTACHMENTS_BASE_URL | The base path to be combined with the cloud filename for attachments | '' |

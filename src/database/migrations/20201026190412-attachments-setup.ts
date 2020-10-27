@@ -124,7 +124,6 @@ export default {
                     model: 'problem_attachment',
                     key: 'problem_attachment_id',
                 },
-
             },
             active: {
                 field: 'student_grade_problem_attachment_active',

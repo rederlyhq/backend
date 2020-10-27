@@ -1,6 +1,5 @@
 import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize';
-import StudentGradeProblemAttachment from './student-grade-problem-attachment';
 
 interface ProblemAttachmentInterface {
     id: number;
@@ -33,6 +32,17 @@ export default class ProblemAttachment extends Model implements ProblemAttachmen
             sourceKey: 'id'
         });
 
+        ProblemAttachment.hasMany(StudentGradeInstanceProblemAttachment, {
+            as: 'studentGradeInstanceProblemAttachments',
+            foreignKey: 'problemAttachmentId',
+            sourceKey: 'id'
+        });
+
+        ProblemAttachment.hasMany(StudentWorkbookProblemAttachment, {
+            as: 'studentWorkbookProblemAttachments',
+            foreignKey: 'problemAttachmentId',
+            sourceKey: 'id'
+        });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }
@@ -64,3 +74,7 @@ ProblemAttachment.init({
     tableName: 'problem_attachment',
     sequelize: appSequelize, // this bit is important
 });
+
+import StudentGradeInstanceProblemAttachment from './student-grade-instance-problem-attachment';
+import StudentGradeProblemAttachment from './student-grade-problem-attachment';
+import StudentWorkbookProblemAttachment from './student-workbook-problem-attachment';

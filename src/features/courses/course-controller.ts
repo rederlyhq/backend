@@ -3310,6 +3310,13 @@ class CourseController {
                         where: {
                             active: true,
                         }
+                    }, {
+                        model: StudentGradeOverride,
+                        as: 'overrides',
+                        required: false,
+                        where: {
+                            active: true,
+                        }
                     }]
                 }]
             });

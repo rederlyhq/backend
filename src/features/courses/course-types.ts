@@ -75,6 +75,10 @@ export interface GetCourseUnitRepositoryOptions {
     id: number;
 }
 
+export interface GetCourseOptions {
+    id: number;
+}
+
 export interface UpdateTopicOptions {
     where: {
         id: number;
@@ -519,6 +523,20 @@ export interface ReGradeStudentGradeOptions {
     minDate?: Date;
     topicOverride?: StudentTopicOverride;
     questionOverride?: StudentTopicQuestionOverride;
+}
+
+export interface CanUserGradeAssessmentOptions {
+    user: User;
+    topicId: number;
+}
+
+export interface GetAssessmentForGradingOptions {
+    topicId: number;
+}
+
+export interface GetAssessmentForGradingResult {
+    problems: CourseWWTopicQuestion[];
+    topic: CourseTopicContent;
 }
 
 export interface CreateAttachmentOptions {

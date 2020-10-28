@@ -215,6 +215,12 @@ export namespace SubmitAssessmentVersionRequest {
     export type body = Joi.extractType<typeof validations.submitAssessmentVersionValidation.body>;
 };
 
+export namespace GradeAssessmentRequest {
+    export type params = Joi.extractType<typeof validations.gradeAssessmentValidation.params>;
+    export type query = Joi.extractType<typeof validations.gradeAssessmentValidation.query>;
+    export type body = Joi.extractType<typeof validations.gradeAssessmentValidation.body>;
+};
+
 export namespace GetAttachmentPresignedURLRequest {
     export type params = Joi.extractType<typeof validations.getAttachmentPresignedURLValidation.params>;
     export type query = Joi.extractType<typeof validations.getAttachmentPresignedURLValidation.query>;

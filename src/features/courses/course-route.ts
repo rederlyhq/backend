@@ -986,7 +986,7 @@ router.post('/:id/email',
             topic: body.topic,
             student: user,
         });
-        next(httpResponse.Ok(null, result));
+        next(httpResponse.Ok('Your message was sent to your professor.', result));
     })
 );
 

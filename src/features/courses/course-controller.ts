@@ -1326,8 +1326,24 @@ class CourseController {
                         wasExpired: gradeResult.gradingRationale.isExpired,
                         wasAfterAttemptLimit: !gradeResult.gradingRationale.isWithinAttemptLimit,
                         wasLocked: gradeResult.gradingRationale.isLocked,
-                        wasAutoSubmitted: false // TODO
+                        wasAutoSubmitted: false
                     });
+
+                    const attachments = await this.listAttachments({
+                        studentGradeId: studentGrade.id
+                    });
+
+                    await attachments.asyncForEach(async (attachment: ProblemAttachment) => {
+                        if (!_.isNil(workbook)) {
+                            await courseRepository.createStudentWorkbookProblemAttachment({
+                                studentWorkbookId: workbook.id,
+                                problemAttachmentId: attachment.id
+                            });
+                        } else {
+                            // should never be possible
+                            logger.warn('nil workbook after creation for create attachments');
+                        }
+                    });    
                 } else {
                     _.assign(workbook, {
                         wasLate: gradeResult.gradingRationale.isLate,
@@ -3198,6 +3214,17 @@ class CourseController {
                     wasAfterAttemptLimit: false,
                     wasLocked: false,
                     wasAutoSubmitted: wasAutoSubmitted,
+                });
+
+                const attachments = await this.listAttachments({
+                    studentGradeInstanceId: result.instance.id
+                });
+
+                await attachments.asyncForEach(async (attachment: ProblemAttachment) => {
+                    await courseRepository.createStudentWorkbookProblemAttachment({
+                        studentWorkbookId: workbook.id,
+                        problemAttachmentId: attachment.id
+                    });
                 });
     
                 // update individual problem high-scores

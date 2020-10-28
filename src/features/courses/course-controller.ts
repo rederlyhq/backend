@@ -16,7 +16,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -46,6 +46,8 @@ import configurations from '../../configurations';
 import urljoin = require('url-join');
 import userController from '../users/user-controller';
 import AttemptsExceededException from '../../exceptions/attempts-exceeded-exception';
+import ProblemAttachment from '../../database/models/problem-attachment';
+import RederlyError from '../../exceptions/rederly-error';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -3326,6 +3328,54 @@ class CourseController {
         }
     }
 
+    async createAttachment({
+        obj,
+        studentGradeId,
+        studentGradeInstanceId
+    }: CreateAttachmentOptions): Promise<ProblemAttachment> {
+        return useDatabaseTransaction(async (): Promise<ProblemAttachment> => {
+            if (_.isNil(studentGradeId) === _.isNil(studentGradeInstanceId)) {
+                throw new IllegalArgumentException('Student grade XOR student grade instance id must be supplied');
+            }
+
+            if(!_.isNil(studentGradeInstanceId)) {
+                if(!_.isNil(studentGradeId)) {
+                    throw new IllegalArgumentException('This should not be possible since _.isNil student grade id and student grade instance id cannot be equal');
+                }
+                const studentGradeInstance = await courseRepository.getStudentGradeInstance({
+                    id: studentGradeInstanceId
+                });
+                studentGradeId = studentGradeInstance.studentGradeId;
+            }
+
+            const result = await courseRepository.createAttachment(obj);
+
+            /**
+             * Currently this could and should be validated by the constraint
+             * however that causes gaps in ids which I know we aren't too worried about
+             * furthermore we will need to fetch the grade anyway for permissions so why not throw it in for now
+             */
+            if(_.isNil(studentGradeId)) throw new RederlyError('Based on above logic this is not possible, however use strict did not pick up on that');
+            // on failure this will throw an error and bubble up
+            await courseRepository.getStudentGrade({
+                id: studentGradeId
+            });
+
+            await courseRepository.createStudentGradeProblemAttachment({
+                problemAttachmentId: result.id,
+                studentGradeId: studentGradeId
+            });
+
+            if(!_.isNil(studentGradeInstanceId)) {
+                await courseRepository.createStudentGradeInstanceProblemAttachment({
+                    problemAttachmentId: result.id,
+                    studentGradeInstanceId: studentGradeInstanceId
+                });
+            }
+
+            return result;
+        });
+    }
 }
 
 export const courseController = new CourseController();

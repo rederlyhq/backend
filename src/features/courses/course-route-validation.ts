@@ -447,3 +447,22 @@ export const gradeAssessmentValidation = {
     query: {},
     body: {},
 };
+
+export const getAttachmentPresignedURLValidation = {
+    params: {},
+    query: {},
+    body: {},
+};
+
+export const postAttachmentValidation = {
+    params: {},
+    query: {},
+    body: {
+        attachment: Joi.object({
+            cloudFileName: Joi.string().required(),
+            userLocalFilename: Joi.string().required(),    
+        }). required(),
+        studentGradeId: Joi.number().optional(),
+        studentGradeInstanceId: Joi.number().optional()
+    },
+};

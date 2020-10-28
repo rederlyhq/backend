@@ -110,5 +110,10 @@ export default {
     },
     scheduler: {
         basePath: _.defaultTo(process.env.SCHEDULER_BASE_PATH,'http://localhost:3003'),
+    },
+    attachments: {
+        presignedUrlBaseUrl: _.defaultTo(process.env.ATTACHMENTS_PRESIGNED_URL_BASE_URL, ''),
+        presignedUrlBasePath: _.defaultTo(process.env.ATTACHMENTS_PRESIGNED_URL_BASE_PATH, ''),
+        baseUrl: _.defaultTo(process.env.ATTACHMENTS_BASE_URL, ''),
     }
 };

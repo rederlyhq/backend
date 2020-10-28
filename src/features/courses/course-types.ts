@@ -15,6 +15,7 @@ import StudentTopicOverride from '../../database/models/student-topic-override';
 import StudentTopicQuestionOverride from '../../database/models/student-topic-question-override';
 import { DeepPartial } from '../../utilities/typescript-helpers';
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
+import ProblemAttachment from '../../database/models/problem-attachment';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -51,6 +52,10 @@ export interface GetStudentTopicAssessmentInfoOptions {
 }
 
 export interface GetStudentGradeInstanceOptions {
+    id: number;
+}
+
+export interface GetStudentGradeOptions {
     id: number;
 }
 
@@ -532,4 +537,10 @@ export interface GetAssessmentForGradingOptions {
 export interface GetAssessmentForGradingResult {
     problems: CourseWWTopicQuestion[];
     topic: CourseTopicContent;
+}
+
+export interface CreateAttachmentOptions {
+    obj: Partial<ProblemAttachment>;
+    studentGradeId?: number;
+    studentGradeInstanceId?: number;
 }

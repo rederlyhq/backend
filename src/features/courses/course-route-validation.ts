@@ -440,6 +440,14 @@ export const submitAssessmentVersionValidation = {
     body: {},
 };
 
+export const gradeAssessmentValidation = {
+    params: {
+        id: Joi.number().required(),
+    },
+    query: {},
+    body: {},
+};
+
 export const getAttachmentPresignedURLValidation = {
     params: {},
     query: {},

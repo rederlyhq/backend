@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import WrappedError from '../../exceptions/wrapped-error';
 import { Constants } from '../../constants';
-import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, UpdateGradeInstanceOptions, ExtendTopicForUserOptions, ExtendTopicQuestionForUserOptions, GetQuestionVersionDetailsOptions, GetStudentGradeInstanceOptions, GetStudentGradeOptions } from './course-types';
+import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, UpdateGradeInstanceOptions, ExtendTopicForUserOptions, ExtendTopicQuestionForUserOptions, GetQuestionVersionDetailsOptions, GetStudentGradeInstanceOptions, GetCourseOptions, GetStudentGradeOptions } from './course-types';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 import NotFoundError from '../../exceptions/not-found-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
@@ -78,6 +78,21 @@ class CourseRepository {
         } catch (e) {
             this.checkCourseError(e);
             throw new WrappedError(Constants.ErrorMessage.UNKNOWN_APPLICATION_ERROR_MESSAGE, e);
+        }
+    }
+
+    async getCourse(options: GetCourseOptions): Promise<Course> {
+        try {
+            const course = await Course.findOne({
+                where: {
+                    id: options.id,
+                    active: true,
+                }
+            });
+            if (_.isNil(course)) throw new Error(`Could not retrieve course with id ${options.id}`);
+            return course;
+        } catch (e) {
+            throw new WrappedError(`Could not retrieve course with id ${options.id}`);
         }
     }
 

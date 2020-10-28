@@ -466,3 +466,12 @@ export const postAttachmentValidation = {
         studentGradeInstanceId: Joi.number().optional()
     },
 };
+
+export const listAttachmentsValidation = {
+    params: {},
+    query: {
+        studentGradeId: Joi.number().optional(),
+        studentGradeInstanceId: Joi.number().optional()
+    },
+    body: {},
+};

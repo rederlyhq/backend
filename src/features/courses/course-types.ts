@@ -544,3 +544,8 @@ export interface CreateAttachmentOptions {
     studentGradeId?: number;
     studentGradeInstanceId?: number;
 }
+
+export interface ListAttachmentOptions {
+    studentGradeId?: number;
+    studentGradeInstanceId?: number;
+}

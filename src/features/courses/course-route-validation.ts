@@ -485,3 +485,22 @@ export const deleteAttachmentValidation = {
     query: {},
     body: {},
 };
+
+export const emailProfValidation = {
+    params: {
+        id: Joi.number().required(),
+    },
+    query: {},
+    body: {
+        content: Joi.string().required(),
+        topic: Joi.object({
+            id: Joi.number().required(),
+            name: Joi.string().required(),
+        }).required(),
+        question: Joi.object({
+            id: Joi.number().required(),
+            webworkQuestionPath: Joi.string().required(),
+            problemNumber: Joi.number().required(),
+        }).required(),
+    },
+};

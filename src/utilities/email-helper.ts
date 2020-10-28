@@ -16,6 +16,8 @@ interface SendEmailOptions {
     content: string;
     email: string;
     subject: string;
+    from?: string;
+    // attachments: File;
 }
 
 class EmailHelper {
@@ -53,11 +55,12 @@ class EmailHelper {
             return Promise.resolve();
         }
 
-        const email = {
+        const email: Mail.Options = {
             from: this.from,
             to: options.email,
             subject: options.subject,
-            text: options.content
+            text: options.content,
+            ...(options.from ? {headers: {'Reply-To': options.from }} : undefined)
         };
 
         // Nodemailer's callback uses any

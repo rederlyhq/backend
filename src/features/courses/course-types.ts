@@ -543,9 +543,15 @@ export interface CreateAttachmentOptions {
     obj: Partial<ProblemAttachment>;
     studentGradeId?: number;
     studentGradeInstanceId?: number;
+    studentWorkbookId?: number;
 }
 
 export interface ListAttachmentOptions {
     studentGradeId?: number;
     studentGradeInstanceId?: number;
+    studentWorkbookId?: number;
+}
+
+export interface DeleteAttachmentOptions {
+    problemAttachmentId: number;
 }

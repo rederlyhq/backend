@@ -463,7 +463,8 @@ export const postAttachmentValidation = {
             userLocalFilename: Joi.string().required(),    
         }). required(),
         studentGradeId: Joi.number().optional(),
-        studentGradeInstanceId: Joi.number().optional()
+        studentGradeInstanceId: Joi.number().optional(),
+        studentWorkbookId: Joi.number().optional(),
     },
 };
 
@@ -471,7 +472,16 @@ export const listAttachmentsValidation = {
     params: {},
     query: {
         studentGradeId: Joi.number().optional(),
-        studentGradeInstanceId: Joi.number().optional()
+        studentGradeInstanceId: Joi.number().optional(),
+        studentWorkbookId: Joi.number().optional(),
     },
+    body: {},
+};
+
+export const deleteAttachmentValidation = {
+    params: {
+        id: Joi.number().required()
+    },
+    query: {},
     body: {},
 };

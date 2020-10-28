@@ -531,3 +531,7 @@ export interface ListAttachmentOptions {
     studentGradeId?: number;
     studentGradeInstanceId?: number;
 }
+
+export interface DeleteAttachmentOptions {
+    problemAttachmentId: number;
+}

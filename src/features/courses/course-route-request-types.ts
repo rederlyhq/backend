@@ -232,3 +232,9 @@ export namespace ListAttachmentsRequest {
     export type query = Joi.extractType<typeof validations.listAttachmentsValidation.query>;
     export type body = Joi.extractType<typeof validations.listAttachmentsValidation.body>;
 };
+
+export namespace DeleteAttachmentRequest {
+    export type params = Joi.extractType<typeof validations.deleteAttachmentValidation.params>;
+    export type query = Joi.extractType<typeof validations.deleteAttachmentValidation.query>;
+    export type body = Joi.extractType<typeof validations.deleteAttachmentValidation.body>;
+};

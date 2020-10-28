@@ -467,3 +467,11 @@ export const listAttachmentsValidation = {
     },
     body: {},
 };
+
+export const deleteAttachmentValidation = {
+    params: {
+        id: Joi.number().required()
+    },
+    query: {},
+    body: {},
+};

@@ -301,7 +301,6 @@ router.get('/assessment/topic/grade/:id',
         const user = await req.session.getUser();
         if (await courseController.canUserGradeAssessment({user, topicId: params.id}) === false) {
             throw new ForbiddenError('You are not allowed to grade this assessment.');
-            return;
         }
 
         const {problems, topic} = await courseController.getAssessmentForGrading({topicId: params.id});

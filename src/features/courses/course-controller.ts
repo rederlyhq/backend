@@ -3276,6 +3276,7 @@ class CourseController {
         user,
         topicId
     }: CanUserGradeAssessmentOptions): Promise<boolean> {
+        // TODO merge into single call
         const topic = await courseRepository.getCourseTopic({ id: topicId });
         const unit = await courseRepository.getCourseUnit({ id: topic.courseUnitContentId });
         const course = await courseRepository.getCourse({ id: unit.courseId });
@@ -3299,10 +3300,12 @@ class CourseController {
                 throw new WrappedError(`failed to retrieve topic #${topicId} for grading`);
             }
 
+            // TODO change to includes on the above get topic
             const problems = await CourseWWTopicQuestion.findAll({
                 where: {
                     courseTopicContentId: topicId,
-                    active: true
+                    active: true,
+                    hidden: false,
                 },
                 include: [{
                     model: StudentGrade,
@@ -3310,13 +3313,6 @@ class CourseController {
                     include: [{
                         model: StudentWorkbook,
                         as: 'workbooks',
-                        required: false,
-                        where: {
-                            active: true,
-                        }
-                    }, {
-                        model: StudentGradeOverride,
-                        as: 'overrides',
                         required: false,
                         where: {
                             active: true,

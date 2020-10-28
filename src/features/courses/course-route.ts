@@ -1032,7 +1032,8 @@ router.post('/attachments',
         const result = await courseController.createAttachment({
             obj: req.body.attachment,
             studentGradeId: req.body.studentGradeId,
-            studentGradeInstanceId: req.body.studentGradeInstanceId
+            studentGradeInstanceId: req.body.studentGradeInstanceId,
+            studentWorkbookId: req.body.studentWorkbookId
         });
         next(httpResponse.Ok('Attachment record created', result));
     }));
@@ -1044,8 +1045,10 @@ router.get('/attachments/list',
         // TODO permission to check if user has access to the provided grade or grade instance
         const result = await courseController.listAttachments({
             studentGradeId: req.query.studentGradeId,
-            studentGradeInstanceId: req.query.studentGradeInstanceId
+            studentGradeInstanceId: req.query.studentGradeInstanceId,
+            studentWorkbookId: req.query.studentWorkbookId,
         });
+        
         next(httpResponse.Ok('Attachments fetched successfully', result));
     }));
 
@@ -1060,6 +1063,7 @@ router.delete('/attachments/:id',
         const result = await courseController.deleteAttachment({
             problemAttachmentId: params.id
         });
+
         next(httpResponse.Ok('Attachments fetched successfully', result));
     }));
 

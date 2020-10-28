@@ -50,6 +50,7 @@ import ProblemAttachment from '../../database/models/problem-attachment';
 import RederlyError from '../../exceptions/rederly-error';
 import StudentGradeProblemAttachment from '../../database/models/student-grade-problem-attachment';
 import StudentGradeInstanceProblemAttachment from '../../database/models/student-grade-instance-problem-attachment';
+import StudentWorkbookProblemAttachment from '../../database/models/student-workbook-problem-attachment';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -3275,16 +3276,38 @@ class CourseController {
     async createAttachment({
         obj,
         studentGradeId,
-        studentGradeInstanceId
+        studentGradeInstanceId,
+        studentWorkbookId
     }: CreateAttachmentOptions): Promise<ProblemAttachment> {
         return useDatabaseTransaction(async (): Promise<ProblemAttachment> => {
-            if (_.isNil(studentGradeId) === _.isNil(studentGradeInstanceId)) {
-                throw new IllegalArgumentException('Student grade XOR student grade instance id must be supplied');
+            const filterCount = [
+                studentGradeId,
+                studentGradeInstanceId,
+                studentWorkbookId,
+            ].reduce((accumulator, val) => (accumulator || 0) + (!_.isNil(val) && 1 || 0), 0);
+    
+            if (filterCount !== 1) {
+                throw new IllegalArgumentException('Create attachment requires exactly 1 of [studentGradeId, studentGradeInstanceId, studentWorkbookId] to be set');
             }
 
-            if(!_.isNil(studentGradeInstanceId)) {
+            if(!_.isNil(studentWorkbookId)) {
+                if(!_.isNil(studentGradeInstanceId)) {
+                    throw new IllegalArgumentException('studentGradeInstanceId was almost overwritten, this should not be possible due to the filter count');
+                }
+
                 if(!_.isNil(studentGradeId)) {
-                    throw new IllegalArgumentException('This should not be possible since _.isNil student grade id and student grade instance id cannot be equal');
+                    throw new IllegalArgumentException('studentGradeId was almost overwritten, this should not be possible due to the filter count');
+                }
+                
+                const studentWorkbook = await courseRepository.getWorkbookById(studentWorkbookId);
+                if (_.isNil(studentWorkbook)) {
+                    throw new NotFoundError('Could not find the student workbook for create attachment');
+                }
+                studentGradeInstanceId = studentWorkbook.studentGradeInstanceId;
+                studentGradeId = studentWorkbook.studentGradeId;
+            } else if(!_.isNil(studentGradeInstanceId)) {
+                if(!_.isNil(studentGradeId)) {
+                    throw new IllegalArgumentException('studentGradeId was almost overwritten, this should not be possible due to the filter count');
                 }
                 const studentGradeInstance = await courseRepository.getStudentGradeInstance({
                     id: studentGradeInstanceId
@@ -3317,16 +3340,30 @@ class CourseController {
                 });
             }
 
+            if(!_.isNil(studentWorkbookId)) {
+                await courseRepository.createStudentWorkbookProblemAttachment({
+                    problemAttachmentId: result.id,
+                    studentWorkbookId: studentWorkbookId
+                });
+            }
+
             return result;
         });
     }
     async listAttachments({
         studentGradeId,
-        studentGradeInstanceId
+        studentGradeInstanceId,
+        studentWorkbookId
     }: ListAttachmentOptions): Promise<Array<ProblemAttachment>> {
         return useDatabaseTransaction(async (): Promise<Array<ProblemAttachment>> => {
-            if (_.isNil(studentGradeId) === _.isNil(studentGradeInstanceId)) {
-                throw new IllegalArgumentException('Either student grade id or student grade instance id must be provided. Not both and not neither.');
+            const filterCount = [
+                studentGradeId,
+                studentGradeInstanceId,
+                studentWorkbookId,
+            ].reduce((accumulator, val) => (accumulator || 0) + (!_.isNil(val) && 1 || 0), 0);
+    
+            if (filterCount !== 1) {
+                throw new IllegalArgumentException('List attachment requires exactly 1 of [studentGradeId, studentGradeInstanceId, studentWorkbookId] to be set');
             }
             // Does it make sense to do this with a union in the future?
             const result = [];
@@ -3363,8 +3400,27 @@ class CourseController {
                         }
                     }]
                 });
+                result.push(...studentGradeProblemAttachments);
+            }
+
+            if (!_.isNil(studentWorkbookId)) {
+                const studentGradeProblemAttachments = await ProblemAttachment.findAll({
+                    where: {
+                        active: true
+                    },
+                    include: [{
+                        model: StudentWorkbookProblemAttachment,
+                        as: 'studentWorkbookProblemAttachments',
+                        attributes: [],
+                        where: {
+                            active: true,
+                            studentWorkbookId: studentWorkbookId
+                        }
+                    }]
+                });
                 result.push(...studentGradeProblemAttachments);    
             }
+
             return result;
         });
     }

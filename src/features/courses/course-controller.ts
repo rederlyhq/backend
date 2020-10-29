@@ -3578,7 +3578,7 @@ class CourseController {
 Hello Professor ${course.instructor.lastName},
 
     Your student ${options.student.firstName} ${options.student.lastName} is asking for help with
-Problem ${question.problemNumber+1} in the Topic ${topic.name}.
+Problem ${question.problemNumber} in the Topic ${topic.name}.
 
 Here is the message that was sent:
 

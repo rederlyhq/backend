@@ -971,7 +971,6 @@ router.post('/:id/email',
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, EmailProfRequest.body, EmailProfRequest.query>, res: Response, next: NextFunction) => {
         const params: EmailProfRequest.params = req.params;
-        const body = req.body as EmailProfRequest.body;
 
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
@@ -981,8 +980,8 @@ router.post('/:id/email',
 
         const result = await courseController.emailProfessor({
             courseId: params.id,
-            content: body.content,
-            question: body.question,
+            content: req.body.content,
+            question: req.body.question,
             student: user,
         });
         next(httpResponse.Ok('Your message was sent to your professor.', result));

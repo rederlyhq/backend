@@ -1072,7 +1072,10 @@ router.get('/attachments/list',
             studentWorkbookId: req.query.studentWorkbookId,
         });
         
-        next(httpResponse.Ok('Attachments fetched successfully', result));
+        next(httpResponse.Ok('Attachments fetched successfully', {
+            attachments: result,
+            baseUrl: configurations.attachments.baseUrl
+        }));
     }));
 
 router.delete('/attachments/:id',
@@ -1087,7 +1090,7 @@ router.delete('/attachments/:id',
             problemAttachmentId: params.id
         });
 
-        next(httpResponse.Ok('Attachments fetched successfully', result));
+        next(httpResponse.Ok('Attachment deleted successfully', result));
     }));
 
 module.exports = router;

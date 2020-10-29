@@ -983,7 +983,6 @@ router.post('/:id/email',
             courseId: params.id,
             content: body.content,
             question: body.question,
-            topic: body.topic,
             student: user,
         });
         next(httpResponse.Ok('Your message was sent to your professor.', result));

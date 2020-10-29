@@ -3543,30 +3543,42 @@ class CourseController {
             }],
         });
 
-        const gradePromise = StudentGrade.findOne({
-            where: {
-                userId: options.student.id,
-                courseWWTopicQuestionId: options.question.id,
-            },
-            attributes: ['randomSeed']
+        const topicPromise = CourseTopicContent.findOne({
+            attributes: ['id', 'name'],
+            where: {},
+            include: [{
+                model: CourseWWTopicQuestion,
+                as: 'questions',
+                attributes: ['problemNumber'],
+                required: true,
+                where: {
+                    id: options.question.id,
+                    active: true,
+                }
+            }]
         });
 
-        const [course, grade] = await Promise.all([coursePromise, gradePromise]);
+        const [course, topic] = await Promise.all([coursePromise, topicPromise]);
 
         if (_.isNil(course) || _.isNil(course.instructor)) {
-            throw new WrappedError('Could not find an instructor for this course.');
+            throw new RederlyError('Could not find an instructor for this course.');
         }
 
-        if (_.isNil(grade)) {
-            throw new WrappedError('Could not find a grade associated with the problem this student is trying to ask about.');
+        if (_.isNil(topic)) {
+            throw new RederlyError('Could not find a topic associated with the problem this student is trying to ask about.');
+        }
+        
+        const question = topic.questions?.[0];
+        
+        if (_.isNil(question)) {
+            throw new RederlyError('Could not find the question associated with the problem/topic this student is trying to ask about.');
         }
 
         const poorMansTemplate = `
 Hello Professor ${course.instructor.lastName},
 
     Your student ${options.student.firstName} ${options.student.lastName} is asking for help with
-Problem ${options.question.problemNumber+1} (ID#${options.question.id}) in the Topic ${options.topic.name} (ID#${options.topic.id})
-The WeBWorK path for this problem is ${options.question.webworkQuestionPath} and the seed value is ${grade.randomSeed}.
+Problem ${question.problemNumber+1} in the Topic ${topic.name}.
 
 Here is the message that was sent:
 
@@ -3578,8 +3590,8 @@ You should be able to reply to the student's email address (${options.student.pr
         return emailHelper.sendEmail({
             content: poorMansTemplate,
             email: course.instructor.preferredEmail,
-            subject: `${options.student.firstName} - Topic ${options.topic.id} - Question ${options.question.id}`,
-            from: options.student.preferredEmail,
+            subject: `${options.student.firstName} - Topic ${topic.id} - Question ${options.question.id}`,
+            replyTo: options.student.preferredEmail,
         });
     }
 }

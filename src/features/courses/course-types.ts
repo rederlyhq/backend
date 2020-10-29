@@ -565,13 +565,7 @@ export interface EmailProfOptions {
     courseId: number;
     content: string;
     student: User;
-    topic: {
-        id: number;
-        name: string;
-    };
     question: {
         id: number;
-        webworkQuestionPath: string;
-        problemNumber: number;
     };
 }

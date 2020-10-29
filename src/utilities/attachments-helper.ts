@@ -9,7 +9,9 @@ interface AttachmentHelperOptions {
 };
 
 interface RequestPresignedURLResponse {
-    upload_url: string;
+    // TODO: URL type?
+    uploadURL: string;
+    photoFilename: string;
 }
 
 interface GetPresignedURLResponse {
@@ -48,8 +50,8 @@ class AttachmentHelper {
     getNewPresignedURL = async (): Promise<GetPresignedURLResponse> => {
         const result = await this.requestNewPresignedURL();
         return {
-            uploadURL: result.data.upload_url,
-            cloudFilename: this.parseTokenFromPresignedURL(result.data.upload_url)
+            uploadURL: result.data.uploadURL,
+            cloudFilename: result.data.photoFilename,
         };
     }
 

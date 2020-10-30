@@ -1,6 +1,6 @@
-import schedulerHelper, { HttpMethod } from './utilities/scheduler-helper';
+import schedulerHelper, { HttpMethod } from '../utilities/scheduler-helper';
 import * as moment from 'moment';
-import logger from './utilities/logger';
+import logger from '../utilities/logger';
 
 const sleep = (millis: number): Promise<void> => new Promise(resolve => setTimeout(resolve, millis));
 

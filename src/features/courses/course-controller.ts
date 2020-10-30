@@ -2936,30 +2936,30 @@ class CourseController {
                 // await questionGrade.save();
             });
 
-            try {
-                let autoSubmitURL: string | undefined;
-                if(_.isNil(options.requestURL)) {
-                    logger.error('requestURL is nil for auto submit');
-                    // TODO configuration backup?
-                } else {
-                    // cspell:disable-next-line -- urljoin is the name of the library
-                    autoSubmitURL = urljoin(options.requestURL, configurations.server.basePath, `/courses/assessment/topic/${topicId}/submit/${studentTopicAssessmentInfo.id}/auto`);
-                }
-    
-                if (_.isNil(autoSubmitURL)) {
-                    logger.error(`Could not determine the url for auto submit for studentTopicAssessmentInfo: ${studentTopicAssessmentInfo.id}`);
-                } else {
-                    await schedulerHelper.setJob({
-                        id: studentTopicAssessmentInfo.id.toString(),
-                        time: endTime.toDate(),
-                        webHookScheduleEvent: {
-                            url: autoSubmitURL,
-                            data: {}
-                        }
-                    });                    
-                }
-            } catch(e) {
-                logger.error(`Could not create scheduler job for studentTopicAssessmentInfo ${studentTopicAssessmentInfo.id}`, e);
+            let autoSubmitURL: string | undefined;
+            if(_.isNil(options.requestURL)) {
+                logger.error('requestURL is nil for auto submit');
+                // TODO configuration backup?
+            } else {
+                // cspell:disable-next-line -- urljoin is the name of the library
+                autoSubmitURL = urljoin(options.requestURL, configurations.server.basePath, `/courses/assessment/topic/${topicId}/submit/${studentTopicAssessmentInfo.id}/auto`);
+            }
+
+            if (_.isNil(autoSubmitURL)) {
+                logger.error(`Could not determine the url for auto submit for studentTopicAssessmentInfo: ${studentTopicAssessmentInfo.id}`);
+            } else {
+                // DO NOT AWAIT, we do not want this to keep the transaction alive, it's result is not important to the application
+                schedulerHelper.setJob({
+                    id: studentTopicAssessmentInfo.id.toString(),
+                    time: endTime.toDate(),
+                    webHookScheduleEvent: {
+                        url: autoSubmitURL,
+                        data: {}
+                    }
+                })
+                .catch((e) => {
+                    logger.error(`Could not create scheduler job for studentTopicAssessmentInfo ${studentTopicAssessmentInfo.id}`, e);
+                });
             }
     
             return studentTopicAssessmentInfo;

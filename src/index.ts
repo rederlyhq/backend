@@ -1,12 +1,12 @@
 import configurations from './configurations';
 import './extensions';
 import logger from './utilities/logger';
-const enableddMarker = new Array(20).join('*');
-const disableddMarker = new Array(20).join('#');
+const enabledMarker = new Array(20).join('*');
+const disabledMarker = new Array(20).join('#');
 if (configurations.email.enabled) {
-    logger.info(`${enableddMarker} EMAIL ENABLED ${enableddMarker}`);
+    logger.info(`${enabledMarker} EMAIL ENABLED ${enabledMarker}`);
 } else {
-    logger.info(`${disableddMarker} EMAIL DISABLED ${disableddMarker}`);
+    logger.info(`${disabledMarker} EMAIL DISABLED ${disabledMarker}`);
 }
 
 import { sync } from './database';

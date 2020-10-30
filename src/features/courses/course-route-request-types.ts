@@ -244,3 +244,9 @@ export namespace DeleteAttachmentRequest {
     export type query = Joi.extractType<typeof validations.deleteAttachmentValidation.query>;
     export type body = Joi.extractType<typeof validations.deleteAttachmentValidation.body>;
 };
+
+export namespace EmailProfRequest {
+    export type params = Joi.extractType<typeof validations.emailProfValidation.params>;
+    export type query = Joi.extractType<typeof validations.emailProfValidation.query>;
+    export type body = Joi.extractType<typeof validations.emailProfValidation.body>;
+};

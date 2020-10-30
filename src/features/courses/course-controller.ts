@@ -16,7 +16,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions  } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -51,6 +51,7 @@ import RederlyError from '../../exceptions/rederly-error';
 import StudentGradeProblemAttachment from '../../database/models/student-grade-problem-attachment';
 import StudentGradeInstanceProblemAttachment from '../../database/models/student-grade-instance-problem-attachment';
 import StudentWorkbookProblemAttachment from '../../database/models/student-workbook-problem-attachment';
+import emailHelper from '../../utilities/email-helper';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -3523,6 +3524,75 @@ class CourseController {
             updatedCount: result[0],
             updatedRecords: result[1]
         };
+    }
+
+    // Sends an email to the professor associated with the course.
+    async emailProfessor(options: EmailProfOptions): Promise<boolean> {
+        const coursePromise = Course.findOne({
+            where: {
+                id: options.courseId,
+            },
+            include: [{
+                model: User,
+                as: 'instructor',
+                attributes: ['id', 'firstName', 'lastName', 'email', 'preferredEmail'],
+                where: {
+                    active: true
+                },
+                required: true,
+            }],
+        });
+
+        const topicPromise = CourseTopicContent.findOne({
+            attributes: ['id', 'name'],
+            where: {},
+            include: [{
+                model: CourseWWTopicQuestion,
+                as: 'questions',
+                attributes: ['problemNumber'],
+                required: true,
+                where: {
+                    id: options.question.id,
+                    active: true,
+                }
+            }]
+        });
+
+        const [course, topic] = await Promise.all([coursePromise, topicPromise]);
+
+        if (_.isNil(course) || _.isNil(course.instructor)) {
+            throw new RederlyError('Could not find an instructor for this course.');
+        }
+
+        if (_.isNil(topic)) {
+            throw new RederlyError('Could not find a topic associated with the problem this student is trying to ask about.');
+        }
+        
+        const question = topic.questions?.[0];
+        
+        if (_.isNil(question)) {
+            throw new RederlyError('Could not find the question associated with the problem/topic this student is trying to ask about.');
+        }
+
+        const poorMansTemplate = `
+Hello Professor ${course.instructor.lastName},
+
+    Your student ${options.student.firstName} ${options.student.lastName} is asking for help with
+Problem ${question.problemNumber} in the Topic ${topic.name}.
+
+Here is the message that was sent:
+
+${options.content}
+
+You should be able to reply to the student's email address (${options.student.preferredEmail}) by replying to this message.
+`;
+
+        return emailHelper.sendEmail({
+            content: poorMansTemplate,
+            email: course.instructor.preferredEmail,
+            subject: `${options.student.firstName} - Topic ${topic.id} - Question ${options.question.id}`,
+            replyTo: options.student.preferredEmail,
+        });
     }
 }
 

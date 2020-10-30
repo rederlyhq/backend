@@ -53,6 +53,8 @@ export default class Course extends Model {
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
+
+    public readonly instructor?: User;
 }
 
 Course.init({

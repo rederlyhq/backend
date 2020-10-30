@@ -555,3 +555,17 @@ export interface ListAttachmentOptions {
 export interface DeleteAttachmentOptions {
     problemAttachmentId: number;
 }
+
+/**
+ * courseId: The ID of the course to contact the professor for.
+ * student: The student/current User that is sending this email.
+ * content: Email content.
+ */
+export interface EmailProfOptions {
+    courseId: number;
+    content: string;
+    student: User;
+    question: {
+        id: number;
+    };
+}

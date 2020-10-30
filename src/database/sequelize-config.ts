@@ -28,7 +28,7 @@ module.exports = {
         underscored: true
     },
     pool: {
-        max: 5,
+        max: 150,
         min: 0,
         idle: 10000
     },

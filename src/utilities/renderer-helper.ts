@@ -25,6 +25,7 @@ export const RENDERER_ENDPOINT = '/rendered';
 export const NEW_RENDERER_ENDPOINT = '/render-api';
 export const RENDERER_LOAD_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'tap');
 export const RENDERER_SAVE_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'can');
+export const RENDERER_CATALOG_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'cat');
 
 export enum OutputFormat {
     SINGLE = 'single',
@@ -61,6 +62,12 @@ export interface SaveProblemSourceOptions {
     writeFilePath: string;
     problemSource: string;
 }
+
+export interface CatalogOptions {
+    basePath: string;
+    maxDepth: number;
+}
+
 
 const objectToFormData = (formData: { [key: string]: unknown }): FormData => {
     const resultFormData = new FormData();
@@ -357,6 +364,31 @@ class RendererHelper {
             return resp.data;
         } catch (e) {
             const errorMessagePrefix = `Could not save "${writeFilePath}"`;
+            if(isAxiosError(e)) {
+                throw new WrappedError(`${errorMessagePrefix}; response: ${JSON.stringify(e.response?.data)}`, e);
+            }
+            // Some application error occurred
+            throw new WrappedError(errorMessagePrefix, e);
+        }
+    }
+
+    catalog = async ({
+        basePath,
+        maxDepth,
+    }: CatalogOptions): Promise<{ [key: string]: number }> => {
+        const resultFormData = objectToFormData({
+            basePath: basePath,
+            maxDepth: maxDepth,
+        });
+
+        try {
+            const resp = await rendererAxios.post<{ [key: string]: number }>(RENDERER_CATALOG_ENDPOINT, resultFormData?.getBuffer(), {
+                headers: resultFormData?.getHeaders()
+            });
+
+            return resp.data;
+        } catch (e) {
+            const errorMessagePrefix = `Could not catalog "${basePath}"`;
             if(isAxiosError(e)) {
                 throw new WrappedError(`${errorMessagePrefix}; response: ${JSON.stringify(e.response?.data)}`, e);
             }

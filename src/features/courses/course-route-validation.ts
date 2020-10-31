@@ -498,3 +498,26 @@ export const emailProfValidation = {
         }).required(),
     },
 };
+
+export const readQuestionValidation = {
+    params: {},
+    query: {},
+    body: {
+        filePath: Joi.string().required(),
+    },
+};
+
+export const saveQuestionValidation = {
+    params: {},
+    query: {},
+    body: {
+        problemSource: Joi.string().required(),
+        relativePath: Joi.string().required(),
+    },
+};
+
+export const catalogValidation = {
+    params: {},
+    query: {},
+    body: {},
+};

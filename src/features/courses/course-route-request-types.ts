@@ -250,3 +250,21 @@ export namespace EmailProfRequest {
     export type query = Joi.extractType<typeof validations.emailProfValidation.query>;
     export type body = Joi.extractType<typeof validations.emailProfValidation.body>;
 };
+
+export namespace ReadQuestionRequest {
+    export type params = Joi.extractType<typeof validations.readQuestionValidation.params>;
+    export type query = Joi.extractType<typeof validations.readQuestionValidation.query>;
+    export type body = Joi.extractType<typeof validations.readQuestionValidation.body>;
+};
+
+export namespace SaveQuestionRequest {
+    export type params = Joi.extractType<typeof validations.saveQuestionValidation.params>;
+    export type query = Joi.extractType<typeof validations.saveQuestionValidation.query>;
+    export type body = Joi.extractType<typeof validations.saveQuestionValidation.body>;
+};
+
+export namespace CatalogRequest {
+    export type params = Joi.extractType<typeof validations.catalogValidation.params>;
+    export type query = Joi.extractType<typeof validations.catalogValidation.query>;
+    export type body = Joi.extractType<typeof validations.catalogValidation.body>;
+};

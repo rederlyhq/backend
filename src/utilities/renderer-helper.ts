@@ -138,29 +138,29 @@ export const rendererResponseValidationScheme = Joi.object({
     })).required(),
     debug: Joi.object({
         // TODO are these required or optional
-        debug: Joi.array().items(Joi.string()).required(),
-        internal: Joi.array().items(Joi.string()).required(),
-        perl_warn: Joi.string().allow('').required(),
-        pg_warn: Joi.array().items(Joi.string()).required(),
-        render_warn: Joi.array().items(Joi.string()).optional(), // THIS FIELD IS NEW, replace with required 
+        // debug: Joi.array().items(Joi.string()).required(),
+        // internal: Joi.array().items(Joi.string()).required(),
+        // perl_warn: Joi.string().allow('').required(),
+        // pg_warn: Joi.array().items(Joi.string()).required(),
+        // render_warn: Joi.array().items(Joi.string()).optional(), // THIS FIELD IS NEW, replace with required 
         // TODO add renderer version when implemented
         // TODO add problem version when implemented
     }).optional(), // THIS FIELD IS NEW, replace with required
-    flags: Joi.object({
-        // comment: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
-        // PROBLEM_GRADER_TO_USE: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
-        // recordSubmittedAnswers: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
-        // refreshCachedImages: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
-        // showpartialCorrectAnswers: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
-        // showHint: Joi.any(), // DOCUMENT NOT SURE, OMITTING
-        ANSWER_ENTRY_ORDER: Joi.array().items(Joi.string()).required(),
-        KEPT_EXTRA_ANSWERS: Joi.array().items(Joi.string()).required(),
-        showHintLimit: Joi.number().required(),
-        showPartialCorrectAnswers: Joi.number().min(0).max(1).optional(),
-        solutionExists: Joi.number().min(0).max(1).required(),
-        hintExists: Joi.number().min(0).max(1).required(),
-    }).required(),
-    form_data: Joi.any().required(),
+    // flags: Joi.object({
+    //     // comment: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+    //     // PROBLEM_GRADER_TO_USE: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
+    //     // recordSubmittedAnswers: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
+    //     // refreshCachedImages: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
+    //     // showpartialCorrectAnswers: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
+    //     // showHint: Joi.any(), // DOCUMENT NOT SURE, OMITTING
+    //     ANSWER_ENTRY_ORDER: Joi.array().items(Joi.string()).required(),
+    //     KEPT_EXTRA_ANSWERS: Joi.array().items(Joi.string()).required(),
+    //     showHintLimit: Joi.number().required(),
+    //     showPartialCorrectAnswers: Joi.number().min(0).max(1).optional(),
+    //     solutionExists: Joi.number().min(0).max(1).required(),
+    //     hintExists: Joi.number().min(0).max(1).required(),
+    // }).required(),
+    // form_data: Joi.any().required(),
     problem_result: Joi.object({
         errors: Joi.string().allow('').required(),
         msg: Joi.string().allow('').required(),

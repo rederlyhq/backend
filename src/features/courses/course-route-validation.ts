@@ -459,7 +459,7 @@ export const postAttachmentValidation = {
     query: {},
     body: {
         attachment: Joi.object({
-            cloudFileName: Joi.string().required(),
+            cloudFilename: Joi.string().required(),
             userLocalFilename: Joi.string().required(),    
         }). required(),
         studentGradeId: Joi.number().optional(),

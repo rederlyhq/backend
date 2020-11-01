@@ -25,6 +25,7 @@ export const RENDERER_ENDPOINT = '/rendered';
 export const NEW_RENDERER_ENDPOINT = '/render-api';
 export const RENDERER_LOAD_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'tap');
 export const RENDERER_SAVE_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'can');
+export const RENDERER_CATALOG_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'cat');
 
 export enum OutputFormat {
     SINGLE = 'single',
@@ -61,6 +62,12 @@ export interface SaveProblemSourceOptions {
     writeFilePath: string;
     problemSource: string;
 }
+
+export interface CatalogOptions {
+    basePath: string;
+    maxDepth: number;
+}
+
 
 const objectToFormData = (formData: { [key: string]: unknown }): FormData => {
     const resultFormData = new FormData();
@@ -131,29 +138,29 @@ export const rendererResponseValidationScheme = Joi.object({
     })).required(),
     debug: Joi.object({
         // TODO are these required or optional
-        debug: Joi.array().items(Joi.string()).required(),
-        internal: Joi.array().items(Joi.string()).required(),
-        perl_warn: Joi.string().allow('').required(),
-        pg_warn: Joi.array().items(Joi.string()).required(),
-        render_warn: Joi.array().items(Joi.string()).optional(), // THIS FIELD IS NEW, replace with required 
+        // debug: Joi.array().items(Joi.string()).required(),
+        // internal: Joi.array().items(Joi.string()).required(),
+        // perl_warn: Joi.string().allow('').required(),
+        // pg_warn: Joi.array().items(Joi.string()).required(),
+        // render_warn: Joi.array().items(Joi.string()).optional(), // THIS FIELD IS NEW, replace with required 
         // TODO add renderer version when implemented
         // TODO add problem version when implemented
     }).optional(), // THIS FIELD IS NEW, replace with required
-    flags: Joi.object({
-        // comment: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
-        // PROBLEM_GRADER_TO_USE: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
-        // recordSubmittedAnswers: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
-        // refreshCachedImages: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
-        // showpartialCorrectAnswers: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
-        // showHint: Joi.any(), // DOCUMENT NOT SURE, OMITTING
-        ANSWER_ENTRY_ORDER: Joi.array().items(Joi.string()).required(),
-        KEPT_EXTRA_ANSWERS: Joi.array().items(Joi.string()).required(),
-        showHintLimit: Joi.number().required(),
-        showPartialCorrectAnswers: Joi.number().min(0).max(1).optional(),
-        solutionExists: Joi.number().min(0).max(1).required(),
-        hintExists: Joi.number().min(0).max(1).required(),
-    }).required(),
-    form_data: Joi.any().required(),
+    // flags: Joi.object({
+    //     // comment: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+    //     // PROBLEM_GRADER_TO_USE: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
+    //     // recordSubmittedAnswers: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
+    //     // refreshCachedImages: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
+    //     // showpartialCorrectAnswers: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
+    //     // showHint: Joi.any(), // DOCUMENT NOT SURE, OMITTING
+    //     ANSWER_ENTRY_ORDER: Joi.array().items(Joi.string()).required(),
+    //     KEPT_EXTRA_ANSWERS: Joi.array().items(Joi.string()).required(),
+    //     showHintLimit: Joi.number().required(),
+    //     showPartialCorrectAnswers: Joi.number().min(0).max(1).optional(),
+    //     solutionExists: Joi.number().min(0).max(1).required(),
+    //     hintExists: Joi.number().min(0).max(1).required(),
+    // }).required(),
+    // form_data: Joi.any().required(),
     problem_result: Joi.object({
         errors: Joi.string().allow('').required(),
         msg: Joi.string().allow('').required(),
@@ -357,6 +364,31 @@ class RendererHelper {
             return resp.data;
         } catch (e) {
             const errorMessagePrefix = `Could not save "${writeFilePath}"`;
+            if(isAxiosError(e)) {
+                throw new WrappedError(`${errorMessagePrefix}; response: ${JSON.stringify(e.response?.data)}`, e);
+            }
+            // Some application error occurred
+            throw new WrappedError(errorMessagePrefix, e);
+        }
+    }
+
+    catalog = async ({
+        basePath,
+        maxDepth,
+    }: CatalogOptions): Promise<{ [key: string]: number }> => {
+        const resultFormData = objectToFormData({
+            basePath: basePath,
+            maxDepth: maxDepth,
+        });
+
+        try {
+            const resp = await rendererAxios.post<{ [key: string]: number }>(RENDERER_CATALOG_ENDPOINT, resultFormData?.getBuffer(), {
+                headers: resultFormData?.getHeaders()
+            });
+
+            return resp.data;
+        } catch (e) {
+            const errorMessagePrefix = `Could not catalog "${basePath}"`;
             if(isAxiosError(e)) {
                 throw new WrappedError(`${errorMessagePrefix}; response: ${JSON.stringify(e.response?.data)}`, e);
             }

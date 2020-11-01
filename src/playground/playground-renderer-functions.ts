@@ -3,6 +3,13 @@ import rendererHelper from '../utilities/renderer-helper';
 
 const runRendererPlayground = async (): Promise<void> => {
     const date = new Date();
+
+    const catResult = await rendererHelper.catalog({
+        basePath: 'private/my',
+        maxDepth: 100
+    });
+    logger.info(JSON.stringify(catResult, null, 2));
+
     // Returns "private/my/tom/test.pg"
     const saveProblemSourceResult = await rendererHelper.saveProblemSource({
         writeFilePath: 'private/my/tom/test.pg',

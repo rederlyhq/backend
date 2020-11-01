@@ -544,6 +544,21 @@ class CourseRepository {
         }
     }
 
+    async getStudentTopicOverride(options: {userId: number; topicId: number}): Promise<StudentTopicOverride | null> {
+        try {
+            const override = await StudentTopicOverride.findOne({
+                where: {
+                    userId: options.userId,
+                    courseTopicContentId: options.topicId,
+                    active: true
+                }
+            });
+            return override; // null is fine, there might not *be* any override for this combo...
+        } catch (e) {
+            throw new WrappedError(`Failed while finding student topic override for user ${options.userId} and topic ${options.topicId}.`);
+        }
+    }
+
     /* ************************* ************************* */
     /* ******************** Questions ******************** */
     /* ************************* ************************* */

@@ -3027,15 +3027,21 @@ class CourseController {
         let message = '';
         if (user.roleId === Role.PROFESSOR || user.roleId === Role.ADMIN) return {userCanViewQuestion: true, message};
         const question = await courseRepository.getQuestion({ id: questionId });
-        const topic = await question.getTopic();
-        if (topic.topicTypeId === 1) {
-            if (topic.startDate.toMoment().isAfter(moment())) {
-                message = `${topic.name} hasn't started yet.`;
-                return { userCanViewQuestion: false, message };
-            } else {
-                return { userCanViewQuestion: true, message };
-            }
-        } else if (topic.topicTypeId === 2) {
+        let topic = await question.getTopic();
+        const topicOverride = await courseRepository.getStudentTopicOverride({userId: user.id, topicId: topic.id});
+        if (!_.isNil(topicOverride)) {
+            topic = topic.getWithOverrides(topicOverride) as CourseTopicContent;
+        }
+
+        // applies to all topics - not just homeworks...
+        if (topic.startDate.toMoment().isAfter(moment())) {
+            message = `${topic.name} hasn't started yet.`;
+            return { userCanViewQuestion: false, message };
+        } else {
+            if (topic.topicTypeId === 1) return { userCanViewQuestion: true, message };
+        }
+
+        if (topic.topicTypeId === 2) {
             let topicIsLive = false;
             if (_.isNil(studentTopicAssessmentInfoId)) {
                 // specific version was not supplied - see if there's a live version for this question

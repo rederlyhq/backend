@@ -54,7 +54,7 @@ ProblemAttachment.init({
         autoIncrement: true,
         primaryKey: true,
     },
-    cloudFileName: {
+    cloudFilename: {
         field: 'problem_attachment_cloud_filename',
         type: DataTypes.TEXT,
         allowNull: false

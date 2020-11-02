@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import WrappedError from '../../exceptions/wrapped-error';
 import { Constants } from '../../constants';
-import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, UpdateGradeInstanceOptions, ExtendTopicForUserOptions, ExtendTopicQuestionForUserOptions, GetQuestionVersionDetailsOptions, GetStudentGradeInstanceOptions, GetCourseOptions, GetStudentGradeOptions } from './course-types';
+import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, UpdateGradeInstanceOptions, ExtendTopicForUserOptions, ExtendTopicQuestionForUserOptions, GetQuestionVersionDetailsOptions, GetStudentGradeInstanceOptions, GetCourseOptions, GetStudentGradeOptions, GetStudentTopicOverrideOptions } from './course-types';
 import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
 import NotFoundError from '../../exceptions/not-found-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
@@ -541,6 +541,21 @@ class CourseRepository {
             return override;
         } catch (e) {
             throw new WrappedError(`Failed while finding student topic override ${id}`);
+        }
+    }
+
+    async getStudentTopicOverride(options: GetStudentTopicOverrideOptions): Promise<StudentTopicOverride | null> {
+        try {
+            const override = await StudentTopicOverride.findOne({
+                where: {
+                    userId: options.userId,
+                    courseTopicContentId: options.topicId,
+                    active: true
+                }
+            });
+            return override; // null is fine, there might not *be* any override for this combo...
+        } catch (e) {
+            throw new WrappedError(`Failed while finding student topic override for user ${options.userId} and topic ${options.topicId}.`, e);
         }
     }
 

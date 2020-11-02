@@ -2,6 +2,7 @@ import configurations from './configurations';
 import './extensions';
 // TODO change logger to just use console in this case
 import logger from './utilities/logger';
+import './global-error-handlers';
 import * as _ from 'lodash';
 
 const enabledMarker = new Array(20).join('*');

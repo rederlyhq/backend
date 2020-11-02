@@ -3027,11 +3027,9 @@ class CourseController {
         let message = '';
         if (user.roleId === Role.PROFESSOR || user.roleId === Role.ADMIN) return {userCanViewQuestion: true, message};
         const question = await courseRepository.getQuestion({ id: questionId });
-        let topic = await question.getTopic();
-        const topicOverride = await courseRepository.getStudentTopicOverride({userId: user.id, topicId: topic.id});
-        if (!_.isNil(topicOverride)) {
-            topic = topic.getWithOverrides(topicOverride) as CourseTopicContent;
-        }
+        const dbTopic = await question.getTopic();
+        const topicOverride = await courseRepository.getStudentTopicOverride({userId: user.id, topicId: dbTopic.id});
+        const topic: CourseTopicContentInterface = (_.isNil(topicOverride)) ? dbTopic : dbTopic.getWithOverrides(topicOverride);
 
         // applies to all topics - not just homeworks...
         if (topic.startDate.toMoment().isAfter(moment())) {
@@ -3052,7 +3050,7 @@ class CourseController {
                 topicIsLive = studentTopicInfo.isClosed === false && // isClosed might not be accurate when the assessment times out
                     moment().isBetween(studentTopicInfo.startTime.toMoment(), studentTopicInfo.endTime.toMoment());
             }
-            const topicInfo = await topic.getTopicAssessmentInfo();
+            const topicInfo = await dbTopic.getTopicAssessmentInfo();
             if (topicIsLive) {
                 return { userCanViewQuestion: true, message };
             } else {

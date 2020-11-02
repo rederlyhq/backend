@@ -569,3 +569,8 @@ export interface EmailProfOptions {
         id: number;
     };
 }
+
+export interface GetStudentTopicOverrideOptions {
+    userId: number; 
+    topicId: number;
+}

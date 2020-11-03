@@ -84,7 +84,7 @@ export const updateCourseTopicValidation = {
 
         // The following fields are only found on exams.
         topicAssessmentInfo: Joi.object({
-            duration: Joi.number().optional().min(10),
+            duration: Joi.number().optional().min(2),
             maxGradedAttemptsPerVersion: Joi.number().optional().min(0),
             maxVersions: Joi.number().optional().min(0),
             versionDelay: Joi.number().optional().min(0),

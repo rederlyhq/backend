@@ -521,3 +521,11 @@ export const catalogValidation = {
     query: {},
     body: {},
 };
+
+export const getVersionValidation = {
+    params: {
+        id: Joi.number().required(),
+    },
+    query: {},
+    body: {},
+};

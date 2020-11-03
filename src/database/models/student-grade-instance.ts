@@ -111,6 +111,13 @@ export default class StudentGradeInstance extends Model implements StudentGradeI
             constraints: false,
         });
 
+        StudentGradeInstance.hasMany(StudentGradeInstanceProblemAttachment, {
+            foreignKey: 'studentGradeInstanceId',
+            sourceKey: 'id',
+            as: 'studentGradeInstanceProblemAttachments',
+            constraints: false,
+        });
+
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }
@@ -193,4 +200,5 @@ StudentGradeInstance.init({
 import StudentGrade from './student-grade';
 import StudentTopicAssessmentInfo from './student-topic-assessment-info';
 import StudentWorkbook from './student-workbook';
-import User from './user';
+import User from './user';import StudentGradeInstanceProblemAttachment from './student-grade-instance-problem-attachment';
+

@@ -5,7 +5,7 @@ import validate from '../../middleware/joi-validator';
 import { authenticationMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
-import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation, deleteEnrollmentValidation, createAssessmentVersionValidation, extendCourseTopicForUserValidation, extendCourseTopicQuestionValidation, getTopicValidation, submitAssessmentVersionValidation, endAssessmentVersionValidation, previewQuestionValidation, gradeAssessmentValidation, getAttachmentPresignedURLValidation, postAttachmentValidation, listAttachmentsValidation, deleteAttachmentValidation, emailProfValidation, readQuestionValidation, saveQuestionValidation, catalogValidation } from './course-route-validation';
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation, deleteEnrollmentValidation, createAssessmentVersionValidation, extendCourseTopicForUserValidation, extendCourseTopicQuestionValidation, getTopicValidation, submitAssessmentVersionValidation, endAssessmentVersionValidation, previewQuestionValidation, gradeAssessmentValidation, getAttachmentPresignedURLValidation, postAttachmentValidation, listAttachmentsValidation, deleteAttachmentValidation, emailProfValidation, readQuestionValidation, saveQuestionValidation, catalogValidation, getVersionValidation } from './course-route-validation';
 import NotFoundError from '../../exceptions/not-found-error';
 import multer = require('multer');
 import * as proxy from 'express-http-proxy';
@@ -14,7 +14,7 @@ import * as _ from 'lodash';
 import configurations from '../../configurations';
 import WrappedError from '../../exceptions/wrapped-error';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
-import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest, ExtendCourseTopicQuestionRequest, CreateAssessmentVersionRequest, SubmitAssessmentVersionRequest, UpdateGradeInstanceRequest, EndAssessmentVersionRequest, PreviewQuestionRequest, GradeAssessmentRequest, GetAttachmentPresignedURLRequest, PostAttachmentRequest, ListAttachmentsRequest, DeleteAttachmentRequest, EmailProfRequest, ReadQuestionRequest, SaveQuestionRequest, CatalogRequest } from './course-route-request-types';
+import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest, ExtendCourseTopicQuestionRequest, CreateAssessmentVersionRequest, SubmitAssessmentVersionRequest, UpdateGradeInstanceRequest, EndAssessmentVersionRequest, PreviewQuestionRequest, GradeAssessmentRequest, GetAttachmentPresignedURLRequest, PostAttachmentRequest, ListAttachmentsRequest, DeleteAttachmentRequest, EmailProfRequest, ReadQuestionRequest, SaveQuestionRequest, CatalogRequest, GetVersionRequest } from './course-route-request-types';
 import Boom = require('boom');
 import { Constants } from '../../constants';
 import Role from '../permissions/roles';
@@ -307,9 +307,6 @@ router.get('/assessment/topic/grade/:id',
         const {problems, topic} = await courseController.getAssessmentForGrading({topicId: params.id});
         next(httpResponse.Ok('Fetched problems + workbooks successfully', {problems, topic}));
     }));
-
-
-
 
 router.get('/assessment/topic/end/:id',
     authenticationMiddleware,
@@ -623,7 +620,8 @@ router.get('/question/:id',
                     user, 
                     questionId: params.id, 
                     studentTopicAssessmentInfoId: 
-                    req.query.studentTopicAssessmentInfoId});
+                    req.query.studentTopicAssessmentInfoId
+                });
                     
                 if (userCanViewQuestion === false) throw new IllegalArgumentException(message);
 
@@ -1181,4 +1179,18 @@ router.post('/question/editor/catalog',
             problems: Object.keys(result).filter(elm => elm.endsWith('.pg'))
         }));
     }));
+
+router.get('/version/:id',
+    authenticationMiddleware,
+    validate(getVersionValidation),
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetVersionRequest.body, GetVersionRequest.query>, _res: Response, next: NextFunction) => {
+        // const result = await courseController.getTopicById({ id: req.params.id, userId: req.query.userId, includeQuestions: req.query.includeQuestions });
+        const params: GetVersionRequest.params = req.params;
+        const result = await courseController.getAllContentForVersion({gradeId: req.params.id});
+        next(httpResponse.Ok('Fetched successfully', result));
+    })
+);
+
 module.exports = router;

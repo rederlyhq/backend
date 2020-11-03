@@ -268,3 +268,9 @@ export namespace CatalogRequest {
     export type query = Joi.extractType<typeof validations.catalogValidation.query>;
     export type body = Joi.extractType<typeof validations.catalogValidation.body>;
 };
+
+export namespace GetVersionRequest {
+    export type params = Joi.extractType<typeof validations.getVersionValidation.params>;
+    export type query = Joi.extractType<typeof validations.getVersionValidation.query>;
+    export type body = Joi.extractType<typeof validations.getVersionValidation.body>;
+};

@@ -390,6 +390,10 @@ class RendererHelper {
         } catch (e) {
             const errorMessagePrefix = `Could not catalog "${basePath}"`;
             if(isAxiosError(e)) {
+                if (e.response?.status === 404) {
+                    logger.debug('Path not found');
+                    return {};
+                }
                 throw new WrappedError(`${errorMessagePrefix}; response: ${JSON.stringify(e.response?.data)}`, e);
             }
             // Some application error occurred

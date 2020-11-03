@@ -1188,7 +1188,7 @@ router.get('/version/:id',
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetVersionRequest.body, GetVersionRequest.query>, _res: Response, next: NextFunction) => {
         // const result = await courseController.getTopicById({ id: req.params.id, userId: req.query.userId, includeQuestions: req.query.includeQuestions });
         const params: GetVersionRequest.params = req.params;
-        const result = await courseController.getAllContentForVersion({gradeInstanceId: req.params.id});
+        const result = await courseController.getAllContentForVersion({gradeId: req.params.id});
         next(httpResponse.Ok('Fetched successfully', result));
     })
 );

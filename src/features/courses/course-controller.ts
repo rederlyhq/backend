@@ -3604,7 +3604,7 @@ You should be able to reply to the student's email address (${options.student.pr
         return await StudentGradeInstance.findAll({
             where: {
                 // TODO: Fix name
-                studentGradeId: options.gradeInstanceId
+                studentGradeId: options.gradeId
             },
             include: [
                 {
@@ -3637,6 +3637,12 @@ You should be able to reply to the student's email address (${options.student.pr
                         }
                     ]
                 },
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['firstName', 'lastName'],
+                    required: true,
+                }
             ],
         });
     }

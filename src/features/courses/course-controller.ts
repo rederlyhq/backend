@@ -52,6 +52,7 @@ import StudentGradeProblemAttachment from '../../database/models/student-grade-p
 import StudentGradeInstanceProblemAttachment from '../../database/models/student-grade-instance-problem-attachment';
 import StudentWorkbookProblemAttachment from '../../database/models/student-workbook-problem-attachment';
 import emailHelper from '../../utilities/email-helper';
+import * as utilities from '../../utilities/utilities';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -2043,15 +2044,15 @@ class CourseController {
             userId,
         } = options.where;
 
-        const setFilterCount = [
+        const setFilterCount = utilities.countNotNil([
             courseId,
             questionId,
             topicId,
             unitId,
-        ].reduce((accumulator, val) => (accumulator || 0) + (!_.isNil(val) && 1 || 0), 0);
+        ]);
 
         if (setFilterCount !== 1) {
-            throw new Error(`One filter must be set but found ${setFilterCount}`);
+            throw new IllegalArgumentException(`One filter must be set but found ${setFilterCount}`);
         }
 
         // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
@@ -3366,11 +3367,11 @@ class CourseController {
         studentWorkbookId
     }: CreateAttachmentOptions): Promise<ProblemAttachment> {
         return useDatabaseTransaction(async (): Promise<ProblemAttachment> => {
-            const filterCount = [
+            const filterCount = utilities.countNotNil([
                 studentGradeId,
                 studentGradeInstanceId,
                 studentWorkbookId,
-            ].reduce((accumulator, val) => (accumulator || 0) + (!_.isNil(val) && 1 || 0), 0);
+            ]);
     
             if (filterCount !== 1) {
                 throw new IllegalArgumentException('Create attachment requires exactly 1 of [studentGradeId, studentGradeInstanceId, studentWorkbookId] to be set');
@@ -3442,11 +3443,11 @@ class CourseController {
         studentWorkbookId
     }: ListAttachmentOptions): Promise<Array<ProblemAttachment>> {
         return useDatabaseTransaction(async (): Promise<Array<ProblemAttachment>> => {
-            const filterCount = [
+            const filterCount = utilities.countNotNil([
                 studentGradeId,
                 studentGradeInstanceId,
                 studentWorkbookId,
-            ].reduce((accumulator, val) => (accumulator || 0) + (!_.isNil(val) && 1 || 0), 0);
+            ]);
     
             if (filterCount !== 1) {
                 throw new IllegalArgumentException('List attachment requires exactly 1 of [studentGradeId, studentGradeInstanceId, studentWorkbookId] to be set');

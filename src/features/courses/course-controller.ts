@@ -3675,7 +3675,7 @@ You should be able to reply to the student's email address (${options.student.pr
         await mainData?.questions?.asyncForEach(async (question, i) => 
             await question.grades?.asyncForEach(async (grade, j) => {
                 if (_.isNil(grade.lastInfluencingAttempt) || _.isNil(grade.lastInfluencingAttempt.studentGradeInstance)) {
-                    console.log('Something was nil');
+                    logger.debug('No lastInfluencingAttempt and no studentGradeInstance exists');
                     return;
                 }
                 const probAttach = await grade.lastInfluencingAttempt.studentGradeInstance.getProblemAttachments();

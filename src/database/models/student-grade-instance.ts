@@ -200,5 +200,5 @@ StudentGradeInstance.init({
 import StudentGrade from './student-grade';
 import StudentTopicAssessmentInfo from './student-topic-assessment-info';
 import StudentWorkbook from './student-workbook';
-import User from './user';import StudentGradeInstanceProblemAttachment from './student-grade-instance-problem-attachment';
-
+import User from './user';
+import StudentGradeInstanceProblemAttachment from './student-grade-instance-problem-attachment';

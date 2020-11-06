@@ -3240,6 +3240,7 @@ class CourseController {
                     if (result.questionResponse.problem_result.score > result.grade.overallBestScore) {
                         // update grade: overallBestScore, *what about workbook id*?
                         result.grade.overallBestScore = result.questionResponse.problem_result.score;
+                        result.grade.lastInfluencingAttemptId = workbook.id;
                         // which workbookId field should be used?
                     }
                 }
@@ -3255,7 +3256,8 @@ class CourseController {
                         result.grade.legalScore = result.questionResponse.problem_result.score;
                         result.grade.effectiveScore = result.questionResponse.problem_result.score;
                         result.grade.partialCreditBestScore = result.questionResponse.problem_result.score;
-                        result.grade.lastInfluencingAttemptId = workbook.id;
+                        result.grade.lastInfluencingLegalAttemptId = workbook.id;
+                        result.grade.lastInfluencingCreditedAttemptId = workbook.id;
                     }
                 }
     

@@ -1,5 +1,6 @@
 import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize';
+import StudentGradeInstance from './student-grade-instance';
 
 interface ProblemAttachmentInterface {
     id: number;
@@ -42,6 +43,10 @@ export default class ProblemAttachment extends Model implements ProblemAttachmen
             as: 'studentWorkbookProblemAttachments',
             foreignKey: 'problemAttachmentId',
             sourceKey: 'id'
+        });
+        
+        ProblemAttachment.belongsToMany(StudentGradeInstance, {
+            through: StudentGradeInstanceProblemAttachment,
         });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }

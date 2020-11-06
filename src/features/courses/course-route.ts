@@ -240,6 +240,19 @@ router.get('/questions',
         }));
     }));
 
+
+router.get('/topic/:topicId/version/:userId',
+    authenticationMiddleware,
+    validate(getVersionValidation),
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetVersionRequest.body, GetVersionRequest.query>, _res: Response, next: NextFunction) => {
+        const params: GetVersionRequest.params = req.params;
+        const result = await courseController.getAllContentForVersion({topicId: params.topicId, userId: params.userId});
+        next(httpResponse.Ok('Fetched successfully', result));
+    })
+);
+
 router.put('/topic/extend',
     authenticationMiddleware,
     validate(extendCourseTopicForUserValidation),
@@ -1180,17 +1193,5 @@ router.post('/question/editor/catalog',
         }));
     }));
 
-router.get('/version/:id',
-    authenticationMiddleware,
-    validate(getVersionValidation),
-    // This is due to a typescript issue where the type mismatches extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetVersionRequest.body, GetVersionRequest.query>, _res: Response, next: NextFunction) => {
-        // const result = await courseController.getTopicById({ id: req.params.id, userId: req.query.userId, includeQuestions: req.query.includeQuestions });
-        const params: GetVersionRequest.params = req.params;
-        const result = await courseController.getAllContentForVersion({gradeId: req.params.id});
-        next(httpResponse.Ok('Fetched successfully', result));
-    })
-);
 
 module.exports = router;

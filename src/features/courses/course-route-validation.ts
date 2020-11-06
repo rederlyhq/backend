@@ -524,7 +524,8 @@ export const catalogValidation = {
 
 export const getVersionValidation = {
     params: {
-        id: Joi.number().required(),
+        userId: Joi.number().required(),
+        topicId: Joi.number().required(),
     },
     query: {},
     body: {},

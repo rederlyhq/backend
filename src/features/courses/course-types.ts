@@ -576,5 +576,6 @@ export interface GetStudentTopicOverrideOptions {
 }
 
 export interface GetAllContentForVersionOptions {
-    gradeId: number;
+    topicId: number;
+    userId: number;
 }

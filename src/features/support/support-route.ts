@@ -27,6 +27,8 @@ router.post('/',
             User id: ${user.id}
             User email: ${user.email}
             User role: ${role.roleName}
+            Frontend version: ${req.body.version}
+            Originating URL: ${req.body.url}
             
             Description:
             ${req.body.description}

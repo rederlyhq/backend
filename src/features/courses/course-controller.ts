@@ -3439,6 +3439,7 @@ class CourseController {
             return result;
         });
     }
+
     async listAttachments({
         studentGradeId,
         studentGradeInstanceId,
@@ -3604,50 +3605,86 @@ You should be able to reply to the student's email address (${options.student.pr
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async getAllContentForVersion(options: GetAllContentForVersionOptions): Promise<any> {
-        return await StudentGradeInstance.findAll({
+
+        // To display which user that submitted this exam version.
+        const user = await User.findOne({
+            attributes: ['id', 'firstName', 'lastName'],
             where: {
-                // TODO: Fix name
-                studentGradeId: options.gradeId
+                id: options.userId,
+            },
+        });
+       
+        // if (_.isNil(userForVersion)) {
+        //     throw new RederlyError('This grade is not associated with a user.');
+        // }
+
+        /**
+         * Start with a GradeInstanceId. This represents a version.
+         * Find all questions associated with the Topic associated with this GradeInstanceId.
+         *      These are all the questions for that version. Should be the same for GradeInstanceIds with the same parent GradeId.
+         */
+        const mainData = await CourseTopicContent.findOne({
+            attributes: ['id', 'name'],
+            where: {
+                id: options.topicId,
+                active: true,
             },
             include: [
                 {
-                    model: StudentWorkbook,
-                    as: 'bestVersionAttempt',
-                    // attributes: [''],
+                    model: CourseWWTopicQuestion,
+                    as: 'questions',
+                    attributes: ['id', 'problemNumber'],
                     required: true,
-                    where: {
-                        active: true,
-                    }
-                },
-                {
-                    model: StudentGradeInstanceProblemAttachment,
-                    as: 'studentGradeInstanceProblemAttachments',
-                    // attributes: ['problemAttachment'],
-                    required: false,
                     where: {
                         active: true,
                     },
                     include: [
                         {
-                            model: ProblemAttachment,
-                            as: 'problemAttachment',
-                            // TODO: Fix when fixing sequelize truncation problem
-                            // attributes: [],
+                            model: StudentGrade,
+                            as: 'grades',
+                            attributes: ['id', 'last_influencing_attempt_workbook_id'],
                             required: true,
                             where: {
+                                userId: options.userId,
                                 active: true,
                             },
+                            include: [
+                                {
+                                    model: StudentWorkbook,
+                                    as: 'lastInfluencingAttempt',
+                                    required: true,
+                                    attributes: ['id'],
+                                    include: [
+                                        {
+                                            model: StudentGradeInstance,
+                                            as: 'studentGradeInstance',
+                                        },
+                                    ]
+                                },
+                            ]
                         }
                     ]
-                },
-                {
-                    model: User,
-                    as: 'user',
-                    attributes: ['firstName', 'lastName'],
-                    required: true,
                 }
             ],
         });
+
+        // TODO: Clean up typing when unpacking the ProblemAttachments
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data: any = mainData?.get({plain: true});
+
+        await mainData?.questions?.asyncForEach(async (question, i) => 
+            await question.grades?.asyncForEach(async (grade, j) => {
+                if (_.isNil(grade.lastInfluencingAttempt) || _.isNil(grade.lastInfluencingAttempt.studentGradeInstance)) {
+                    logger.debug('No lastInfluencingAttempt and no studentGradeInstance exists');
+                    return;
+                }
+                const probAttach = await grade.lastInfluencingAttempt.studentGradeInstance.getProblemAttachments();
+                grade.lastInfluencingAttempt.studentGradeInstance.problemAttachments = probAttach;
+                data.questions[i].grades[j].lastInfluencingAttempt.studentGradeInstance.problemAttachments = probAttach.map(pA => pA.get({plain: true}));
+            })
+        );
+
+        return {user: user, topic: data};
     }
 }
 

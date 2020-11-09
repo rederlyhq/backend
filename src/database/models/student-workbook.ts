@@ -56,6 +56,7 @@ export default class StudentWorkbook extends Model implements StudentWorkbookInt
     public studentGrade!: StudentGrade;
     public user!: User;
     public courseWWTopicQuestion!: CourseWWTopicQuestion;
+    public studentGradeInstance?: StudentGradeInstance;
 
     // timestamps!
     public readonly createdAt!: Date;

@@ -3679,8 +3679,9 @@ You should be able to reply to the student's email address (${options.student.pr
                 data.questions[i].grades[j].lastInfluencingAttempt.studentGradeInstance.problemAttachments = probAttach.map(pA => pA.get({plain: true}));
             })
         );
-
-        return {user: user, topic: data};
+        
+        const baseUrl = configurations.attachments.baseUrl;
+        return {user: user, topic: data, baseUrl};
     }
 }
 

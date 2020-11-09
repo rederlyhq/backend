@@ -286,5 +286,5 @@ import CourseWWTopicQuestion from './course-ww-topic-question';
 import User from './user';
 import StudentWorkbook from './student-workbook';
 import StudentGradeInstance, { StudentGradeInstanceGradeOverridesInterface } from './student-grade-instance';
-import StudentGradeOverride from './student-grade-override';import StudentGradeProblemAttachment from './student-grade-problem-attachment';
-
+import StudentGradeOverride from './student-grade-override';
+import StudentGradeProblemAttachment from './student-grade-problem-attachment';

@@ -214,3 +214,63 @@ export namespace SubmitAssessmentVersionRequest {
     export type query = Joi.extractType<typeof validations.submitAssessmentVersionValidation.query>;
     export type body = Joi.extractType<typeof validations.submitAssessmentVersionValidation.body>;
 };
+
+export namespace GradeAssessmentRequest {
+    export type params = Joi.extractType<typeof validations.gradeAssessmentValidation.params>;
+    export type query = Joi.extractType<typeof validations.gradeAssessmentValidation.query>;
+    export type body = Joi.extractType<typeof validations.gradeAssessmentValidation.body>;
+};
+
+export namespace GetAttachmentPresignedURLRequest {
+    export type params = Joi.extractType<typeof validations.getAttachmentPresignedURLValidation.params>;
+    export type query = Joi.extractType<typeof validations.getAttachmentPresignedURLValidation.query>;
+    export type body = Joi.extractType<typeof validations.getAttachmentPresignedURLValidation.body>;
+};
+
+export namespace PostAttachmentRequest {
+    export type params = Joi.extractType<typeof validations.postAttachmentValidation.params>;
+    export type query = Joi.extractType<typeof validations.postAttachmentValidation.query>;
+    export type body = Joi.extractType<typeof validations.postAttachmentValidation.body>;
+};
+
+export namespace ListAttachmentsRequest {
+    export type params = Joi.extractType<typeof validations.listAttachmentsValidation.params>;
+    export type query = Joi.extractType<typeof validations.listAttachmentsValidation.query>;
+    export type body = Joi.extractType<typeof validations.listAttachmentsValidation.body>;
+};
+
+export namespace DeleteAttachmentRequest {
+    export type params = Joi.extractType<typeof validations.deleteAttachmentValidation.params>;
+    export type query = Joi.extractType<typeof validations.deleteAttachmentValidation.query>;
+    export type body = Joi.extractType<typeof validations.deleteAttachmentValidation.body>;
+};
+
+export namespace EmailProfRequest {
+    export type params = Joi.extractType<typeof validations.emailProfValidation.params>;
+    export type query = Joi.extractType<typeof validations.emailProfValidation.query>;
+    export type body = Joi.extractType<typeof validations.emailProfValidation.body>;
+};
+
+export namespace ReadQuestionRequest {
+    export type params = Joi.extractType<typeof validations.readQuestionValidation.params>;
+    export type query = Joi.extractType<typeof validations.readQuestionValidation.query>;
+    export type body = Joi.extractType<typeof validations.readQuestionValidation.body>;
+};
+
+export namespace SaveQuestionRequest {
+    export type params = Joi.extractType<typeof validations.saveQuestionValidation.params>;
+    export type query = Joi.extractType<typeof validations.saveQuestionValidation.query>;
+    export type body = Joi.extractType<typeof validations.saveQuestionValidation.body>;
+};
+
+export namespace CatalogRequest {
+    export type params = Joi.extractType<typeof validations.catalogValidation.params>;
+    export type query = Joi.extractType<typeof validations.catalogValidation.query>;
+    export type body = Joi.extractType<typeof validations.catalogValidation.body>;
+};
+
+export namespace GetVersionRequest {
+    export type params = Joi.extractType<typeof validations.getVersionValidation.params>;
+    export type query = Joi.extractType<typeof validations.getVersionValidation.query>;
+    export type body = Joi.extractType<typeof validations.getVersionValidation.body>;
+};

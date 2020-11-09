@@ -15,6 +15,7 @@ import StudentTopicOverride from '../../database/models/student-topic-override';
 import StudentTopicQuestionOverride from '../../database/models/student-topic-question-override';
 import { DeepPartial } from '../../utilities/typescript-helpers';
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
+import ProblemAttachment from '../../database/models/problem-attachment';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -54,6 +55,10 @@ export interface GetStudentGradeInstanceOptions {
     id: number;
 }
 
+export interface GetStudentGradeOptions {
+    id: number;
+}
+
 export interface GetQuestionVersionDetailsOptions {
     questionId: number;
     userId: number;
@@ -67,6 +72,10 @@ export interface QuestionVersionDetails {
 
 // TODO make generic interface
 export interface GetCourseUnitRepositoryOptions {
+    id: number;
+}
+
+export interface GetCourseOptions {
     id: number;
 }
 
@@ -514,4 +523,59 @@ export interface ReGradeStudentGradeOptions {
     minDate?: Date;
     topicOverride?: StudentTopicOverride;
     questionOverride?: StudentTopicQuestionOverride;
+}
+
+export interface CanUserGradeAssessmentOptions {
+    user: User;
+    topicId: number;
+}
+
+export interface GetAssessmentForGradingOptions {
+    topicId: number;
+}
+
+export interface GetAssessmentForGradingResult {
+    problems: CourseWWTopicQuestion[];
+    topic: CourseTopicContent;
+}
+
+export interface CreateAttachmentOptions {
+    obj: Partial<ProblemAttachment>;
+    studentGradeId?: number;
+    studentGradeInstanceId?: number;
+    studentWorkbookId?: number;
+}
+
+export interface ListAttachmentOptions {
+    studentGradeId?: number;
+    studentGradeInstanceId?: number;
+    studentWorkbookId?: number;
+}
+
+export interface DeleteAttachmentOptions {
+    problemAttachmentId: number;
+}
+
+/**
+ * courseId: The ID of the course to contact the professor for.
+ * student: The student/current User that is sending this email.
+ * content: Email content.
+ */
+export interface EmailProfOptions {
+    courseId: number;
+    content: string;
+    student: User;
+    question: {
+        id: number;
+    };
+}
+
+export interface GetStudentTopicOverrideOptions {
+    userId: number; 
+    topicId: number;
+}
+
+export interface GetAllContentForVersionOptions {
+    topicId: number;
+    userId: number;
 }

@@ -16,7 +16,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -46,6 +46,13 @@ import configurations from '../../configurations';
 import urljoin = require('url-join');
 import userController from '../users/user-controller';
 import AttemptsExceededException from '../../exceptions/attempts-exceeded-exception';
+import ProblemAttachment from '../../database/models/problem-attachment';
+import RederlyError from '../../exceptions/rederly-error';
+import StudentGradeProblemAttachment from '../../database/models/student-grade-problem-attachment';
+import StudentGradeInstanceProblemAttachment from '../../database/models/student-grade-instance-problem-attachment';
+import StudentWorkbookProblemAttachment from '../../database/models/student-workbook-problem-attachment';
+import emailHelper from '../../utilities/email-helper';
+import * as utilities from '../../utilities/utilities';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -1321,8 +1328,24 @@ class CourseController {
                         wasExpired: gradeResult.gradingRationale.isExpired,
                         wasAfterAttemptLimit: !gradeResult.gradingRationale.isWithinAttemptLimit,
                         wasLocked: gradeResult.gradingRationale.isLocked,
-                        wasAutoSubmitted: false // TODO
+                        wasAutoSubmitted: false
                     });
+
+                    const attachments = await this.listAttachments({
+                        studentGradeId: studentGrade.id
+                    });
+
+                    await attachments.asyncForEach(async (attachment: ProblemAttachment) => {
+                        if (!_.isNil(workbook)) {
+                            await courseRepository.createStudentWorkbookProblemAttachment({
+                                studentWorkbookId: workbook.id,
+                                problemAttachmentId: attachment.id
+                            });
+                        } else {
+                            // should never be possible
+                            logger.warn('nil workbook after creation for create attachments');
+                        }
+                    });    
                 } else {
                     _.assign(workbook, {
                         wasLate: gradeResult.gradingRationale.isLate,
@@ -2023,15 +2046,15 @@ class CourseController {
             userId,
         } = options.where;
 
-        const setFilterCount = [
+        const setFilterCount = utilities.countNotNil([
             courseId,
             questionId,
             topicId,
             unitId,
-        ].reduce((accumulator, val) => (accumulator || 0) + (!_.isNil(val) && 1 || 0), 0);
+        ]);
 
         if (setFilterCount !== 1) {
-            throw new Error(`One filter must be set but found ${setFilterCount}`);
+            throw new IllegalArgumentException(`One filter must be set but found ${setFilterCount}`);
         }
 
         // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
@@ -2929,13 +2952,6 @@ class CourseController {
                     userId,
                     problemNumber: problemOrder[index]+1, // problemOrder starts from 0
                 });
-
-                // for assessments, 
-                // numAttempts on a StudentGrade should refer to the number of versions the student has tried
-                // do we use StudentGrade.numExtendedAttempts for number of versions generated?
-                // or is that a confusing abuse of data?
-                // questionGrade.numExtendedAttempts++; 
-                // await questionGrade.save();
             });
 
             let autoSubmitURL: string | undefined;
@@ -3007,15 +3023,19 @@ class CourseController {
         let message = '';
         if (user.roleId === Role.PROFESSOR || user.roleId === Role.ADMIN) return {userCanViewQuestion: true, message};
         const question = await courseRepository.getQuestion({ id: questionId });
-        const topic = await question.getTopic();
-        if (topic.topicTypeId === 1) {
-            if (topic.startDate.toMoment().isAfter(moment())) {
-                message = `${topic.name} hasn't started yet.`;
-                return { userCanViewQuestion: false, message };
-            } else {
-                return { userCanViewQuestion: true, message };
-            }
-        } else if (topic.topicTypeId === 2) {
+        const dbTopic = await question.getTopic();
+        const topicOverride = await courseRepository.getStudentTopicOverride({userId: user.id, topicId: dbTopic.id});
+        const topic: CourseTopicContentInterface = (_.isNil(topicOverride)) ? dbTopic : dbTopic.getWithOverrides(topicOverride);
+
+        // applies to all topics - not just homeworks...
+        if (topic.startDate.toMoment().isAfter(moment())) {
+            message = `${topic.name} hasn't started yet.`;
+            return { userCanViewQuestion: false, message };
+        } else {
+            if (topic.topicTypeId === 1) return { userCanViewQuestion: true, message };
+        }
+
+        if (topic.topicTypeId === 2) {
             let topicIsLive = false;
             if (_.isNil(studentTopicAssessmentInfoId)) {
                 // specific version was not supplied - see if there's a live version for this question
@@ -3026,7 +3046,7 @@ class CourseController {
                 topicIsLive = studentTopicInfo.isClosed === false && // isClosed might not be accurate when the assessment times out
                     moment().isBetween(studentTopicInfo.startTime.toMoment(), studentTopicInfo.endTime.toMoment());
             }
-            const topicInfo = await topic.getTopicAssessmentInfo();
+            const topicInfo = await dbTopic.getTopicAssessmentInfo();
             if (topicIsLive) {
                 return { userCanViewQuestion: true, message };
             } else {
@@ -3157,6 +3177,7 @@ class CourseController {
     
                 const getProblemParams: GetProblemParameters = {
                     formURL: '/', // we don't care about this - no one sees the rendered version
+                    answersSubmitted: 1,
                     sourceFilePath: instance.webworkQuestionPath,
                     problemSeed: instance.randomSeed,
                     formData: instance.currentProblemState,
@@ -3196,6 +3217,17 @@ class CourseController {
                     wasLocked: false,
                     wasAutoSubmitted: wasAutoSubmitted,
                 });
+
+                const attachments = await this.listAttachments({
+                    studentGradeInstanceId: result.instance.id
+                });
+
+                await attachments.asyncForEach(async (attachment: ProblemAttachment) => {
+                    await courseRepository.createStudentWorkbookProblemAttachment({
+                        studentWorkbookId: workbook.id,
+                        problemAttachmentId: attachment.id
+                    });
+                });
     
                 // update individual problem high-scores
                 if (result.questionResponse.problem_result.score > result.instance.overallBestScore) {
@@ -3205,6 +3237,7 @@ class CourseController {
                     if (result.questionResponse.problem_result.score > result.grade.overallBestScore) {
                         // update grade: overallBestScore, *what about workbook id*?
                         result.grade.overallBestScore = result.questionResponse.problem_result.score;
+                        result.grade.lastInfluencingAttemptId = workbook.id;
                         // which workbookId field should be used?
                     }
                 }
@@ -3219,17 +3252,19 @@ class CourseController {
                         result.grade.bestScore = result.questionResponse.problem_result.score;
                         result.grade.legalScore = result.questionResponse.problem_result.score;
                         result.grade.effectiveScore = result.questionResponse.problem_result.score;
-                        result.grade.lastInfluencingAttemptId = workbook.id;
+                        result.grade.partialCreditBestScore = result.questionResponse.problem_result.score;
+                        result.grade.lastInfluencingLegalAttemptId = workbook.id;
+                        result.grade.lastInfluencingCreditedAttemptId = workbook.id;
                     }
                 }
     
                 // const versionAverage = (incoming.instance.averageScore * incoming.instance.numAttempts + incoming.questionResponse.problem_result.score)/(incoming.instance.numAttempts + 1);
     
-                if (studentTopicAssessmentInfo.numAttempts === 0) {
-                    // this is the student's first submission for this version -- 
-                    // update StudentGrade numAttempts to reflect the number of versions that were actually attempted
-                    result.grade.numAttempts++;
-                }
+                // keep these in line with workbook count -- all attempts are legal, extensions not allowed
+                result.grade.numAttempts++;
+                result.grade.numLegalAttempts++;
+                result.grade.numExtendedAttempts++;
+
                 // save updates
                 await result.grade.save();
                 await result.instance.save();
@@ -3269,7 +3304,384 @@ class CourseController {
             return { problemScores: problemScoresReturn, bestVersionScore: bestVersionScoreReturn, bestOverallVersion: bestOverallVersionReturn};
         });
     };
+    async canUserGradeAssessment({
+        user,
+        topicId
+    }: CanUserGradeAssessmentOptions): Promise<boolean> {
+        // TODO merge into single call
+        const topic = await courseRepository.getCourseTopic({ id: topicId });
+        const unit = await courseRepository.getCourseUnit({ id: topic.courseUnitContentId });
+        const course = await courseRepository.getCourse({ id: unit.courseId });
+        return (user.id === course.instructorId);
+    }
 
+    async getAssessmentForGrading({
+        topicId
+    }: GetAssessmentForGradingOptions): Promise<GetAssessmentForGradingResult> {
+        // eventually update to include different parameters
+        // grade best individual problems // grade best version attempt // get ALL versions?!?
+        try {
+            const topic = await CourseTopicContent.findOne({
+                where: {
+                    id: topicId,
+                    active: true,
+                },
+            });
+
+            if (_.isNil(topic)) {
+                throw new WrappedError(`failed to retrieve topic #${topicId} for grading`);
+            }
+
+            // TODO change to includes on the above get topic
+            const problems = await CourseWWTopicQuestion.findAll({
+                where: {
+                    courseTopicContentId: topicId,
+                    active: true,
+                    hidden: false,
+                },
+                include: [{
+                    model: StudentGrade,
+                    as: 'grades',
+                    include: [{
+                        model: StudentWorkbook,
+                        as: 'workbooks',
+                        required: false,
+                        where: {
+                            active: true,
+                        }
+                    }]
+                }]
+            });
+            return {problems, topic};
+        } catch (e) {
+            throw new WrappedError(`Topic #${topicId} failed to retrieve problems for grading assessment.`, e);
+        }
+    }
+
+    async createAttachment({
+        obj,
+        studentGradeId,
+        studentGradeInstanceId,
+        studentWorkbookId
+    }: CreateAttachmentOptions): Promise<ProblemAttachment> {
+        return useDatabaseTransaction(async (): Promise<ProblemAttachment> => {
+            const filterCount = utilities.countNotNil([
+                studentGradeId,
+                studentGradeInstanceId,
+                studentWorkbookId,
+            ]);
+    
+            if (filterCount !== 1) {
+                throw new IllegalArgumentException('Create attachment requires exactly 1 of [studentGradeId, studentGradeInstanceId, studentWorkbookId] to be set');
+            }
+
+            if(!_.isNil(studentWorkbookId)) {
+                if(!_.isNil(studentGradeInstanceId)) {
+                    throw new IllegalArgumentException('studentGradeInstanceId was almost overwritten, this should not be possible due to the filter count');
+                }
+
+                if(!_.isNil(studentGradeId)) {
+                    throw new IllegalArgumentException('studentGradeId was almost overwritten, this should not be possible due to the filter count');
+                }
+                
+                const studentWorkbook = await courseRepository.getWorkbookById(studentWorkbookId);
+                if (_.isNil(studentWorkbook)) {
+                    throw new NotFoundError('Could not find the student workbook for create attachment');
+                }
+                studentGradeInstanceId = studentWorkbook.studentGradeInstanceId;
+                studentGradeId = studentWorkbook.studentGradeId;
+            } else if(!_.isNil(studentGradeInstanceId)) {
+                if(!_.isNil(studentGradeId)) {
+                    throw new IllegalArgumentException('studentGradeId was almost overwritten, this should not be possible due to the filter count');
+                }
+                const studentGradeInstance = await courseRepository.getStudentGradeInstance({
+                    id: studentGradeInstanceId
+                });
+                studentGradeId = studentGradeInstance.studentGradeId;
+            }
+
+            const result = await courseRepository.createAttachment(obj);
+
+            /**
+             * Currently this could and should be validated by the constraint
+             * however that causes gaps in ids which I know we aren't too worried about
+             * furthermore we will need to fetch the grade anyway for permissions so why not throw it in for now
+             */
+            if(_.isNil(studentGradeId)) throw new RederlyError('Based on above logic this is not possible, however use strict did not pick up on that');
+            // on failure this will throw an error and bubble up
+            await courseRepository.getStudentGrade({
+                id: studentGradeId
+            });
+
+            await courseRepository.createStudentGradeProblemAttachment({
+                problemAttachmentId: result.id,
+                studentGradeId: studentGradeId
+            });
+
+            if(!_.isNil(studentGradeInstanceId)) {
+                await courseRepository.createStudentGradeInstanceProblemAttachment({
+                    problemAttachmentId: result.id,
+                    studentGradeInstanceId: studentGradeInstanceId
+                });
+            }
+
+            if(!_.isNil(studentWorkbookId)) {
+                await courseRepository.createStudentWorkbookProblemAttachment({
+                    problemAttachmentId: result.id,
+                    studentWorkbookId: studentWorkbookId
+                });
+            }
+
+            return result;
+        });
+    }
+
+    async listAttachments({
+        studentGradeId,
+        studentGradeInstanceId,
+        studentWorkbookId
+    }: ListAttachmentOptions): Promise<Array<ProblemAttachment>> {
+        return useDatabaseTransaction(async (): Promise<Array<ProblemAttachment>> => {
+            const filterCount = utilities.countNotNil([
+                studentGradeId,
+                studentGradeInstanceId,
+                studentWorkbookId,
+            ]);
+    
+            if (filterCount !== 1) {
+                throw new IllegalArgumentException('List attachment requires exactly 1 of [studentGradeId, studentGradeInstanceId, studentWorkbookId] to be set');
+            }
+            // Does it make sense to do this with a union in the future?
+            const result = [];
+            if (!_.isNil(studentGradeId)) {
+                const studentGradeProblemAttachments = await ProblemAttachment.findAll({
+                    where: {
+                        active: true
+                    },
+                    include: [{
+                        model: StudentGradeProblemAttachment,
+                        as: 'studentGradeProblemAttachments',
+                        attributes: [],
+                        where: {
+                            active: true,
+                            studentGradeId: studentGradeId
+                        }
+                    }]
+                });
+                result.push(...studentGradeProblemAttachments);    
+            }
+
+            if (!_.isNil(studentGradeInstanceId)) {
+                const studentGradeProblemAttachments = await ProblemAttachment.findAll({
+                    where: {
+                        active: true
+                    },
+                    include: [{
+                        model: StudentGradeInstanceProblemAttachment,
+                        as: 'studentGradeInstanceProblemAttachments',
+                        attributes: [],
+                        where: {
+                            active: true,
+                            studentGradeInstanceId: studentGradeInstanceId
+                        }
+                    }]
+                });
+                result.push(...studentGradeProblemAttachments);
+            }
+
+            if (!_.isNil(studentWorkbookId)) {
+                const studentGradeProblemAttachments = await ProblemAttachment.findAll({
+                    where: {
+                        active: true
+                    },
+                    include: [{
+                        model: StudentWorkbookProblemAttachment,
+                        as: 'studentWorkbookProblemAttachments',
+                        attributes: [],
+                        where: {
+                            active: true,
+                            studentWorkbookId: studentWorkbookId
+                        }
+                    }]
+                });
+                result.push(...studentGradeProblemAttachments);    
+            }
+
+            return result;
+        });
+    }
+
+    async deleteAttachment({
+        problemAttachmentId,
+    }: DeleteAttachmentOptions): Promise<UpdateResult<ProblemAttachment>> {
+        const result = await ProblemAttachment.update({
+            active: false
+        }, {
+            where: {
+                id: problemAttachmentId,
+                active: true
+            },
+            returning: true
+        });
+        
+        return {
+            updatedCount: result[0],
+            updatedRecords: result[1]
+        };
+    }
+
+    // Sends an email to the professor associated with the course.
+    async emailProfessor(options: EmailProfOptions): Promise<boolean> {
+        const coursePromise = Course.findOne({
+            where: {
+                id: options.courseId,
+            },
+            include: [{
+                model: User,
+                as: 'instructor',
+                attributes: ['id', 'firstName', 'lastName', 'email', 'preferredEmail'],
+                where: {
+                    active: true
+                },
+                required: true,
+            }],
+        });
+
+        const topicPromise = CourseTopicContent.findOne({
+            attributes: ['id', 'name'],
+            where: {},
+            include: [{
+                model: CourseWWTopicQuestion,
+                as: 'questions',
+                attributes: ['problemNumber'],
+                required: true,
+                where: {
+                    id: options.question.id,
+                    active: true,
+                }
+            }]
+        });
+
+        const [course, topic] = await Promise.all([coursePromise, topicPromise]);
+
+        if (_.isNil(course) || _.isNil(course.instructor)) {
+            throw new RederlyError('Could not find an instructor for this course.');
+        }
+
+        if (_.isNil(topic)) {
+            throw new RederlyError('Could not find a topic associated with the problem this student is trying to ask about.');
+        }
+        
+        const question = topic.questions?.[0];
+        
+        if (_.isNil(question)) {
+            throw new RederlyError('Could not find the question associated with the problem/topic this student is trying to ask about.');
+        }
+
+        const poorMansTemplate = `
+Hello Professor ${course.instructor.lastName},
+
+    Your student ${options.student.firstName} ${options.student.lastName} is asking for help with
+Problem ${question.problemNumber} in the Topic ${topic.name}.
+
+Here is the message that was sent:
+
+${options.content}
+
+You should be able to reply to the student's email address (${options.student.preferredEmail}) by replying to this message.
+`;
+
+        return emailHelper.sendEmail({
+            content: poorMansTemplate,
+            email: course.instructor.preferredEmail,
+            subject: `${options.student.firstName} - Topic ${topic.id} - Question ${options.question.id}`,
+            replyTo: options.student.preferredEmail,
+        });
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async getAllContentForVersion(options: GetAllContentForVersionOptions): Promise<any> {
+
+        // To display which user that submitted this exam version.
+        const user = await User.findOne({
+            attributes: ['id', 'firstName', 'lastName'],
+            where: {
+                id: options.userId,
+            },
+        });
+       
+        // if (_.isNil(userForVersion)) {
+        //     throw new RederlyError('This grade is not associated with a user.');
+        // }
+
+        /**
+         * Start with a GradeInstanceId. This represents a version.
+         * Find all questions associated with the Topic associated with this GradeInstanceId.
+         *      These are all the questions for that version. Should be the same for GradeInstanceIds with the same parent GradeId.
+         */
+        const mainData = await CourseTopicContent.findOne({
+            attributes: ['id', 'name'],
+            where: {
+                id: options.topicId,
+                active: true,
+            },
+            include: [
+                {
+                    model: CourseWWTopicQuestion,
+                    as: 'questions',
+                    attributes: ['id', 'problemNumber'],
+                    required: true,
+                    where: {
+                        active: true,
+                    },
+                    include: [
+                        {
+                            model: StudentGrade,
+                            as: 'grades',
+                            attributes: ['id', 'last_influencing_attempt_workbook_id'],
+                            required: true,
+                            where: {
+                                userId: options.userId,
+                                active: true,
+                            },
+                            include: [
+                                {
+                                    model: StudentWorkbook,
+                                    as: 'lastInfluencingAttempt',
+                                    required: true,
+                                    attributes: ['id'],
+                                    include: [
+                                        {
+                                            model: StudentGradeInstance,
+                                            as: 'studentGradeInstance',
+                                        },
+                                    ]
+                                },
+                            ]
+                        }
+                    ]
+                }
+            ],
+        });
+
+        // TODO: Clean up typing when unpacking the ProblemAttachments
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data: any = mainData?.get({plain: true});
+
+        await mainData?.questions?.asyncForEach(async (question, i) => 
+            await question.grades?.asyncForEach(async (grade, j) => {
+                if (_.isNil(grade.lastInfluencingAttempt) || _.isNil(grade.lastInfluencingAttempt.studentGradeInstance)) {
+                    logger.debug('No lastInfluencingAttempt and no studentGradeInstance exists');
+                    return;
+                }
+                const probAttach = await grade.lastInfluencingAttempt.studentGradeInstance.getProblemAttachments();
+                grade.lastInfluencingAttempt.studentGradeInstance.problemAttachments = probAttach;
+                data.questions[i].grades[j].lastInfluencingAttempt.studentGradeInstance.problemAttachments = probAttach.map(pA => pA.get({plain: true}));
+            })
+        );
+
+        return {user: user, topic: data};
+    }
 }
 
 export const courseController = new CourseController();

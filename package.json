@@ -1,6 +1,6 @@
 {
   "name": "backend",
-  "version": "1.4.10-3",
+  "version": "1.5.4",
   "description": "",
   "main": "index.js",
   "dependencies": {
@@ -82,8 +82,8 @@
     "cli": "ts-node ./src/cli.ts",
     "cli:debug": "node --inspect=5859 -r ts-node/register ./src/cli.ts",
     "cli:debug:watch": "nodemon -x npm run cli:debug",
-    "play": "ts-node src/playground.ts",
-    "play:debug": "node --inspect=5860 -r ts-node/register ./src/playground.ts",
+    "play": "ts-node src/playground/playground.ts",
+    "play:debug": "node --inspect=5860 -r ts-node/register ./src/playground/playground.ts",
     "play:debug:watch": "nodemon -x npm run play:debug",
     "generate-route-types": "ts-node src/generate-route-types.ts",
     "generate-route-types:debug": "node --inspect=5860 -r ts-node/register ./src/generate-route-types.ts",
@@ -93,7 +93,7 @@
     "run:build": "node ts-built/index.js",
     "sequelize": "npm run build && sequelize",
     "sequelize:migrations": "npm run sequelize -- db:migrate",
-    "sequelize:migrations:devundo": "npm run sequelize -- db:migrate:undo:all --to 20200925034242-assessments-setup.js",
+    "sequelize:migrations:devundo": "npm run sequelize -- db:migrate:undo:all --to 20201026190412-attachments-setup.js",
     "sequelize:built:migrations": "sequelize -- db:migrate",
     "lint": "eslint src/ --ext .ts",
     "clean": "if [ -d ts-built ]; then rm -r ts-built; fi;"

@@ -5,7 +5,7 @@ import validate from '../../middleware/joi-validator';
 import { authenticationMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
-import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation, deleteEnrollmentValidation, createAssessmentVersionValidation, extendCourseTopicForUserValidation, extendCourseTopicQuestionValidation, getTopicValidation, submitAssessmentVersionValidation, endAssessmentVersionValidation, previewQuestionValidation } from './course-route-validation';
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation, deleteEnrollmentValidation, createAssessmentVersionValidation, extendCourseTopicForUserValidation, extendCourseTopicQuestionValidation, getTopicValidation, submitAssessmentVersionValidation, endAssessmentVersionValidation, previewQuestionValidation, gradeAssessmentValidation, getAttachmentPresignedURLValidation, postAttachmentValidation, listAttachmentsValidation, deleteAttachmentValidation, emailProfValidation, readQuestionValidation, saveQuestionValidation, catalogValidation, getVersionValidation } from './course-route-validation';
 import NotFoundError from '../../exceptions/not-found-error';
 import multer = require('multer');
 import * as proxy from 'express-http-proxy';
@@ -14,7 +14,7 @@ import * as _ from 'lodash';
 import configurations from '../../configurations';
 import WrappedError from '../../exceptions/wrapped-error';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
-import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest, ExtendCourseTopicQuestionRequest, CreateAssessmentVersionRequest, SubmitAssessmentVersionRequest, UpdateGradeInstanceRequest, EndAssessmentVersionRequest, PreviewQuestionRequest } from './course-route-request-types';
+import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest, ExtendCourseTopicQuestionRequest, CreateAssessmentVersionRequest, SubmitAssessmentVersionRequest, UpdateGradeInstanceRequest, EndAssessmentVersionRequest, PreviewQuestionRequest, GradeAssessmentRequest, GetAttachmentPresignedURLRequest, PostAttachmentRequest, ListAttachmentsRequest, DeleteAttachmentRequest, EmailProfRequest, ReadQuestionRequest, SaveQuestionRequest, CatalogRequest, GetVersionRequest } from './course-route-request-types';
 import Boom = require('boom');
 import { Constants } from '../../constants';
 import Role from '../permissions/roles';
@@ -26,6 +26,8 @@ import IllegalArgumentException from '../../exceptions/illegal-argument-exceptio
 import logger from '../../utilities/logger';
 import ForbiddenError from '../../exceptions/forbidden-error';
 import AttemptsExceededException from '../../exceptions/attempts-exceeded-exception';
+import attachmentHelper from '../../utilities/attachments-helper';
+import urljoin = require('url-join');
 
 const fileUpload = multer();
 
@@ -238,6 +240,19 @@ router.get('/questions',
         }));
     }));
 
+
+router.get('/topic/:topicId/version/:userId',
+    authenticationMiddleware,
+    validate(getVersionValidation),
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetVersionRequest.body, GetVersionRequest.query>, _res: Response, next: NextFunction) => {
+        const params: GetVersionRequest.params = req.params;
+        const result = await courseController.getAllContentForVersion({topicId: params.topicId, userId: params.userId});
+        next(httpResponse.Ok('Fetched successfully', result));
+    })
+);
+
 router.put('/topic/extend',
     authenticationMiddleware,
     validate(extendCourseTopicForUserValidation),
@@ -284,6 +299,26 @@ router.put('/topic/:id',
         } catch (e) {
             next(e);
         }
+    }));
+
+router.get('/assessment/topic/grade/:id',
+    authenticationMiddleware,
+    validate(gradeAssessmentValidation),
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GradeAssessmentRequest.body, GradeAssessmentRequest.query>, _res: Response, next: NextFunction) => {
+        const params = req.params as GradeAssessmentRequest.params;
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+
+        const user = await req.session.getUser();
+        if (await courseController.canUserGradeAssessment({user, topicId: params.id}) === false) {
+            throw new ForbiddenError('You are not allowed to grade this assessment.');
+        }
+
+        const {problems, topic} = await courseController.getAssessmentForGrading({topicId: params.id});
+        next(httpResponse.Ok('Fetched problems + workbooks successfully', {problems, topic}));
     }));
 
 router.get('/assessment/topic/end/:id',
@@ -598,7 +633,8 @@ router.get('/question/:id',
                     user, 
                     questionId: params.id, 
                     studentTopicAssessmentInfoId: 
-                    req.query.studentTopicAssessmentInfoId});
+                    req.query.studentTopicAssessmentInfoId
+                });
                     
                 if (userCanViewQuestion === false) throw new IllegalArgumentException(message);
 
@@ -940,6 +976,30 @@ router.get('/topics',
         next(httpResponse.Ok('Fetched successfully', result));
     }));
 
+router.post('/:id/email',
+    authenticationMiddleware,
+    validate(emailProfValidation),
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, EmailProfRequest.body, EmailProfRequest.query>, res: Response, next: NextFunction) => {
+        const params: EmailProfRequest.params = req.params;
+
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+
+        const user = await req.session.getUser();
+
+        const result = await courseController.emailProfessor({
+            courseId: params.id,
+            content: req.body.content,
+            question: req.body.question,
+            student: user,
+        });
+        next(httpResponse.Ok('Your message was sent to your professor.', result));
+    })
+);
+
 router.get('/:id',
     authenticationMiddleware,
     validate(getCourseValidation),
@@ -1014,5 +1074,124 @@ router.delete('/enroll',
             }
         }
     }));
+
+router.get('/attachments/upload-url',
+    authenticationMiddleware,
+    validate(getAttachmentPresignedURLValidation),
+    asyncHandler(async (req: RederlyExpressRequest<GetAttachmentPresignedURLRequest.params, unknown, GetAttachmentPresignedURLRequest.body, GetAttachmentPresignedURLRequest.query>, _res: Response, next: NextFunction) => {
+        const result = await attachmentHelper.getNewPresignedURL();
+        next(httpResponse.Ok('Get new presigned url success', result));
+    }));
+
+router.post('/attachments',
+    authenticationMiddleware,
+    validate(postAttachmentValidation),
+    asyncHandler(async (req: RederlyExpressRequest<PostAttachmentRequest.params, unknown, PostAttachmentRequest.body, PostAttachmentRequest.query>, _res: Response, next: NextFunction) => {
+        // TODO permission to check if user has access to the provided grade or grade instance
+        const result = await courseController.createAttachment({
+            obj: req.body.attachment,
+            studentGradeId: req.body.studentGradeId,
+            studentGradeInstanceId: req.body.studentGradeInstanceId,
+            studentWorkbookId: req.body.studentWorkbookId
+        });
+        next(httpResponse.Ok('Attachment record created', result));
+    }));
+
+router.get('/attachments/list',
+    authenticationMiddleware,
+    validate(listAttachmentsValidation),
+    asyncHandler(async (req: RederlyExpressRequest<ListAttachmentsRequest.params, unknown, ListAttachmentsRequest.body, ListAttachmentsRequest.query>, _res: Response, next: NextFunction) => {
+        // TODO permission to check if user has access to the provided grade or grade instance
+        const result = await courseController.listAttachments({
+            studentGradeId: req.query.studentGradeId,
+            studentGradeInstanceId: req.query.studentGradeInstanceId,
+            studentWorkbookId: req.query.studentWorkbookId,
+        });
+        
+        next(httpResponse.Ok('Attachments fetched successfully', {
+            attachments: result,
+            baseUrl: configurations.attachments.baseUrl
+        }));
+    }));
+
+router.delete('/attachments/:id',
+    authenticationMiddleware,
+    validate(deleteAttachmentValidation),
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, DeleteAttachmentRequest.body, DeleteAttachmentRequest.query>, _res: Response, next: NextFunction) => {
+        const params = req.params as DeleteAttachmentRequest.params;
+        // TODO permission to check if user has access to the provided grade or grade instance
+        const result = await courseController.deleteAttachment({
+            problemAttachmentId: params.id
+        });
+
+        next(httpResponse.Ok('Attachment deleted successfully', result));
+    }));
+
+router.post('/question/editor/save',
+    authenticationMiddleware,
+    validate(saveQuestionValidation),
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<SaveQuestionRequest.params, unknown, SaveQuestionRequest.body, SaveQuestionRequest.query>, _res: Response, next: NextFunction) => {
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+
+        const writeFilePath = urljoin(`private/my/${req.session.userId}`, req.body.relativePath);
+        const result = await rendererHelper.saveProblemSource({
+            problemSource: req.body.problemSource,
+            writeFilePath: writeFilePath,
+        });
+
+        next(httpResponse.Ok('Loaded', {
+            filePath: result
+        }));
+    }));
+
+router.post('/question/editor/read',
+    authenticationMiddleware,
+    validate(readQuestionValidation),
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<ReadQuestionRequest.params, unknown, ReadQuestionRequest.body, ReadQuestionRequest.query>, _res: Response, next: NextFunction) => {
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+
+        const sourceFilePath = req.body.filePath;
+        const result = await rendererHelper.readProblemSource({
+            sourceFilePath: sourceFilePath
+        });
+
+        next(httpResponse.Ok('Loaded', {
+            problemSource: result
+        }));
+    }));
+
+router.post('/question/editor/catalog',
+    authenticationMiddleware,
+    validate(catalogValidation),
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<CatalogRequest.params, unknown, CatalogRequest.body, CatalogRequest.query>, _res: Response, next: NextFunction) => {
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+
+        const basePath = `private/my/${req.session.userId}`;
+        const result = await rendererHelper.catalog({
+            basePath: basePath,
+            // TODO what should the depth be?
+            // -1 did not do all
+            maxDepth: 100,
+        });
+
+        next(httpResponse.Ok('Loaded', {
+            problems: Object.keys(result).filter(elm => elm.endsWith('.pg'))
+        }));
+    }));
+
 
 module.exports = router;

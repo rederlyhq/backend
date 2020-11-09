@@ -54,7 +54,7 @@
 #### Auth
 | Environment variable | Description | Default value |
 | --- | --- | --- |
-| AUTH_SESSION_LIFE | The number of hours a session token is good for | 24 |
+| AUTH_SESSION_LIFE | The number of minutes a session token is good for | 1440 (1 day) |
 | AUTH_COST_FACTOR | The cost factor for bcrypt to hash the password (this is important for preventing brute force attacks as it makes the hash take time to calculate) | 8 |
 | AUTH_TOKEN_LIFE | The default value for all other auth tokens | 1440 |
 | AUTH_FORGOT_PASSWORD_TOKEN_LIFE | The amount of time you have to claim forgot password token | AUTH_TOKEN_LIFE=1440 |

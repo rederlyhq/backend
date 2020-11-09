@@ -1720,6 +1720,7 @@ class CourseController {
     }: GradeOptions): Promise<StudentWorkbook | undefined> => {
         let topic: CourseTopicContentInterface = passedTopic;
         let question: CourseWWTopicQuestionInterface = passedQuestion;
+        let realSolutionDate: moment.Moment = solutionDate;
         if (useOverride) {
             /**
              * Currently:
@@ -1749,13 +1750,14 @@ class CourseController {
             }
 
             topic = _.isNil(topicOverride) ? topic : passedTopic.getWithOverrides(topicOverride);
+            realSolutionDate = moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days');
             question = _.isNil(questionOverride) ? question : passedQuestion.getWithOverrides(questionOverride);
         }
 
         const gradeResult = calculateGrade({
             newScore,
             question,
-            solutionDate,
+            solutionDate: realSolutionDate,
             studentGrade,
             topic,
             timeOfSubmission

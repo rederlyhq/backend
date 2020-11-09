@@ -1,6 +1,6 @@
 
 # The instructions for the first stage
-FROM http://699581105482.dkr.ecr.us-east-2.amazonaws.com/standard-images:node-10-alpine as builder
+FROM 699581105482.dkr.ecr.us-east-2.amazonaws.com/standard-images:node-10-alpine as builder
 
 # set to production to run build
 #ARG NODE_ENV=development
@@ -22,7 +22,7 @@ RUN npm run sequelize:built:migrations
 RUN npm prune --production
 
 # The instructions for second stage
-FROM http://699581105482.dkr.ecr.us-east-2.amazonaws.com/standard-images:node-10-alpine
+FROM 699581105482.dkr.ecr.us-east-2.amazonaws.com/standard-images:node-10-alpine
 
 #WORKDIR /app
 COPY --from=builder /app/ts-built ./ts-built

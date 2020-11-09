@@ -290,7 +290,7 @@ class UserController {
     }
 
     createSession(userId: number): Bluebird<Session> {
-        const expiresAt: Date = moment().add(sessionLife, 'hour').toDate();
+        const expiresAt: Date = moment().add(sessionLife, 'minute').toDate();
         return Session.create({
             userId,
             uuid: uuidv4(),

@@ -52,6 +52,7 @@ export interface GetProblemParameters {
     processAnswers?: boolean;
     formData?: { [key: string]: unknown };
     showCorrectAnswers?: boolean;
+    answersSubmitted?: number;
 }
 
 export interface ReadProblemSourceOptions {

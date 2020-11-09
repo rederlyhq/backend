@@ -2950,13 +2950,6 @@ class CourseController {
                     userId,
                     problemNumber: problemOrder[index]+1, // problemOrder starts from 0
                 });
-
-                // for assessments, 
-                // numAttempts on a StudentGrade should refer to the number of versions the student has tried
-                // do we use StudentGrade.numExtendedAttempts for number of versions generated?
-                // or is that a confusing abuse of data?
-                // questionGrade.numExtendedAttempts++; 
-                // await questionGrade.save();
             });
 
             let autoSubmitURL: string | undefined;
@@ -3182,6 +3175,7 @@ class CourseController {
     
                 const getProblemParams: GetProblemParameters = {
                     formURL: '/', // we don't care about this - no one sees the rendered version
+                    answersSubmitted: 1,
                     sourceFilePath: instance.webworkQuestionPath,
                     problemSeed: instance.randomSeed,
                     formData: instance.currentProblemState,
@@ -3264,11 +3258,11 @@ class CourseController {
     
                 // const versionAverage = (incoming.instance.averageScore * incoming.instance.numAttempts + incoming.questionResponse.problem_result.score)/(incoming.instance.numAttempts + 1);
     
-                if (studentTopicAssessmentInfo.numAttempts === 0) {
-                    // this is the student's first submission for this version -- 
-                    // update StudentGrade numAttempts to reflect the number of versions that were actually attempted
-                    result.grade.numAttempts++;
-                }
+                // keep these in line with workbook count -- all attempts are legal, extensions not allowed
+                result.grade.numAttempts++;
+                result.grade.numLegalAttempts++;
+                result.grade.numExtendedAttempts++;
+
                 // save updates
                 await result.grade.save();
                 await result.instance.save();

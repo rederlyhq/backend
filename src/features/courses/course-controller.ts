@@ -2933,7 +2933,9 @@ class CourseController {
                         active: true
                     }
                 });
-                if (_.isNil(questionGrade)) throw new WrappedError(`Question id: ${question.id} has no corresponding grade.`);
+                if (_.isNil(questionGrade)) {
+                    throw new WrappedError(`Question id: ${question.id} has no corresponding grade.`);
+                }
                 let randomSeed: number | undefined;
                 let webworkQuestionPath: string | undefined;
                 if (_.isNil(questionInfo)) {
@@ -3082,6 +3084,24 @@ class CourseController {
         }); // includes TopicOverrides
         if (!_.isNil(topic.studentTopicOverride) && topic.studentTopicOverride.length > 0) {
             topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
+        }
+        const unit = await topic.getUnit();
+        const course = await unit.getCourse();
+        const enroll = await course.getEnrolledStudents({
+            where: {
+                userId: user.id,
+            }
+        });
+        if (_.isEmpty(enroll)) {
+            logger.warn(`User #${user.id} is not enrolled in course for topic #${topicId}.`);
+            message = 'Only enrolled students may begin an assessment.';
+            data.status = 'NOT_ENROLLED';
+            userCanStartNewVersion = false;
+            return {
+                message,
+                data,
+                userCanStartNewVersion
+            };
         }
 
         let topicInfo = await this.getTopicAssessmentInfoByTopicId({

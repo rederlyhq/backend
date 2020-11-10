@@ -33,6 +33,7 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
     public partialExtend!: boolean;
 
     public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
+    public getUnit!: BelongsToGetAssociationMixin<CourseUnitContent>;
     public getTopicType!: BelongsToGetAssociationMixin<TopicType>;
     public getQuestions!: HasManyGetAssociationsMixin<CourseWWTopicQuestion>;
     public getStudentTopicOverride!: HasManyGetAssociationsMixin<StudentTopicOverride>;

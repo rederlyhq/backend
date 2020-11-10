@@ -2934,7 +2934,7 @@ class CourseController {
                     }
                 });
                 if (_.isNil(questionGrade)) {
-                    throw new WrappedError(`Question id: ${question.id} has no corresponding grade.`);
+                    throw new RederlyError(`Question id: ${question.id} has no corresponding grade.`);
                 }
                 let randomSeed: number | undefined;
                 let webworkQuestionPath: string | undefined;
@@ -3090,10 +3090,11 @@ class CourseController {
         const enroll = await course.getEnrolledStudents({
             where: {
                 userId: user.id,
+                active: true,
+                dropDate: null,
             }
         });
         if (_.isEmpty(enroll)) {
-            logger.warn(`User #${user.id} is not enrolled in course for topic #${topicId}.`);
             message = 'Only enrolled students may begin an assessment.';
             data.status = 'NOT_ENROLLED';
             userCanStartNewVersion = false;

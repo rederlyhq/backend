@@ -1919,6 +1919,17 @@ class CourseController {
     }
 
     async enroll(enrollment: CreateGradesForUserEnrollmentOptions): Promise<StudentEnrollment> {
+        // TODO future, what should this do if the student has already dropped?
+        const fetchedEnrollment = await StudentEnrollment.findOne({
+            where: {
+                courseId: enrollment.courseId,
+                userId: enrollment.userId,
+            }
+        });
+        if (!_.isNil(fetchedEnrollment)) {
+            return fetchedEnrollment;
+        }
+
         return await useDatabaseTransaction(async () => {
             const result = await this.createStudentEnrollment({
                 ...enrollment,

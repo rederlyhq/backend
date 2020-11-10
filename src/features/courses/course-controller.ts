@@ -1103,7 +1103,8 @@ class CourseController {
         role,
         topic,
         gradeInstance,
-        courseQuestion
+        courseQuestion,
+        userId
     }: GetCalculatedRendererParamsOptions): Promise<GetCalculatedRendererParamsResponse> {
         let showSolutions = role !== Role.STUDENT;
         let outputFormat: OutputFormat | undefined;
@@ -1112,7 +1113,22 @@ class CourseController {
             if (_.isNil(topic)) {
                 topic = await this.getTopicById({id: courseQuestion.courseTopicContentId});
             }
-            showSolutions = moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days').isBefore(moment());
+            let topicObj: CourseTopicContentInterface = topic;
+            if (!_.isNil(userId)) {
+                const overrides = await topic.getStudentTopicOverride({
+                    where: {
+                        userId: userId,
+                        active: true,    
+                    }
+                });
+                if (overrides.length > 1) {
+                    logger.warn('getCalculatedRendererParams got multiple overrides, using first');
+                }
+                if (!_.isNil(overrides.first)) {
+                    topicObj = topic.getWithOverrides(overrides.first);
+                }
+            }
+            showSolutions = moment(topicObj.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days').isBefore(moment());
         }
         if (!_.isNil(gradeInstance)) {
             const version = await gradeInstance.getStudentAssessmentInfo();
@@ -1236,7 +1252,8 @@ class CourseController {
         const calculatedRendererParameters = await this.getCalculatedRendererParams({
             courseQuestion,
             role: options.role,
-            gradeInstance
+            gradeInstance,
+            userId: options.userId
         });
 
         // TODO; rework calculatedRendererParameters
@@ -1720,6 +1737,7 @@ class CourseController {
     }: GradeOptions): Promise<StudentWorkbook | undefined> => {
         let topic: CourseTopicContentInterface = passedTopic;
         let question: CourseWWTopicQuestionInterface = passedQuestion;
+        let realSolutionDate: moment.Moment = solutionDate;
         if (useOverride) {
             /**
              * Currently:
@@ -1749,13 +1767,14 @@ class CourseController {
             }
 
             topic = _.isNil(topicOverride) ? topic : passedTopic.getWithOverrides(topicOverride);
+            realSolutionDate = moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days');
             question = _.isNil(questionOverride) ? question : passedQuestion.getWithOverrides(questionOverride);
         }
 
         const gradeResult = calculateGrade({
             newScore,
             question,
-            solutionDate,
+            solutionDate: realSolutionDate,
             studentGrade,
             topic,
             timeOfSubmission

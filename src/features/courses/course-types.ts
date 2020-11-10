@@ -431,7 +431,9 @@ export interface GetCalculatedRendererParamsOptions {
     role: Role;
     topic?: CourseTopicContent;
     courseQuestion: CourseWWTopicQuestion;
+    // TODO this was more generic way to interface with the renderer, seems like we got more specific with our user logic in here
     gradeInstance?: StudentGradeInstance;
+    userId?: number;
 }
 
 export interface GetCalculatedRendererParamsResponse {

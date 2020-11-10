@@ -809,7 +809,8 @@ router.post('/question/:id',
 
         const rendererParams = await courseController.getCalculatedRendererParams({
             courseQuestion: question,
-            role: user.roleId
+            role: user.roleId,
+            userId: user.id
         });
 
         const studentGrade = await StudentGrade.findOne({

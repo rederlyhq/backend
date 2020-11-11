@@ -56,9 +56,9 @@ export default class User extends Model {
       as: 'role'
     });
 
-    User.belongsTo(University, {
-      foreignKey: 'universityId',
-      targetKey: 'id',
+    User.hasOne(University, {
+      sourceKey: 'universityId',
+      foreignKey: 'id',
       as: 'university'
     });
 

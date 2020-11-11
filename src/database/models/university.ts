@@ -25,9 +25,9 @@ export default class University extends Model {
     //   as: 'user' // this determines the name in `associations`!
     // });
 
-    University.belongsTo(User, {
+    University.hasMany(User, {
       foreignKey: 'universityId',
-      targetKey: 'id',
+      sourceKey: 'id',
       as: 'user'
     });
 

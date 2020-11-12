@@ -5,20 +5,49 @@ import CurriculumUnitContent from '../../database/models/curriculum-unit-content
 import CurriculumTopicContent from '../../database/models/curriculum-topic-content';
 import CurriculumWWTopicQuestion from '../../database/models/curriculum-ww-topic-question';
 import { BaseError } from 'sequelize';
+import * as Sequelize from 'sequelize';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import WrappedError from '../../exceptions/wrapped-error';
 import NotFoundError from '../../exceptions/not-found-error';
 import { UpdateTopicOptions, UpdateUnitOptions } from './curriculum-types';
 import { Constants } from '../../constants';
 import curriculumRepository from './curriculum-repository';
+import University from '../../database/models/university';
+import User from '../../database/models/user';
 
 class CurriculumController {
     getCurriculumById(id: number): Promise<Curriculum> {
         return curriculumRepository.getCurriculumById(id);
     }
 
-    getCurriculums(): Bluebird<Curriculum[]> {
-        return Curriculum.findAll();
+    async getCurriculums({user}: {user: User}): Promise<Curriculum[]> {
+
+        const university = await user.getUniversity();
+
+        return Curriculum.findAll(
+            {
+                where: {
+                    active: true,
+                },
+                include: [
+                    {
+                        model: University,
+                        as: 'university',
+                        attributes: [],
+                        where: {
+                            [Sequelize.Op.or]: [
+                                {
+                                    id: 1
+                                },
+                                {
+                                    id: university.id
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        );
     }
 
     private checkCurriculumError(e: Error): void {

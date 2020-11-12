@@ -1,5 +1,6 @@
 interface Array<T> {
     asyncForEach: (callbackfn: (value: T, index: number, array: T[]) => Promise<unknown>) => Promise<unknown[]>;
+    first?: T;
 }
 
 Array.prototype.asyncForEach = function <T>(callbackfn: (value: T, index: number, array: T[]) => Promise<unknown>): Promise<unknown[]> {
@@ -10,3 +11,11 @@ Array.prototype.asyncForEach = function <T>(callbackfn: (value: T, index: number
     });
     return Promise.all(promises);
 };
+
+Object.defineProperty(Array.prototype, 'first', {
+    get(this: Array<unknown>) {
+        return this[0];
+    },
+    enumerable: false,
+    configurable: true
+});

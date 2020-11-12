@@ -1,4 +1,4 @@
-import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
+import { Model, DataTypes, BelongsToGetAssociationMixin, HasOneGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
 export default class CurriculumTopicContent extends Model {
@@ -13,7 +13,7 @@ export default class CurriculumTopicContent extends Model {
     public questions?: CurriculumWWTopicQuestion[];
 
     public getCurriculumUnitContent!: BelongsToGetAssociationMixin<CurriculumUnitContent>;
-
+    public getCurriculumTopicAssessmentInfo!: HasOneGetAssociationMixin<CurriculumTopicAssessmentInfo>;
     public readonly curriculumUnitContent!: CurriculumUnitContent;
 
     // timestamps!
@@ -23,7 +23,6 @@ export default class CurriculumTopicContent extends Model {
     static constraints = {
         uniqueOrderPerUnit: 'curriculum_topic_content--unit_id-order',
         uniqueNamePerUnit: 'curriculum_topic_content--unit_id-name',
-
         foreignKeyUnit: 'curriculum_topic_content_curriculum_unit_content_id_fkey'
     }
 
@@ -103,3 +102,4 @@ CurriculumTopicContent.init({
 
 import CurriculumUnitContent from './curriculum-unit-content';
 import CurriculumWWTopicQuestion from './curriculum-ww-topic-question';
+import CurriculumTopicAssessmentInfo from './curriculum-topic-assessment-info';

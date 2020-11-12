@@ -47,8 +47,11 @@ export default class StudentGrade extends Model implements StudentGradeInterface
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public currentProblemState!: any;
 
+    // Updated with legalScore
     public lastInfluencingLegalAttemptId!: number | null;
+    // Updated with partialCreditBestScore
     public lastInfluencingCreditedAttemptId!: number | null;
+    // Updated with overallBestScore
     public lastInfluencingAttemptId!: number | null;
 
     public getUser!: BelongsToGetAssociationMixin<User>;
@@ -62,6 +65,7 @@ export default class StudentGrade extends Model implements StudentGradeInterface
     public readonly workbooks?: Array<StudentWorkbook>;
     public readonly gradeInstances?: StudentGradeInstance[];
     public readonly overrides?: Array<StudentGradeOverride>;
+    public readonly lastInfluencingAttempt?: StudentWorkbook;
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -137,6 +141,13 @@ export default class StudentGrade extends Model implements StudentGradeInterface
             foreignKey: 'studentGradeId',
             sourceKey: 'id',
             as: 'overrides'
+        });
+
+        StudentGrade.hasMany(StudentGradeProblemAttachment, {
+            foreignKey: 'studentGradeId',
+            sourceKey: 'id',
+            as: 'studentGradeProblemAttachments',
+            constraints: false,
         });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
@@ -276,3 +287,4 @@ import User from './user';
 import StudentWorkbook from './student-workbook';
 import StudentGradeInstance, { StudentGradeInstanceGradeOverridesInterface } from './student-grade-instance';
 import StudentGradeOverride from './student-grade-override';
+import StudentGradeProblemAttachment from './student-grade-problem-attachment';

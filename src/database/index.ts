@@ -27,6 +27,10 @@ import StudentTopicAssessmentOverride from './models/student-topic-assessment-ov
 import StudentTopicAssessmentInfo from './models/student-topic-assessment-info';
 import TopicAssessmentInfo from './models/topic-assessment-info';
 import CourseQuestionAssessmentInfo from './models/course-question-assessment-info';
+import ProblemAttachment from './models/problem-attachment';
+import StudentGradeProblemAttachment from './models/student-grade-problem-attachment';
+import StudentGradeInstanceProblemAttachment from './models/student-grade-instance-problem-attachment';
+import StudentWorkbookProblemAttachment from './models/student-workbook-problem-attachment';
 
 export const sync = async (): Promise<void> => {
     try {
@@ -63,7 +67,11 @@ const models = [
     CourseQuestionAssessmentInfo,
     StudentTopicAssessmentInfo,
     StudentTopicAssessmentOverride,
-    TopicAssessmentInfo
+    TopicAssessmentInfo,
+    ProblemAttachment,
+    StudentGradeProblemAttachment,
+    StudentGradeInstanceProblemAttachment,
+    StudentWorkbookProblemAttachment,
 ];
 
 // TODO fix this

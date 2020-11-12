@@ -145,7 +145,12 @@ router.get('/',
     validate(listCurriculumValidation),
     asyncHandler(async (req: RederlyExpressRequest<ListCurriculumRequest.params, unknown, ListCurriculumRequest.body, ListCurriculumRequest.query>, res: Response, next: NextFunction) => {
         try {
-            const curriculums = await curriculumController.getCurriculums();
+            if (_.isNil(req.session)) {
+                throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+            }
+
+            const user = await req.session.getUser();
+            const curriculums = await curriculumController.getCurriculums({user});
             next(httpResponse.Ok('Fetched successfully', curriculums));
         } catch (e) {
             next(e);

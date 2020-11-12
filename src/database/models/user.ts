@@ -26,7 +26,7 @@ export default class User extends Model {
 
   public courseEnrollments?: StudentEnrollment[]
 
-  public getUniversity!: HasOneGetAssociationMixin<University>;
+  public getUniversity!: BelongsToGetAssociationMixin<University>;
   public getRole!: BelongsToGetAssociationMixin<Permission>;
 
   public readonly university!: University;

@@ -81,8 +81,8 @@ export default {
         from: _.defaultTo(process.env.EMAIL_FROM, '')
     },
     auth: {
-        // in hours
-        sessionLife: fromIntValue(process.env.AUTH_SESSION_LIFE, 24),
+        // in minutes - defaults to 1 day
+        sessionLife: fromIntValue(process.env.AUTH_SESSION_LIFE, 1440),
         costFactor: fromIntValue(process.env.AUTH_COST_FACTOR, 8),
         // in minutes
         // these are specified above because token life is a convenience fallback
@@ -110,5 +110,10 @@ export default {
     },
     scheduler: {
         basePath: _.defaultTo(process.env.SCHEDULER_BASE_PATH,'http://localhost:3003'),
+    },
+    attachments: {
+        presignedUrlBaseUrl: _.defaultTo(process.env.ATTACHMENTS_PRESIGNED_URL_BASE_URL, ''),
+        presignedUrlBasePath: _.defaultTo(process.env.ATTACHMENTS_PRESIGNED_URL_BASE_PATH, ''),
+        baseUrl: _.defaultTo(process.env.ATTACHMENTS_BASE_URL, ''),
     }
 };

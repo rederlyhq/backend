@@ -83,12 +83,45 @@ export default {
                     defaultValue: true
                 },
             });
+
+            await queryInterface.createTable('curriculum_question_assessment_info', {                
+                id: {
+                    field: 'curriculum_question_assessment_info_id',
+                    type: DataTypes.INTEGER,
+                    autoIncrement: true,
+                    primaryKey: true,
+                },
+                curriculumWWTopicQuestionId: {
+                    field: 'curriculum_topic_question_id',
+                    type: DataTypes.INTEGER,
+                    allowNull: false,
+                },
+                randomSeedSet: {
+                    field: 'curriculum_question_assessment_info_random_seed_set',
+                    type: DataTypes.ARRAY(DataTypes.INTEGER),
+                    allowNull: false,
+                    defaultValue: []
+                },
+                additionalProblemPaths: {
+                    field: 'curriculum_question_assessment_info_additional_problem_paths',
+                    type: DataTypes.ARRAY(DataTypes.TEXT),
+                    allowNull: false,
+                    defaultValue: []
+                },
+                active: {
+                    field: 'curriculum_question_assessment_info_active',
+                    type: DataTypes.BOOLEAN,
+                    allowNull: false,
+                    defaultValue: true,
+                },
+            });
         });
     },
     down: async (queryInterface: QueryInterface): Promise<void> => {
         // Transactions are automatically use because a namespace is injected into sequelize when fetching configurations
         await queryInterface.sequelize.transaction(async () => {
             await queryInterface.dropTable('curriculum_topic_assessment_info');
+            await queryInterface.dropTable('curriculum_question_assessment_info');
         });
     }
 };

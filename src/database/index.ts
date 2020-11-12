@@ -26,6 +26,7 @@ import StudentTopicQuestionOverride from './models/student-topic-question-overri
 import StudentTopicAssessmentOverride from './models/student-topic-assessment-override';
 import StudentTopicAssessmentInfo from './models/student-topic-assessment-info';
 import TopicAssessmentInfo from './models/topic-assessment-info';
+import CurriculumTopicAssessmentInfo from './models/curriculum-topic-assessment-info';
 import CourseQuestionAssessmentInfo from './models/course-question-assessment-info';
 import ProblemAttachment from './models/problem-attachment';
 import StudentGradeProblemAttachment from './models/student-grade-problem-attachment';
@@ -52,6 +53,7 @@ const models = [
     CurriculumUnitContent,
     CurriculumTopicContent,
     CurriculumWWTopicQuestion,
+    CurriculumTopicAssessmentInfo,
     StudentEnrollment,
     CourseUnitContent,
     CourseTopicContent,

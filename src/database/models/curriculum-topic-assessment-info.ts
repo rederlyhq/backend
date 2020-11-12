@@ -33,7 +33,6 @@ export default class CurriculumTopicAssessmentInfo extends Model implements Curr
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 
-
     static constraints = {
     }
 
@@ -133,4 +132,3 @@ CurriculumTopicAssessmentInfo.init({
 });
 
 import CurriculumTopicContent from './curriculum-topic-content';
-

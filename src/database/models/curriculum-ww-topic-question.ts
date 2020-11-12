@@ -1,6 +1,7 @@
 // TODO rename
-import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
+import { Model, DataTypes, BelongsToGetAssociationMixin, HasOneGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
+import CurriculumQuestionAssessmentInfo from './curriculum-question-assessment-info';
 import CurriculumTopicContent from './curriculum-topic-content';
 
 export default class CurriculumWWTopicQuestion extends Model {
@@ -15,7 +16,7 @@ export default class CurriculumWWTopicQuestion extends Model {
   public optional!: boolean;
 
   public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
-
+  public getCurriculumQuestionAssessmentInfo!: HasOneGetAssociationMixin<CurriculumQuestionAssessmentInfo>;
   public readonly curriculumTopicContent!: CurriculumTopicContent;
 
   // timestamps!
@@ -24,7 +25,6 @@ export default class CurriculumWWTopicQuestion extends Model {
 
   static constraints = {
     uniqueOrderPerTopic: 'curriculum_topic_question--problem_number-topic_id',
-
     foreignKeyTopic: 'curriculum_topic_question_curriculum_topic_content_id_fkey'
   }
 }
@@ -100,4 +100,10 @@ CurriculumWWTopicQuestion.belongsTo(CurriculumTopicContent, {
   foreignKey: 'curriculumTopicContentId',
   targetKey: 'id',
   as: 'curriculumTopicContent'
+});
+
+CurriculumWWTopicQuestion.hasOne(CurriculumQuestionAssessmentInfo, {
+    foreignKey: 'curriculumWWTopicQuestionId',
+    sourceKey: 'id',
+    as: 'curriculumQuestionAssessmentInfo'
 });

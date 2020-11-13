@@ -82,9 +82,19 @@ export default {
                     allowNull: false,
                     defaultValue: true
                 },
+                updatedAt: {
+                    field: 'updated_at',
+                    type: DataTypes.DATE,
+                    allowNull: false,
+                },
+                createdAt: {
+                    field: 'created_at',
+                    type: DataTypes.DATE,
+                    allowNull: false,
+                },
             });
 
-            await queryInterface.createTable('curriculum_question_assessment_info', {                
+            await queryInterface.createTable('curriculum_question_assessment_info', {
                 id: {
                     field: 'curriculum_question_assessment_info_id',
                     type: DataTypes.INTEGER,
@@ -114,7 +124,28 @@ export default {
                     allowNull: false,
                     defaultValue: true,
                 },
+                updatedAt: {
+                    field: 'updated_at',
+                    type: DataTypes.DATE,
+                    allowNull: false,
+                },
+                createdAt: {
+                    field: 'created_at',
+                    type: DataTypes.DATE,
+                    allowNull: false,
+                },
             });
+
+            await queryInterface.addColumn('topic_assessment_info', 'curriculum_topic_assessment_info_id', {
+                type: DataTypes.INTEGER,
+                allowNull: true,
+            });
+
+            await queryInterface.addColumn('course_question_assessment_info', 'curriculum_question_assessment_info_id', {
+                type: DataTypes.INTEGER,
+                allowNull: true,
+            });
+
         });
     },
     down: async (queryInterface: QueryInterface): Promise<void> => {
@@ -122,6 +153,8 @@ export default {
         await queryInterface.sequelize.transaction(async () => {
             await queryInterface.dropTable('curriculum_topic_assessment_info');
             await queryInterface.dropTable('curriculum_question_assessment_info');
+            await queryInterface.removeColumn('topic_assessment_info', 'curriculum_topic_assessment_info_id');
+            await queryInterface.removeColumn('course_question_assessment_info', 'curriculum_question_assessment_info_id');
         });
     }
 };

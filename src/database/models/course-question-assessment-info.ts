@@ -4,6 +4,7 @@ import appSequelize from '../app-sequelize';
 export interface CourseQuestionAssessmentInfoInterface {
     id: number;
     courseWWTopicQuestionId: number;
+    curriculumQuestionAssessmentInfoId: number;
     randomSeedSet: Array<number>;
     additionalProblemPaths: Array<string>;
     active: boolean;
@@ -12,6 +13,7 @@ export default class CourseQuestionAssessmentInfo extends Model implements Cours
 
     public id!: number;
     public courseWWTopicQuestionId!: number;
+    public curriculumQuestionAssessmentInfoId!: number;
     public randomSeedSet!: Array<number>;
     public additionalProblemPaths!: Array<string>;
     public active!: boolean;
@@ -47,6 +49,11 @@ CourseQuestionAssessmentInfo.init({
         field: 'course_topic_question_id',
         type: DataTypes.INTEGER,
         allowNull: false,
+    },
+    curriculumQuestionAssessmentInfoId: {
+        field: 'curriculum_question_assessment_info_id',
+        type: DataTypes.INTEGER,
+        allowNull: true,
     },
     randomSeedSet: {
         field: 'course_question_assessment_info_random_seed_set',

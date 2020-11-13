@@ -40,6 +40,12 @@ export default class CurriculumTopicContent extends Model {
             sourceKey: 'id',
             as: 'questions'
         });
+
+        CurriculumTopicContent.hasOne(CurriculumTopicAssessmentInfo, {
+            foreignKey: 'curriculumTopicContentId',
+            sourceKey: 'id',
+            as: 'curriculumTopicAssessmentInfo'
+        });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }

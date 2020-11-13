@@ -26,6 +26,7 @@ export interface EmailOptions {
     listUsersFilter: ListUserFilter;
     content: string;
     subject: string;
+    replyTo?: string;
 }
 
 export interface GetUserOptions {

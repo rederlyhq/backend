@@ -162,7 +162,8 @@ class UserController {
             emailPromises.push(emailHelper.sendEmail({
                 content: emailOptions.content,
                 subject: emailOptions.subject,
-                email: users[i].email
+                email: users[i].email,
+                replyTo: emailOptions.replyTo,
             }));
         }
 
@@ -405,7 +406,7 @@ class UserController {
         userObject.universityId = university.id;
         userObject.verifyToken = uuidv4();
         userObject.verifyTokenExpiresAt = moment().add(configurations.auth.verifyInstutionalEmailTokenLife, 'minutes').toDate();
-        userObject.password = await hashPassword(userObject.password);    
+        userObject.password = await hashPassword(userObject.password);
         const newUser = await this.createUser(userObject);
         const emailSent = await this.setupUserVerification({
             baseUrl,

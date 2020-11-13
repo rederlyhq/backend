@@ -13,6 +13,7 @@ import * as asyncHandler from 'express-async-handler';
 import IncludeGradeOptions from './include-grade-options';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
 import logger from '../../utilities/logger';
+import { Constants } from '../../constants';
 
 router.post('/login',
     validate(loginValidation),
@@ -178,12 +179,19 @@ router.post('/email',
     authenticationMiddleware,
     validate(emailUsersValidation),
     asyncHandler(async (req: RederlyExpressRequest<EmailUsersRequest.params, unknown, EmailUsersRequest.body, EmailUsersRequest.query>, res: Response, next: NextFunction) => {
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+
+        const user = await req.session.getUser();
+
         const result = await userController.email({
             listUsersFilter: {
                 userIds: req.body.userIds
             },
             content: req.body.content,
-            subject: req.body.subject
+            subject: req.body.subject,
+            replyTo: user.preferredEmail,
         });
         next(httpResponse.Ok(null, result));
     }));

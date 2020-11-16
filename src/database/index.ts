@@ -32,6 +32,7 @@ import ProblemAttachment from './models/problem-attachment';
 import StudentGradeProblemAttachment from './models/student-grade-problem-attachment';
 import StudentGradeInstanceProblemAttachment from './models/student-grade-instance-problem-attachment';
 import StudentWorkbookProblemAttachment from './models/student-workbook-problem-attachment';
+import CurriculumQuestionAssessmentInfo from './models/curriculum-question-assessment-info';
 
 export const sync = async (): Promise<void> => {
     try {
@@ -73,6 +74,7 @@ const models = [
     ProblemAttachment,
     StudentGradeProblemAttachment,
     StudentGradeInstanceProblemAttachment,
+    CurriculumQuestionAssessmentInfo,
     StudentWorkbookProblemAttachment,
 ];
 

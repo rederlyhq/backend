@@ -15,6 +15,12 @@ export default {
                     field: 'curriculum_topic_content_id',
                     type: DataTypes.INTEGER,
                     allowNull: false,
+                    onUpdate: 'CASCADE',
+                    onDelete: 'NO ACTION',
+                    references: {
+                        model: 'curriculum_topic_content',
+                        key: 'curriculum_topic_content_id',
+                    },
                 },
                 duration: {
                     field: 'curriculum_topic_assessment_info_duration',
@@ -105,6 +111,12 @@ export default {
                     field: 'curriculum_topic_question_id',
                     type: DataTypes.INTEGER,
                     allowNull: false,
+                    onUpdate: 'CASCADE',
+                    onDelete: 'NO ACTION',
+                    references: {
+                        model: 'curriculum_topic_question',
+                        key: 'curriculum_topic_question_id',
+                    },
                 },
                 randomSeedSet: {
                     field: 'curriculum_question_assessment_info_random_seed_set',
@@ -139,11 +151,23 @@ export default {
             await queryInterface.addColumn('topic_assessment_info', 'curriculum_topic_assessment_info_id', {
                 type: DataTypes.INTEGER,
                 allowNull: true,
+                onUpdate: 'CASCADE',
+                onDelete: 'NO ACTION',
+                references: {
+                    model: 'curriculum_topic_assessment_info',
+                    key: 'curriculum_topic_assessment_info_id',
+                },
             });
 
             await queryInterface.addColumn('course_question_assessment_info', 'curriculum_question_assessment_info_id', {
                 type: DataTypes.INTEGER,
                 allowNull: true,
+                onUpdate: 'CASCADE',
+                onDelete: 'NO ACTION',
+                references: {
+                    model: 'curriculum_question_assessment_info',
+                    key: 'curriculum_question_assessment_info_id',
+                },
             });
 
         });

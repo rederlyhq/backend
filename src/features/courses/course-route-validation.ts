@@ -269,6 +269,28 @@ export const extendCourseTopicQuestionValidation = {
     },
 };
 
+export const getQuestionGradeValidation = {
+    params: {
+        id: Joi.number().required(),
+    },
+    query: {
+        userId: Joi.number().required(),
+        topicAssessmentInfoId: Joi.number().optional(),
+        includeWorkbooks: Joi.boolean().optional(),
+    },
+    body: {}
+};
+
+export const getQuestionRawValidation = {
+    params: {
+        id: Joi.number().required(),
+    },
+    query: {
+        userId: Joi.number().required(),
+    },
+    body: {}
+};
+
 export const getQuestionValidation = {
     params: {
         id: Joi.number().required()

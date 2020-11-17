@@ -2251,7 +2251,7 @@ class CourseController {
         });
     }
 
-    getGradeForQuestion(options: GetGradeForQuestionOptions): Promise<StudentGrade> {
+    async getGradeForQuestion(options: GetGradeForQuestionOptions): Promise<StudentGrade> {
         const {
             questionId,
             userId,
@@ -2260,6 +2260,7 @@ class CourseController {
         const include: sequelize.IncludeOptions[] = [{
             model: StudentGradeInstance,
             as: 'gradeInstances',
+            required: false,
             where: {
                 active: true,
             }
@@ -2268,13 +2269,14 @@ class CourseController {
             include.push({
                 model: StudentWorkbook,
                 as: 'workbooks',
+                required: false,
                 where: {
                     active: true
                 }
             });
         }
         try {
-            const grade = StudentGrade.findOne({
+            const grade = await StudentGrade.findOne({
                 where: {
                     courseWWTopicQuestionId: questionId,
                     userId,
@@ -2282,8 +2284,11 @@ class CourseController {
                 },
                 include
             });
-            
-            return grade;
+            if (!_.isNil(grade)) {
+                return grade;
+            } else {
+                throw new Error('Did not find a student grade.');
+            }
         } catch (e) {
             throw new RederlyError(`Unable to get grade for user #${userId} and question #${questionId}`);
         }

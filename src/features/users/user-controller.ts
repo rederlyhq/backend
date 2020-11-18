@@ -267,7 +267,7 @@ class UserController {
                 userObject.email = userObject.email.toLowerCase();
                 const user = await this.getUserByEmail(userObject.email);
                 if(!_.isNil(user)) {
-                    throw new AlreadyExistsError(`A user with the email ${userObject.email} already exists`);
+                    throw new AlreadyExistsError(`A user with the email ${userObject.email} already exists.`);
                 }
             } else {
                 logger.error('This should not happen, email should have been caught above');
@@ -386,7 +386,7 @@ class UserController {
             emailDomain
         });
         if (universities.length < 1) {
-            throw new NoAssociatedUniversityError(`There is no university associated with the email domain ${emailDomain}`);
+            throw new NoAssociatedUniversityError(`There is no university associated with the email domain ${emailDomain}.`);
         }
         if (universities.length > 1) {
             logger.error(`Multiple universities found ${universities.length}`);

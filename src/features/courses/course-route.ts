@@ -640,17 +640,13 @@ router.get('/question/:id/grade',
         const { userId, includeWorkbooks } = req.query as GetQuestionGradeRequest.query;
         const { id: questionId } = req.params as GetQuestionGradeRequest.params;
 
-        try {
-            const grade = await courseController.getGradeForQuestion({
-                questionId,
-                userId,
-                includeWorkbooks
-            });
+        const grade = await courseController.getGradeForQuestion({
+            questionId,
+            userId,
+            includeWorkbooks
+        });
 
-            next(httpResponse.Ok('Fetched question grade successfully', grade));
-        } catch (e) {
-            next(e);
-        }
+        next(httpResponse.Ok('Fetched question grade successfully', grade));
 
     }));
 

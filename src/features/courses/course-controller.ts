@@ -1227,7 +1227,8 @@ class CourseController {
                     // we have to pass through the studentGrade to get there
                     const questionGrade = await courseQuestion.getGrades({
                         where: {
-                            userId: options.userId
+                            userId: options.userId,
+                            active: true,
                         }
                     });
 
@@ -2251,7 +2252,7 @@ class CourseController {
         });
     }
 
-    async getGradeForQuestion(options: GetGradeForQuestionOptions): Promise<StudentGrade> {
+    async getGradeForQuestion(options: GetGradeForQuestionOptions): Promise<StudentGrade | null> {
         const {
             questionId,
             userId,
@@ -2276,7 +2277,7 @@ class CourseController {
             });
         }
         try {
-            const grade = await StudentGrade.findOne({
+            return StudentGrade.findOne({
                 where: {
                     courseWWTopicQuestionId: questionId,
                     userId,
@@ -2284,11 +2285,6 @@ class CourseController {
                 },
                 include
             });
-            if (!_.isNil(grade)) {
-                return grade;
-            } else {
-                throw new Error('Did not find a student grade.');
-            }
         } catch (e) {
             throw new RederlyError(`Unable to get grade for user #${userId} and question #${questionId}`);
         }
@@ -3349,11 +3345,11 @@ class CourseController {
                 });
     
                 // update individual problem high-scores
-                if (result.questionResponse.problem_result.score > result.instance.overallBestScore) {
+                if (result.questionResponse.problem_result.score >= result.instance.overallBestScore) {
                     // update instance: overallBestScore, bestIndividualAttemptId
                     result.instance.overallBestScore = result.questionResponse.problem_result.score;
                     result.instance.bestIndividualAttemptId = workbook.id;
-                    if (result.questionResponse.problem_result.score > result.grade.overallBestScore) {
+                    if (result.questionResponse.problem_result.score >= result.grade.overallBestScore) {
                         // update grade: overallBestScore, *what about workbook id*?
                         result.grade.overallBestScore = result.questionResponse.problem_result.score;
                         result.grade.lastInfluencingAttemptId = workbook.id;

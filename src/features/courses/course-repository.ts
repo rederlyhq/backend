@@ -121,7 +121,7 @@ class CourseRepository {
             // case CourseUnitContent.constraints.uniqueNamePerCourse:
             case CourseUnitContent.constraints.uniqueNamePerCourse:
                 throw new AlreadyExistsError('A unit with that name already exists within this course');
-            case CourseUnitContent.constraints.unqiueOrderPerCourse:
+            case CourseUnitContent.constraints.uniqueOrderPerCourse:
                 throw new AlreadyExistsError('A unit already exists with this order');
             case CourseUnitContent.constraints.foreignKeyCourse:
                 throw new NotFoundError('The given course was not found to create the unit');
@@ -129,7 +129,7 @@ class CourseRepository {
                 throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
         }
     }
-    
+
     async updateCourseUnit(options: UpdateUnitOptions): Promise<UpdateResult<CourseUnitContent>> {
         try {
             // makeUnitOrderAvailable
@@ -177,7 +177,7 @@ class CourseRepository {
         try {
             return await CourseUnitContent.create({
                 ...courseUnitContent,
-                active: true // as of right now we don't support creating 
+                active: true // as of right now we don't support creating
             });
         } catch (e) {
             this.checkCourseUnitError(e);
@@ -296,7 +296,7 @@ class CourseRepository {
                 throw new IllegalArgumentException('End date and due date cannot be in the past');
             }
         }
-        
+
         try {
             // console.log(options);
             const updates = await CourseTopicContent.update(options.updates, {
@@ -307,8 +307,8 @@ class CourseRepository {
                 returning: true,
             });
 
-            if (updates[0] === 1 && 
-                !_.isUndefined(options.updates.topicAssessmentInfo) && 
+            if (updates[0] === 1 &&
+                !_.isUndefined(options.updates.topicAssessmentInfo) &&
                 !_.isEmpty(options.updates.topicAssessmentInfo)) {
 
                 const updatedObj: CourseTopicContent = updates[1][0];
@@ -357,7 +357,7 @@ class CourseRepository {
         try {
             const found = await StudentTopicOverride.findOne({where: {...options.where, active: true}});
             const original = found?.get({ plain: true });
-            
+
             if (!found) {
                 const newExtension = await StudentTopicOverride.create({...options.where, ...options.updates.extensions}, {validate: true});
 
@@ -406,7 +406,7 @@ class CourseRepository {
         ) {
             throw new IllegalArgumentException('Cannot extend an assessment topic without topicAssessmentInfoId');
         }
-        
+
         try {
             const found = await StudentTopicAssessmentOverride.findOne({
                 where: {
@@ -423,11 +423,11 @@ class CourseRepository {
                 }]
             });
             const original = found?.get({ plain: true });
-            
+
             if (!found) {
                 logger.debug('Assessment override not found... creating');
                 const newExtension = await StudentTopicAssessmentOverride.create({
-                    userId: options.where.userId, 
+                    userId: options.where.userId,
                     ...options.assessmentWhere,
                     ...options.updates.studentTopicAssessmentOverride
                 }, {validate: true});
@@ -442,7 +442,7 @@ class CourseRepository {
                 // TODO we weren't checking before that there were actually changes to be made, we should however check first and duck out if there are no changes
                 const updates = await StudentTopicAssessmentOverride.update(options.updates.studentTopicAssessmentOverride ?? {}, {
                     where: {
-                        userId: options.where.userId, 
+                        userId: options.where.userId,
                         // Used spread initially but nil check did not persist (from top of function)
                         topicAssessmentInfoId: options.assessmentWhere.topicAssessmentInfoId,
                         active: true
@@ -618,7 +618,7 @@ class CourseRepository {
                 throw new WrappedError(Constants.ErrorMessage.UNKNOWN_DATABASE_ERROR_MESSAGE, e);
         }
     }
-    
+
     async getStudentGrade(options: GetStudentGradeOptions): Promise<StudentGrade | null> {
         const result = await StudentGrade.findOne({
             where: {
@@ -675,8 +675,8 @@ class CourseRepository {
 
         // no versions created, or the most recent version timed out or was closed early
         if ( assessmentInfo.length === 0 || (
-            (moment(assessmentInfo[0].endTime).isBefore(moment()) || 
-            assessmentInfo[0].isClosed) && 
+            (moment(assessmentInfo[0].endTime).isBefore(moment()) ||
+            assessmentInfo[0].isClosed) &&
             topicInfo.hideProblemsAfterFinish) ) return; // no current version available
 
         const gradeInstance = await StudentGradeInstance.findOne({

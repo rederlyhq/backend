@@ -10,7 +10,7 @@ export default {
                 unique: true,
                 defaultValue: DataTypes.UUIDV4
             });
-            
+
             await queryInterface.sequelize.query(
                 'UPDATE users SET user_uuid = uuid_generate_v4()'
             );
@@ -19,12 +19,29 @@ export default {
                 'users',
                 'user_uuid',
                 {
-                  type: DataTypes.UUID,
-                  allowNull: false,
-                  unique: true,
-                  defaultValue: DataTypes.UUIDV4
+                    type: DataTypes.UUID,
+                    allowNull: false,
+                    unique: true,
+                    defaultValue: DataTypes.UUIDV4
                 }
-              );
+            );
+
+            /* *************** *************** */
+            /* **** Existing issues fixed **** */
+            /* *************** *************** */
+            await queryInterface.addConstraint('student_workbook', ['student_grade_instance_id'], {
+                references: {
+                    table: 'student_grade_instance',
+                    field: 'student_grade_instance_id'
+                },
+                onDelete: 'CASCADE',
+                onUpdate: 'CASCADE',
+                type: 'foreign key'
+            });
+
+            await queryInterface.addConstraint('student_grade_instance_problem_attachment', ['student_grade_instance_id', 'problem_attachment_id'], {
+                type: 'unique',
+            });
         });
     },
     down: async (queryInterface: QueryInterface): Promise<void> => {

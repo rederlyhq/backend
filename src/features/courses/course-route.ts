@@ -1140,7 +1140,13 @@ router.post('/question/editor/save',
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const writeFilePath = urljoin(`private/my/${req.session.userId}`, req.body.relativePath);
+        const user = await req.session.getUser({
+            where: {
+                active: true
+            }
+        });
+
+        const writeFilePath = urljoin(`private/my/${user.uuid}`, req.body.relativePath);
         const result = await rendererHelper.saveProblemSource({
             problemSource: req.body.problemSource,
             writeFilePath: writeFilePath,
@@ -1181,7 +1187,13 @@ router.post('/question/editor/catalog',
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const basePath = `private/my/${req.session.userId}`;
+        const user = await req.session.getUser({
+            where: {
+                active: true
+            }
+        });
+
+        const basePath = `private/my/${user.uuid}`;
         const result = await rendererHelper.catalog({
             basePath: basePath,
             // TODO what should the depth be?

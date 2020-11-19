@@ -29,7 +29,7 @@ import { nameof } from '../../utilities/typescript-helpers';
 import Role from '../permissions/roles';
 import moment = require('moment');
 import RederlyExtendedError from '../../exceptions/rederly-extended-error';
-import { calculateGrade, WillTrackAttemptReason } from '../../utilities/grading-helper';
+import { calculateGrade, WillGetCreditReason, WillTrackAttemptReason } from '../../utilities/grading-helper';
 import { useDatabaseTransaction } from '../../utilities/database-helper';
 import StudentTopicOverride, { StudentTopicOverrideInterface } from '../../database/models/student-topic-override';
 import StudentTopicQuestionOverride, { StudentTopicQuestionOverrideInterface } from '../../database/models/student-topic-question-override';
@@ -1378,21 +1378,29 @@ class CourseController {
                 if (!_.isNil(gradeResult.gradeUpdates.overallBestScore)) {
                     studentGrade.overallBestScore = gradeResult.gradeUpdates.overallBestScore;
                     studentGrade.lastInfluencingAttemptId = workbook.id;
+                } else if (_.isNil(studentGrade.lastInfluencingAttemptId) && gradeResult.gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
+                    studentGrade.lastInfluencingAttemptId = workbook.id;
                 }
     
                 // TODO do we need to track "best score"
                 if (!_.isNil(gradeResult.gradeUpdates.bestScore)) {
                     studentGrade.bestScore = gradeResult.gradeUpdates.bestScore;
                     studentGrade.lastInfluencingAttemptId = workbook.id;
+                } else if (_.isNil(studentGrade.lastInfluencingAttemptId) && gradeResult.gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
+                    studentGrade.lastInfluencingAttemptId = workbook.id;
                 }
     
                 if (!_.isNil(gradeResult.gradeUpdates.legalScore)) {
                     studentGrade.legalScore = gradeResult.gradeUpdates.legalScore;
                     studentGrade.lastInfluencingLegalAttemptId = workbook.id;
+                } else if (_.isNil(studentGrade.lastInfluencingLegalAttemptId) && gradeResult.gradingRationale.willGetCreditReason === WillGetCreditReason.YES) {
+                    studentGrade.lastInfluencingLegalAttemptId = workbook.id;
                 }
     
                 if (!_.isNil(gradeResult.gradeUpdates.partialCreditBestScore)) {
                     studentGrade.partialCreditBestScore = gradeResult.gradeUpdates.partialCreditBestScore;
+                    studentGrade.lastInfluencingCreditedAttemptId = workbook.id;
+                } else if (_.isNil(studentGrade.lastInfluencingCreditedAttemptId) && (gradeResult.gradingRationale.willGetCreditReason === WillGetCreditReason.YES || gradeResult.gradingRationale.willGetCreditReason === WillGetCreditReason.YES_BUT_PARTIAL_CREDIT)) {
                     studentGrade.lastInfluencingCreditedAttemptId = workbook.id;
                 }
     

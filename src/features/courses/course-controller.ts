@@ -3729,7 +3729,7 @@ You should be able to reply to the student's email address (${options.student.pr
                         {
                             model: StudentGradeInstance,
                             as: 'studentGradeInstance',
-                            attributes: ['id'],
+                            attributes: ['id', 'webworkQuestionPath', 'randomSeed'],
                             where: {
                                 active: true,
                             },
@@ -3747,6 +3747,8 @@ You should be able to reply to the student's email address (${options.student.pr
                     ]
                 });
 
+                data.questions[i].grades[j].randomSeed = gradeInstanceAttachments?.studentGradeInstance?.randomSeed;
+                data.questions[i].grades[j].webworkQuestionPath = gradeInstanceAttachments?.studentGradeInstance?.webworkQuestionPath;
                 data.questions[i].grades[j].problemAttachments = gradeInstanceAttachments?.studentGradeInstance?.problemAttachments;
             })
         );

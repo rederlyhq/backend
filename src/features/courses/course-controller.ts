@@ -3242,8 +3242,8 @@ class CourseController {
             });
     
             const { problemScores, bestVersionScore, bestOverallVersion } = this.scoreAssessment(questionResponses);
-            const isBestForThisVersion = problemScores.total >= bestVersionScore;
-            const isBestOverallVersion = problemScores.total >= bestOverallVersion;
+            const isBestForThisVersion = problemScores.total > bestVersionScore;
+            const isBestOverallVersion = problemScores.total > bestOverallVersion;
     
             await questionResponses.asyncForEach(async (result: SubmittedAssessmentResultContext) => {
     
@@ -3279,11 +3279,11 @@ class CourseController {
                 });
     
                 // update individual problem high-scores
-                if (result.questionResponse.problem_result.score > result.instance.overallBestScore) {
+                if (result.questionResponse.problem_result.score > result.instance.overallBestScore || _.isNil(result.instance.bestIndividualAttemptId)) {
                     // update instance: overallBestScore, bestIndividualAttemptId
                     result.instance.overallBestScore = result.questionResponse.problem_result.score;
                     result.instance.bestIndividualAttemptId = workbook.id;
-                    if (result.questionResponse.problem_result.score > result.grade.overallBestScore) {
+                    if (result.questionResponse.problem_result.score > result.grade.overallBestScore || _.isNil(result.grade.lastInfluencingAttemptId)) {
                         // update grade: overallBestScore, *what about workbook id*?
                         result.grade.overallBestScore = result.questionResponse.problem_result.score;
                         result.grade.lastInfluencingAttemptId = workbook.id;
@@ -3292,11 +3292,11 @@ class CourseController {
                 }
     
                 // update aggregate best-scores
-                if (isBestForThisVersion) {
+                if (isBestForThisVersion || _.isNil(result.instance.bestVersionAttemptId)) {
                     // update instance: bestScore, bestVersionAttemptId
                     result.instance.scoreForBestVersion = result.questionResponse.problem_result.score;
                     result.instance.bestVersionAttemptId = workbook.id;
-                    if (isBestOverallVersion) {
+                    if (isBestOverallVersion || _.isNil(result.grade.lastInfluencingCreditedAttemptId)) {
                         // update grade: bestScore, lastInfluencingLegalAttemptId? (or do we forego workbooks on grades for assessments because of grade instances)
                         result.grade.bestScore = result.questionResponse.problem_result.score;
                         result.grade.legalScore = result.questionResponse.problem_result.score;

@@ -22,7 +22,7 @@ export default class User extends Model {
   public preferredEmailVerificationTokenExpiresAt!: Date;
   public forgotPasswordToken?: string;
   public forgotPasswordTokenExpiresAt!: Date
-  public userUUID!: string;
+  public uuid!: string;
 
   public courseEnrollments?: StudentEnrollment[]
 
@@ -184,7 +184,7 @@ User.init({
       allowNull: false,
       defaultValue: appSequelize.literal('NOW()')
   },
-  userUUID: {
+  uuid: {
       field: 'user_uuid',
       type: DataTypes.UUID,
       allowNull: false,

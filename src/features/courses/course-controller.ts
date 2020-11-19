@@ -3714,7 +3714,6 @@ You should be able to reply to the student's email address (${options.student.pr
         await mainData?.questions?.asyncForEach(async (question, i) =>
             await question.grades?.asyncForEach(async (grade, j) => {
                 if (_.isNil(grade.lastInfluencingCreditedAttemptId)) {
-                    console.log(data.questions[i].grades[j]);
                     logger.error('No lastInfluencingCreditedAttemptId. Cannot find the best version.');
                     return;
                 }
@@ -3729,7 +3728,7 @@ You should be able to reply to the student's email address (${options.student.pr
                         {
                             model: StudentGradeInstance,
                             as: 'studentGradeInstance',
-                            attributes: ['id', 'webworkQuestionPath', 'randomSeed'],
+                            attributes: ['id', 'webworkQuestionPath'],
                             where: {
                                 active: true,
                             },
@@ -3747,7 +3746,6 @@ You should be able to reply to the student's email address (${options.student.pr
                     ]
                 });
 
-                data.questions[i].grades[j].randomSeed = gradeInstanceAttachments?.studentGradeInstance?.randomSeed;
                 data.questions[i].grades[j].webworkQuestionPath = gradeInstanceAttachments?.studentGradeInstance?.webworkQuestionPath;
                 data.questions[i].grades[j].problemAttachments = gradeInstanceAttachments?.studentGradeInstance?.problemAttachments;
             })

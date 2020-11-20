@@ -122,6 +122,7 @@ export default class StudentGradeInstance extends Model implements StudentGradeI
 
         StudentGradeInstance.belongsToMany(ProblemAttachment, {
             through: StudentGradeInstanceProblemAttachment,
+            as: 'problemAttachments',
         });
 
         /* eslint-enable @typescript-eslint/no-use-before-define */

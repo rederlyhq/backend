@@ -28,6 +28,7 @@ import ForbiddenError from '../../exceptions/forbidden-error';
 import AttemptsExceededException from '../../exceptions/attempts-exceeded-exception';
 import attachmentHelper from '../../utilities/attachments-helper';
 import urljoin = require('url-join');
+import RederlyError from '../../exceptions/rederly-error';
 
 const fileUpload = multer();
 
@@ -610,22 +611,17 @@ router.get('/question/:id/raw',
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetQuestionRawRequest.body, unknown>, _res: Response, next: NextFunction) => {
         if (_.isNil(req.session)) {
-            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+            throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
         const { id: questionId } = req.params as GetQuestionRawRequest.params;
         const { userId } = req.query as GetQuestionRawRequest.query;
         
-        try {
-            const question = await courseController.getQuestionWithoutRenderer({
-                    id: questionId,
-                    userId,
-                });
-            next(httpResponse.Ok('Fetched question successfully', question));
-        } catch (e) {
-            next(e);
-        }
-
+        const question = await courseController.getQuestionWithoutRenderer({
+                id: questionId,
+                userId,
+            });
+        next(httpResponse.Ok('Fetched question successfully', question));
     }));
 
 router.get('/question/:id/grade', 
@@ -635,7 +631,7 @@ router.get('/question/:id/grade',
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetQuestionGradeRequest.body, unknown>, _res: Response, next: NextFunction) => {
         if (_.isNil(req.session)) {
-            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+            throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
         const { userId, includeWorkbooks } = req.query as GetQuestionGradeRequest.query;
         const { id: questionId } = req.params as GetQuestionGradeRequest.params;
@@ -657,7 +653,7 @@ router.get('/question/:id',
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetQuestionRequest.body, GetQuestionRequest.query>, _res: Response, next: NextFunction) => {
         if (_.isNil(req.session)) {
-            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+            throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
         const requestingUser = await req.session.getUser();

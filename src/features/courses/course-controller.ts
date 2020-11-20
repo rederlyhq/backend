@@ -29,7 +29,7 @@ import { nameof } from '../../utilities/typescript-helpers';
 import Role from '../permissions/roles';
 import moment = require('moment');
 import RederlyExtendedError from '../../exceptions/rederly-extended-error';
-import { calculateGrade, WillTrackAttemptReason } from '../../utilities/grading-helper';
+import { calculateGrade, WillGetCreditReason, WillTrackAttemptReason } from '../../utilities/grading-helper';
 import { useDatabaseTransaction } from '../../utilities/database-helper';
 import StudentTopicOverride, { StudentTopicOverrideInterface } from '../../database/models/student-topic-override';
 import StudentTopicQuestionOverride, { StudentTopicQuestionOverrideInterface } from '../../database/models/student-topic-question-override';
@@ -1407,21 +1407,29 @@ class CourseController {
                 if (!_.isNil(gradeResult.gradeUpdates.overallBestScore)) {
                     studentGrade.overallBestScore = gradeResult.gradeUpdates.overallBestScore;
                     studentGrade.lastInfluencingAttemptId = workbook.id;
+                } else if (_.isNil(studentGrade.lastInfluencingAttemptId) && gradeResult.gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
+                    studentGrade.lastInfluencingAttemptId = workbook.id;
                 }
 
                 // TODO do we need to track "best score"
                 if (!_.isNil(gradeResult.gradeUpdates.bestScore)) {
                     studentGrade.bestScore = gradeResult.gradeUpdates.bestScore;
                     studentGrade.lastInfluencingAttemptId = workbook.id;
+                } else if (_.isNil(studentGrade.lastInfluencingAttemptId) && gradeResult.gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
+                    studentGrade.lastInfluencingAttemptId = workbook.id;
                 }
 
                 if (!_.isNil(gradeResult.gradeUpdates.legalScore)) {
                     studentGrade.legalScore = gradeResult.gradeUpdates.legalScore;
                     studentGrade.lastInfluencingLegalAttemptId = workbook.id;
+                } else if (_.isNil(studentGrade.lastInfluencingLegalAttemptId) && gradeResult.gradingRationale.willGetCreditReason === WillGetCreditReason.YES) {
+                    studentGrade.lastInfluencingLegalAttemptId = workbook.id;
                 }
 
                 if (!_.isNil(gradeResult.gradeUpdates.partialCreditBestScore)) {
                     studentGrade.partialCreditBestScore = gradeResult.gradeUpdates.partialCreditBestScore;
+                    studentGrade.lastInfluencingCreditedAttemptId = workbook.id;
+                } else if (_.isNil(studentGrade.lastInfluencingCreditedAttemptId) && (gradeResult.gradingRationale.willGetCreditReason === WillGetCreditReason.YES || gradeResult.gradingRationale.willGetCreditReason === WillGetCreditReason.YES_BUT_PARTIAL_CREDIT)) {
                     studentGrade.lastInfluencingCreditedAttemptId = workbook.id;
                 }
 
@@ -3308,11 +3316,11 @@ class CourseController {
                 });
 
                 // update individual problem high-scores
-                if (result.questionResponse.problem_result.score > result.instance.overallBestScore) {
+                if (result.questionResponse.problem_result.score > result.instance.overallBestScore || _.isNil(result.instance.bestIndividualAttemptId)) {
                     // update instance: overallBestScore, bestIndividualAttemptId
                     result.instance.overallBestScore = result.questionResponse.problem_result.score;
                     result.instance.bestIndividualAttemptId = workbook.id;
-                    if (result.questionResponse.problem_result.score > result.grade.overallBestScore) {
+                    if (result.questionResponse.problem_result.score > result.grade.overallBestScore || _.isNil(result.grade.lastInfluencingAttemptId)) {
                         // update grade: overallBestScore, *what about workbook id*?
                         result.grade.overallBestScore = result.questionResponse.problem_result.score;
                         result.grade.lastInfluencingAttemptId = workbook.id;
@@ -3321,11 +3329,11 @@ class CourseController {
                 }
 
                 // update aggregate best-scores
-                if (isBestForThisVersion) {
+                if (isBestForThisVersion || _.isNil(result.instance.bestVersionAttemptId)) {
                     // update instance: bestScore, bestVersionAttemptId
                     result.instance.scoreForBestVersion = result.questionResponse.problem_result.score;
                     result.instance.bestVersionAttemptId = workbook.id;
-                    if (isBestOverallVersion) {
+                    if (isBestOverallVersion || _.isNil(result.grade.lastInfluencingCreditedAttemptId)) {
                         // update grade: bestScore, lastInfluencingLegalAttemptId? (or do we forego workbooks on grades for assessments because of grade instances)
                         result.grade.bestScore = result.questionResponse.problem_result.score;
                         result.grade.legalScore = result.questionResponse.problem_result.score;
@@ -3716,26 +3724,12 @@ You should be able to reply to the student's email address (${options.student.pr
                         {
                             model: StudentGrade,
                             as: 'grades',
-                            attributes: ['id', 'last_influencing_attempt_workbook_id'],
+                            attributes: ['id', 'lastInfluencingCreditedAttemptId'],
                             required: true,
                             where: {
                                 userId: options.userId,
                                 active: true,
                             },
-                            include: [
-                                {
-                                    model: StudentWorkbook,
-                                    as: 'lastInfluencingAttempt',
-                                    required: true,
-                                    attributes: ['id'],
-                                    include: [
-                                        {
-                                            model: StudentGradeInstance,
-                                            as: 'studentGradeInstance',
-                                        },
-                                    ]
-                                },
-                            ]
                         }
                     ]
                 }
@@ -3748,13 +3742,41 @@ You should be able to reply to the student's email address (${options.student.pr
 
         await mainData?.questions?.asyncForEach(async (question, i) =>
             await question.grades?.asyncForEach(async (grade, j) => {
-                if (_.isNil(grade.lastInfluencingAttempt) || _.isNil(grade.lastInfluencingAttempt.studentGradeInstance)) {
-                    logger.debug('No lastInfluencingAttempt and no studentGradeInstance exists');
+                if (_.isNil(grade.lastInfluencingCreditedAttemptId)) {
+                    logger.error('No lastInfluencingCreditedAttemptId. Cannot find the best version.');
                     return;
                 }
-                const probAttach = await grade.lastInfluencingAttempt.studentGradeInstance.getProblemAttachments();
-                grade.lastInfluencingAttempt.studentGradeInstance.problemAttachments = probAttach;
-                data.questions[i].grades[j].lastInfluencingAttempt.studentGradeInstance.problemAttachments = probAttach.map(pA => pA.get({plain: true}));
+
+                const gradeInstanceAttachments = await StudentWorkbook.findOne({
+                    where: {
+                        id: grade.lastInfluencingCreditedAttemptId,
+                        active: true,
+                    },
+                    attributes: ['id'],
+                    include: [
+                        {
+                            model: StudentGradeInstance,
+                            as: 'studentGradeInstance',
+                            attributes: ['id', 'webworkQuestionPath'],
+                            where: {
+                                active: true,
+                            },
+                            include: [
+                                {
+                                    model: ProblemAttachment,
+                                    as: 'problemAttachments',
+                                    attributes: ['id', 'cloudFilename', 'userLocalFilename'],
+                                    where: {
+                                        active: true,
+                                    }
+                                }
+                            ]
+                        },
+                    ]
+                });
+
+                data.questions[i].grades[j].webworkQuestionPath = gradeInstanceAttachments?.studentGradeInstance?.webworkQuestionPath;
+                data.questions[i].grades[j].problemAttachments = gradeInstanceAttachments?.studentGradeInstance?.problemAttachments;
             })
         );
 

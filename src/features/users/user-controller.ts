@@ -364,7 +364,7 @@ class UserController {
         const verifyURL = new URL(`/verify/${user.verifyToken}`, baseUrl);
         try {
             await emailHelper.sendEmail({
-                content: verificationEmailTemplateFunction({verifyUrl: verifyURL}),
+                html: verificationEmailTemplateFunction({verifyUrl: verifyURL}),
                 email: user.email,
                 subject: 'Welcome to Rederly! Please verify your account.'
             });

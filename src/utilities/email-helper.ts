@@ -2,6 +2,7 @@ import configurations from '../configurations';
 import logger from '../utilities/logger';
 import nodemailer = require('nodemailer');
 import Mail = require('nodemailer/lib/mailer');
+import _ = require('lodash');
 // There is no type def for sendgrid-transport
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const sgTransport = require('nodemailer-sendgrid-transport');
@@ -13,8 +14,9 @@ interface EmailHelperOptions {
 }
 
 interface SendEmailOptions {
-    content: string;
     email: string;
+    content?: string;
+    html?: string;
     subject: string;
     replyTo?: string;
     // attachments: File;
@@ -55,11 +57,15 @@ class EmailHelper {
             return Promise.resolve();
         }
 
+        if (!_.isNil(options.content) && !_.isNil(options.html)) {
+            logger.error('Email requires either content (text) or html to be set.');
+        }
+
         const email: Mail.Options = {
             from: this.from,
             to: options.email,
             subject: options.subject,
-            text: options.content,
+            ...(options.content ? {text: options.content} : {html: options.html}),
             ...(options.replyTo ? {headers: {'Reply-To': options.replyTo }} : undefined)
         };
 

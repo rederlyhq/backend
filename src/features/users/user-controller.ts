@@ -32,7 +32,6 @@ import IllegalArgumentException from '../../exceptions/illegal-argument-exceptio
 import ForbiddenError from '../../exceptions/forbidden-error';
 import RederlyExtendedError from '../../exceptions/rederly-extended-error';
 import StudentGradeInstance from '../../database/models/student-grade-instance';
-import * as pug from 'pug';
 
 const {
     sessionLife
@@ -358,9 +357,6 @@ class UserController {
             await user.save();
         }
 
-
-        // const verificationEmailTemplateFunction = pug.compileFile('src/email-templates/verification.pug');
-
         const verifyURL = new URL(`/verify/${user.verifyToken}`, baseUrl);
         try {
             await emailHelper.sendEmail({
@@ -409,7 +405,7 @@ class UserController {
         userObject.universityId = university.id;
         userObject.verifyToken = uuidv4();
         userObject.verifyTokenExpiresAt = moment().add(configurations.auth.verifyInstutionalEmailTokenLife, 'minutes').toDate();
-        userObject.password = await hashPassword(userObject.password);    
+        userObject.password = await hashPassword(userObject.password);
         const newUser = await this.createUser(userObject);
         const emailSent = await this.setupUserVerification({
             baseUrl,

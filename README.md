@@ -54,7 +54,7 @@
 #### Auth
 | Environment variable | Description | Default value |
 | --- | --- | --- |
-| AUTH_SESSION_LIFE | The number of hours a session token is good for | 24 |
+| AUTH_SESSION_LIFE | The number of minutes a session token is good for | 1440 (1 day) |
 | AUTH_COST_FACTOR | The cost factor for bcrypt to hash the password (this is important for preventing brute force attacks as it makes the hash take time to calculate) | 8 |
 | AUTH_TOKEN_LIFE | The default value for all other auth tokens | 1440 |
 | AUTH_FORGOT_PASSWORD_TOKEN_LIFE | The amount of time you have to claim forgot password token | AUTH_TOKEN_LIFE=1440 |
@@ -102,3 +102,10 @@
 | Environment variable | Description | Default value |
 | --- | --- | --- |
 | SCHEDULER_BASE_PATH | The url to the scheduler | http://localhost:3003 |
+
+##### Attachments
+| Environment variable | Description | Default value |
+| --- | --- | --- |
+| ATTACHMENTS_PRESIGNED_URL_BASE_URL | The base url to fetch the presigned url from for uploads (i.e. `http://example.com`/base/path) | '' |
+| ATTACHMENTS_PRESIGNED_URL_BASE_PATH | The base path to fetch the presigned url for uploads (i.e. http://example.com`/base/path`) | '' |
+| ATTACHMENTS_BASE_URL | The base path to be combined with the cloud filename for attachments | '' |

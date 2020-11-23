@@ -1,4 +1,4 @@
-import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin } from 'sequelize';
+import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin, BelongsToManyGetAssociationsMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 import * as _ from 'lodash';
 
@@ -54,6 +54,8 @@ export default class StudentGradeInstance extends Model implements StudentGradeI
     public getGrade!: BelongsToGetAssociationMixin<StudentGrade>;
     public getWorkbooks!: HasManyGetAssociationsMixin<StudentWorkbook>;
     public getStudentAssessmentInfo!: BelongsToGetAssociationMixin<StudentTopicAssessmentInfo>;
+    public getProblemAttachments!: BelongsToManyGetAssociationsMixin<ProblemAttachment>;
+    public problemAttachments?: ProblemAttachment[];
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -109,6 +111,18 @@ export default class StudentGradeInstance extends Model implements StudentGradeI
             targetKey: 'id',
             as: 'bestVersionAttempt',
             constraints: false,
+        });
+
+        StudentGradeInstance.hasMany(StudentGradeInstanceProblemAttachment, {
+            foreignKey: 'studentGradeInstanceId',
+            sourceKey: 'id',
+            as: 'studentGradeInstanceProblemAttachments',
+            constraints: false,
+        });
+
+        StudentGradeInstance.belongsToMany(ProblemAttachment, {
+            through: StudentGradeInstanceProblemAttachment,
+            as: 'problemAttachments',
         });
 
         /* eslint-enable @typescript-eslint/no-use-before-define */
@@ -194,3 +208,6 @@ import StudentGrade from './student-grade';
 import StudentTopicAssessmentInfo from './student-topic-assessment-info';
 import StudentWorkbook from './student-workbook';
 import User from './user';
+import StudentGradeInstanceProblemAttachment from './student-grade-instance-problem-attachment';
+import ProblemAttachment from './problem-attachment';
+

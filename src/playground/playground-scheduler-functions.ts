@@ -1,23 +1,10 @@
-import configurations from './configurations';
-import './extensions';
-// TODO change logger to just use console in this case
-import logger from './utilities/logger';
+import schedulerHelper, { HttpMethod } from '../utilities/scheduler-helper';
 import * as moment from 'moment';
-
-const enableddMarker = new Array(20).join('*');
-const disableddMarker = new Array(20).join('#');
-if (configurations.email.enabled) {
-    logger.info(`${enableddMarker} EMAIL ENABLED ${enableddMarker}`);
-} else {
-    logger.info(`${disableddMarker} EMAIL DISABLED ${disableddMarker}`);
-}
-
-import { sync } from './database';
-import schedulerHelper, { HttpMethod } from './utilities/scheduler-helper';
+import logger from '../utilities/logger';
 
 const sleep = (millis: number): Promise<void> => new Promise(resolve => setTimeout(resolve, millis));
 
-const schedulerTest = async ({
+export const schedulerTest = async ({
     staticSchedulerDelay,
     schedulerDelayInMinute,
     requestDelayMillis,
@@ -54,6 +41,8 @@ const schedulerTest = async ({
                 }
             });
             await sleep(requestDelayMillis);
+            // This is test code, i'm not to worried about types
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             resultPromise.then((data: any) => {
                 console.log(data.data);
             });
@@ -65,7 +54,7 @@ const schedulerTest = async ({
     await Promise.all(resultPromises);
 };
 
-const testTwoWaves = async (): Promise<unknown> => {
+export const testTwoWaves = async (): Promise<unknown> => {
     logger.info('RUNNING FIRST WAVE!');
     // We don't want to await this because we want the second wave to occur precisely
     const firstWavePromise = schedulerTest({
@@ -87,7 +76,7 @@ const testTwoWaves = async (): Promise<unknown> => {
     return Promise.all([firstWavePromise, secondWavePromise]);
 };
 
-const testImmediateTurnAround = async (): Promise<void> => {
+export const testImmediateTurnAround = async (): Promise<void> => {
     await schedulerTest({
         staticSchedulerDelay: true,
         schedulerDelayInMinute: 0,
@@ -96,7 +85,7 @@ const testImmediateTurnAround = async (): Promise<void> => {
     });
 };
 
-const testConsistentRequests = async (): Promise<unknown> => {
+export const testConsistentRequests = async (): Promise<unknown> => {
     return schedulerTest({
         staticSchedulerDelay: false,
         schedulerDelayInMinute: 1,
@@ -104,12 +93,3 @@ const testConsistentRequests = async (): Promise<unknown> => {
         iterations: 60, // 60 requests, with the above this is 600 seconds == 10 minutes
     });
 };
-
-(async (): Promise<void> => {
-    await sync();
-    logger.info('Playground start');
-    // await testImmediateTurnAround();
-    // await testTwoWaves();
-    await testConsistentRequests();
-    logger.info('Playground done');
-})();

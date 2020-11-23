@@ -1,4 +1,4 @@
-import { Model, DataTypes, HasOneGetAssociationMixin, BelongsToGetAssociationMixin } from 'sequelize';
+import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
 export default class User extends Model {
@@ -22,11 +22,11 @@ export default class User extends Model {
   public preferredEmailVerificationTokenExpiresAt!: Date;
   public forgotPasswordToken?: string;
   public forgotPasswordTokenExpiresAt!: Date
-
+  public uuid!: string;
 
   public courseEnrollments?: StudentEnrollment[]
 
-  public getUniversity!: HasOneGetAssociationMixin<University>;
+  public getUniversity!: BelongsToGetAssociationMixin<University>;
   public getRole!: BelongsToGetAssociationMixin<Permission>;
 
   public readonly university!: University;
@@ -183,6 +183,13 @@ User.init({
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: appSequelize.literal('NOW()')
+  },
+  uuid: {
+      field: 'user_uuid',
+      type: DataTypes.UUID,
+      allowNull: false,
+      unique: true,
+      defaultValue: DataTypes.UUIDV4
   },
 }, {
   tableName: 'users',

@@ -267,7 +267,7 @@ class UserController {
                 userObject.email = userObject.email.toLowerCase();
                 const user = await this.getUserByEmail(userObject.email);
                 if(!_.isNil(user)) {
-                    throw new AlreadyExistsError(`A user with the email ${userObject.email} already exists`);
+                    throw new AlreadyExistsError(`A user with the email ${userObject.email} already exists.`);
                 }
             } else {
                 logger.error('This should not happen, email should have been caught above');
@@ -290,7 +290,7 @@ class UserController {
     }
 
     createSession(userId: number): Bluebird<Session> {
-        const expiresAt: Date = moment().add(sessionLife, 'hour').toDate();
+        const expiresAt: Date = moment().add(sessionLife, 'minute').toDate();
         return Session.create({
             userId,
             uuid: uuidv4(),
@@ -386,7 +386,7 @@ class UserController {
             emailDomain
         });
         if (universities.length < 1) {
-            throw new NoAssociatedUniversityError(`There is no university associated with the email domain ${emailDomain}`);
+            throw new NoAssociatedUniversityError(`There is no university associated with the email domain ${emailDomain}.`);
         }
         if (universities.length > 1) {
             logger.error(`Multiple universities found ${universities.length}`);
@@ -458,7 +458,7 @@ class UserController {
         });
 
         if(result.updatedRecords.length < 1) {
-            throw new NotFoundError('This user is not registered');
+            throw new NotFoundError('There are no accounts registered with this email.');
         } else if (result.updatedRecords.length > 1) {
             logger.warn('Multiple users were updated for forgot password');
         }
@@ -526,7 +526,7 @@ The Rederly Team
         const user = await this.getUserByEmail(email);
         let validated = false;
         if(_.isNil(user?.forgotPasswordToken) || user.forgotPasswordToken !== forgotPasswordToken) {
-            throw new IllegalArgumentException('The institutional email address (which you login with) is not valid for the current url. Please check your set preferred email for a more up to date `Forgot Password` email or go to the homepage and make another request.');
+            throw new IllegalArgumentException('The institutional email address (which you login with) is not valid for the current url. Please return to the login page and click `Forgot Password` again to get a new url.');
         } else if (moment(user.forgotPasswordTokenExpiresAt).isBefore(moment())) {
             throw new IllegalArgumentException('Your forgot password request has expired, please click forgot password on the home page again.');
         } else {

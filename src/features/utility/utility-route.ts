@@ -4,12 +4,13 @@ import validate from '../../middleware/joi-validator';
 import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
-
+import * as _ from 'lodash';
 import * as fs from 'fs';
 import * as path from 'path';
 import logger from '../../utilities/logger';
 import { clientLogValidation } from './utility-route-validation';
 import { ClientLogRequest } from './utility-route-request-types';
+import { Logger } from 'winston';
 
 const packageJSONPath = '../../../package.json';
 
@@ -47,13 +48,30 @@ asyncHandler(async (_req: RederlyExpressRequest, _res: Response, next: NextFunct
     }));
 }));
 
+interface ClientLogMessage {
+    level?: keyof Logger;
+}
+
 router.use('/client-logs',
 validate(clientLogValidation),
 asyncHandler(async (req: RederlyExpressRequest<ClientLogRequest.params, unknown, ClientLogRequest.body, ClientLogRequest.query>, _res: Response, next: NextFunction) => {
     req.body.logs.forEach((log: unknown) => {
-        // TODO grab the log level from the object?
-        // Should not bloat this with anything but errors
-        logger.error(`Client Log: ${JSON.stringify(log)}`);
+        let logLevel: keyof Logger | undefined = (log as ClientLogMessage).level;
+        const availableLoggingLevels = Object.keys(logger.levels);
+        if(_.isUndefined(logLevel)) {
+            logger.warn(`logLevel "${logLevel}" is undefined`);
+        } else if (availableLoggingLevels.indexOf(logLevel) < 0) {
+            logger.warn(`logLevel "${logLevel}" is not a log level`);
+            // Delete the invalid log level so it can be defaulted
+            logLevel = undefined;
+        } else if (typeof(logger[logLevel]) !== 'function') {
+            // This should be impossible to hit since the above else if should handle it, adding it to be extra careful
+            logger.warn(`logLevel "${logLevel}" is a log level but not a function on logger`);
+            // Delete the invalid log level so it can be defaulted
+            logLevel = undefined;
+        }
+        logLevel = logLevel || 'error';
+        logger[logLevel](`Client Log: ${JSON.stringify(log)}`);
     });
     next(httpResponse.Ok('Logged'));
 }));

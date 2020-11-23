@@ -84,7 +84,7 @@ export const updateCourseTopicValidation = {
 
         // The following fields are only found on exams.
         topicAssessmentInfo: Joi.object({
-            duration: Joi.number().optional().min(10),
+            duration: Joi.number().optional().min(2),
             maxGradedAttemptsPerVersion: Joi.number().optional().min(0),
             maxVersions: Joi.number().optional().min(0),
             versionDelay: Joi.number().optional().min(0),
@@ -435,6 +435,97 @@ export const submitAssessmentVersionValidation = {
     params: {
         id: Joi.number().required(),
         version: Joi.number().required(),
+    },
+    query: {},
+    body: {},
+};
+
+export const gradeAssessmentValidation = {
+    params: {
+        id: Joi.number().required(),
+    },
+    query: {},
+    body: {},
+};
+
+export const getAttachmentPresignedURLValidation = {
+    params: {},
+    query: {},
+    body: {},
+};
+
+export const postAttachmentValidation = {
+    params: {},
+    query: {},
+    body: {
+        attachment: Joi.object({
+            cloudFilename: Joi.string().required(),
+            userLocalFilename: Joi.string().required(),    
+        }). required(),
+        studentGradeId: Joi.number().optional(),
+        studentGradeInstanceId: Joi.number().optional(),
+        studentWorkbookId: Joi.number().optional(),
+    },
+};
+
+export const listAttachmentsValidation = {
+    params: {},
+    query: {
+        studentGradeId: Joi.number().optional(),
+        studentGradeInstanceId: Joi.number().optional(),
+        studentWorkbookId: Joi.number().optional(),
+    },
+    body: {},
+};
+
+export const deleteAttachmentValidation = {
+    params: {
+        id: Joi.number().required()
+    },
+    query: {},
+    body: {},
+};
+
+export const emailProfValidation = {
+    params: {
+        id: Joi.number().required(),
+    },
+    query: {},
+    body: {
+        content: Joi.string().required(),
+        question: Joi.object({
+            id: Joi.number().required(),
+        }).required(),
+    },
+};
+
+export const readQuestionValidation = {
+    params: {},
+    query: {},
+    body: {
+        filePath: Joi.string().required(),
+    },
+};
+
+export const saveQuestionValidation = {
+    params: {},
+    query: {},
+    body: {
+        problemSource: Joi.string().required(),
+        relativePath: Joi.string().required(),
+    },
+};
+
+export const catalogValidation = {
+    params: {},
+    query: {},
+    body: {},
+};
+
+export const getVersionValidation = {
+    params: {
+        userId: Joi.number().required(),
+        topicId: Joi.number().required(),
     },
     query: {},
     body: {},

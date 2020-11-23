@@ -15,6 +15,7 @@ interface StudentTopicAssessmentInfoInterface {
     active: boolean;
 }
 
+// Generated every time a student starts a new version.
 export default class StudentTopicAssessmentInfo extends Model implements StudentTopicAssessmentInfoInterface {
     public id!: number;
     public topicAssessmentInfoId!: number;

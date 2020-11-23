@@ -5,9 +5,14 @@ import moment = require('moment');
 import passport = require('passport');
 import Session from '../database/models/session';
 import { Request, Response, NextFunction } from 'express';
+import configurations from '../configurations';
 const LocalStrategy = require('passport-local').Strategy;
 
-export const validateSession = async (uuid: string): Promise<Session> => {
+const {
+    sessionLife
+} = configurations.auth;
+
+export const validateSession = async (uuid: string, res: Response): Promise<Session> => {
     try {
         const session = await userController.getSession(uuid);
         if (!session) {
@@ -22,6 +27,22 @@ export const validateSession = async (uuid: string): Promise<Session> => {
                 logger.warn(response);
                 throw Boom.unauthorized(response);
             } else {
+                // Convert to millis (since moment diff returns millis) and divide by 2
+                // This is so that we don't update the session on every request, it gets refreshed half way through the session period
+                // if a request comes through
+                const newSessionDiffThreshold = (sessionLife * 1000 * 60) / 2;
+                const timeDiff = expiresAt.diff(moment());
+                if (timeDiff < newSessionDiffThreshold) {
+                    session.expiresAt = moment().add(sessionLife, 'minute').toDate();
+                    await session.save();
+                    const cookieOptions = {
+                        expires: session.expiresAt
+                    };
+                    res.cookie('sessionToken', uuid, cookieOptions);
+                    logger.debug('validateSession: Extended session token');
+                } else {
+                    logger.debug('validateSession: session token did not need refresh');
+                }
                 return session;
             }
         }
@@ -41,7 +62,7 @@ export const authenticationMiddleware = async (req: Request, res: Response, next
     }
     //authenticate cookie
     try {
-        const session = await validateSession(req.cookies.sessionToken);
+        const session = await validateSession(req.cookies.sessionToken, res);
         //Successful, add the user id to the session
         // TODO figure out session with request
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

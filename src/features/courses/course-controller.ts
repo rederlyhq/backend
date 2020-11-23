@@ -3146,10 +3146,7 @@ class CourseController {
         let topic = await this.getTopicById({
             id: topicId,
             userId: user.id
-        }); // includes TopicOverrides
-        if (!_.isNil(topic.studentTopicOverride) && topic.studentTopicOverride.length > 0) {
-            topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
-        }
+        });
         const unit = await topic.getUnit();
         const course = await unit.getCourse();
         const enroll = await course.getEnrolledStudents({
@@ -3170,6 +3167,10 @@ class CourseController {
             };
         }
 
+        // apply topic overrides
+        if (!_.isNil(topic.studentTopicOverride) && topic.studentTopicOverride.length > 0) {
+            topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
+        }
         let topicInfo = await this.getTopicAssessmentInfoByTopicId({
             topicId: topicId,
             userId: user.id

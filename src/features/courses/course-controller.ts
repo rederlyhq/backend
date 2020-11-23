@@ -1297,8 +1297,10 @@ class CourseController {
         }
 
         let showCorrectAnswers = false;
+        let answersSubmitted: number | undefined;
         if (options.role === Role.PROFESSOR && !_.isNil(workbook)) {
             showCorrectAnswers = true;
+            answersSubmitted = 1;
         }
 
         const rendererData = await rendererHelper.getProblem({
@@ -1308,6 +1310,7 @@ class CourseController {
             numIncorrect,
             formData,
             showCorrectAnswers,
+            answersSubmitted,
             ...calculatedRendererParameters
         });
         return {

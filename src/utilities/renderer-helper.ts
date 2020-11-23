@@ -251,6 +251,7 @@ class RendererHelper {
         processAnswers,
         format = 'json',
         formData,
+        answersSubmitted,
         showCorrectAnswers = false
     }: GetProblemParameters): Promise<unknown> {
         if (!_.isNil(problemSource)) {
@@ -272,6 +273,7 @@ class RendererHelper {
             numCorrect,
             numIncorrect,
             processAnswers,
+            answersSubmitted,
             showCorrectAnswers: showCorrectAnswers ? 'true' : undefined
         };
 

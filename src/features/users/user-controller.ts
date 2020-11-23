@@ -360,12 +360,12 @@ class UserController {
         const verifyURL = new URL(`/verify/${user.verifyToken}`, baseUrl);
         try {
             await emailHelper.sendEmail({
-                content: `Hello,
-
-                Please verify your account by clicking this url: ${verifyURL}
-                `,
+                template: 'verification',
                 email: user.email,
-                subject: 'Please verify account'
+                subject: 'Welcome to Rederly! Please verify your account.',
+                locals: {
+                    verifyUrl: verifyURL
+                }
             });
             emailSent = configurations.email.enabled;
         } catch (e) {
@@ -405,7 +405,7 @@ class UserController {
         userObject.universityId = university.id;
         userObject.verifyToken = uuidv4();
         userObject.verifyTokenExpiresAt = moment().add(configurations.auth.verifyInstutionalEmailTokenLife, 'minutes').toDate();
-        userObject.password = await hashPassword(userObject.password);    
+        userObject.password = await hashPassword(userObject.password);
         const newUser = await this.createUser(userObject);
         const emailSent = await this.setupUserVerification({
             baseUrl,

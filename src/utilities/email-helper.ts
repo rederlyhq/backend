@@ -6,6 +6,7 @@ import _ = require('lodash');
 // There is no type def for sendgrid-transport
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const sgTransport = require('nodemailer-sendgrid-transport');
+import * as Email from 'email-templates';
 
 interface EmailHelperOptions {
     user: string;
@@ -69,19 +70,31 @@ class EmailHelper {
             ...(options.replyTo ? {headers: {'Reply-To': options.replyTo }} : undefined)
         };
 
+        const sender = new Email({
+            message: email,
+            transport: this.client,
+            send: true,
+        });
+
         // Nodemailer's callback uses any
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return new Promise<any>((resolve: (data: any) => void, reject: (err: Error) => void) => {
             // Nodemailer's callback uses any
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            this.client.sendMail(email, (err: Error | null, info: any) => {
-                if (err) {
-                    reject(err);
-                }
-                else {
-                    resolve(info);
-                }
-            });
+            // this.client.sendMail(email, (err: Error | null, info: any) => {
+            //     if (err) {
+            //         reject(err);
+            //     }
+            //     else {
+            //         resolve(info);
+            //     }
+            // });
+
+            sender.send({
+                template: 'verification',
+                message: {},
+                locals: {},
+            })
         });
     }
 }

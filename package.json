@@ -81,7 +81,7 @@
   "scripts": {
     "test": "jest",
     "start": "ts-node src/index.ts",
-    "start:watch": "npx nodemon -x npm start",
+    "start:watch": "nodemon -x npm start",
     "start:debug": "node --inspect=5858 -r ts-node/register ./src/index.ts",
     "start:debug:watch": "nodemon -x npm run start:debug",
     "cli": "ts-node ./src/cli.ts",

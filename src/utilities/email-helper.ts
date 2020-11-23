@@ -58,7 +58,7 @@ class EmailHelper {
                 attachments: [
                     {
                       filename: 'favicon.png',
-                      path: 'src/email-templates/rederly_favicon.png',
+                      path: 'emails/rederly_favicon.png',
                       cid: 'favicon'
                     }
                 ]
@@ -89,18 +89,18 @@ class EmailHelper {
             ...(options.replyTo ? {headers: {'Reply-To': options.replyTo }} : undefined)
         };
 
-        // Nodemailer's callback uses any
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return new Promise<any>((resolve: (data: any) => void, reject: (err: Error) => void) => {
-            if (options.template) {
-                this.mailer.send({
-                    template: options.template,
-                    message: {
-                        to: options.email,
-                    },
-                    locals: options.locals,
-                })
-            } else {
+        if (options.template) {
+            return this.mailer.send({
+                template: options.template,
+                message: {
+                    to: options.email,
+                },
+                locals: options.locals,
+            });
+        } else {    
+            // Nodemailer's callback uses any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return new Promise<any>((resolve: (data: any) => void, reject: (err: Error) => void) => {
                 // Nodemailer's callback uses any
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 this.client.sendMail(email, (err: Error | null, info: any) => {
@@ -111,8 +111,8 @@ class EmailHelper {
                         resolve(info);
                     }
                 });
-            }
-        });
+            });
+        }
     }
 }
 

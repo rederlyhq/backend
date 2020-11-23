@@ -359,14 +359,17 @@ class UserController {
         }
 
 
-        const verificationEmailTemplateFunction = pug.compileFile('src/email-templates/verification.pug');
+        // const verificationEmailTemplateFunction = pug.compileFile('src/email-templates/verification.pug');
 
         const verifyURL = new URL(`/verify/${user.verifyToken}`, baseUrl);
         try {
             await emailHelper.sendEmail({
-                html: verificationEmailTemplateFunction({verifyUrl: verifyURL}),
+                template: 'verification',
                 email: user.email,
-                subject: 'Welcome to Rederly! Please verify your account.'
+                subject: 'Welcome to Rederly! Please verify your account.',
+                locals: {
+                    verifyUrl: verifyURL
+                }
             });
             emailSent = configurations.email.enabled;
         } catch (e) {

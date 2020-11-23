@@ -7,6 +7,7 @@ import _ = require('lodash');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const sgTransport = require('nodemailer-sendgrid-transport');
 import * as Email from 'email-templates';
+import RederlyError from '../exceptions/rederly-error';
 
 interface EmailHelperOptions {
     user: string;
@@ -17,9 +18,10 @@ interface EmailHelperOptions {
 interface SendEmailOptions {
     email: string;
     content?: string;
-    html?: string;
     subject: string;
     replyTo?: string;
+    locals?: object;
+    template?: string;
     // attachments: File;
 }
 
@@ -29,6 +31,7 @@ class EmailHelper {
     private from: string;
 
     private client: Mail;
+    private mailer: Email;
 
     constructor(options: EmailHelperOptions) {
         this.user = options.user;
@@ -47,7 +50,22 @@ class EmailHelper {
         };
 
         this.client = nodemailer.createTransport(sgTransport(clientOptions));
-
+        this.mailer = new Email({
+            message: {
+                from: this.from,
+                // Default attachments for all emails without the email client automatically blocking them.
+                // GMail and Outlook do not support base64 data-urls.
+                attachments: [
+                    {
+                      filename: 'favicon.png',
+                      path: 'src/email-templates/rederly_favicon.png',
+                      cid: 'favicon'
+                    }
+                ]
+            },
+            transport: this.client,
+            send: true,
+        });
     }
 
     // Returns the object that sendgrid returns which is any
@@ -58,43 +76,42 @@ class EmailHelper {
             return Promise.resolve();
         }
 
-        if (!_.isNil(options.content) && !_.isNil(options.html)) {
-            logger.error('Email requires either content (text) or html to be set.');
+        if (_.isNil(options.content) && _.isNil(options.template)) {
+            logger.error('Email requires either content (text) or template (pug) to be set.');
+            throw new RederlyError('Missing content for email.');
         }
 
         const email: Mail.Options = {
             from: this.from,
             to: options.email,
             subject: options.subject,
-            ...(options.content ? {text: options.content} : {html: options.html}),
+            text: options.content,
             ...(options.replyTo ? {headers: {'Reply-To': options.replyTo }} : undefined)
         };
-
-        const sender = new Email({
-            message: email,
-            transport: this.client,
-            send: true,
-        });
 
         // Nodemailer's callback uses any
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return new Promise<any>((resolve: (data: any) => void, reject: (err: Error) => void) => {
-            // Nodemailer's callback uses any
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            // this.client.sendMail(email, (err: Error | null, info: any) => {
-            //     if (err) {
-            //         reject(err);
-            //     }
-            //     else {
-            //         resolve(info);
-            //     }
-            // });
-
-            sender.send({
-                template: 'verification',
-                message: {},
-                locals: {},
-            })
+            if (options.template) {
+                this.mailer.send({
+                    template: options.template,
+                    message: {
+                        to: options.email,
+                    },
+                    locals: options.locals,
+                })
+            } else {
+                // Nodemailer's callback uses any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                this.client.sendMail(email, (err: Error | null, info: any) => {
+                    if (err) {
+                        reject(err);
+                    }
+                    else {
+                        resolve(info);
+                    }
+                });
+            }
         });
     }
 }

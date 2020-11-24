@@ -1232,11 +1232,11 @@ class CourseController {
                         }
                     });
 
-                    if (!_.isEmpty(questionGrade)){
+                    if (!_.isNil(questionGrade.first)) {
                         const requestedGradeInstance = await StudentGradeInstance.findOne({
                             where: {
                                 studentTopicAssessmentInfoId: options.studentTopicAssessmentInfoId,
-                                studentGradeId: questionGrade[0].id,
+                                studentGradeId: questionGrade.first.id,
                                 active: true
                             }
                         });
@@ -2289,7 +2289,7 @@ class CourseController {
                 include
             });
         } catch (e) {
-            throw new RederlyError(`Unable to get grade for user #${userId} and question #${questionId}`);
+            throw new WrappedError(`Unable to get grade for user #${userId} and question #${questionId}`, e);
         }
     }
 

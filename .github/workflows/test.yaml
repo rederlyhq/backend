@@ -24,6 +24,8 @@ jobs:
       run: npm run build
       env:
         CI: false # TODO consistent with frontend but I don't think this matters
+    - name: Check Build
+      run: npm run run:built:test-run # this script runs the application without connecting the server or database, therefore it goes through all the imports and everything
     # - name: Test
     #   run: npm test
     #   env:

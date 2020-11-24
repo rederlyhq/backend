@@ -75,7 +75,7 @@ const commandLookup: {[key: string]: () => unknown} = {
         }
         logger.info('Finished running CLI');
     } catch (e) {
-        logger.error(`Could not start up ${e}`);
+        logger.error('Could not start up', e);
         // Used a larger number so that we could determine by the error code that this was an application error
         process.exit(87);
     }

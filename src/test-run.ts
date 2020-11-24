@@ -24,7 +24,7 @@ import './server';
             logger.info(`${disabledMarker} "${firstArg}" !== "sync"; Skipping sync ${disabledMarker}`);
         }    
     } catch (e) {
-        logger.error(`Could not start up ${e}`);
+        logger.error('Could not start up', e);
         // Used a larger number so that we could determine by the error code that this was an application error
         process.exit(87);
     }

@@ -162,7 +162,8 @@ class UserController {
             emailPromises.push(emailHelper.sendEmail({
                 content: emailOptions.content,
                 subject: emailOptions.subject,
-                email: users[i].email
+                email: users[i].email,
+                replyTo: emailOptions.replyTo,
             }));
         }
 

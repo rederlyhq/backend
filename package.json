@@ -80,6 +80,7 @@
   },
   "scripts": {
     "test": "jest",
+    "test-run": "ts-node src/test-run.ts",
     "start": "ts-node src/index.ts",
     "start:watch": "nodemon -x npm start",
     "start:debug": "node --inspect=5858 -r ts-node/register ./src/index.ts",
@@ -96,6 +97,7 @@
     "build": "npm run clean && tsc",
     "build:run": "npm run build && npm run run:build",
     "run:build": "node ts-built/index.js",
+    "run:built:test-run": "node ts-built/test-run.js",
     "sequelize": "npm run build && sequelize",
     "sequelize:migrations": "npm run sequelize -- db:migrate",
     "sequelize:migrations:devundo": "npm run sequelize -- db:migrate:undo:all --to 20201112094400-curriculum-assessments.js",

@@ -35,12 +35,8 @@ import StudentWorkbookProblemAttachment from './models/student-workbook-problem-
 import CurriculumQuestionAssessmentInfo from './models/curriculum-question-assessment-info';
 
 export const sync = async (): Promise<void> => {
-    try {
-        await appSequelize.authenticate();
-        await appSequelize.sync();
-    } catch (e) {
-        logger.error('Could not init sequelize', e);
-    }
+    await appSequelize.authenticate();
+    await appSequelize.sync();
 };
 
 const models = [

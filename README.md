@@ -1,4 +1,9 @@
-# backend
+# Rederly Backend
+
+![Version](https://img.shields.io/github/v/tag/rederly/backend?style=plastic)
+![Commit Activity](https://img.shields.io/github/commit-activity/m/rederly/backend?style=plastic)
+![License](https://img.shields.io/github/license/rederly/backend?style=plastic)
+![Build Status](https://img.shields.io/github/workflow/status/rederly/backend/Node.js%20CI?style=plastic)
 
 ## Getting started:
 1. Make sure below configurations are made in environment variables or .env file

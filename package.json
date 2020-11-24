@@ -36,6 +36,7 @@
     "pug": "^3.0.0",
     "qs": "^6.9.4",
     "sequelize": "^5.22.3",
+    "sequelize-cli": "^5.5.1",
     "url-join": "^4.0.1",
     "uuid": "^7.0.3",
     "winston": "^3.3.3"
@@ -73,7 +74,6 @@
     "eslint": "^6.8.0",
     "jest": "^26.4.2",
     "nodemon": "^2.0.4",
-    "sequelize-cli": "^5.5.1",
     "ts-jest": "^26.4.1",
     "ts-node": "^8.10.2",
     "typescript": "^3.9.7"

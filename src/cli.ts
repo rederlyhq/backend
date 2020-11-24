@@ -61,16 +61,22 @@ const commandLookup: {[key: string]: () => unknown} = {
 };
 
 (async (): Promise<void> => {
-    await sync();
+    try {
+        await sync();
 
-    logger.info('Running CLI');
-    const command = process.argv[2]?.toLowerCase();
-    logger.info(`Running command: ${command}`);
-    const commandFunction = commandLookup[command];
-    if (_.isNil(commandFunction)) {
-        logger.error(`"${command}" is not a valid command, it must be one of: ${JSON.stringify(Object.keys(commandLookup))}`);
-    } else {
-        await commandFunction();
+        logger.info('Running CLI');
+        const command = process.argv[2]?.toLowerCase();
+        logger.info(`Running command: ${command}`);
+        const commandFunction = commandLookup[command];
+        if (_.isNil(commandFunction)) {
+            logger.error(`"${command}" is not a valid command, it must be one of: ${JSON.stringify(Object.keys(commandLookup))}`);
+        } else {
+            await commandFunction();
+        }
+        logger.info('Finished running CLI');
+    } catch (e) {
+        logger.error('Could not start up', e);
+        // Used a larger number so that we could determine by the error code that this was an application error
+        process.exit(87);
     }
-    logger.info('Finished running CLI');
 })();

@@ -26,19 +26,17 @@ import StudentTopicQuestionOverride from './models/student-topic-question-overri
 import StudentTopicAssessmentOverride from './models/student-topic-assessment-override';
 import StudentTopicAssessmentInfo from './models/student-topic-assessment-info';
 import TopicAssessmentInfo from './models/topic-assessment-info';
+import CurriculumTopicAssessmentInfo from './models/curriculum-topic-assessment-info';
 import CourseQuestionAssessmentInfo from './models/course-question-assessment-info';
 import ProblemAttachment from './models/problem-attachment';
 import StudentGradeProblemAttachment from './models/student-grade-problem-attachment';
 import StudentGradeInstanceProblemAttachment from './models/student-grade-instance-problem-attachment';
 import StudentWorkbookProblemAttachment from './models/student-workbook-problem-attachment';
+import CurriculumQuestionAssessmentInfo from './models/curriculum-question-assessment-info';
 
 export const sync = async (): Promise<void> => {
-    try {
-        await appSequelize.authenticate();
-        await appSequelize.sync();
-    } catch (e) {
-        logger.error('Could not init sequelize', e);
-    }
+    await appSequelize.authenticate();
+    await appSequelize.sync();
 };
 
 const models = [
@@ -52,6 +50,7 @@ const models = [
     CurriculumUnitContent,
     CurriculumTopicContent,
     CurriculumWWTopicQuestion,
+    CurriculumTopicAssessmentInfo,
     StudentEnrollment,
     CourseUnitContent,
     CourseTopicContent,
@@ -71,6 +70,7 @@ const models = [
     ProblemAttachment,
     StudentGradeProblemAttachment,
     StudentGradeInstanceProblemAttachment,
+    CurriculumQuestionAssessmentInfo,
     StudentWorkbookProblemAttachment,
 ];
 

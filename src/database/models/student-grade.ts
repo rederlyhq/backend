@@ -56,6 +56,7 @@ export default class StudentGrade extends Model implements StudentGradeInterface
 
     public getUser!: BelongsToGetAssociationMixin<User>;
     public getQuestion!: BelongsToGetAssociationMixin<CourseWWTopicQuestion>;
+    public getLastInfluencingAttempt!: BelongsToGetAssociationMixin<StudentWorkbook>;
     public getWorkbooks!: HasManyGetAssociationsMixin<StudentWorkbook>;
     public getGradeInstances!: HasManyGetAssociationsMixin<StudentGradeInstance>;
     public getOverrides!: HasManyGetAssociationsMixin<StudentGradeOverride>;

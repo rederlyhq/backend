@@ -23,6 +23,7 @@ interface TopicAssessmentInfoInterface extends TopicAssessmentInfoOverridesInter
 export default class TopicAssessmentInfo extends Model implements TopicAssessmentInfoInterface {
     public id!: number;
     public courseTopicContentId!: number;
+    public curriculumTopicAssessmentInfoId!: number;
     public duration!: number; // enforce IN MINUTES
     public hardCutoff!: boolean;
     public maxGradedAttemptsPerVersion!: number;
@@ -93,6 +94,11 @@ TopicAssessmentInfo.init({
         field: 'course_topic_content_id',
         type: DataTypes.INTEGER,
         allowNull: false,
+    },
+    curriculumTopicAssessmentInfoId: {
+        field: 'curriculum_topic_assessment_info_id',
+        type: DataTypes.INTEGER,
+        allowNull: true,
     },
     duration: {
         field: 'topic_assessment_info_duration',

@@ -29,7 +29,7 @@ import { nameof } from '../../utilities/typescript-helpers';
 import Role from '../permissions/roles';
 import moment = require('moment');
 import RederlyExtendedError from '../../exceptions/rederly-extended-error';
-import { calculateGrade, WillTrackAttemptReason } from '../../utilities/grading-helper';
+import { calculateGrade, WillGetCreditReason, WillTrackAttemptReason } from '../../utilities/grading-helper';
 import { useDatabaseTransaction } from '../../utilities/database-helper';
 import StudentTopicOverride, { StudentTopicOverrideInterface } from '../../database/models/student-topic-override';
 import StudentTopicQuestionOverride, { StudentTopicQuestionOverrideInterface } from '../../database/models/student-topic-question-override';
@@ -190,7 +190,7 @@ class CourseController {
             where[`$unit.${CourseUnitContent.rawAttributes.courseId.field}$`] = courseId;
             // where[`$studentTopicOverride.${StudentTopicOverride.rawAttributes.courseTopicContentId.field}$`] = `$${CourseTopicContent.rawAttributes.id.field}`;
         }
-        
+
         if (isOpen) {
             const date = new Date();
             // If no userId is passed, show all active topics and topics with extensions (professor view)
@@ -311,11 +311,13 @@ class CourseController {
                 }
                 const curriculum = await curriculumRepository.getCurriculumById(options.object.curriculumId);
                 const createdCourse = await courseRepository.createCourse(options.object);
+                logger.debug('Created a course from a curriculum.');
                 await curriculum.units?.asyncForEach(async (curriculumUnit: CurriculumUnitContent) => {
                     if (curriculumUnit.active === false) {
-                        logger.warn(`Inactive curriculum unit was fetched in query for create course ID#${curriculumUnit.id}`);
+                        logger.debug(`Inactive curriculum unit was fetched in query for create course ID#${curriculumUnit.id}`);
                         return;
                     }
+
                     const createdCourseUnit = await courseRepository.createUnit({
                         // active: curriculumUnit.active,
                         contentOrder: curriculumUnit.contentOrder,
@@ -323,11 +325,13 @@ class CourseController {
                         curriculumUnitId: curriculumUnit.id,
                         name: curriculumUnit.name,
                     });
+
                     await curriculumUnit.topics?.asyncForEach(async (curriculumTopic: CurriculumTopicContent) => {
                         if (curriculumTopic.active === false) {
-                            logger.warn(`Inactive curriculum topic was fetched in query for create course ID#${curriculumTopic.id}`);
+                            logger.debug(`Inactive curriculum topic was fetched in query for create course ID#${curriculumTopic.id}`);
                             return;
                         }
+
                         const createdCourseTopic: CourseTopicContent = await courseRepository.createCourseTopic({
                             // active: curriculumTopic.active,
                             curriculumTopicContentId: curriculumTopic.id,
@@ -341,12 +345,24 @@ class CourseController {
                             deadDate: createdCourse.end,
                             partialExtend: false
                         });
+
+                        const topicAssessmentInfo = await curriculumTopic.getCurriculumTopicAssessmentInfo();
+
+                        if (!_.isNil(topicAssessmentInfo)) {
+                            await TopicAssessmentInfo.create({
+                                ..._.omit(topicAssessmentInfo.get({plain: true}), ['id']),
+                                courseTopicContentId: createdCourseTopic.id,
+                                curriculumTopicAssessmentInfoId: curriculumTopic.id,
+                            });
+                        }
+
                         await curriculumTopic.questions?.asyncForEach(async (curriculumQuestion: CurriculumWWTopicQuestion) => {
                             if (curriculumQuestion.active === false) {
-                                logger.warn(`Inactive curriculum question was fetched in query for create course ID#${curriculumQuestion.id}`);
+                                logger.debug(`Inactive curriculum question was fetched in query for create course ID#${curriculumQuestion.id}`);
                                 return;
                             }
-                            await courseRepository.createQuestion({
+
+                            const createdCourseQuestion = await courseRepository.createQuestion({
                                 // active: curriculumQuestion.active,
                                 courseTopicContentId: createdCourseTopic.id,
                                 problemNumber: curriculumQuestion.problemNumber,
@@ -357,6 +373,19 @@ class CourseController {
                                 optional: curriculumQuestion.optional,
                                 curriculumQuestionId: curriculumQuestion.id
                             });
+
+                            const questionAssessmentInfo = await curriculumQuestion.getCurriculumQuestionAssessmentInfo();
+
+                            if (!_.isNil(questionAssessmentInfo)) {
+                                const createFromCurriculum = {
+                                    ..._.omit(questionAssessmentInfo.get({plain: true}), ['id']),
+                                    courseWWTopicQuestionId: createdCourseQuestion.id,
+                                    curriculumQuestionAssessmentInfoId: curriculumQuestion.id,
+                                };
+
+                                await CourseQuestionAssessmentInfo.create(createFromCurriculum);
+                            }
+
                         });
                     });
                 });
@@ -562,7 +591,7 @@ class CourseController {
                 });
                 const newOverride = extendTopicResult.updatedRecords[0];
                 const originalOverride: StudentTopicOverrideInterface = extendTopicResult.original as StudentTopicOverrideInterface;
-                
+
                 const originalTopic: CourseTopicContentInterface = topic.getWithOverrides(originalOverride);
                 const newTopic: CourseTopicContentInterface = topic.getWithOverrides(newOverride);
 
@@ -1125,7 +1154,7 @@ class CourseController {
                 const overrides = await topic.getStudentTopicOverride({
                     where: {
                         userId: userId,
-                        active: true,    
+                        active: true,
                     }
                 });
                 if (overrides.length > 1) {
@@ -1184,7 +1213,7 @@ class CourseController {
         // grades/statistics may send workbookID => show problem with workbookID.form_data
         // problem page (not enrolled) will send questionID without userID => show problem with no form_data
         // problem page (enrolled, hw) will send questionID with userID => show problem with grades.currentProblemState
-        // problem page (enrolled, assess) needs to check if the question belongs to an assessment: isQuestionAnAssessment() 
+        // problem page (enrolled, assess) needs to check if the question belongs to an assessment: isQuestionAnAssessment()
         const courseQuestion = await this.getQuestionRecord(options.questionId);
 
         if (_.isNil(courseQuestion)) {
@@ -1211,7 +1240,7 @@ class CourseController {
 
         let gradeInstance: StudentGradeInstance | undefined;
 
-        // get studentGrade from workbook if workbookID, 
+        // get studentGrade from workbook if workbookID,
         // otherwise studentGrade from userID + questionID | null
         if(_.isNil(workbook)) {
             // when no workbook is sent, the source of truth depends on whether question belongs to an assessment
@@ -1340,7 +1369,7 @@ class CourseController {
 
     /**
      * This function takes the grade results and merges it into the database objects and save them
-     * @param param0 
+     * @param param0
      */
     setGradeFromSubmission = async ({
         studentGrade,
@@ -1353,7 +1382,7 @@ class CourseController {
             if (gradeResult.gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
                 if(studentGrade.numAttempts === 0) {
                     studentGrade.firstAttempts = gradeResult.score;
-                } 
+                }
                 studentGrade.latestAttempts = gradeResult.score;
                 studentGrade.numAttempts++;
                 if (gradeResult.gradingRationale.isOnTime && !gradeResult.gradingRationale.isLocked && gradeResult.gradingRationale.isWithinAttemptLimit) {
@@ -1362,7 +1391,7 @@ class CourseController {
                 if (!gradeResult.gradingRationale.isExpired && !gradeResult.gradingRationale.isLocked && gradeResult.gradingRationale.isWithinAttemptLimit) {
                     studentGrade.numExtendedAttempts++;
                 }
-    
+
                 if (_.isNil(workbook)) {
                     workbook = await StudentWorkbook.create({
                         studentGradeId: studentGrade.id,
@@ -1393,7 +1422,7 @@ class CourseController {
                             // should never be possible
                             logger.warn('nil workbook after creation for create attachments');
                         }
-                    });    
+                    });
                 } else {
                     _.assign(workbook, {
                         wasLate: gradeResult.gradingRationale.isLate,
@@ -1402,31 +1431,39 @@ class CourseController {
                         wasLocked: gradeResult.gradingRationale.isLocked,
                         active: true
                     });
-                    
+
                     await workbook.save();
                 }
-    
+
                 if (!_.isNil(gradeResult.gradeUpdates.overallBestScore)) {
                     studentGrade.overallBestScore = gradeResult.gradeUpdates.overallBestScore;
                     studentGrade.lastInfluencingAttemptId = workbook.id;
+                } else if (_.isNil(studentGrade.lastInfluencingAttemptId) && gradeResult.gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
+                    studentGrade.lastInfluencingAttemptId = workbook.id;
                 }
-    
+
                 // TODO do we need to track "best score"
                 if (!_.isNil(gradeResult.gradeUpdates.bestScore)) {
                     studentGrade.bestScore = gradeResult.gradeUpdates.bestScore;
                     studentGrade.lastInfluencingAttemptId = workbook.id;
+                } else if (_.isNil(studentGrade.lastInfluencingAttemptId) && gradeResult.gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
+                    studentGrade.lastInfluencingAttemptId = workbook.id;
                 }
-    
+
                 if (!_.isNil(gradeResult.gradeUpdates.legalScore)) {
                     studentGrade.legalScore = gradeResult.gradeUpdates.legalScore;
                     studentGrade.lastInfluencingLegalAttemptId = workbook.id;
+                } else if (_.isNil(studentGrade.lastInfluencingLegalAttemptId) && gradeResult.gradingRationale.willGetCreditReason === WillGetCreditReason.YES) {
+                    studentGrade.lastInfluencingLegalAttemptId = workbook.id;
                 }
-    
+
                 if (!_.isNil(gradeResult.gradeUpdates.partialCreditBestScore)) {
                     studentGrade.partialCreditBestScore = gradeResult.gradeUpdates.partialCreditBestScore;
                     studentGrade.lastInfluencingCreditedAttemptId = workbook.id;
+                } else if (_.isNil(studentGrade.lastInfluencingCreditedAttemptId) && (gradeResult.gradingRationale.willGetCreditReason === WillGetCreditReason.YES || gradeResult.gradingRationale.willGetCreditReason === WillGetCreditReason.YES_BUT_PARTIAL_CREDIT)) {
+                    studentGrade.lastInfluencingCreditedAttemptId = workbook.id;
                 }
-    
+
                 if (!_.isNil(gradeResult.gradeUpdates.effectiveScore)) {
                     studentGrade.effectiveScore = gradeResult.gradeUpdates.effectiveScore;
                     // We don't track the effective grade that altered the effective score, in part because it could be updated externally
@@ -1447,7 +1484,7 @@ class CourseController {
                         logger.error(`Did not regrade submission ${workbook.id} because of an error that occured in coming up with grading rationale`);
                     }
                 } else {
-                    logger.debug('Not keeping a workbook');                
+                    logger.debug('Not keeping a workbook');
                 }
             }
             await studentGrade.save();
@@ -1676,7 +1713,7 @@ class CourseController {
             if (question.courseTopicContentId !== topic.id) {
                 throw new IllegalArgumentException('question topic id does not match the topic\'s id');
             }
-            
+
             const solutionDate = moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days');
 
             // reset student grade before submitting
@@ -1693,14 +1730,14 @@ class CourseController {
             studentGrade.lastInfluencingLegalAttemptId = null;
             studentGrade.firstAttempts = 0;
             studentGrade.latestAttempts = 0;
-            
+
             const gradeOverrides: StudentGradeOverride[] = await studentGrade.getOverrides({
                 order: ['id'],
                 where: {
                     active: true
                 }
             });
-            
+
             const workbooksAndOverrides: (StudentWorkbook | StudentGradeOverride)[] = [...workbooks, ...gradeOverrides];
             const sortedWorkbooksAndOverrides = workbooksAndOverrides.sort((first: StudentWorkbook | StudentGradeOverride, second: StudentWorkbook | StudentGradeOverride): number => {
                 const getDate = (object: StudentWorkbook | StudentGradeOverride): Date => {
@@ -1732,22 +1769,22 @@ class CourseController {
                         }
                         continue;
                     }
-    
+
                     if (workbook.studentGradeId !== studentGrade.id) {
                         throw new IllegalArgumentException('workbook studentGradeId does not match studentGrade.id');
                     }
-        
+
                     if(_.isNil(question) || _.isNil(topic)) {
                         throw new Error('This cannot be undefined, strict is confused because of transaction callback');
                     }
-    
+
                     await this.gradeSubmission({
                         newScore: workbook.result,
                         question,
                         solutionDate,
                         studentGrade,
                         topic,
-    
+
                         timeOfSubmission: workbook.time.toMoment(),
                         submitted: null,
                         workbook,
@@ -1756,7 +1793,7 @@ class CourseController {
                             questionOverride: questionOverride,
                             topicOverride: topicOverride
                         }
-                    });                        
+                    });
                 } else if (workbookOrOverride instanceof StudentGradeOverride) {
                     // redundant but makes it easier to read
                     const override = workbookOrOverride;
@@ -1772,7 +1809,7 @@ class CourseController {
 
     /**
      * This function is in charge of getting the grade updates and passing it along to be updated
-     * @param param0 
+     * @param param0
      */
     gradeSubmission = async ({
         studentGrade,
@@ -1883,8 +1920,8 @@ class CourseController {
                 }]
             }
         );
-        
-        
+
+
         const topic: CourseTopicContent = await question.getTopic({
             include: [{
                 model: StudentTopicOverride,
@@ -2017,7 +2054,7 @@ class CourseController {
             if (_.isNull(enrollment)) {
                 throw new NotFoundError(`Could not find Student ${deEnrollment.userId} to remove from Course ${deEnrollment.courseId}`);
             }
-            
+
             if (enrollment.dropDate) {
                 throw new NotFoundError(`Student ${deEnrollment.userId} has already been dropped from Course ${deEnrollment.courseId}`);
             }
@@ -2205,8 +2242,8 @@ class CourseController {
                 [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
             ];
             // TODO This group needs to match the alias below, I'd like to find a better way to do this
-            group = [`user.${User.rawAttributes.id.field}`, 
-                `user.${User.rawAttributes.firstName.field}`, 
+            group = [`user.${User.rawAttributes.id.field}`,
+                `user.${User.rawAttributes.firstName.field}`,
                 `user.${User.rawAttributes.lastName.field}`
             ];
         }
@@ -2985,33 +3022,33 @@ class CourseController {
             }
 
             // apply user overrides to version
-            if (!_.isNil(topicInfo) && 
+            if (!_.isNil(topicInfo) &&
                 !_.isNil(topicInfo.studentTopicAssessmentOverride) &&
                 !_.isEmpty(topicInfo.studentTopicAssessmentOverride)
             ){
                 const studentTopicAssessmentOverrideId = topicInfo.studentTopicAssessmentOverride[0].id;
                 // we have the studentTopicAssessmentOverride object, but this extra step is
                 // needed because sequelize truncates when nested include namespaces get too long
-                // {minifyAliases: true} introduced in sequelize-5.18 
+                // {minifyAliases: true} introduced in sequelize-5.18
                 // https://github.com/sequelize/sequelize/pull/11095
                 if (!_.isNil(studentTopicAssessmentOverrideId)) {
                     const studentTopicAssessmentOverride = await courseRepository.getStudentTopicAssessmentOverride(studentTopicAssessmentOverrideId);
                     topicInfo = topicInfo.getWithOverrides(studentTopicAssessmentOverride) as TopicAssessmentInfo;
                 }
             }
-    
+
             const questions = await courseRepository.getQuestionsFromTopicId({id:topicId});
             const startTime = moment().add(1,'minute'); // should cover any delay in creating records before a student can actually begin
-    
+
             let endTime = moment(startTime).add(topicInfo.duration, 'minutes');
             if (topicInfo.hardCutoff) {
                 endTime = moment.min(topic.endDate.toMoment(), endTime);
-            } 
-    
+            }
+
             const nextVersionAvailableTime = moment(startTime).add(topicInfo.versionDelay, 'minutes');
             // in trying to be clever about shuffling the order, don't forget to shift from 0..n-1 to 1..n
             const problemOrder = (topicInfo.randomizeOrder) ? _.shuffle([...Array(questions.length).keys()]) : [...Array(questions.length).keys()];
-    
+
             const studentTopicAssessmentInfo = await this.createStudentTopicAssessmentInfo({
                 userId,
                 topicAssessmentInfoId: topicInfo.id,
@@ -3078,7 +3115,7 @@ class CourseController {
                     logger.error(`Could not create scheduler job for studentTopicAssessmentInfo ${studentTopicAssessmentInfo.id}`, e);
                 });
             }
-    
+
             return studentTopicAssessmentInfo;
         });
     }
@@ -3175,13 +3212,10 @@ class CourseController {
             status: 'none'
         };
 
-        let topic = await this.getTopicById({ 
-            id: topicId, 
-            userId: user.id 
-        }); // includes TopicOverrides
-        if (!_.isNil(topic.studentTopicOverride) && topic.studentTopicOverride.length > 0) {
-            topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
-        }
+        let topic = await this.getTopicById({
+            id: topicId,
+            userId: user.id
+        });
         const unit = await topic.getUnit();
         const course = await unit.getCourse();
         const enroll = await course.getEnrolledStudents({
@@ -3202,10 +3236,14 @@ class CourseController {
             };
         }
 
+        // apply topic overrides
+        if (!_.isNil(topic.studentTopicOverride) && topic.studentTopicOverride.length > 0) {
+            topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
+        }
         let topicInfo = await this.getTopicAssessmentInfoByTopicId({
             topicId: topicId,
             userId: user.id
-        }); 
+        });
         if (!_.isNil(topicInfo.studentTopicAssessmentOverride) && topicInfo.studentTopicAssessmentOverride.length > 0) {
             topicInfo = topicInfo.getWithOverrides(topicInfo.studentTopicAssessmentOverride[0]) as TopicAssessmentInfo;
         }
@@ -3285,14 +3323,14 @@ class CourseController {
             }
             const topicInfo = await studentTopicAssessmentInfo.getTopicAssessmentInfo();
             const { showItemizedResults, showTotalGradeImmediately } = topicInfo;
-    
+
             const studentGradeInstances = await studentTopicAssessmentInfo.getStudentGradeInstances();
-    
+
             const questionResponses = [] as SubmittedAssessmentResultContext[];
             await studentGradeInstances.asyncForEach(async (instance) => {
                 const grade = await instance.getGrade(); // passing studentGrade, studentGradeInstance, and questionResponse for grading
                 const question = await grade.getQuestion(); // getting this just for weight -- will save queries later
-    
+
                 const getProblemParams: GetProblemParameters = {
                     formURL: '/', // we don't care about this - no one sees the rendered version
                     answersSubmitted: 1,
@@ -3300,7 +3338,7 @@ class CourseController {
                     problemSeed: instance.randomSeed,
                     formData: instance.currentProblemState,
                 };
-    
+
                 const questionResponse = await rendererHelper.getProblem(getProblemParams) as RendererResponse;
                 questionResponses.push({
                     questionResponse,
@@ -3309,13 +3347,13 @@ class CourseController {
                     weight: question.weight,
                 });
             });
-    
+
             const { problemScores, bestVersionScore, bestOverallVersion } = this.scoreAssessment(questionResponses);
             const isBestForThisVersion = problemScores.total >= bestVersionScore;
             const isBestOverallVersion = problemScores.total >= bestOverallVersion;
-    
+
             await questionResponses.asyncForEach(async (result: SubmittedAssessmentResultContext) => {
-    
+
                 if (_.isNil(result.instance.id)) {
                     throw new Error('the grade instance ID cannot be empty');
                 }
@@ -3346,26 +3384,26 @@ class CourseController {
                         problemAttachmentId: attachment.id
                     });
                 });
-    
+
                 // update individual problem high-scores
-                if (result.questionResponse.problem_result.score >= result.instance.overallBestScore) {
+                if (result.questionResponse.problem_result.score > result.instance.overallBestScore || _.isNil(result.instance.bestIndividualAttemptId)) {
                     // update instance: overallBestScore, bestIndividualAttemptId
                     result.instance.overallBestScore = result.questionResponse.problem_result.score;
                     result.instance.bestIndividualAttemptId = workbook.id;
-                    if (result.questionResponse.problem_result.score >= result.grade.overallBestScore) {
+                    if (result.questionResponse.problem_result.score > result.grade.overallBestScore || _.isNil(result.grade.lastInfluencingAttemptId)) {
                         // update grade: overallBestScore, *what about workbook id*?
                         result.grade.overallBestScore = result.questionResponse.problem_result.score;
                         result.grade.lastInfluencingAttemptId = workbook.id;
                         // which workbookId field should be used?
                     }
                 }
-    
+
                 // update aggregate best-scores
-                if (isBestForThisVersion) {
+                if (isBestForThisVersion || _.isNil(result.instance.bestVersionAttemptId)) {
                     // update instance: bestScore, bestVersionAttemptId
                     result.instance.scoreForBestVersion = result.questionResponse.problem_result.score;
                     result.instance.bestVersionAttemptId = workbook.id;
-                    if (isBestOverallVersion) {
+                    if (isBestOverallVersion || _.isNil(result.grade.lastInfluencingCreditedAttemptId)) {
                         // update grade: bestScore, lastInfluencingLegalAttemptId? (or do we forego workbooks on grades for assessments because of grade instances)
                         result.grade.bestScore = result.questionResponse.problem_result.score;
                         result.grade.legalScore = result.questionResponse.problem_result.score;
@@ -3375,9 +3413,9 @@ class CourseController {
                         result.grade.lastInfluencingCreditedAttemptId = workbook.id;
                     }
                 }
-    
+
                 // const versionAverage = (incoming.instance.averageScore * incoming.instance.numAttempts + incoming.questionResponse.problem_result.score)/(incoming.instance.numAttempts + 1);
-    
+
                 // keep these in line with workbook count -- all attempts are legal, extensions not allowed
                 result.grade.numAttempts++;
                 result.grade.numLegalAttempts++;
@@ -3387,7 +3425,7 @@ class CourseController {
                 await result.grade.save();
                 await result.instance.save();
             });
-    
+
             // update the number of attempts for this version
             studentTopicAssessmentInfo.numAttempts++;
             // close the version if student has maxed out their attempts
@@ -3395,7 +3433,7 @@ class CourseController {
                 studentTopicAssessmentInfo.isClosed = true;
             }
             await studentTopicAssessmentInfo.save();
-    
+
             // use topic assessment info settings to decide what data is exposed to the frontend
             let problemScoresReturn: { [key: string]: number } | undefined;
             let bestVersionScoreReturn: number | undefined;
@@ -3502,7 +3540,7 @@ class CourseController {
                 studentGradeInstanceId,
                 studentWorkbookId,
             ]);
-    
+
             if (filterCount !== 1) {
                 throw new IllegalArgumentException('Create attachment requires exactly 1 of [studentGradeId, studentGradeInstanceId, studentWorkbookId] to be set');
             }
@@ -3515,7 +3553,7 @@ class CourseController {
                 if(!_.isNil(studentGradeId)) {
                     throw new IllegalArgumentException('studentGradeId was almost overwritten, this should not be possible due to the filter count');
                 }
-                
+
                 const studentWorkbook = await courseRepository.getWorkbookById(studentWorkbookId);
                 if (_.isNil(studentWorkbook)) {
                     throw new NotFoundError('Could not find the student workbook for create attachment');
@@ -3579,7 +3617,7 @@ class CourseController {
                 studentGradeInstanceId,
                 studentWorkbookId,
             ]);
-    
+
             if (filterCount !== 1) {
                 throw new IllegalArgumentException('List attachment requires exactly 1 of [studentGradeId, studentGradeInstanceId, studentWorkbookId] to be set');
             }
@@ -3600,7 +3638,7 @@ class CourseController {
                         }
                     }]
                 });
-                result.push(...studentGradeProblemAttachments);    
+                result.push(...studentGradeProblemAttachments);
             }
 
             if (!_.isNil(studentGradeInstanceId)) {
@@ -3636,7 +3674,7 @@ class CourseController {
                         }
                     }]
                 });
-                result.push(...studentGradeProblemAttachments);    
+                result.push(...studentGradeProblemAttachments);
             }
 
             return result;
@@ -3655,7 +3693,7 @@ class CourseController {
             },
             returning: true
         });
-        
+
         return {
             updatedCount: result[0],
             updatedRecords: result[1]
@@ -3703,9 +3741,9 @@ class CourseController {
         if (_.isNil(topic)) {
             throw new RederlyError('Could not find a topic associated with the problem this student is trying to ask about.');
         }
-        
+
         const question = topic.questions?.[0];
-        
+
         if (_.isNil(question)) {
             throw new RederlyError('Could not find the question associated with the problem/topic this student is trying to ask about.');
         }
@@ -3713,7 +3751,7 @@ class CourseController {
         const poorMansTemplate = `
 Hello Professor ${course.instructor.lastName},
 
-    Your student ${options.student.firstName} ${options.student.lastName} is asking for help with
+Your student ${options.student.firstName} ${options.student.lastName} is asking for help with
 Problem ${question.problemNumber} in the Topic ${topic.name}.
 
 Here is the message that was sent:
@@ -3741,7 +3779,7 @@ You should be able to reply to the student's email address (${options.student.pr
                 id: options.userId,
             },
         });
-       
+
         // if (_.isNil(userForVersion)) {
         //     throw new RederlyError('This grade is not associated with a user.');
         // }
@@ -3770,26 +3808,12 @@ You should be able to reply to the student's email address (${options.student.pr
                         {
                             model: StudentGrade,
                             as: 'grades',
-                            attributes: ['id', 'last_influencing_attempt_workbook_id'],
+                            attributes: ['id', 'lastInfluencingCreditedAttemptId'],
                             required: true,
                             where: {
                                 userId: options.userId,
                                 active: true,
                             },
-                            include: [
-                                {
-                                    model: StudentWorkbook,
-                                    as: 'lastInfluencingAttempt',
-                                    required: true,
-                                    attributes: ['id'],
-                                    include: [
-                                        {
-                                            model: StudentGradeInstance,
-                                            as: 'studentGradeInstance',
-                                        },
-                                    ]
-                                },
-                            ]
                         }
                     ]
                 }
@@ -3800,18 +3824,46 @@ You should be able to reply to the student's email address (${options.student.pr
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const data: any = mainData?.get({plain: true});
 
-        await mainData?.questions?.asyncForEach(async (question, i) => 
+        await mainData?.questions?.asyncForEach(async (question, i) =>
             await question.grades?.asyncForEach(async (grade, j) => {
-                if (_.isNil(grade.lastInfluencingAttempt) || _.isNil(grade.lastInfluencingAttempt.studentGradeInstance)) {
-                    logger.debug('No lastInfluencingAttempt and no studentGradeInstance exists');
+                if (_.isNil(grade.lastInfluencingCreditedAttemptId)) {
+                    logger.error('No lastInfluencingCreditedAttemptId. Cannot find the best version.');
                     return;
                 }
-                const probAttach = await grade.lastInfluencingAttempt.studentGradeInstance.getProblemAttachments();
-                grade.lastInfluencingAttempt.studentGradeInstance.problemAttachments = probAttach;
-                data.questions[i].grades[j].lastInfluencingAttempt.studentGradeInstance.problemAttachments = probAttach.map(pA => pA.get({plain: true}));
+
+                const gradeInstanceAttachments = await StudentWorkbook.findOne({
+                    where: {
+                        id: grade.lastInfluencingCreditedAttemptId,
+                        active: true,
+                    },
+                    attributes: ['id'],
+                    include: [
+                        {
+                            model: StudentGradeInstance,
+                            as: 'studentGradeInstance',
+                            attributes: ['id', 'webworkQuestionPath'],
+                            where: {
+                                active: true,
+                            },
+                            include: [
+                                {
+                                    model: ProblemAttachment,
+                                    as: 'problemAttachments',
+                                    attributes: ['id', 'cloudFilename', 'userLocalFilename'],
+                                    where: {
+                                        active: true,
+                                    }
+                                }
+                            ]
+                        },
+                    ]
+                });
+
+                data.questions[i].grades[j].webworkQuestionPath = gradeInstanceAttachments?.studentGradeInstance?.webworkQuestionPath;
+                data.questions[i].grades[j].problemAttachments = gradeInstanceAttachments?.studentGradeInstance?.problemAttachments;
             })
         );
-        
+
         const baseUrl = configurations.attachments.baseUrl;
         return {user: user, topic: data, baseUrl};
     }

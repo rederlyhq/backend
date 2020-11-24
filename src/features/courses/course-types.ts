@@ -226,6 +226,12 @@ export interface GetGradesOptions {
     };
 }
 
+export interface GetGradeForQuestionOptions {
+    questionId: number;
+    userId: number;
+    includeWorkbooks?: boolean;
+}
+
 export interface GetStatisticsOnUnitsOptions {
     where: {
         courseId?: number;
@@ -266,6 +272,7 @@ export interface GetQuestionOptions {
     topic?: CourseTopicContent;
     workbookId?: number;
     readonly?: boolean;
+    studentTopicAssessmentInfoId?: number;
 };
 
 export interface PreviewQuestionOptions {

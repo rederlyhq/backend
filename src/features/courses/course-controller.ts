@@ -16,7 +16,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -1246,10 +1246,38 @@ class CourseController {
             // when no workbook is sent, the source of truth depends on whether question belongs to an assessment
             const thisQuestionIsFromAnAssessment = await this.isQuestionAnAssessment(options.questionId);
             if (thisQuestionIsFromAnAssessment) {
-                gradeInstance = await courseRepository.getCurrentInstanceForQuestion({
-                    questionId: options.questionId,
-                    userId: options.userId
-                });
+                if (_.isNil(options.studentTopicAssessmentInfoId)) {
+                    gradeInstance = await courseRepository.getCurrentInstanceForQuestion({
+                        questionId: options.questionId,
+                        userId: options.userId
+                    }); 
+                } else {
+                    // student grade instances do not have a direct reference to userId
+                    // we have to pass through the studentGrade to get there
+                    const questionGrade = await courseQuestion.getGrades({
+                        where: {
+                            userId: options.userId,
+                            active: true,
+                        }
+                    });
+
+                    if (!_.isNil(questionGrade.first)) {
+                        const requestedGradeInstance = await StudentGradeInstance.findOne({
+                            where: {
+                                studentTopicAssessmentInfoId: options.studentTopicAssessmentInfoId,
+                                studentGradeId: questionGrade.first.id,
+                                active: true
+                            }
+                        });
+                        if (!_.isNil(requestedGradeInstance)) {
+                            gradeInstance = requestedGradeInstance;
+                        } else {
+                            throw new IllegalArgumentException('The version you requested does not correspond to the requested user.');
+                        }
+                    } else {
+                        throw new IllegalArgumentException('Requested user has not been assigned this problem.');
+                    }
+                }
 
                 if (_.isNil(gradeInstance)) throw new IllegalArgumentException('No current grade instance for this assessment question.');
                 formData = gradeInstance.currentProblemState;
@@ -1298,8 +1326,10 @@ class CourseController {
         }
 
         let showCorrectAnswers = false;
+        let answersSubmitted: number | undefined;
         if (options.role === Role.PROFESSOR && !_.isNil(workbook)) {
             showCorrectAnswers = true;
+            answersSubmitted = 1;
         }
 
         const rendererData = await rendererHelper.getProblem({
@@ -1309,6 +1339,7 @@ class CourseController {
             numIncorrect,
             formData,
             showCorrectAnswers,
+            answersSubmitted,
             ...calculatedRendererParameters
         });
         return {
@@ -2259,6 +2290,44 @@ class CourseController {
             where,
             group
         });
+    }
+
+    async getGradeForQuestion(options: GetGradeForQuestionOptions): Promise<StudentGrade | null> {
+        const {
+            questionId,
+            userId,
+            includeWorkbooks
+        } = options;
+        const include: sequelize.IncludeOptions[] = [{
+            model: StudentGradeInstance,
+            as: 'gradeInstances',
+            required: false,
+            where: {
+                active: true,
+            }
+        }];
+        if (includeWorkbooks) {
+            include.push({
+                model: StudentWorkbook,
+                as: 'workbooks',
+                required: false,
+                where: {
+                    active: true
+                }
+            });
+        }
+        try {
+            return StudentGrade.findOne({
+                where: {
+                    courseWWTopicQuestionId: questionId,
+                    userId,
+                    active: true,
+                },
+                include
+            });
+        } catch (e) {
+            throw new WrappedError(`Unable to get grade for user #${userId} and question #${questionId}`, e);
+        }
     }
 
     getStatisticsOnUnits(options: GetStatisticsOnUnitsOptions): Promise<CourseUnitContent[]> {
@@ -3413,6 +3482,20 @@ class CourseController {
                     id: topicId,
                     active: true,
                 },
+                include: [{
+                    model: TopicAssessmentInfo,
+                    as: 'topicAssessmentInfo',
+                    where: {
+                        active: true,
+                    },
+                    include: [{
+                        model: StudentTopicAssessmentInfo,
+                        as: 'studentTopicAssessmentInfo',
+                        where: {
+                            active: true,
+                        },
+                    }]
+                }]
             });
 
             if (_.isNil(topic)) {

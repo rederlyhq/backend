@@ -1,3 +1,9 @@
+// This is first a foremost a no op script
+// it can be used for initializing the database but it is not intended to be fully configured
+// Forcing these configuration options
+process.env.LOG_MISSING_CONFIGURATIONS='false';
+process.env.FAIL_ON_MISSING_CONFIGURATIONS='false';
+
 import configurations from './configurations';
 import './extensions';
 import logger from './utilities/logger';

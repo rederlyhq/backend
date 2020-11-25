@@ -75,10 +75,12 @@ const getLoggingLevel = (key: string, defaultValue: LoggingLevelType | null): Lo
     let rawValue = process.env[key];
     // Not set
     if (_.isUndefined(rawValue)) {
+        logs?.push(generateLog(key, rawValue, defaultValue));
         return defaultValue;
     }
 
-    if (_.isNull(rawValue) || rawValue === 'null') {
+    // Explicit not set
+    if (rawValue === 'null') {
         return null;
     }
 
@@ -95,6 +97,10 @@ const getLoggingLevel = (key: string, defaultValue: LoggingLevelType | null): Lo
 const loggingLevel = getLoggingLevel('LOGGING_LEVEL', LOGGING_LEVEL.INFO);
 const loggingLevelForFile = getLoggingLevel('LOGGING_LEVEL_FOR_FILE', loggingLevel);
 const loggingLevelForConsole = getLoggingLevel('LOGGING_LEVEL_FOR_CONSOLE', loggingLevel);
+
+const isProduction = (val: string | undefined): boolean => val === 'production';
+// needs to be read ahead of of time to be used in configurations
+const nodeEnv = readStringValue('NODE_ENV', 'development');
 
 const configurations = {
     server: {
@@ -156,21 +162,42 @@ const configurations = {
         presignedUrlBaseUrl: readStringValue('ATTACHMENTS_PRESIGNED_URL_BASE_URL', ''),
         presignedUrlBasePath: readStringValue('ATTACHMENTS_PRESIGNED_URL_BASE_PATH', ''),
         baseUrl: readStringValue('ATTACHMENTS_BASE_URL', ''),
-    }
+    },
+    app: {
+        nodeEnv: nodeEnv,
+        get isProduction(): boolean { return isProduction(configurations.app.nodeEnv); },
+        logMissingConfigurations: readBooleanValue('LOG_MISSING_CONFIGURATIONS', true),
+        failOnMissingConfigurations: readBooleanValue('FAIL_ON_MISSING_CONFIGURATIONS', isProduction(nodeEnv)),
+    },
+    loadPromise: new Promise((resolve, reject) => {
+        // Avoid cyclic dependency by deferring the logging until after all the imports are done
+        setTimeout(() => {
+            // Can't use require statement in callback
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
+            const logger = require('./utilities/logger').default;
+            // THIS IS FOR DEBUGGING, DO NOT COMMIT UNCOMMENTED
+            // logger.info(JSON.stringify(configurations, null, 2));
+
+            if (_.isNil(logs)) {
+                logger.error('configuration logs nil before reading');
+            } else {
+                if (configurations.app.logMissingConfigurations) {
+                    logs.forEach((log: string) => {
+                        logger.warn(log);
+                    });        
+                }
+            }
+            
+            // Log count defaults to 1 so it fails on null which has already been logged
+            if (configurations.app.failOnMissingConfigurations && (logs?.length ?? 1 > 0)) {
+                reject(logs);
+            } else {
+                resolve();
+            }
+            // After we log the warnings we can drop the logs
+            logs = null;
+        });
+    })
 };
 
 export default configurations;
-
-// Avoid cyclic dependency by deferring the logging until after all the imports are done
-setTimeout(() => {
-    // Can't use require statement in callback
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const logger = require('./utilities/logger').default;
-    // THIS IS FOR DEBUGGING, DO NOT COMMIT UNCOMMENTED
-    logger.info(JSON.stringify(configurations, null, 2));
-    logs?.forEach((log: string) => {
-        logger.warn(log);
-    });
-    // After we log the warnings we can drop the logs
-    logs = null;
-});

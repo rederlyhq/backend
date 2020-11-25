@@ -1,10 +1,18 @@
 require('dotenv').config();
 import * as _ from 'lodash';
+import RederlyError from './exceptions/rederly-error';
 import { LoggingLevelType, LOGGING_LEVEL } from './utilities/logger-logging-levels';
 let logs: Array<string> | null = [];
 
 const fromBooleanField = (value: string | undefined | null): boolean | null => {
-    return value ? value.toLowerCase() === 'true' : null;
+    switch (value?.toLowerCase()) {
+        case 'true':
+            return true;
+        case 'false':
+            return false;
+        default:
+            return null;
+    }
 };
 
 const fromIntValue = (value: string | undefined | null): number | null => {
@@ -19,7 +27,7 @@ const fromIntValue = (value: string | undefined | null): number | null => {
     return result;
 };
 
-const generateLog = (key: string, value: string | undefined, defaultValue: unknown): string => `Configuration not set${key ? ` for ${key}` : ''} using default value [${defaultValue}]`;
+const generateLog = (key: string, value: string | undefined, defaultValue: unknown): string => `Configuration for [${key}] not recognized with value [${value}] using default value [${defaultValue}]`;
 
 function readStringValue(key: string, defaultValue: string): string;
 function readStringValue(key: string, defaultValue?: string | null | undefined): string | null;
@@ -180,21 +188,19 @@ const configurations = {
 
             if (_.isNil(logs)) {
                 logger.error('configuration logs nil before reading');
-            } else {
-                if (configurations.app.logMissingConfigurations) {
-                    logs.forEach((log: string) => {
-                        logger.warn(log);
-                    });        
-                }
+            } else if (configurations.app.logMissingConfigurations) {
+                logs.forEach((log: string) => {
+                    logger.warn(log);
+                });        
             }
             
             // Log count defaults to 1 so it fails on null which has already been logged
             if (configurations.app.failOnMissingConfigurations && (logs?.length ?? 1 > 0)) {
-                reject(logs);
+                return reject(new RederlyError(`Missing configurations:\n${logs?.join('\n') ?? 'Logs are null'}`));
             } else {
                 resolve();
             }
-            // After we log the warnings we can drop the logs
+            // After we log the warnings we can drop the logs, figured it would cause cleanup
             logs = null;
         });
     })

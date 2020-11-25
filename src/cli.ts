@@ -62,6 +62,9 @@ const commandLookup: {[key: string]: () => unknown} = {
 
 (async (): Promise<void> => {
     try {
+        // This cannot be below sync otherwise an unhandled rejection is logged and the error is empty
+        await configurations.loadPromise;
+
         await sync();
 
         logger.info('Running CLI');

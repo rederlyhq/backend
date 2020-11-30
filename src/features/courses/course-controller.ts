@@ -3758,14 +3758,14 @@ Here is the message that was sent:
 
 ${options.content}
 
-You should be able to reply to the student's email address (${options.student.preferredEmail}) by replying to this message.
+You should be able to reply to the student's email address (${options.student.email}) by replying to this message.
 `;
 
         return emailHelper.sendEmail({
             content: poorMansTemplate,
-            email: course.instructor.preferredEmail,
+            email: course.instructor.email,
             subject: `${options.student.firstName} - Topic ${topic.id} - Question ${options.question.id}`,
-            replyTo: options.student.preferredEmail,
+            replyTo: options.student.email,
         });
     }
 

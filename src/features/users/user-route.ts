@@ -36,7 +36,8 @@ router.post('/login',
             const cookieOptions = {
                 expires: newSession.expiresAt
             };
-            res.cookie('sessionToken', newSession.uuid, cookieOptions);
+            const token = `${newSession.uuid}_${newSession.expiresAt.getTime()}`;
+            res.cookie('sessionToken', token, cookieOptions);
             next(httpResponse.Ok(null, {
                 roleId: role.id,
                 firstName: user.firstName,

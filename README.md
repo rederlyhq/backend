@@ -24,6 +24,12 @@
 | --- | --- | --- |
 | NODE_ENV | This is a standard environment variable which will make libraries behave differently (i.e. express). If set to `production` our application will be less verbose about error responses |  |
 
+#### Configuration handling
+| Environment variable | Description | Default value |
+| --- | --- | --- |
+| LOG_MISSING_CONFIGURATIONS | Whether or not to log missing configurations | true |
+| FAIL_ON_MISSING_CONFIGURATIONS | Whether or not to reject the loading promise on missing configurations | true in prod, false in dev |
+
 #### Server
 | Environment variable | Description | Default value |
 | --- | --- | --- |

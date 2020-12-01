@@ -15,6 +15,13 @@ import { RederlyExpressRequest } from '../../extensions/rederly-express-request'
 import logger from '../../utilities/logger';
 import { Constants } from '../../constants';
 
+router.all('/check-in',
+    // No validation
+    authenticationMiddleware,
+    (_req: RederlyExpressRequest<never, unknown, never, never>, _res: Response, next: NextFunction) => {
+        next(httpResponse.Ok());
+    });
+
 router.post('/login',
     validate(loginValidation),
     passport.authenticate('local'),
@@ -29,7 +36,8 @@ router.post('/login',
             const cookieOptions = {
                 expires: newSession.expiresAt
             };
-            res.cookie('sessionToken', newSession.uuid, cookieOptions);
+            const token = `${newSession.uuid}_${newSession.expiresAt.getTime()}`;
+            res.cookie('sessionToken', token, cookieOptions);
             next(httpResponse.Ok(null, {
                 roleId: role.id,
                 firstName: user.firstName,

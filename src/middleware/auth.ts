@@ -6,14 +6,22 @@ import passport = require('passport');
 import Session from '../database/models/session';
 import { Request, Response, NextFunction } from 'express';
 import configurations from '../configurations';
+import * as _ from 'lodash';
+import RederlyError from '../exceptions/rederly-error';
+
 const LocalStrategy = require('passport-local').Strategy;
 
 const {
     sessionLife
 } = configurations.auth;
 
-export const validateSession = async (uuid: string, res: Response): Promise<Session> => {
+export const validateSession = async (token: string, res: Response): Promise<Session> => {
     try {
+        const splitToken = token.split('_');
+        if(_.isNil(splitToken.first)) {
+            throw new RederlyError('TSNH: parsing token failed. string.split returned an empty array');
+        }
+        const uuid = splitToken.first;
         const session = await userController.getSession(uuid);
         if (!session) {
             const response = 'Invalid session';
@@ -38,7 +46,8 @@ export const validateSession = async (uuid: string, res: Response): Promise<Sess
                     const cookieOptions = {
                         expires: session.expiresAt
                     };
-                    res.cookie('sessionToken', uuid, cookieOptions);
+                    const token = `${session.uuid}_${session.expiresAt.getTime()}`;
+                    res.cookie('sessionToken', token, cookieOptions);
                     logger.debug('validateSession: Extended session token');
                 } else {
                     logger.debug('validateSession: session token did not need refresh');

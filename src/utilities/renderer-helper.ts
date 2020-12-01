@@ -199,6 +199,12 @@ class RendererHelper {
 
     getOutputFormatForRole = (role: Role): OutputFormat => this.getOutputFormatForPermission(this.getPermissionForRole(role));
 
+    // (nearly) identical to that used in ProblemIframe
+    // run StudentWorkbook.submitted through _.omitBy(isPrevious) to compare to StudentGrade.currentProblemState
+    isPrevious = (_value: unknown, key: string): boolean => {
+        return /^previous_/.test(key);
+    };
+
     cleanRendererResponseForTheDatabase = (resp: RendererResponse): Partial<RendererResponse> => {
         // I don't know if this method could be used if we needed nested keys
         // I'm back and forth between using _.pick and joi validation

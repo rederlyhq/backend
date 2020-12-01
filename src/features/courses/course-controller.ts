@@ -3357,14 +3357,45 @@ class CourseController {
                 if (_.isNil(result.instance.id)) {
                     throw new Error('the grade instance ID cannot be empty');
                 }
-                // create workbook for attempt
+
+                const previousWorkbook = await StudentWorkbook.findOne({
+                    where: {
+                        courseWWTopicQuestionId: result.grade.courseWWTopicQuestionId
+                    },
+                    order: [
+                        ['createdAt', 'desc']
+                    ]
+                });
+
+                const currentAttachments = await this.listAttachments({
+                    studentGradeInstanceId: result.instance.id
+                });
+                const currentAttachmentIds = _.map(currentAttachments, 'id');
+
+                const cleanSubmitted = rendererHelper.cleanRendererResponseForTheDatabase(result.questionResponse);
+
+                if (!_.isNil(previousWorkbook)){
+                    // do not compare the "previous_*" fields
+                    const newSubmitted = _.omitBy(cleanSubmitted, rendererHelper.isPrevious);
+                    const oldSubmitted = _.omitBy(previousWorkbook.submitted, rendererHelper.isPrevious);
+
+                    const previousAttachments = await this.listAttachments({
+                        studentWorkbookId: previousWorkbook.id
+                    });
+                    const previousAttachmentIds = _.map(previousAttachments, 'id');
+
+                    if ( _.isEqual(newSubmitted, oldSubmitted) &&  _.isEqual(currentAttachmentIds, previousAttachmentIds)) {
+                        return; // skip out on creating a workbook et al
+                    }
+                }
+
                 const workbook = await StudentWorkbook.create({
                     studentGradeId: result.grade.id,
                     userId: result.grade.userId,
                     courseWWTopicQuestionId: result.grade.courseWWTopicQuestionId,
                     studentGradeInstanceId: result.instance.id, // shouldn't this workbook be tied to a grade instance?
                     randomSeed: result.instance.randomSeed,
-                    submitted: rendererHelper.cleanRendererResponseForTheDatabase(result.questionResponse),
+                    submitted: cleanSubmitted,
                     result: result.questionResponse.problem_result.score,
                     time: new Date(),
                     wasLate: false,
@@ -3374,11 +3405,7 @@ class CourseController {
                     wasAutoSubmitted: wasAutoSubmitted,
                 });
 
-                const attachments = await this.listAttachments({
-                    studentGradeInstanceId: result.instance.id
-                });
-
-                await attachments.asyncForEach(async (attachment: ProblemAttachment) => {
+                await currentAttachments.asyncForEach(async (attachment: ProblemAttachment) => {
                     await courseRepository.createStudentWorkbookProblemAttachment({
                         studentWorkbookId: workbook.id,
                         problemAttachmentId: attachment.id

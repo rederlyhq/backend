@@ -15,6 +15,13 @@ import { RederlyExpressRequest } from '../../extensions/rederly-express-request'
 import logger from '../../utilities/logger';
 import { Constants } from '../../constants';
 
+router.all('/check-in',
+    // No validation
+    authenticationMiddleware,
+    (_req: RederlyExpressRequest<never, unknown, never, never>, _res: Response, next: NextFunction) => {
+        next(httpResponse.Ok());
+    });
+
 router.post('/login',
     validate(loginValidation),
     passport.authenticate('local'),

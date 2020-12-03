@@ -17,6 +17,7 @@ import AlreadyExistsError from './exceptions/already-exists-error';
 import NotFoundError from './exceptions/not-found-error';
 import IllegalArgumentException from './exceptions/illegal-argument-exception';
 import ForbiddenError from './exceptions/forbidden-error';
+import * as _ from 'lodash';
 
 interface ErrorResponse {
     statusCode: number;
@@ -34,15 +35,35 @@ const {
 
 const app = express();
 
-if (configurations.server.logAccess) {
-    app.use(morgan('dev', {
-        stream: {
-            write: (message): void => {
-                logger.info(message);
+app.use(morgan((tokens, req, res) => {
+    const responseTime = parseInt(tokens['response-time'](req, res) ?? '', 10);
+    const shouldWarn = !_.isNumber(responseTime) || responseTime > configurations.server.logAccessSlowRequestThreshold;
+    const message = [
+        tokens.method(req, res),
+        tokens.url(req, res),
+        tokens.status(req, res),
+        tokens.res(req, res, 'content-length'), '-',
+        responseTime, 'ms'
+    ].join(' ');
+
+    return JSON.stringify({
+        shouldWarn: shouldWarn,
+        responseTime: responseTime,
+        message: message
+    });
+}, {
+    stream: {
+        write: (message): void => {
+            const obj = JSON.parse(message);
+            const output = obj.message;
+            if (obj.shouldWarn) {
+                logger.warn(`Slow request: Access log: ${output}`);
+            } else if (configurations.server.logAccess) {
+                logger.info(`Access log: ${output}`);
             }
         }
-    }));    
-}
+    }
+}));
 
 const generatePathRegex = (pathRegex: string): RegExp => new RegExp(`^${basePath}${pathRegex}$`);
 const baseUrlRegex = generatePathRegex('.*');

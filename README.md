@@ -37,6 +37,8 @@
 | SERVER_BASE_PATH | The prefix for all path (i.e. `/rederly/api` | /backend-api |
 | SERVER_LOG_INVALIDLY_PREFIXED_REQUESTS | Should there be an extra warning log when bad requests come in | true |
 | SERVER_BLOCK_INVALIDLY_PREFIXED_REQUESTS | Should the socket be closed and end prematurely | true |
+| SERVER_LOG_ACCESS | Whether or not to log healthy requests (faster than the threshold) | true |
+| SERVER_LOG_ACCESS_SLOW_REQUEST_THRESHOLD | At what point to log an request with a warning that it is slow | 30000 |
 
 ##### Limiter
 | Environment variable | Description | Default value |

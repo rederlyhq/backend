@@ -124,3 +124,4 @@
 | ATTACHMENTS_PRESIGNED_URL_BASE_URL | The base url to fetch the presigned url from for uploads (i.e. `http://example.com`/base/path) | '' |
 | ATTACHMENTS_PRESIGNED_URL_BASE_PATH | The base path to fetch the presigned url for uploads (i.e. http://example.com`/base/path`) | '' |
 | ATTACHMENTS_BASE_URL | The base path to be combined with the cloud filename for attachments | '' |
+| ATTACHMENTS_PRESIGNED_URL_TIMEOUT | The amount of time it is allowed to take to get a presigned url | 60000 |

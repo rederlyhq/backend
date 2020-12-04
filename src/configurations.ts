@@ -173,6 +173,7 @@ const configurations = {
         presignedUrlBaseUrl: readStringValue('ATTACHMENTS_PRESIGNED_URL_BASE_URL', ''),
         presignedUrlBasePath: readStringValue('ATTACHMENTS_PRESIGNED_URL_BASE_PATH', ''),
         baseUrl: readStringValue('ATTACHMENTS_BASE_URL', ''),
+        presignedUrlTimeout: readIntValue('ATTACHMENTS_PRESIGNED_URL_TIMEOUT', 60000),
     },
     app: {
         nodeEnv: nodeEnv,

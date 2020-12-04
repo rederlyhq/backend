@@ -6,6 +6,7 @@ interface AttachmentHelperOptions {
     presignedUrlBaseUrl: string;
     presignedUrlBasePath: string;
     baseUrl: string;
+    presignedUrlTimeout: number;
 };
 
 interface RequestPresignedURLResponse {
@@ -23,6 +24,7 @@ class AttachmentHelper {
     private presignedUrlBaseUrl: string;
     private presignedUrlBasePath: string;
     private baseUrl: string;
+    private presignedUrlTimeout: number;
 
     private presignedAxios: AxiosInstance;
     // private attachmentAxios: AxiosInstance;
@@ -30,16 +32,19 @@ class AttachmentHelper {
     constructor({
         presignedUrlBaseUrl,
         presignedUrlBasePath,
-        baseUrl
+        baseUrl,
+        presignedUrlTimeout
     }: AttachmentHelperOptions) {
         this.presignedUrlBaseUrl = presignedUrlBaseUrl;
         this.presignedUrlBasePath = presignedUrlBasePath;
         // our application shouldn't be doing any fetching of attachments so this shouldn't be needed
         // if we were to use it we should have another axios instance
         this.baseUrl = baseUrl;
+        this.presignedUrlTimeout = presignedUrlTimeout;
 
         this.presignedAxios = Axios.create({
             baseURL: this.presignedUrlBaseUrl,
+            timeout: this.presignedUrlTimeout
         });
     }
 

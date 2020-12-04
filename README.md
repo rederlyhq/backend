@@ -39,6 +39,7 @@
 | SERVER_BLOCK_INVALIDLY_PREFIXED_REQUESTS | Should the socket be closed and end prematurely | true |
 | SERVER_LOG_ACCESS | Whether or not to log healthy requests (faster than the threshold) | true |
 | SERVER_LOG_ACCESS_SLOW_REQUEST_THRESHOLD | At what point to log an request with a warning that it is slow | 30000 |
+| SERVER_REQUEST_TIMEOUT | The amount of time before the server gives up on responding in millis | 150000 |
 
 ##### Limiter
 | Environment variable | Description | Default value |
@@ -77,6 +78,7 @@
 | Environment variable | Description | Default value |
 | --- | --- | --- |
 | RENDERER_URL | The base url for the renderer | http://localhost:3000 |
+| RENDERER_REQUEST_TIMEOUT | The number of millis before requests to the renderer timeout | 75000 |
 
 #### Jira
 | Environment variable | Description | Default value |
@@ -115,6 +117,8 @@
 | Environment variable | Description | Default value |
 | --- | --- | --- |
 | SCHEDULER_BASE_PATH | The url to the scheduler | http://localhost:3003 |
+| SCHEDULER_REQUEST_TIMEOUT | The amount of time it is allowed to take to make the request to the scheduler | 60000 |
+| SCHEDULER_RESPONSE_TIMEOUT | The default amount of time it is allowed for the scheduler to respond back the backend | 180000 |
 
 ##### Attachments
 | Environment variable | Description | Default value |
@@ -122,3 +126,4 @@
 | ATTACHMENTS_PRESIGNED_URL_BASE_URL | The base url to fetch the presigned url from for uploads (i.e. `http://example.com`/base/path) | '' |
 | ATTACHMENTS_PRESIGNED_URL_BASE_PATH | The base path to fetch the presigned url for uploads (i.e. http://example.com`/base/path`) | '' |
 | ATTACHMENTS_BASE_URL | The base path to be combined with the cloud filename for attachments | '' |
+| ATTACHMENTS_PRESIGNED_URL_TIMEOUT | The amount of time it is allowed to take to get a presigned url | 60000 |

@@ -18,6 +18,7 @@ import NotFoundError from './exceptions/not-found-error';
 import IllegalArgumentException from './exceptions/illegal-argument-exception';
 import ForbiddenError from './exceptions/forbidden-error';
 import * as _ from 'lodash';
+import * as nodeUrl from 'url';
 
 interface ErrorResponse {
     statusCode: number;
@@ -117,6 +118,25 @@ const limiter = rateLimit({
 });
 
 app.use(limiter);
+
+const apiTimeout = configurations.server.requestTimeout;
+app.use((req, res, next) => {
+    const timeoutHandler = (): void => {
+        const url = nodeUrl.format({
+            protocol: req.protocol,
+            host: req.get('host'),
+            pathname: req.originalUrl
+        });
+        logger.error(`Request timed out ${url}`);
+        next(Boom.clientTimeout());
+    };
+
+    // Set the timeout for all HTTP requests
+    req.setTimeout(apiTimeout, timeoutHandler);
+    // Set the server response timeout for all HTTP requests
+    res.setTimeout(apiTimeout, timeoutHandler);
+    next();
+});
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));

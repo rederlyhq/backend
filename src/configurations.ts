@@ -118,6 +118,7 @@ const configurations = {
             windowLength: readIntValue('SERVER_LIMITER_WINDOW_LENGTH', 60000),
             maxRequests: readIntValue('SERVER_LIMITER_MAX_REQUESTS', 100),
         },
+        requestTimeout: readIntValue('SERVER_REQUEST_TIMEOUT', 150000),
         logAccess: readBooleanValue('SERVER_LOG_ACCESS', true),
         logInvalidlyPrefixedRequests: readBooleanValue('SERVER_LOG_INVALIDLY_PREFIXED_REQUESTS', true),
         blockInvalidlyPrefixedRequests: readBooleanValue('SERVER_BLOCK_INVALIDLY_PREFIXED_REQUESTS', true),
@@ -148,6 +149,7 @@ const configurations = {
     },
     renderer: {
         url: readStringValue('RENDERER_URL', 'http://localhost:3000'),
+        requestTimeout: readIntValue('RENDERER_REQUEST_TIMEOUT', 75000),
     },
     jira: {
         email: readStringValue('JIRA_EMAIL', ''),
@@ -166,11 +168,14 @@ const configurations = {
     },
     scheduler: {
         basePath: readStringValue('SCHEDULER_BASE_PATH','http://localhost:3003'),
+        schedulerRequestTimeout: readIntValue('SCHEDULER_REQUEST_TIMEOUT', 60000),
+        schedulerResponseTimeout: readIntValue('SCHEDULER_RESPONSE_TIMEOUT', 180000),
     },
     attachments: {
         presignedUrlBaseUrl: readStringValue('ATTACHMENTS_PRESIGNED_URL_BASE_URL', ''),
         presignedUrlBasePath: readStringValue('ATTACHMENTS_PRESIGNED_URL_BASE_PATH', ''),
         baseUrl: readStringValue('ATTACHMENTS_BASE_URL', ''),
+        presignedUrlTimeout: readIntValue('ATTACHMENTS_PRESIGNED_URL_TIMEOUT', 60000),
     },
     app: {
         nodeEnv: nodeEnv,

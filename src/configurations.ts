@@ -121,6 +121,7 @@ const configurations = {
         logAccess: readBooleanValue('SERVER_LOG_ACCESS', true),
         logInvalidlyPrefixedRequests: readBooleanValue('SERVER_LOG_INVALIDLY_PREFIXED_REQUESTS', true),
         blockInvalidlyPrefixedRequests: readBooleanValue('SERVER_BLOCK_INVALIDLY_PREFIXED_REQUESTS', true),
+        logAccessSlowRequestThreshold: readIntValue('SERVER_LOG_ACCESS_SLOW_REQUEST_THRESHOLD', 30000),
     },
     db: {
         host: readStringValue('DB_HOST', 'localhost'),

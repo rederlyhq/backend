@@ -118,6 +118,7 @@ const configurations = {
             windowLength: readIntValue('SERVER_LIMITER_WINDOW_LENGTH', 60000),
             maxRequests: readIntValue('SERVER_LIMITER_MAX_REQUESTS', 100),
         },
+        requestTimeout: readIntValue('SERVER_REQUEST_TIMEOUT', 150000),
         logAccess: readBooleanValue('SERVER_LOG_ACCESS', true),
         logInvalidlyPrefixedRequests: readBooleanValue('SERVER_LOG_INVALIDLY_PREFIXED_REQUESTS', true),
         blockInvalidlyPrefixedRequests: readBooleanValue('SERVER_BLOCK_INVALIDLY_PREFIXED_REQUESTS', true),

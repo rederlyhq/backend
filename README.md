@@ -39,6 +39,7 @@
 | SERVER_BLOCK_INVALIDLY_PREFIXED_REQUESTS | Should the socket be closed and end prematurely | true |
 | SERVER_LOG_ACCESS | Whether or not to log healthy requests (faster than the threshold) | true |
 | SERVER_LOG_ACCESS_SLOW_REQUEST_THRESHOLD | At what point to log an request with a warning that it is slow | 30000 |
+| SERVER_REQUEST_TIMEOUT | The amount of time before the server gives up on responding in millis | 150000 |
 
 ##### Limiter
 | Environment variable | Description | Default value |

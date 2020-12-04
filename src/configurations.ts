@@ -149,6 +149,7 @@ const configurations = {
     },
     renderer: {
         url: readStringValue('RENDERER_URL', 'http://localhost:3000'),
+        requestTimeout: readIntValue('RENDERER_REQUEST_TIMEOUT', 75000),
     },
     jira: {
         email: readStringValue('JIRA_EMAIL', ''),

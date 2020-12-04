@@ -15,6 +15,7 @@ import urljoin = require('url-join');
 const rendererAxios = axios.create({
     baseURL: configurations.renderer.url,
     responseType: 'json',
+    timeout: configurations.renderer.requestTimeout
 });
 
 // TODO switch over to new endpoint

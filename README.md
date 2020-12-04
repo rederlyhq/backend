@@ -78,6 +78,7 @@
 | Environment variable | Description | Default value |
 | --- | --- | --- |
 | RENDERER_URL | The base url for the renderer | http://localhost:3000 |
+| RENDERER_REQUEST_TIMEOUT | The number of millis before requests to the renderer timeout | 75000 |
 
 #### Jira
 | Environment variable | Description | Default value |

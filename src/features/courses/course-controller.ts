@@ -1250,7 +1250,7 @@ class CourseController {
                     gradeInstance = await courseRepository.getCurrentInstanceForQuestion({
                         questionId: options.questionId,
                         userId: options.userId
-                    }); 
+                    });
                 } else {
                     // student grade instances do not have a direct reference to userId
                     // we have to pass through the studentGrade to get there
@@ -2217,8 +2217,9 @@ class CourseController {
         if (_.isNil(questionId) === false) {
             attributes = [
                 'id',
+                'numAttempts',
                 'effectiveScore',
-                'numAttempts'
+                ['student_grade_partial_best_score', 'systemScore'],
             ];
             // This should already be the case but let's guarentee it
             group = undefined;
@@ -2250,17 +2251,17 @@ class CourseController {
 
         // Filter all grades to only be included if the student has not been dropped.
         const studentGradeInclude = [{
-                model: StudentEnrollment,
-                as: 'courseEnrollments',
-                required: true,
-                attributes: [],
-                where: {
-                    courseId: {
-                        [Sequelize.Op.eq]: sequelize.literal(`"user->courseEnrollments".${Course.rawAttributes.id.field}`)
-                    },
-                    dropDate: null
-                }
-            }];
+            model: StudentEnrollment,
+            as: 'courseEnrollments',
+            required: true,
+            attributes: [],
+            where: {
+                courseId: {
+                    [Sequelize.Op.eq]: sequelize.literal(`"user->courseEnrollments".${Course.rawAttributes.id.field}`)
+                },
+                dropDate: null
+            }
+        }];
 
         return StudentGrade.findAll({
             // This query must be run raw, otherwise the deduplication logic in Sequelize will force-add the primary key

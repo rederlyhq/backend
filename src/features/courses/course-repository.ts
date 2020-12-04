@@ -285,7 +285,7 @@ class CourseRepository {
 
     async updateCourseTopic(options: UpdateTopicOptions): Promise<UpdateResult<CourseTopicContent>> {
         const {
-            checkDates = true
+            checkDates = false
         } = options;
         if (checkDates) {
             // The use of DeepPartial on the type causes toMoment to be nullable.
@@ -343,7 +343,7 @@ class CourseRepository {
 
     async extendTopicByUser(options: ExtendTopicForUserOptions): Promise<UpsertResult<StudentTopicOverride>> {
         const {
-            checkDates = true
+            checkDates = false
         } = options;
         if (checkDates) {
             const dueDates = _.compact([options.updates.extensions?.endDate?.toMoment(), options.updates.extensions?.deadDate?.toMoment()]);

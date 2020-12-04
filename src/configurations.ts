@@ -168,6 +168,8 @@ const configurations = {
     },
     scheduler: {
         basePath: readStringValue('SCHEDULER_BASE_PATH','http://localhost:3003'),
+        schedulerRequestTimeout: readIntValue('SCHEDULER_REQUEST_TIMEOUT', 60000),
+        schedulerResponseTimeout: readIntValue('SCHEDULER_RESPONSE_TIMEOUT', 180000),
     },
     attachments: {
         presignedUrlBaseUrl: readStringValue('ATTACHMENTS_PRESIGNED_URL_BASE_URL', ''),

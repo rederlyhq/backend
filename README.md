@@ -117,6 +117,8 @@
 | Environment variable | Description | Default value |
 | --- | --- | --- |
 | SCHEDULER_BASE_PATH | The url to the scheduler | http://localhost:3003 |
+| SCHEDULER_REQUEST_TIMEOUT | The amount of time it is allowed to take to make the request to the scheduler | 60000 |
+| SCHEDULER_RESPONSE_TIMEOUT | The default amount of time it is allowed for the scheduler to respond back the backend | 180000 |
 
 ##### Attachments
 | Environment variable | Description | Default value |

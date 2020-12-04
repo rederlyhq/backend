@@ -1,5 +1,6 @@
 import Axios, { AxiosInstance, AxiosResponse } from 'axios';
 import configurations from '../configurations';
+import WrappedError from '../exceptions/wrapped-error';
 import logger from './logger';
 
 interface AttachmentHelperOptions {
@@ -48,8 +49,13 @@ class AttachmentHelper {
         });
     }
 
-    private requestNewPresignedURL = (): Promise<AxiosResponse<RequestPresignedURLResponse>> => {
-        return this.presignedAxios.get(this.presignedUrlBasePath);
+    private requestNewPresignedURL = async (): Promise<AxiosResponse<RequestPresignedURLResponse>> => {
+        try {
+            return await this.presignedAxios.get(this.presignedUrlBasePath);
+        } catch (e) {
+            // The stack from axios here is not very helpful
+            throw new WrappedError('Could not get presigned url', e);
+        }
     };
 
     getNewPresignedURL = async (): Promise<GetPresignedURLResponse> => {

@@ -16,7 +16,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -311,11 +311,13 @@ class CourseController {
                 }
                 const curriculum = await curriculumRepository.getCurriculumById(options.object.curriculumId);
                 const createdCourse = await courseRepository.createCourse(options.object);
+                logger.debug('Created a course from a curriculum.');
                 await curriculum.units?.asyncForEach(async (curriculumUnit: CurriculumUnitContent) => {
                     if (curriculumUnit.active === false) {
-                        logger.warn(`Inactive curriculum unit was fetched in query for create course ID#${curriculumUnit.id}`);
+                        logger.debug(`Inactive curriculum unit was fetched in query for create course ID#${curriculumUnit.id}`);
                         return;
                     }
+
                     const createdCourseUnit = await courseRepository.createUnit({
                         // active: curriculumUnit.active,
                         contentOrder: curriculumUnit.contentOrder,
@@ -323,11 +325,13 @@ class CourseController {
                         curriculumUnitId: curriculumUnit.id,
                         name: curriculumUnit.name,
                     });
+
                     await curriculumUnit.topics?.asyncForEach(async (curriculumTopic: CurriculumTopicContent) => {
                         if (curriculumTopic.active === false) {
-                            logger.warn(`Inactive curriculum topic was fetched in query for create course ID#${curriculumTopic.id}`);
+                            logger.debug(`Inactive curriculum topic was fetched in query for create course ID#${curriculumTopic.id}`);
                             return;
                         }
+
                         const createdCourseTopic: CourseTopicContent = await courseRepository.createCourseTopic({
                             // active: curriculumTopic.active,
                             curriculumTopicContentId: curriculumTopic.id,
@@ -341,12 +345,24 @@ class CourseController {
                             deadDate: createdCourse.end,
                             partialExtend: false
                         });
+
+                        const topicAssessmentInfo = await curriculumTopic.getCurriculumTopicAssessmentInfo();
+
+                        if (!_.isNil(topicAssessmentInfo)) {
+                            await TopicAssessmentInfo.create({
+                                ..._.omit(topicAssessmentInfo.get({plain: true}), ['id']),
+                                courseTopicContentId: createdCourseTopic.id,
+                                curriculumTopicAssessmentInfoId: curriculumTopic.id,
+                            });
+                        }
+
                         await curriculumTopic.questions?.asyncForEach(async (curriculumQuestion: CurriculumWWTopicQuestion) => {
                             if (curriculumQuestion.active === false) {
-                                logger.warn(`Inactive curriculum question was fetched in query for create course ID#${curriculumQuestion.id}`);
+                                logger.debug(`Inactive curriculum question was fetched in query for create course ID#${curriculumQuestion.id}`);
                                 return;
                             }
-                            await courseRepository.createQuestion({
+
+                            const createdCourseQuestion = await courseRepository.createQuestion({
                                 // active: curriculumQuestion.active,
                                 courseTopicContentId: createdCourseTopic.id,
                                 problemNumber: curriculumQuestion.problemNumber,
@@ -357,6 +373,19 @@ class CourseController {
                                 optional: curriculumQuestion.optional,
                                 curriculumQuestionId: curriculumQuestion.id
                             });
+
+                            const questionAssessmentInfo = await curriculumQuestion.getCurriculumQuestionAssessmentInfo();
+
+                            if (!_.isNil(questionAssessmentInfo)) {
+                                const createFromCurriculum = {
+                                    ..._.omit(questionAssessmentInfo.get({plain: true}), ['id']),
+                                    courseWWTopicQuestionId: createdCourseQuestion.id,
+                                    curriculumQuestionAssessmentInfoId: curriculumQuestion.id,
+                                };
+
+                                await CourseQuestionAssessmentInfo.create(createFromCurriculum);
+                            }
+
                         });
                     });
                 });
@@ -1217,10 +1246,38 @@ class CourseController {
             // when no workbook is sent, the source of truth depends on whether question belongs to an assessment
             const thisQuestionIsFromAnAssessment = await this.isQuestionAnAssessment(options.questionId);
             if (thisQuestionIsFromAnAssessment) {
-                gradeInstance = await courseRepository.getCurrentInstanceForQuestion({
-                    questionId: options.questionId,
-                    userId: options.userId
-                });
+                if (_.isNil(options.studentTopicAssessmentInfoId)) {
+                    gradeInstance = await courseRepository.getCurrentInstanceForQuestion({
+                        questionId: options.questionId,
+                        userId: options.userId
+                    }); 
+                } else {
+                    // student grade instances do not have a direct reference to userId
+                    // we have to pass through the studentGrade to get there
+                    const questionGrade = await courseQuestion.getGrades({
+                        where: {
+                            userId: options.userId,
+                            active: true,
+                        }
+                    });
+
+                    if (!_.isNil(questionGrade.first)) {
+                        const requestedGradeInstance = await StudentGradeInstance.findOne({
+                            where: {
+                                studentTopicAssessmentInfoId: options.studentTopicAssessmentInfoId,
+                                studentGradeId: questionGrade.first.id,
+                                active: true
+                            }
+                        });
+                        if (!_.isNil(requestedGradeInstance)) {
+                            gradeInstance = requestedGradeInstance;
+                        } else {
+                            throw new IllegalArgumentException('The version you requested does not correspond to the requested user.');
+                        }
+                    } else {
+                        throw new IllegalArgumentException('Requested user has not been assigned this problem.');
+                    }
+                }
 
                 if (_.isNil(gradeInstance)) throw new IllegalArgumentException('No current grade instance for this assessment question.');
                 formData = gradeInstance.currentProblemState;
@@ -1269,8 +1326,10 @@ class CourseController {
         }
 
         let showCorrectAnswers = false;
+        let answersSubmitted: number | undefined;
         if (options.role === Role.PROFESSOR && !_.isNil(workbook)) {
             showCorrectAnswers = true;
+            answersSubmitted = 1;
         }
 
         const rendererData = await rendererHelper.getProblem({
@@ -1280,6 +1339,7 @@ class CourseController {
             numIncorrect,
             formData,
             showCorrectAnswers,
+            answersSubmitted,
             ...calculatedRendererParameters
         });
         return {
@@ -2230,6 +2290,44 @@ class CourseController {
             where,
             group
         });
+    }
+
+    async getGradeForQuestion(options: GetGradeForQuestionOptions): Promise<StudentGrade | null> {
+        const {
+            questionId,
+            userId,
+            includeWorkbooks
+        } = options;
+        const include: sequelize.IncludeOptions[] = [{
+            model: StudentGradeInstance,
+            as: 'gradeInstances',
+            required: false,
+            where: {
+                active: true,
+            }
+        }];
+        if (includeWorkbooks) {
+            include.push({
+                model: StudentWorkbook,
+                as: 'workbooks',
+                required: false,
+                where: {
+                    active: true
+                }
+            });
+        }
+        try {
+            return StudentGrade.findOne({
+                where: {
+                    courseWWTopicQuestionId: questionId,
+                    userId,
+                    active: true,
+                },
+                include
+            });
+        } catch (e) {
+            throw new WrappedError(`Unable to get grade for user #${userId} and question #${questionId}`, e);
+        }
     }
 
     getStatisticsOnUnits(options: GetStatisticsOnUnitsOptions): Promise<CourseUnitContent[]> {
@@ -3259,14 +3357,45 @@ class CourseController {
                 if (_.isNil(result.instance.id)) {
                     throw new Error('the grade instance ID cannot be empty');
                 }
-                // create workbook for attempt
+
+                const previousWorkbook = await StudentWorkbook.findOne({
+                    where: {
+                        courseWWTopicQuestionId: result.grade.courseWWTopicQuestionId
+                    },
+                    order: [
+                        ['createdAt', 'desc']
+                    ]
+                });
+
+                const currentAttachments = await this.listAttachments({
+                    studentGradeInstanceId: result.instance.id
+                });
+                const currentAttachmentIds = _.map(currentAttachments, 'id');
+
+                const cleanSubmitted = rendererHelper.cleanRendererResponseForTheDatabase(result.questionResponse);
+
+                if (!_.isNil(previousWorkbook)){
+                    // do not compare the "previous_*" fields
+                    const newSubmitted = _.omitBy(cleanSubmitted, rendererHelper.isPrevious);
+                    const oldSubmitted = _.omitBy(previousWorkbook.submitted, rendererHelper.isPrevious);
+
+                    const previousAttachments = await this.listAttachments({
+                        studentWorkbookId: previousWorkbook.id
+                    });
+                    const previousAttachmentIds = _.map(previousAttachments, 'id');
+
+                    if ( _.isEqual(newSubmitted, oldSubmitted) &&  _.isEqual(currentAttachmentIds, previousAttachmentIds)) {
+                        return; // skip out on creating a workbook et al
+                    }
+                }
+
                 const workbook = await StudentWorkbook.create({
                     studentGradeId: result.grade.id,
                     userId: result.grade.userId,
                     courseWWTopicQuestionId: result.grade.courseWWTopicQuestionId,
                     studentGradeInstanceId: result.instance.id, // shouldn't this workbook be tied to a grade instance?
                     randomSeed: result.instance.randomSeed,
-                    submitted: rendererHelper.cleanRendererResponseForTheDatabase(result.questionResponse),
+                    submitted: cleanSubmitted,
                     result: result.questionResponse.problem_result.score,
                     time: new Date(),
                     wasLate: false,
@@ -3276,11 +3405,7 @@ class CourseController {
                     wasAutoSubmitted: wasAutoSubmitted,
                 });
 
-                const attachments = await this.listAttachments({
-                    studentGradeInstanceId: result.instance.id
-                });
-
-                await attachments.asyncForEach(async (attachment: ProblemAttachment) => {
+                await currentAttachments.asyncForEach(async (attachment: ProblemAttachment) => {
                     await courseRepository.createStudentWorkbookProblemAttachment({
                         studentWorkbookId: workbook.id,
                         problemAttachmentId: attachment.id
@@ -3384,6 +3509,20 @@ class CourseController {
                     id: topicId,
                     active: true,
                 },
+                include: [{
+                    model: TopicAssessmentInfo,
+                    as: 'topicAssessmentInfo',
+                    where: {
+                        active: true,
+                    },
+                    include: [{
+                        model: StudentTopicAssessmentInfo,
+                        as: 'studentTopicAssessmentInfo',
+                        where: {
+                            active: true,
+                        },
+                    }]
+                }]
             });
 
             if (_.isNil(topic)) {
@@ -3639,7 +3778,7 @@ class CourseController {
         const poorMansTemplate = `
 Hello Professor ${course.instructor.lastName},
 
-    Your student ${options.student.firstName} ${options.student.lastName} is asking for help with
+Your student ${options.student.firstName} ${options.student.lastName} is asking for help with
 Problem ${question.problemNumber} in the Topic ${topic.name}.
 
 Here is the message that was sent:

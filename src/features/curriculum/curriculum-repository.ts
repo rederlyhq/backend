@@ -4,6 +4,7 @@ import CurriculumWWTopicQuestion from '../../database/models/curriculum-ww-topic
 import Curriculum from '../../database/models/curriculum';
 
 class CurriculumRepository {
+    // TODO: [SECURITY] Check user's university allows them access to this curriculum.
     getCurriculumById(id: number): Promise<Curriculum> {
         return Curriculum.findOne({
             where: {

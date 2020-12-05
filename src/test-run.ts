@@ -1,3 +1,9 @@
+// This is first a foremost a no op script
+// it can be used for initializing the database but it is not intended to be fully configured
+// Forcing these configuration options
+process.env.LOG_MISSING_CONFIGURATIONS='false';
+process.env.FAIL_ON_MISSING_CONFIGURATIONS='false';
+
 import configurations from './configurations';
 import './extensions';
 import logger from './utilities/logger';
@@ -12,14 +18,17 @@ if (configurations.email.enabled) {
 }
 
 import { sync } from './database';
-import { listen } from './server';
+import './server';
 
 (async (): Promise<void> => {
     try {
-        // This cannot be below sync otherwise an unhandled rejection is logged and the error is empty
-        await configurations.loadPromise;
-        await sync();
-        await listen();
+        const firstArg = process.argv[2];
+        if (firstArg === 'sync') {
+            logger.info(`${enabledMarker} "${firstArg}" === "sync"; Running sync ${enabledMarker}`);
+            await sync();
+        } else {
+            logger.info(`${disabledMarker} "${firstArg}" !== "sync"; Skipping sync ${disabledMarker}`);
+        }    
     } catch (e) {
         logger.error('Could not start up', e);
         // Used a larger number so that we could determine by the error code that this was an application error

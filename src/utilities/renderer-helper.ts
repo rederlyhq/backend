@@ -15,6 +15,7 @@ import urljoin = require('url-join');
 const rendererAxios = axios.create({
     baseURL: configurations.renderer.url,
     responseType: 'json',
+    timeout: configurations.renderer.requestTimeout
 });
 
 // TODO switch over to new endpoint
@@ -199,6 +200,12 @@ class RendererHelper {
 
     getOutputFormatForRole = (role: Role): OutputFormat => this.getOutputFormatForPermission(this.getPermissionForRole(role));
 
+    // (nearly) identical to that used in ProblemIframe
+    // run StudentWorkbook.submitted through _.omitBy(isPrevious) to compare to StudentGrade.currentProblemState
+    isPrevious = (_value: unknown, key: string): boolean => {
+        return /^previous_/.test(key);
+    };
+
     cleanRendererResponseForTheDatabase = (resp: RendererResponse): Partial<RendererResponse> => {
         // I don't know if this method could be used if we needed nested keys
         // I'm back and forth between using _.pick and joi validation
@@ -251,6 +258,7 @@ class RendererHelper {
         processAnswers,
         format = 'json',
         formData,
+        answersSubmitted,
         showCorrectAnswers = false
     }: GetProblemParameters): Promise<unknown> {
         if (!_.isNil(problemSource)) {
@@ -272,6 +280,7 @@ class RendererHelper {
             numCorrect,
             numIncorrect,
             processAnswers,
+            answersSubmitted,
             showCorrectAnswers: showCorrectAnswers ? 'true' : undefined
         };
 

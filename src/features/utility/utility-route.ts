@@ -39,8 +39,9 @@ const versionPromise = new Promise<string | null>((resolve, reject) => {
     return null;
 });
 
-// TODO should we make a utility routes file
 router.use('/version',
+// No validation
+// No authentication
 asyncHandler(async (_req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
     const version = await versionPromise;
     next(httpResponse.Ok(null, {
@@ -54,6 +55,7 @@ interface ClientLogMessage {
 
 router.use('/client-logs',
 validate(clientLogValidation),
+// No authentication
 asyncHandler(async (req: RederlyExpressRequest<ClientLogRequest.params, unknown, ClientLogRequest.body, ClientLogRequest.query>, _res: Response, next: NextFunction) => {
     req.body.logs.forEach((log: unknown) => {
         let logLevel: keyof Logger | undefined = (log as ClientLogMessage).level;

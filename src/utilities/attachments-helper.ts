@@ -1,11 +1,13 @@
 import Axios, { AxiosInstance, AxiosResponse } from 'axios';
 import configurations from '../configurations';
+import WrappedError from '../exceptions/wrapped-error';
 import logger from './logger';
 
 interface AttachmentHelperOptions {
     presignedUrlBaseUrl: string;
     presignedUrlBasePath: string;
     baseUrl: string;
+    presignedUrlTimeout: number;
 };
 
 interface RequestPresignedURLResponse {
@@ -23,6 +25,7 @@ class AttachmentHelper {
     private presignedUrlBaseUrl: string;
     private presignedUrlBasePath: string;
     private baseUrl: string;
+    private presignedUrlTimeout: number;
 
     private presignedAxios: AxiosInstance;
     // private attachmentAxios: AxiosInstance;
@@ -30,21 +33,29 @@ class AttachmentHelper {
     constructor({
         presignedUrlBaseUrl,
         presignedUrlBasePath,
-        baseUrl
+        baseUrl,
+        presignedUrlTimeout
     }: AttachmentHelperOptions) {
         this.presignedUrlBaseUrl = presignedUrlBaseUrl;
         this.presignedUrlBasePath = presignedUrlBasePath;
         // our application shouldn't be doing any fetching of attachments so this shouldn't be needed
         // if we were to use it we should have another axios instance
         this.baseUrl = baseUrl;
+        this.presignedUrlTimeout = presignedUrlTimeout;
 
         this.presignedAxios = Axios.create({
             baseURL: this.presignedUrlBaseUrl,
+            timeout: this.presignedUrlTimeout
         });
     }
 
-    private requestNewPresignedURL = (): Promise<AxiosResponse<RequestPresignedURLResponse>> => {
-        return this.presignedAxios.get(this.presignedUrlBasePath);
+    private requestNewPresignedURL = async (): Promise<AxiosResponse<RequestPresignedURLResponse>> => {
+        try {
+            return await this.presignedAxios.get(this.presignedUrlBasePath);
+        } catch (e) {
+            // The stack from axios here is not very helpful
+            throw new WrappedError('Could not get presigned url', e);
+        }
     };
 
     getNewPresignedURL = async (): Promise<GetPresignedURLResponse> => {

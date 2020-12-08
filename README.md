@@ -111,6 +111,9 @@
 | LOGGING_LEVEL | Fallback logging level for values below that are not provided | debug |
 | LOGGING_LEVEL_FOR_FILE | The logging level for use with the file, pass null to turn off file logging | LOGGING_LEVEL |
 | LOGGING_LEVEL_FOR_CONSOLE | The logging level for use with the console, pass null to turn off console logging | LOGGING_LEVEL |
+| LOGGING_URL_IN_META | Whether or not to include the url in the request meta | false |
+| LOGGING_META_IN_LOGS | Only applicable when LOGGING_LOG_JSON is false, whether or not to append meta to the end of the message | false |
+| LOGGING_LOG_JSON | Whether or not logs to the console should be formatted or output as json | false in development true in production |
 
 ##### Scheduler
 

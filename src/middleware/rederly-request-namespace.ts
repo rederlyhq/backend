@@ -45,6 +45,10 @@ export const rederlyRequestNamespaceWrapper = <P extends core.Params = core.Para
     };
 };
 
+export const rederlyRequestNamespaceMiddleware = rederlyRequestNamespaceWrapper((_req: express.Request, _res: express.Response, next: express.NextFunction) => {
+    next();
+});
+
 export const rederlyRequestNamespaceDump = (): RederlyRequestNamespaceDump => {
     const result: RederlyRequestNamespaceDump = {};
     Object.keys(RederlyRequestNamespaceKey).forEach((key: string) => {

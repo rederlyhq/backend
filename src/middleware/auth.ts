@@ -8,6 +8,7 @@ import { Request, Response, NextFunction } from 'express';
 import configurations from '../configurations';
 import * as _ from 'lodash';
 import RederlyError from '../exceptions/rederly-error';
+import { rederlyRequestNamespaceSet } from './rederly-request-namespace';
 
 const LocalStrategy = require('passport-local').Strategy;
 
@@ -76,6 +77,7 @@ export const authenticationMiddleware = async (req: Request, res: Response, next
         // TODO figure out session with request
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (req as any).session = session;
+        rederlyRequestNamespaceSet(req);
         return next();
     } catch (err) {
         res.clearCookie('sessionToken');

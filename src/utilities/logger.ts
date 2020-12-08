@@ -1,6 +1,7 @@
 import winston = require('winston');
 import * as _ from 'lodash';
 import configurations from '../configurations';
+import { rederlyRequestNamespaceDump } from '../middleware/rederly-request-namespace';
 
 const {
   format,
@@ -19,7 +20,16 @@ if (!_.isNil(loggingLevelForConsole)) {
         winston.format.colorize(),
         winston.format.timestamp(),
         winston.format.align(),
-        winston.format.printf(info => `${info.timestamp} [${info.level}]: ${info.message}`),
+        winston.format.printf(info => {
+          const requestMetadata = _.omitBy(info.metadata.requestMeta, _.isUndefined);
+          const requestId = `request-${(requestMetadata.requestId ?? 'null')}-${requestMetadata.userId ?? 'null'}`;
+          let message = `${info.timestamp} [${info.level}]: ${requestId} ${info.message}`;
+          if (configurations.logging.metaInLogs) {
+            const requestMetadataString = _.isEmpty(requestMetadata) ? '' : JSON.stringify(requestMetadata);
+            message += requestMetadataString;
+          }
+          return message;
+        }),
       )
     })
   );
@@ -42,6 +52,11 @@ if (!_.isNil(loggingLevelForFile)) {
 // If the logger has no tranpsort it logs the following message to console (with the log content)
 // [winston] Attempt to write logs with no transports ${LOG_OBJECT}
 const logger = winston.createLogger({
+  defaultMeta: {
+    get requestMeta(): unknown {
+      return rederlyRequestNamespaceDump();
+    },
+  },
   format: format.combine(
     format.errors({ stack: true }),
     format.metadata(),

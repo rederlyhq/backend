@@ -15,7 +15,7 @@ if (!_.isNil(loggingLevelForConsole)) {
   transports.push(
     new winston.transports.Console({
       level: loggingLevelForConsole.key,
-      format: format.combine(
+      format: configurations.logging.logJson ? undefined : format.combine(
         winston.format.colorize(),
         winston.format.timestamp(),
         winston.format.align(),

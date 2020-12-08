@@ -19,6 +19,7 @@ import IllegalArgumentException from './exceptions/illegal-argument-exception';
 import ForbiddenError from './exceptions/forbidden-error';
 import * as _ from 'lodash';
 import * as nodeUrl from 'url';
+import { rederlyRequestNamespaceMiddleware } from './middleware/rederly-request-namespace';
 
 interface ErrorResponse {
     statusCode: number;
@@ -35,6 +36,8 @@ const {
 } = configurations.server.limiter;
 
 const app = express();
+
+app.use(rederlyRequestNamespaceMiddleware);
 
 app.use(morgan((tokens, req, res) => {
     const responseTime = parseInt(tokens['response-time'](req, res) ?? '', 10);

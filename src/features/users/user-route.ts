@@ -14,13 +14,15 @@ import IncludeGradeOptions from './include-grade-options';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
 import logger from '../../utilities/logger';
 import { Constants } from '../../constants';
+import { rederlyRequestNamespaceWrapper } from '../../middleware/rederly-request-namespace';
 
 router.all('/check-in',
     // No validation
     authenticationMiddleware,
-    (_req: RederlyExpressRequest<never, unknown, never, never>, _res: Response, next: NextFunction) => {
+    rederlyRequestNamespaceWrapper((_req: RederlyExpressRequest<never, unknown, never, never>, _res: Response, next: NextFunction) => {
+        logger.error('TOMTOM');
         next(httpResponse.Ok());
-    });
+    }));
 
 router.post('/login',
     validate(loginValidation),

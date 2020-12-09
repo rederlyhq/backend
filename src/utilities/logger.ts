@@ -28,7 +28,7 @@ if (!_.isNil(loggingLevelForConsole)) {
         winston.format.align(),
         winston.format.printf(info => {
           const requestMetadata = _.omitBy(info.metadata.requestMeta, _.isUndefined);
-          const requestId = `request-${(requestMetadata.requestId ?? 'null')}-${requestMetadata.userId ?? 'null'}`;
+          const requestId = `request-${(requestMetadata.requestId ?? 'null')}`;
           let message = `${info.timestamp} [${info.level}]: ${requestId} ${info.message}`;
           if (configurations.logging.metaInLogs) {
             const requestMetadataString = _.isEmpty(requestMetadata) ? '' : JSON.stringify(requestMetadata);

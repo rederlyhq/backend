@@ -1250,7 +1250,7 @@ class CourseController {
                     gradeInstance = await courseRepository.getCurrentInstanceForQuestion({
                         questionId: options.questionId,
                         userId: options.userId
-                    }); 
+                    });
                 } else {
                     // student grade instances do not have a direct reference to userId
                     // we have to pass through the studentGrade to get there
@@ -3835,7 +3835,7 @@ You should be able to reply to the student's email address (${options.student.em
                         {
                             model: StudentGrade,
                             as: 'grades',
-                            attributes: ['id', 'lastInfluencingCreditedAttemptId'],
+                            attributes: ['id', 'lastInfluencingCreditedAttemptId', 'lastInfluencingAttemptId'],
                             required: true,
                             where: {
                                 userId: options.userId,
@@ -3853,14 +3853,15 @@ You should be able to reply to the student's email address (${options.student.em
 
         await mainData?.questions?.asyncForEach(async (question, i) =>
             await question.grades?.asyncForEach(async (grade, j) => {
-                if (_.isNil(grade.lastInfluencingCreditedAttemptId)) {
-                    logger.error('No lastInfluencingCreditedAttemptId. Cannot find the best version.');
+                const influencingWorkbook = grade.lastInfluencingCreditedAttemptId ?? grade.lastInfluencingAttemptId;
+                if (_.isNil(influencingWorkbook)) {
+                    logger.error(`Cannot find the best version for Grade ${grade.id} with lastInfluencingCreditedAttemptId or lastInfluencingAttemptId.`);
                     return;
                 }
 
                 const gradeInstanceAttachments = await StudentWorkbook.findOne({
                     where: {
-                        id: grade.lastInfluencingCreditedAttemptId,
+                        id: influencingWorkbook,
                         active: true,
                     },
                     attributes: ['id'],

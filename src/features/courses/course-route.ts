@@ -343,12 +343,8 @@ router.get('/assessment/topic/end/:id',
             throw new ForbiddenError('You cannot end an exam without making at least one attempt.');
         }
 
-        // if (version.isClean === false) {
-        //     // throw error? the student has made changes to their answers, but they have not submitted those changes
-        // }
+        courseController.endAssessmentEarly(version, true);
 
-        version.isClosed = true;
-        await version.save();
         next(httpResponse.Ok('Assessment version has been closed.'));
     }));
 

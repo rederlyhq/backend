@@ -3457,7 +3457,7 @@ class CourseController {
             studentTopicAssessmentInfo.numAttempts++;
             // close the version if student has maxed out their attempts
             if (studentTopicAssessmentInfo.numAttempts === studentTopicAssessmentInfo.maxAttempts) {
-                studentTopicAssessmentInfo.isClosed = true;
+                this.endAssessmentEarly(studentTopicAssessmentInfo, wasAutoSubmitted);
             }
             await studentTopicAssessmentInfo.save();
 
@@ -3473,20 +3473,23 @@ class CourseController {
                 } else {
                     problemScoresReturn = {total: problemScores.total};
                 }
-            }
-
-            // TODO move this to finish job
-            // try {
-            //     await schedulerHelper.deleteJob({
-            //         id: studentTopicAssessmentInfo.id.toString()
-            //     });
-            // } catch (e) {
-            //     logger.error(`Failed to delete job ${studentTopicAssessmentInfo.id}`, e);
-            // }
+            }            
 
             return { problemScores: problemScoresReturn, bestVersionScore: bestVersionScoreReturn, bestOverallVersion: bestOverallVersionReturn};
         });
     };
+
+    endAssessmentEarly(studentTopicAssessmentInfo: StudentTopicAssessmentInfo, wasAutoSubmitted: boolean): void {
+        studentTopicAssessmentInfo.isClosed = true;
+        studentTopicAssessmentInfo.save();
+        if (wasAutoSubmitted === false) {
+            // intentionally orphaned promise -- we don't care how long this takes
+            schedulerHelper.deleteJob({
+                id: studentTopicAssessmentInfo.id.toString()
+            }).catch((e) => { logger.error(`Failed to delete job ${studentTopicAssessmentInfo.id}`, e); });
+        }
+    }
+
     async canUserGradeAssessment({
         user,
         topicId

@@ -37,8 +37,6 @@ const {
 
 const app = express();
 
-app.use(rederlyRequestNamespaceMiddleware);
-
 app.use(morgan((tokens, req, res) => {
     const responseTime = parseInt(tokens['response-time'](req, res) ?? '', 10);
     const shouldWarn = !_.isNumber(responseTime) || responseTime > configurations.server.logAccessSlowRequestThreshold;
@@ -141,9 +139,13 @@ app.use((req, res, next) => {
     next();
 });
 
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// The line: app.use(bodyParser.json()); clears the namespace for some reason :shrug:
+app.use(rederlyRequestNamespaceMiddleware);
 
 app.use(passport.initialize());
 

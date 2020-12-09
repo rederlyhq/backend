@@ -16,7 +16,13 @@ if (!_.isNil(loggingLevelForConsole)) {
   transports.push(
     new winston.transports.Console({
       level: loggingLevelForConsole.key,
-      format: configurations.logging.logJson ? undefined : format.combine(
+      format: configurations.logging.logJson ? winston.format.printf(info => {
+        const { level } = info;
+        if (!configurations.logging.urlInMeta && level !== 'error' && level !== 'warn') {
+          delete info.metadata.requestMeta?.url;
+        }
+        return JSON.stringify(info);
+      }) : format.combine(
         winston.format.colorize(),
         winston.format.timestamp(),
         winston.format.align(),

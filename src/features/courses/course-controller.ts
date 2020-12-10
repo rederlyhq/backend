@@ -3457,7 +3457,7 @@ class CourseController {
             studentTopicAssessmentInfo.numAttempts++;
             // close the version if student has maxed out their attempts
             if (studentTopicAssessmentInfo.numAttempts === studentTopicAssessmentInfo.maxAttempts) {
-                this.endAssessmentEarly(studentTopicAssessmentInfo, wasAutoSubmitted);
+                await this.endAssessmentEarly(studentTopicAssessmentInfo, wasAutoSubmitted);
             }
             await studentTopicAssessmentInfo.save();
 
@@ -3479,14 +3479,14 @@ class CourseController {
         });
     };
 
-    endAssessmentEarly(studentTopicAssessmentInfo: StudentTopicAssessmentInfo, wasAutoSubmitted: boolean): void {
+    async endAssessmentEarly(studentTopicAssessmentInfo: StudentTopicAssessmentInfo, wasAutoSubmitted: boolean): void {
         studentTopicAssessmentInfo.isClosed = true;
-        studentTopicAssessmentInfo.save();
+        await studentTopicAssessmentInfo.save();
         if (wasAutoSubmitted === false) {
             // intentionally orphaned promise -- we don't care how long this takes
             schedulerHelper.deleteJob({
                 id: studentTopicAssessmentInfo.id.toString()
-            }).catch((e) => { logger.error(`Failed to delete job ${studentTopicAssessmentInfo.id}`, e); });
+            }).catch((e) => logger.error(`Failed to delete job ${studentTopicAssessmentInfo.id}`, e) );
         }
     }
 

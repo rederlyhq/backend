@@ -343,7 +343,7 @@ router.get('/assessment/topic/end/:id',
             throw new ForbiddenError('You cannot end an exam without making at least one attempt.');
         }
 
-        courseController.endAssessmentEarly(version, true);
+        await courseController.endAssessmentEarly(version, true);
 
         next(httpResponse.Ok('Assessment version has been closed.'));
     }));

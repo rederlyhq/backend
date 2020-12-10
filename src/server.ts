@@ -20,6 +20,7 @@ import ForbiddenError from './exceptions/forbidden-error';
 import * as _ from 'lodash';
 import * as nodeUrl from 'url';
 import { rederlyRequestNamespaceMiddleware } from './middleware/rederly-request-namespace';
+import { v4 as uuidv4 } from 'uuid';
 
 interface ErrorResponse {
     statusCode: number;
@@ -36,6 +37,11 @@ const {
 } = configurations.server.limiter;
 
 const app = express();
+
+app.use((req: RederlyExpressRequest, res: unknown, next: NextFunction) => {
+    req.requestId = uuidv4();
+    next();
+});
 
 app.use(morgan((tokens, req, res) => {
     const responseTime = parseInt(tokens['response-time'](req, res) ?? '', 10);

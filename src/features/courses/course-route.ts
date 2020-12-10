@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, Handler } from 'express';
 import courseController from './course-controller';
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator';
@@ -29,8 +29,40 @@ import AttemptsExceededException from '../../exceptions/attempts-exceeded-except
 import attachmentHelper from '../../utilities/attachments-helper';
 import urljoin = require('url-join');
 import RederlyError from '../../exceptions/rederly-error';
+import * as tar from 'tar';
+import * as nodePath from 'path';
+import * as fs from 'fs';
 
 const fileUpload = multer();
+
+const tempFileUpload: Handler = (...args) => {
+    const req: RederlyExpressRequest = args[0];
+    const next: NextFunction = args[2];
+    if (_.isNil(req.requestId)) {
+        next(new RederlyError('Request is missing request id'));
+    }
+    multer({dest:`./tmp/${req.requestId}`}).single('file')(...args);
+};
+
+router.post('/abc',
+    tempFileUpload,
+    asyncHandler(async (req: RederlyExpressRequest, res: unknown, next: NextFunction) => {
+        const workingDirectory = `${nodePath.dirname(req.file.path)}/${nodePath.basename(req.file.originalname, nodePath.extname(req.file.originalname))}`;
+        await new Promise((resolve, reject) => {
+            fs.mkdir(workingDirectory, (err: Error | null) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve();
+                }
+            });    
+        });
+        await tar.x({
+            file: req.file.path,
+            cwd: workingDirectory
+        });
+        next(httpResponse.Ok());
+    }));
 
 router.get('/statistics/units',
     authenticationMiddleware,
@@ -1240,6 +1272,5 @@ router.post('/question/editor/catalog',
             problems: Object.keys(result).filter(elm => elm.endsWith('.pg'))
         }));
     }));
-
 
 module.exports = router;

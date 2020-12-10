@@ -8,6 +8,7 @@ import _ = require('lodash');
 const sgTransport = require('nodemailer-sendgrid-transport');
 import * as Email from 'email-templates';
 import RederlyError from '../exceptions/rederly-error';
+import path = require('path');
 
 interface EmailHelperOptions {
     user: string;
@@ -51,6 +52,9 @@ class EmailHelper {
 
         this.client = nodemailer.createTransport(sgTransport(clientOptions));
         this.mailer = new Email({
+            views: {
+                root: path.resolve('assets/emails')
+            },
             message: {
                 from: this.from,
                 // Default attachments for all emails without the email client automatically blocking them.
@@ -58,7 +62,7 @@ class EmailHelper {
                 attachments: [
                     {
                       filename: 'favicon.png',
-                      path: 'emails/rederly_favicon.png',
+                      path: 'assets/emails/rederly_favicon.png',
                       cid: 'favicon'
                     }
                 ]
@@ -97,7 +101,7 @@ class EmailHelper {
                 },
                 locals: options.locals,
             });
-        } else {    
+        } else {
             // Nodemailer's callback uses any
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return new Promise<any>((resolve: (data: any) => void, reject: (err: Error) => void) => {

@@ -1250,7 +1250,7 @@ class CourseController {
                     gradeInstance = await courseRepository.getCurrentInstanceForQuestion({
                         questionId: options.questionId,
                         userId: options.userId
-                    }); 
+                    });
                 } else {
                     // student grade instances do not have a direct reference to userId
                     // we have to pass through the studentGrade to get there
@@ -2217,8 +2217,9 @@ class CourseController {
         if (_.isNil(questionId) === false) {
             attributes = [
                 'id',
+                'numAttempts',
                 'effectiveScore',
-                'numAttempts'
+                ['student_grade_partial_best_score', 'systemScore'],
             ];
             // This should already be the case but let's guarentee it
             group = undefined;
@@ -2250,17 +2251,17 @@ class CourseController {
 
         // Filter all grades to only be included if the student has not been dropped.
         const studentGradeInclude = [{
-                model: StudentEnrollment,
-                as: 'courseEnrollments',
-                required: true,
-                attributes: [],
-                where: {
-                    courseId: {
-                        [Sequelize.Op.eq]: sequelize.literal(`"user->courseEnrollments".${Course.rawAttributes.id.field}`)
-                    },
-                    dropDate: null
-                }
-            }];
+            model: StudentEnrollment,
+            as: 'courseEnrollments',
+            required: true,
+            attributes: [],
+            where: {
+                courseId: {
+                    [Sequelize.Op.eq]: sequelize.literal(`"user->courseEnrollments".${Course.rawAttributes.id.field}`)
+                },
+                dropDate: null
+            }
+        }];
 
         return StudentGrade.findAll({
             // This query must be run raw, otherwise the deduplication logic in Sequelize will force-add the primary key
@@ -2381,6 +2382,7 @@ class CourseController {
                 [sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
                 [averageScoreAttribute, 'averageScore'],
                 [sequelize.fn('count', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
+                [sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'],
                 [sequelize.literal(`count(CASE WHEN "topics->questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN "topics->questions->grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
                 [completionPercentAttribute, 'completionPercent'],
             ],
@@ -2497,6 +2499,7 @@ class CourseController {
                 [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
                 [averageScoreAttribute, 'averageScore'],
                 [sequelize.fn('count', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
+                [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'],
                 [sequelize.literal(`count(CASE WHEN "questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN "questions->grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
                 [completionPercentAttribute, 'completionPercent'],
             ],
@@ -2585,6 +2588,7 @@ class CourseController {
                 [sequelize.literal(`'Problem ' || "${CourseWWTopicQuestion.name}".${CourseWWTopicQuestion.rawAttributes.problemNumber.field}`), 'name'],
                 [sequelize.fn('avg', sequelize.col(`grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
                 [sequelize.fn('avg', scoreField), 'averageScore'],
+                [sequelize.fn('avg', sequelize.col(`grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'],
                 [sequelize.fn('count', sequelize.col(`grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
                 [sequelize.literal(`count(CASE WHEN "grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
                 [completionPercentAttribute, 'completionPercent'],
@@ -3007,47 +3011,87 @@ class CourseController {
     }
 
     async createGradeInstancesForAssessment(options: CreateGradeInstancesForAssessmentOptions): Promise<StudentTopicAssessmentInfo> {
-        return useDatabaseTransaction(async (): Promise<StudentTopicAssessmentInfo> => {
-            const { topicId, userId } = options;
-            // overrides will strip includes down to raw values -- no methods
-            let topic = await this.getTopicById({id: topicId, userId});
-            let topicInfo = topic.topicAssessmentInfo;
-            if (_.isNil(topicInfo)) {
-                throw new IllegalArgumentException(`Tried to create grade instances for topic ${topic.id} without topic assessment info`);
-            }
+        const { topicId, userId } = options;
+        // overrides will strip includes down to raw values -- no methods
+        let topic = await this.getTopicById({id: topicId, userId});
+        let topicInfo = topic.topicAssessmentInfo;
+        if (_.isNil(topicInfo)) {
+            throw new IllegalArgumentException(`Tried to create grade instances for topic ${topic.id} without topic assessment info`);
+        }
 
-            // apply user overrides to topic
-            if (!_.isNil(topic.studentTopicOverride) && !_.isEmpty(topic.studentTopicOverride)) {
-                topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
-            }
+        // apply user overrides to topic
+        if (!_.isNil(topic.studentTopicOverride) && !_.isEmpty(topic.studentTopicOverride)) {
+            topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
+        }
 
-            // apply user overrides to version
-            if (!_.isNil(topicInfo) &&
-                !_.isNil(topicInfo.studentTopicAssessmentOverride) &&
-                !_.isEmpty(topicInfo.studentTopicAssessmentOverride)
-            ){
-                const studentTopicAssessmentOverrideId = topicInfo.studentTopicAssessmentOverride[0].id;
-                // we have the studentTopicAssessmentOverride object, but this extra step is
-                // needed because sequelize truncates when nested include namespaces get too long
-                // {minifyAliases: true} introduced in sequelize-5.18
-                // https://github.com/sequelize/sequelize/pull/11095
-                if (!_.isNil(studentTopicAssessmentOverrideId)) {
-                    const studentTopicAssessmentOverride = await courseRepository.getStudentTopicAssessmentOverride(studentTopicAssessmentOverrideId);
-                    topicInfo = topicInfo.getWithOverrides(studentTopicAssessmentOverride) as TopicAssessmentInfo;
+        // apply user overrides to version
+        if (!_.isNil(topicInfo) &&
+            !_.isNil(topicInfo.studentTopicAssessmentOverride) &&
+            !_.isEmpty(topicInfo.studentTopicAssessmentOverride)
+        ){
+            const studentTopicAssessmentOverrideId = topicInfo.studentTopicAssessmentOverride[0].id;
+            // we have the studentTopicAssessmentOverride object, but this extra step is
+            // needed because sequelize truncates when nested include namespaces get too long
+            // {minifyAliases: true} introduced in sequelize-5.18
+            // https://github.com/sequelize/sequelize/pull/11095
+            if (!_.isNil(studentTopicAssessmentOverrideId)) {
+                const studentTopicAssessmentOverride = await courseRepository.getStudentTopicAssessmentOverride(studentTopicAssessmentOverrideId);
+                topicInfo = topicInfo.getWithOverrides(studentTopicAssessmentOverride) as TopicAssessmentInfo;
+            }
+        }
+
+        const questions = await courseRepository.getQuestionsFromTopicId({id:topicId});
+        const startTime = moment().add(1,'minute'); // should cover any delay in creating records before a student can actually begin
+
+        let endTime = moment(startTime).add(topicInfo.duration, 'minutes');
+        if (topicInfo.hardCutoff) {
+            endTime = moment.min(topic.endDate.toMoment(), endTime);
+        }
+
+        const nextVersionAvailableTime = moment(startTime).add(topicInfo.versionDelay, 'minutes');
+        // in trying to be clever about shuffling the order, don't forget to shift from 0..n-1 to 1..n
+        const problemOrder = (topicInfo.randomizeOrder) ? _.shuffle([...Array(questions.length).keys()]) : [...Array(questions.length).keys()];
+
+        const gradeInstances: Array<StudentGradeInstance> = [];
+        await questions.asyncForEach(async (question, index) => {
+            const questionInfo = await question.getCourseQuestionAssessmentInfo();
+            const questionGrade = await StudentGrade.findOne({
+                where: {
+                    userId,
+                    courseWWTopicQuestionId: question.id,
+                    active: true
                 }
+            });
+            if (_.isNil(questionGrade)) {
+                throw new RederlyError(`Question id: ${question.id} has no corresponding grade.`);
             }
-
-            const questions = await courseRepository.getQuestionsFromTopicId({id:topicId});
-            const startTime = moment().add(1,'minute'); // should cover any delay in creating records before a student can actually begin
-
-            let endTime = moment(startTime).add(topicInfo.duration, 'minutes');
-            if (topicInfo.hardCutoff) {
-                endTime = moment.min(topic.endDate.toMoment(), endTime);
+            let randomSeed: number | undefined;
+            let webworkQuestionPath: string | undefined;
+            if (_.isNil(questionInfo)) {
+                randomSeed = this.generateRandomSeed();
+                webworkQuestionPath = question.webworkQuestionPath;
+            } else {
+                randomSeed = _.sample(questionInfo.randomSeedSet) ?? this.generateRandomSeed(); // coalesce should NEVER happen - but TS doesn't recognize that _.sample(nonEmptyArray) will not return undefined
+                const problemPaths = [...new Set([question.webworkQuestionPath, ...questionInfo.additionalProblemPaths])]; // Set removes duplicates
+                webworkQuestionPath = _.sample(problemPaths) ?? question.webworkQuestionPath; // same coalesce chicanery to mollify TS _.sample() is string | undefined
             }
+            const result = await rendererHelper.isPathAccessibleToRenderer({problemPath: webworkQuestionPath});
+            if (result === false) {
+                throw new IllegalArgumentException(`There is an issue with problem with #${question.problemNumber} (${question.id}). Please contact your professor.`);
+            }
+            gradeInstances.push(new StudentGradeInstance({
+                studentGradeId: questionGrade.id,
+                webworkQuestionPath,
+                randomSeed,
+                userId,
+                problemNumber: problemOrder[index]+1, // problemOrder starts from 0
+            }));
+        });
 
-            const nextVersionAvailableTime = moment(startTime).add(topicInfo.versionDelay, 'minutes');
-            // in trying to be clever about shuffling the order, don't forget to shift from 0..n-1 to 1..n
-            const problemOrder = (topicInfo.randomizeOrder) ? _.shuffle([...Array(questions.length).keys()]) : [...Array(questions.length).keys()];
+        return useDatabaseTransaction(async (): Promise<StudentTopicAssessmentInfo> => {
+            if (_.isNil(topicInfo)) {
+                throw new RederlyError('TSNH, topicInfo nil check happened outside db transaction');
+            }
 
             const studentTopicAssessmentInfo = await this.createStudentTopicAssessmentInfo({
                 userId,
@@ -3058,37 +3102,11 @@ class CourseController {
                 maxAttempts: topicInfo.maxGradedAttemptsPerVersion,
             });
 
-            await questions.asyncForEach(async (question, index) => {
-                const questionInfo = await question.getCourseQuestionAssessmentInfo();
-                const questionGrade = await StudentGrade.findOne({
-                    where: {
-                        userId,
-                        courseWWTopicQuestionId: question.id,
-                        active: true
-                    }
-                });
-                if (_.isNil(questionGrade)) {
-                    throw new RederlyError(`Question id: ${question.id} has no corresponding grade.`);
-                }
-                let randomSeed: number | undefined;
-                let webworkQuestionPath: string | undefined;
-                if (_.isNil(questionInfo)) {
-                    randomSeed = this.generateRandomSeed();
-                    webworkQuestionPath = question.webworkQuestionPath;
-                } else {
-                    randomSeed = _.sample(questionInfo.randomSeedSet) ?? this.generateRandomSeed(); // coalesce should NEVER happen - but TS doesn't recognize that _.sample(nonEmptyArray) will not return undefined
-                    const problemPaths = [...new Set([question.webworkQuestionPath, ...questionInfo.additionalProblemPaths])]; // Set removes duplicates
-                    webworkQuestionPath = _.sample(problemPaths) ?? question.webworkQuestionPath; // same coalesce chicanery to mollify TS _.sample() is string | undefined
-                }
-                await this.createNewStudentGradeInstance({
-                    studentGradeId: questionGrade.id,
-                    studentTopicAssessmentInfoId: studentTopicAssessmentInfo.id,
-                    webworkQuestionPath,
-                    randomSeed,
-                    userId,
-                    problemNumber: problemOrder[index]+1, // problemOrder starts from 0
-                });
+            await gradeInstances.asyncForEach(async (gradeInstance) => {
+                gradeInstance.studentTopicAssessmentInfoId = studentTopicAssessmentInfo.id;
+                await gradeInstance.save();
             });
+
 
             let autoSubmitURL: string | undefined;
             if(_.isNil(options.requestURL)) {
@@ -3457,7 +3475,7 @@ class CourseController {
             studentTopicAssessmentInfo.numAttempts++;
             // close the version if student has maxed out their attempts
             if (studentTopicAssessmentInfo.numAttempts === studentTopicAssessmentInfo.maxAttempts) {
-                studentTopicAssessmentInfo.isClosed = true;
+                await this.endAssessmentEarly(studentTopicAssessmentInfo, wasAutoSubmitted);
             }
             await studentTopicAssessmentInfo.save();
 
@@ -3473,20 +3491,23 @@ class CourseController {
                 } else {
                     problemScoresReturn = {total: problemScores.total};
                 }
-            }
-
-            // TODO move this to finish job
-            // try {
-            //     await schedulerHelper.deleteJob({
-            //         id: studentTopicAssessmentInfo.id.toString()
-            //     });
-            // } catch (e) {
-            //     logger.error(`Failed to delete job ${studentTopicAssessmentInfo.id}`, e);
-            // }
+            }            
 
             return { problemScores: problemScoresReturn, bestVersionScore: bestVersionScoreReturn, bestOverallVersion: bestOverallVersionReturn};
         });
     };
+
+    async endAssessmentEarly(studentTopicAssessmentInfo: StudentTopicAssessmentInfo, wasAutoSubmitted: boolean): Promise<void> {
+        studentTopicAssessmentInfo.isClosed = true;
+        await studentTopicAssessmentInfo.save();
+        if (wasAutoSubmitted === false) {
+            // intentionally orphaned promise -- we don't care how long this takes
+            schedulerHelper.deleteJob({
+                id: studentTopicAssessmentInfo.id.toString()
+            }).catch((e) => logger.error(`Failed to delete job ${studentTopicAssessmentInfo.id}`, e) );
+        }
+    }
+
     async canUserGradeAssessment({
         user,
         topicId
@@ -3835,7 +3856,7 @@ You should be able to reply to the student's email address (${options.student.em
                         {
                             model: StudentGrade,
                             as: 'grades',
-                            attributes: ['id', 'lastInfluencingCreditedAttemptId'],
+                            attributes: ['id', 'lastInfluencingCreditedAttemptId', 'lastInfluencingAttemptId'],
                             required: true,
                             where: {
                                 userId: options.userId,
@@ -3853,14 +3874,15 @@ You should be able to reply to the student's email address (${options.student.em
 
         await mainData?.questions?.asyncForEach(async (question, i) =>
             await question.grades?.asyncForEach(async (grade, j) => {
-                if (_.isNil(grade.lastInfluencingCreditedAttemptId)) {
-                    logger.error('No lastInfluencingCreditedAttemptId. Cannot find the best version.');
+                const influencingWorkbook = grade.lastInfluencingCreditedAttemptId ?? grade.lastInfluencingAttemptId;
+                if (_.isNil(influencingWorkbook)) {
+                    logger.error(`Cannot find the best version for Grade ${grade.id} with lastInfluencingCreditedAttemptId or lastInfluencingAttemptId.`);
                     return;
                 }
 
                 const gradeInstanceAttachments = await StudentWorkbook.findOne({
                     where: {
-                        id: grade.lastInfluencingCreditedAttemptId,
+                        id: influencingWorkbook,
                         active: true,
                     },
                     attributes: ['id'],

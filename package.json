@@ -1,6 +1,6 @@
 {
   "name": "backend",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "",
   "main": "index.js",
   "dependencies": {
@@ -12,7 +12,7 @@
     "cls-hooked": "^4.2.2",
     "cookie-parser": "^1.4.5",
     "dotenv": "^8.2.0",
-    "email-templates": "^7.2.0",
+    "email-templates": "^8.0.2",
     "express": "^4.17.1",
     "express-async-handler": "^1.1.4",
     "express-http-proxy": "^1.6.2",
@@ -71,6 +71,7 @@
     "@typescript-eslint/eslint-plugin": "^2.34.0",
     "@typescript-eslint/parser": "^2.34.0",
     "acorn": "^7.4.1",
+    "cpy-cli": "^3.1.1",
     "eslint": "^6.8.0",
     "jest": "^26.4.2",
     "nodemon": "^2.0.4",
@@ -95,6 +96,7 @@
     "generate-route-types:debug": "node --inspect=5860 -r ts-node/register ./src/generate-route-types.ts",
     "generate-route-types:debug:watch": "nodemon -x npm run generate-route-types:debug",
     "build": "npm run clean && tsc",
+    "postbuild": "cpy --parents assets ts-built",
     "build:run": "npm run build && npm run run:build",
     "run:build": "node ts-built/index.js",
     "run:built:test-run": "node ts-built/test-run.js",

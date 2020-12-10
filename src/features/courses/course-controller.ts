@@ -3011,47 +3011,87 @@ class CourseController {
     }
 
     async createGradeInstancesForAssessment(options: CreateGradeInstancesForAssessmentOptions): Promise<StudentTopicAssessmentInfo> {
-        return useDatabaseTransaction(async (): Promise<StudentTopicAssessmentInfo> => {
-            const { topicId, userId } = options;
-            // overrides will strip includes down to raw values -- no methods
-            let topic = await this.getTopicById({id: topicId, userId});
-            let topicInfo = topic.topicAssessmentInfo;
-            if (_.isNil(topicInfo)) {
-                throw new IllegalArgumentException(`Tried to create grade instances for topic ${topic.id} without topic assessment info`);
-            }
+        const { topicId, userId } = options;
+        // overrides will strip includes down to raw values -- no methods
+        let topic = await this.getTopicById({id: topicId, userId});
+        let topicInfo = topic.topicAssessmentInfo;
+        if (_.isNil(topicInfo)) {
+            throw new IllegalArgumentException(`Tried to create grade instances for topic ${topic.id} without topic assessment info`);
+        }
 
-            // apply user overrides to topic
-            if (!_.isNil(topic.studentTopicOverride) && !_.isEmpty(topic.studentTopicOverride)) {
-                topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
-            }
+        // apply user overrides to topic
+        if (!_.isNil(topic.studentTopicOverride) && !_.isEmpty(topic.studentTopicOverride)) {
+            topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
+        }
 
-            // apply user overrides to version
-            if (!_.isNil(topicInfo) &&
-                !_.isNil(topicInfo.studentTopicAssessmentOverride) &&
-                !_.isEmpty(topicInfo.studentTopicAssessmentOverride)
-            ){
-                const studentTopicAssessmentOverrideId = topicInfo.studentTopicAssessmentOverride[0].id;
-                // we have the studentTopicAssessmentOverride object, but this extra step is
-                // needed because sequelize truncates when nested include namespaces get too long
-                // {minifyAliases: true} introduced in sequelize-5.18
-                // https://github.com/sequelize/sequelize/pull/11095
-                if (!_.isNil(studentTopicAssessmentOverrideId)) {
-                    const studentTopicAssessmentOverride = await courseRepository.getStudentTopicAssessmentOverride(studentTopicAssessmentOverrideId);
-                    topicInfo = topicInfo.getWithOverrides(studentTopicAssessmentOverride) as TopicAssessmentInfo;
+        // apply user overrides to version
+        if (!_.isNil(topicInfo) &&
+            !_.isNil(topicInfo.studentTopicAssessmentOverride) &&
+            !_.isEmpty(topicInfo.studentTopicAssessmentOverride)
+        ){
+            const studentTopicAssessmentOverrideId = topicInfo.studentTopicAssessmentOverride[0].id;
+            // we have the studentTopicAssessmentOverride object, but this extra step is
+            // needed because sequelize truncates when nested include namespaces get too long
+            // {minifyAliases: true} introduced in sequelize-5.18
+            // https://github.com/sequelize/sequelize/pull/11095
+            if (!_.isNil(studentTopicAssessmentOverrideId)) {
+                const studentTopicAssessmentOverride = await courseRepository.getStudentTopicAssessmentOverride(studentTopicAssessmentOverrideId);
+                topicInfo = topicInfo.getWithOverrides(studentTopicAssessmentOverride) as TopicAssessmentInfo;
+            }
+        }
+
+        const questions = await courseRepository.getQuestionsFromTopicId({id:topicId});
+        const startTime = moment().add(1,'minute'); // should cover any delay in creating records before a student can actually begin
+
+        let endTime = moment(startTime).add(topicInfo.duration, 'minutes');
+        if (topicInfo.hardCutoff) {
+            endTime = moment.min(topic.endDate.toMoment(), endTime);
+        }
+
+        const nextVersionAvailableTime = moment(startTime).add(topicInfo.versionDelay, 'minutes');
+        // in trying to be clever about shuffling the order, don't forget to shift from 0..n-1 to 1..n
+        const problemOrder = (topicInfo.randomizeOrder) ? _.shuffle([...Array(questions.length).keys()]) : [...Array(questions.length).keys()];
+
+        const gradeInstances: Array<StudentGradeInstance> = [];
+        await questions.asyncForEach(async (question, index) => {
+            const questionInfo = await question.getCourseQuestionAssessmentInfo();
+            const questionGrade = await StudentGrade.findOne({
+                where: {
+                    userId,
+                    courseWWTopicQuestionId: question.id,
+                    active: true
                 }
+            });
+            if (_.isNil(questionGrade)) {
+                throw new RederlyError(`Question id: ${question.id} has no corresponding grade.`);
             }
-
-            const questions = await courseRepository.getQuestionsFromTopicId({id:topicId});
-            const startTime = moment().add(1,'minute'); // should cover any delay in creating records before a student can actually begin
-
-            let endTime = moment(startTime).add(topicInfo.duration, 'minutes');
-            if (topicInfo.hardCutoff) {
-                endTime = moment.min(topic.endDate.toMoment(), endTime);
+            let randomSeed: number | undefined;
+            let webworkQuestionPath: string | undefined;
+            if (_.isNil(questionInfo)) {
+                randomSeed = this.generateRandomSeed();
+                webworkQuestionPath = question.webworkQuestionPath;
+            } else {
+                randomSeed = _.sample(questionInfo.randomSeedSet) ?? this.generateRandomSeed(); // coalesce should NEVER happen - but TS doesn't recognize that _.sample(nonEmptyArray) will not return undefined
+                const problemPaths = [...new Set([question.webworkQuestionPath, ...questionInfo.additionalProblemPaths])]; // Set removes duplicates
+                webworkQuestionPath = _.sample(problemPaths) ?? question.webworkQuestionPath; // same coalesce chicanery to mollify TS _.sample() is string | undefined
             }
+            const result = await rendererHelper.isPathAccessibleToRenderer({problemPath: webworkQuestionPath});
+            if (result === false) {
+                throw new IllegalArgumentException(`There is an issue with problem with #${question.problemNumber} (${question.id}). Please contact your professor.`);
+            }
+            gradeInstances.push(new StudentGradeInstance({
+                studentGradeId: questionGrade.id,
+                webworkQuestionPath,
+                randomSeed,
+                userId,
+                problemNumber: problemOrder[index]+1, // problemOrder starts from 0
+            }));
+        });
 
-            const nextVersionAvailableTime = moment(startTime).add(topicInfo.versionDelay, 'minutes');
-            // in trying to be clever about shuffling the order, don't forget to shift from 0..n-1 to 1..n
-            const problemOrder = (topicInfo.randomizeOrder) ? _.shuffle([...Array(questions.length).keys()]) : [...Array(questions.length).keys()];
+        return useDatabaseTransaction(async (): Promise<StudentTopicAssessmentInfo> => {
+            if (_.isNil(topicInfo)) {
+                throw new RederlyError('TSNH, topicInfo nil check happened outside db transaction');
+            }
 
             const studentTopicAssessmentInfo = await this.createStudentTopicAssessmentInfo({
                 userId,
@@ -3062,37 +3102,11 @@ class CourseController {
                 maxAttempts: topicInfo.maxGradedAttemptsPerVersion,
             });
 
-            await questions.asyncForEach(async (question, index) => {
-                const questionInfo = await question.getCourseQuestionAssessmentInfo();
-                const questionGrade = await StudentGrade.findOne({
-                    where: {
-                        userId,
-                        courseWWTopicQuestionId: question.id,
-                        active: true
-                    }
-                });
-                if (_.isNil(questionGrade)) {
-                    throw new RederlyError(`Question id: ${question.id} has no corresponding grade.`);
-                }
-                let randomSeed: number | undefined;
-                let webworkQuestionPath: string | undefined;
-                if (_.isNil(questionInfo)) {
-                    randomSeed = this.generateRandomSeed();
-                    webworkQuestionPath = question.webworkQuestionPath;
-                } else {
-                    randomSeed = _.sample(questionInfo.randomSeedSet) ?? this.generateRandomSeed(); // coalesce should NEVER happen - but TS doesn't recognize that _.sample(nonEmptyArray) will not return undefined
-                    const problemPaths = [...new Set([question.webworkQuestionPath, ...questionInfo.additionalProblemPaths])]; // Set removes duplicates
-                    webworkQuestionPath = _.sample(problemPaths) ?? question.webworkQuestionPath; // same coalesce chicanery to mollify TS _.sample() is string | undefined
-                }
-                await this.createNewStudentGradeInstance({
-                    studentGradeId: questionGrade.id,
-                    studentTopicAssessmentInfoId: studentTopicAssessmentInfo.id,
-                    webworkQuestionPath,
-                    randomSeed,
-                    userId,
-                    problemNumber: problemOrder[index]+1, // problemOrder starts from 0
-                });
+            await gradeInstances.asyncForEach(async (gradeInstance) => {
+                gradeInstance.studentTopicAssessmentInfoId = studentTopicAssessmentInfo.id;
+                await gradeInstance.save();
             });
+
 
             let autoSubmitURL: string | undefined;
             if(_.isNil(options.requestURL)) {

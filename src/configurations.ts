@@ -185,6 +185,7 @@ const configurations = {
         get isProduction(): boolean { return isProduction(configurations.app.nodeEnv); },
         logMissingConfigurations: readBooleanValue('LOG_MISSING_CONFIGURATIONS', true),
         failOnMissingConfigurations: readBooleanValue('FAIL_ON_MISSING_CONFIGURATIONS', isProduction(nodeEnv)),
+        autoDeleteTemp: readBooleanValue('AUTO_DELETE_TEMP_FILES', true)
     },
     loadPromise: new Promise((resolve, reject) => {
         // Avoid cyclic dependency by deferring the logging until after all the imports are done

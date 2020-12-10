@@ -159,25 +159,68 @@ app.use(passport.initialize());
 
 app.use(basePath, router);
 
-// request temp file cleanup
-app.use((obj: unknown, req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
-    if (!_.isNil(req.requestId)) {
-        const requestTmpPath = `./tmp/${req.requestId}`;
-        fs.access(requestTmpPath, (accessError: Error | null) => {
+// This is a developer option, it will be logged as a warning if it is on in production
+if (configurations.app.autoDeleteTemp) {
+    const tmpFolderPath = './tmp';
+    const deleteTmpFolder = (): void => {
+        logger.debug('Deleting temp file');
+        fs.access(tmpFolderPath, (accessError: Error | null) => {
             if (!accessError) {
-                fs.rmdir(requestTmpPath, { recursive: true }, (rmError: Error | null) => {
+                fs.rmdir(tmpFolderPath, { recursive: true }, (rmError: Error | null) => {
                     if (rmError) {
-                        logger.error(`Removing temp files: could not delete  ${requestTmpPath}`, rmError);
+                        logger.error(`Removing temp files: could not delete  ${tmpFolderPath}`, rmError);
                     }
                 });
             } else {
-                // This is extremely common so it is a little more verbose then I want to leave in there
-                // logger.debug(`Removing temp files: could not access ${requestTmpPath} (may not have been created)`, accessError);
+                // This only happens on startup and shutdown
+                logger.debug(`Removing temp files: could not access ${tmpFolderPath} (may not have been created)`, accessError);
             }
-        });
-    }
-    next(obj);
-});
+        });    
+    };
+    /**
+     * The on exit handler has to be sync otherwise callbacks never get executed
+     */
+    const deleteTmpFolderSync = (): void => {
+        try {
+            logger.debug('Deleting temp file sync');
+            try {
+                fs.accessSync(tmpFolderPath);
+            } catch (e) {
+                logger.debug(`Removing temp files: could not access ${tmpFolderPath} (may not have been created)`);
+            }
+            
+            try {
+                fs.rmdirSync(tmpFolderPath, { recursive: true });
+            } catch (e) {
+                logger.error(`Removing temp files: could not delete  ${tmpFolderPath}`);
+            }
+        } catch (e) {
+            // Everything should be try catched above, adding extra error handling because uncaught error results in the application staying open
+            logger.error('TSNH deleteTmpFolderSync failed', e);
+        }
+    };
+    deleteTmpFolder();
+    process.on('exit', deleteTmpFolderSync);
+    // request temp file cleanup
+    app.use((obj: unknown, req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
+        if (!_.isNil(req.requestId)) {
+            const requestTmpPath = `./tmp/${req.requestId}`;
+            fs.access(requestTmpPath, (accessError: Error | null) => {
+                if (!accessError) {
+                    fs.rmdir(requestTmpPath, { recursive: true }, (rmError: Error | null) => {
+                        if (rmError) {
+                            logger.error(`Removing temp files: could not delete  ${requestTmpPath}`, rmError);
+                        }
+                    });
+                } else {
+                    // This is extremely common so it is a little more verbose then I want to leave in there
+                    // logger.debug(`Removing temp files: could not access ${requestTmpPath} (may not have been created)`, accessError);
+                }
+            });
+        }
+        next(obj);
+    });
+}
 
 // General Exception Handler
 // next is a required parameter, without having it requests result in a response of object
@@ -227,6 +270,10 @@ app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
 
 export const listen = (): Promise<null> => {
     return new Promise((resolve) => {
+        process.on('exit', function() {
+            logger.info('Server shutting down');
+        });
+        
         app.listen(port, () => {
             logger.info(`Server started up and listening on port: ${port}`);
             resolve();

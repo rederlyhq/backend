@@ -21,3 +21,15 @@ process.on('unhandledRejection', (error: any) => {
 process.on('uncaughtException', (error: any) => {
     logger.error(`An uncaught error occurred "${error?.stack ?? error}"`);
 });
+
+/**
+ * Make sure that on exit cleanup tasks are performed
+ */
+const exit = (): void => process.exit(0);
+
+//catches ctrl+c event
+process.on('SIGINT', exit);
+
+// catches "kill pid" (for example: nodemon restart)
+process.on('SIGUSR1', exit);
+process.on('SIGUSR2', exit);

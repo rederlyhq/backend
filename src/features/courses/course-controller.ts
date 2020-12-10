@@ -3479,7 +3479,7 @@ class CourseController {
         });
     };
 
-    async endAssessmentEarly(studentTopicAssessmentInfo: StudentTopicAssessmentInfo, wasAutoSubmitted: boolean): void {
+    async endAssessmentEarly(studentTopicAssessmentInfo: StudentTopicAssessmentInfo, wasAutoSubmitted: boolean): Promise<void> {
         studentTopicAssessmentInfo.isClosed = true;
         await studentTopicAssessmentInfo.save();
         if (wasAutoSubmitted === false) {

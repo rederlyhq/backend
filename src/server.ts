@@ -20,7 +20,9 @@ import ForbiddenError from './exceptions/forbidden-error';
 import * as _ from 'lodash';
 import * as nodeUrl from 'url';
 import { rederlyRequestNamespaceMiddleware } from './middleware/rederly-request-namespace';
+import { RederlyExpressRequest } from './extensions/rederly-express-request';
 import { v4 as uuidv4 } from 'uuid';
+import * as fs from 'fs';
 
 interface ErrorResponse {
     statusCode: number;
@@ -157,6 +159,25 @@ app.use(passport.initialize());
 
 app.use(basePath, router);
 
+// request temp file cleanup
+app.use((obj: unknown, req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
+    if (!_.isNil(req.requestId)) {
+        const requestTmpPath = `./tmp/${req.requestId}`;
+        fs.access(requestTmpPath, (accessError: Error | null) => {
+            if (!accessError) {
+                fs.rmdir(requestTmpPath, { recursive: true }, (rmError: Error | null) => {
+                    if (rmError) {
+                        logger.error(`Removing temp files: could not delete  ${requestTmpPath}`, rmError);
+                    }
+                });
+            } else {
+                // This is extremely common so it is a little more verbose then I want to leave in there
+                // logger.debug(`Removing temp files: could not access ${requestTmpPath} (may not have been created)`, accessError);
+            }
+        });
+    }
+    next(obj);
+});
 
 // General Exception Handler
 // next is a required parameter, without having it requests result in a response of object

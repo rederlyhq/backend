@@ -34,6 +34,7 @@
     "qs": "^6.9.4",
     "sequelize": "^5.22.3",
     "sequelize-cli": "^5.5.1",
+    "tar": "^6.0.5",
     "url-join": "^4.0.1",
     "uuid": "^7.0.3",
     "winston": "^3.3.3"
@@ -64,6 +65,7 @@
     "@types/pug": "^2.0.4",
     "@types/qs": "^6.9.4",
     "@types/sequelize": "^4.28.9",
+    "@types/tar": "^4.0.4",
     "@types/url-join": "^4.0.0",
     "@types/uuid": "^7.0.4",
     "@types/validator": "^13.1.0",

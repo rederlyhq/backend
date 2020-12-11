@@ -1,6 +1,25 @@
 import logger from '../utilities/logger';
 import rendererHelper from '../utilities/renderer-helper';
 
+const isPathAccessibleToRenderer = async () => {
+    let path = 'abc';
+    logger.info(`isPathAccessibleToRenderer path:${path}; result:${await rendererHelper.isPathAccessibleToRenderer({ problemPath: path })}`);
+    path = 'private/templates/barebones.pg';
+    logger.info(`isPathAccessibleToRenderer path:${path}; result:${await rendererHelper.isPathAccessibleToRenderer({ problemPath: path })}`);
+    path = 'private/our/CUNY/Statistics/BCC/Stats/qwerqwer.pg';
+    logger.info(`isPathAccessibleToRenderer path:${path}; result:${await rendererHelper.isPathAccessibleToRenderer({ problemPath: path })}`);
+    path = 'private/our/CUNY/Statistics/BCC/Stats/standard_normal1.pg';
+    logger.info(`isPathAccessibleToRenderer path:${path}; result:${await rendererHelper.isPathAccessibleToRenderer({ problemPath: path })}`);
+    path = 'Contrib/CUNY/CityTech/Calculus/setDerivatives_-_Limit_Definition/diff-quotient-intro.pg';
+    logger.info(`isPathAccessibleToRenderer path:${path}; result:${await rendererHelper.isPathAccessibleToRenderer({ problemPath: path })}`);
+    path = 'Contrib/CUNY/CityTech/Calculus/setDerivatives_-_Limit_Definition';
+    logger.info(`isPathAccessibleToRenderer path:${path}; result:${await rendererHelper.isPathAccessibleToRenderer({ problemPath: path })}`);
+    path = 'Contrib/CUNY/CityTech/Calculus/setDerivatives_-_Limit_Definition/';
+    logger.info(`isPathAccessibleToRenderer path:${path}; result:${await rendererHelper.isPathAccessibleToRenderer({ problemPath: path })}`);
+    path = 'Library/NAU/setProbability/samplespace.pg';
+    logger.info(`isPathAccessibleToRenderer path:${path}; result:${await rendererHelper.isPathAccessibleToRenderer({ problemPath: path })}`);
+};
+
 const runRendererPlayground = async (): Promise<void> => {
     const date = new Date();
 
@@ -74,5 +93,7 @@ const runRendererPlayground = async (): Promise<void> => {
         `
     });
     logger.info(JSON.stringify(getProblemResult, null, 2));
+
+    await isPathAccessibleToRenderer();
 };
 export default runRendererPlayground;

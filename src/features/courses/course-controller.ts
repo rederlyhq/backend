@@ -2194,7 +2194,16 @@ class CourseController {
                     active: true
                 },
                 include: unitInclude || [],
-            }];
+            },
+            // {
+            //     model: StudentTopicOverride,
+            //     as: 'studentTopicOverride',
+            //     attributes: [],
+            //     where: {
+            //         active: true
+            //     }
+            // }
+        ];
         }
 
         let questionInclude;
@@ -2236,8 +2245,56 @@ class CourseController {
                 END
             `);
 
+            // Calculate the OPEN grades only
+            const pointsEarnedOpen = `SUM(
+                CASE
+                    WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
+                        AND "question->topic".${CourseTopicContent.rawAttributes.startDate.field} < NOW()
+                    THEN ${StudentGrade.rawAttributes.effectiveScore.field} * "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
+                    ELSE 0
+                END)`;
+            const pointsAvailableOpen = `SUM(
+                CASE
+                    WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
+                        AND "question->topic".${CourseTopicContent.rawAttributes.startDate.field} < NOW()
+                    THEN "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
+                    ELSE 0
+                END)`;
+            const averageScoreAttributeOpen = sequelize.literal(`
+                CASE WHEN ${pointsAvailableOpen} = 0 THEN
+                    NULL
+                ELSE
+                    ${pointsEarnedOpen} / ${pointsAvailableOpen}
+                END
+            `);
+
+            // Calculate the DEAD grades only
+            const pointsEarnedDead = `SUM(
+                CASE
+                    WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
+                        AND "question->topic".${CourseTopicContent.rawAttributes.deadDate.field} < NOW()
+                    THEN ${StudentGrade.rawAttributes.effectiveScore.field} * "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
+                    ELSE 0
+                END)`;
+            const pointsAvailableDead = `SUM(
+                CASE
+                    WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
+                        AND "question->topic".${CourseTopicContent.rawAttributes.deadDate.field} < NOW()
+                    THEN "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
+                    ELSE 0
+                END)`;
+            const averageScoreAttributeDead = sequelize.literal(`
+                CASE WHEN ${pointsAvailableDead} = 0 THEN
+                    NULL
+                ELSE
+                    ${pointsEarnedDead} / ${pointsAvailableDead}
+                END
+            `);
+
             attributes = [
                 [averageScoreAttribute, 'average'],
+                [averageScoreAttributeOpen, 'openAverage'],
+                [averageScoreAttributeDead, 'deadAverage'],
                 [sequelize.literal(pendingProblemCountCalculationString), 'pendingProblemCount'],
                 [sequelize.literal(masteredProblemCountCalculationString), 'masteredProblemCount'],
                 [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
@@ -3491,7 +3548,7 @@ class CourseController {
                 } else {
                     problemScoresReturn = {total: problemScores.total};
                 }
-            }            
+            }
 
             return { problemScores: problemScoresReturn, bestVersionScore: bestVersionScoreReturn, bestOverallVersion: bestOverallVersionReturn};
         });

@@ -2195,14 +2195,15 @@ class CourseController {
                 },
                 include: unitInclude || [],
             },
-            // {
-            //     model: StudentTopicOverride,
-            //     as: 'studentTopicOverride',
-            //     attributes: [],
-            //     where: {
-            //         active: true
-            //     }
-            // }
+            {
+                model: StudentTopicOverride,
+                as: 'studentTopicOverride',
+                attributes: [],
+                required: false,
+                where: {
+                    active: true
+                }
+            }
         ];
         }
 
@@ -2245,60 +2246,78 @@ class CourseController {
                 END
             `);
 
-            // Calculate the OPEN grades only
-            const pointsEarnedOpen = `SUM(
-                CASE
-                    WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
-                        AND "question->topic".${CourseTopicContent.rawAttributes.startDate.field} < NOW()
-                    THEN ${StudentGrade.rawAttributes.effectiveScore.field} * "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
-                    ELSE 0
-                END)`;
-            const pointsAvailableOpen = `SUM(
-                CASE
-                    WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
-                        AND "question->topic".${CourseTopicContent.rawAttributes.startDate.field} < NOW()
-                    THEN "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
-                    ELSE 0
-                END)`;
-            const averageScoreAttributeOpen = sequelize.literal(`
-                CASE WHEN ${pointsAvailableOpen} = 0 THEN
-                    NULL
-                ELSE
-                    ${pointsEarnedOpen} / ${pointsAvailableOpen}
-                END
-            `);
+            if (_.isNil(topicId)) {
+                // Calculate the OPEN grades only
+                const pointsEarnedOpen = `SUM(
+                    CASE
+                        WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
+                            AND
+                                ("question->topic".${CourseTopicContent.rawAttributes.startDate.field} < NOW()
+                                OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.startDate.field} < NOW())
+                        THEN ${StudentGrade.rawAttributes.effectiveScore.field} * "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
+                        ELSE 0
+                    END)`;
+                const pointsAvailableOpen = `SUM(
+                    CASE
+                        WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
+                            AND
+                                ("question->topic".${CourseTopicContent.rawAttributes.startDate.field} < NOW()
+                                OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.startDate.field} < NOW())
+                        THEN "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
+                        ELSE 0
+                    END)`;
+                const averageScoreAttributeOpen = sequelize.literal(`
+                    CASE WHEN ${pointsAvailableOpen} = 0 THEN
+                        NULL
+                    ELSE
+                        ${pointsEarnedOpen} / ${pointsAvailableOpen}
+                    END
+                `);
 
-            // Calculate the DEAD grades only
-            const pointsEarnedDead = `SUM(
-                CASE
-                    WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
-                        AND "question->topic".${CourseTopicContent.rawAttributes.deadDate.field} < NOW()
-                    THEN ${StudentGrade.rawAttributes.effectiveScore.field} * "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
-                    ELSE 0
-                END)`;
-            const pointsAvailableDead = `SUM(
-                CASE
-                    WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
-                        AND "question->topic".${CourseTopicContent.rawAttributes.deadDate.field} < NOW()
-                    THEN "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
-                    ELSE 0
-                END)`;
-            const averageScoreAttributeDead = sequelize.literal(`
-                CASE WHEN ${pointsAvailableDead} = 0 THEN
-                    NULL
-                ELSE
-                    ${pointsEarnedDead} / ${pointsAvailableDead}
-                END
-            `);
+                // Calculate the DEAD grades only
+                const pointsEarnedDead = `SUM(
+                    CASE
+                        WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
+                            AND
+                                ("question->topic".${CourseTopicContent.rawAttributes.deadDate.field} < NOW()
+                                OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.deadDate.field} < NOW())
+                        THEN ${StudentGrade.rawAttributes.effectiveScore.field} * "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
+                        ELSE 0
+                    END)`;
+                const pointsAvailableDead = `SUM(
+                    CASE
+                        WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
+                            AND
+                                ("question->topic".${CourseTopicContent.rawAttributes.deadDate.field} < NOW()
+                                OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.deadDate.field} < NOW())
+                        THEN "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
+                        ELSE 0
+                    END)`;
+                const averageScoreAttributeDead = sequelize.literal(`
+                    CASE WHEN ${pointsAvailableDead} = 0 THEN
+                        NULL
+                    ELSE
+                        ${pointsEarnedDead} / ${pointsAvailableDead}
+                    END
+                `);
 
-            attributes = [
-                [averageScoreAttribute, 'average'],
-                [averageScoreAttributeOpen, 'openAverage'],
-                [averageScoreAttributeDead, 'deadAverage'],
-                [sequelize.literal(pendingProblemCountCalculationString), 'pendingProblemCount'],
-                [sequelize.literal(masteredProblemCountCalculationString), 'masteredProblemCount'],
-                [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
-            ];
+                attributes = [
+                    [averageScoreAttribute, 'average'],
+                    [averageScoreAttributeOpen, 'openAverage'],
+                    [averageScoreAttributeDead, 'deadAverage'],
+                    [sequelize.literal(pendingProblemCountCalculationString), 'pendingProblemCount'],
+                    [sequelize.literal(masteredProblemCountCalculationString), 'masteredProblemCount'],
+                    [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
+                ];
+            } else {
+                attributes = [
+                    [averageScoreAttribute, 'average'],
+                    [sequelize.literal(pendingProblemCountCalculationString), 'pendingProblemCount'],
+                    [sequelize.literal(masteredProblemCountCalculationString), 'masteredProblemCount'],
+                    [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
+                ];
+            }
+
             // TODO This group needs to match the alias below, I'd like to find a better way to do this
             group = [`user.${User.rawAttributes.id.field}`,
                 `user.${User.rawAttributes.firstName.field}`,

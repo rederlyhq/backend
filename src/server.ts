@@ -186,13 +186,13 @@ if (configurations.app.autoDeleteTemp) {
             try {
                 fs.accessSync(tmpFolderPath);
             } catch (e) {
-                logger.debug(`Removing temp files: could not access ${tmpFolderPath} (may not have been created)`);
+                logger.debug(`Removing temp files: could not access ${tmpFolderPath} (may not have been created)`, e);
             }
-            
+
             try {
                 fs.rmdirSync(tmpFolderPath, { recursive: true });
             } catch (e) {
-                logger.error(`Removing temp files: could not delete  ${tmpFolderPath}`);
+                logger.error(`Removing temp files: could not delete  ${tmpFolderPath}`, e);
             }
         } catch (e) {
             // Everything should be try catched above, adding extra error handling because uncaught error results in the application staying open
@@ -270,10 +270,6 @@ app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
 
 export const listen = (): Promise<null> => {
     return new Promise((resolve) => {
-        process.on('exit', function() {
-            logger.info('Server shutting down');
-        });
-        
         app.listen(port, () => {
             logger.info(`Server started up and listening on port: ${port}`);
             resolve();

@@ -382,6 +382,11 @@ class RendererHelper {
         }
     }
 
+    /**
+     * TODO fix return
+     * catalog a pg file that exists returns an empty string
+     * @param param0 
+     */
     catalog = async ({
         basePath,
         maxDepth,
@@ -405,6 +410,30 @@ class RendererHelper {
                     return {};
                 }
                 throw new WrappedError(`${errorMessagePrefix}; response: ${JSON.stringify(e.response?.data)}`, e);
+            }
+            // Some application error occurred
+            throw new WrappedError(errorMessagePrefix, e);
+        }
+    }
+
+    isPathAccessibleToRenderer = async ({
+        problemPath
+    }: {
+        problemPath: string;
+    }): Promise<boolean> => {
+        try {
+            const catalogResult = await this.catalog({
+                basePath: problemPath,
+                maxDepth: 0
+            });
+            // right now catalog returns empty string if you catalog a pg file
+            return catalogResult as unknown === '';
+        } catch (err) {
+            const errorMessagePrefix = `Could not check path accessibility "${problemPath}"`;
+            const e = err.cause;
+            if(isAxiosError(e) && e.response?.status === 403) {
+                logger.debug('Path forbidden');
+                return false;
             }
             // Some application error occurred
             throw new WrappedError(errorMessagePrefix, e);

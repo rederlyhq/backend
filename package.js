@@ -118,7 +118,7 @@ console.log(`Starting to package project into ${destFile}`);
     });
 
     const archivePromises = [];
-    if (process.env.REDERLY_PACKAGER_ARCHIVE !== 'false' && process.env.REDERLY_PACKAGER_ARCHIVE_TAR !== 'false') {
+    if (REDERLY_PACKAGER_ARCHIVE !== 'false' && REDERLY_PACKAGER_ARCHIVE_TAR !== 'false') {
         const tarPromise = createArchive('tar', {
             gzip: true
         }, `${distDirectory}/${destFile}.tgz`, buildDir);
@@ -127,7 +127,7 @@ console.log(`Starting to package project into ${destFile}`);
         console.log('REDERLY_PACKAGER_ARCHIVE or REDERLY_PACKAGER_ARCHIVE_TAR is set to false, skipping tar');
     }
 
-    if (process.env.REDERLY_PACKAGER_ARCHIVE !== 'false' && process.env.REDERLY_PACKAGER_ARCHIVE_ZIP !== 'false') {
+    if (REDERLY_PACKAGER_ARCHIVE !== 'false' && REDERLY_PACKAGER_ARCHIVE_ZIP !== 'false') {
         const zipPromise = createArchive('zip', null, `${distDirectory}/${destFile}.zip`, buildDir);
         archivePromises.push(zipPromise);    
     } else {

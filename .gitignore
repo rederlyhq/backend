@@ -4,3 +4,5 @@ ts-built
 logs
 *.DS_Store
 tmp
+build
+builds

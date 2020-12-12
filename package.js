@@ -15,7 +15,23 @@ const archiver = require('archiver');
 // zip -r ${{ steps.get_file_name.outputs.result }} build;
 
 const builtDirectory = 'ts-built';
-const destFile = process.argv[2] || 'dist';
+
+const {
+    REDERLY_PACKAGER_ARCHIVE,
+    REDERLY_PACKAGER_ARCHIVE_ZIP,
+    REDERLY_PACKAGER_ARCHIVE_TAR,
+    REDERLY_PACKAGER_DEST_FILE
+} = process.env;
+
+console.log(`Env: ${JSON.stringify({
+    REDERLY_PACKAGER_ARCHIVE,
+    REDERLY_PACKAGER_ARCHIVE_ZIP,
+    REDERLY_PACKAGER_ARCHIVE_TAR,
+    REDERLY_PACKAGER_DEST_FILE
+}, null, 2)}`);
+
+const destFile = process.argv[2] || REDERLY_PACKAGER_DEST_FILE || 'dist';
+
 const buildDir = 'build';
 console.log(`Starting to package project into ${destFile}`);
 
@@ -46,13 +62,14 @@ console.log(`Starting to package project into ${destFile}`);
         'package-lock.json'
     ];
     
-    const promises = filesToCopy.map(async fileToCopy => {
+    const copyFilePromises = filesToCopy.map(async fileToCopy => {
         const dest = `${buildDir}/${fileToCopy}`;
         console.log(`Copying ${fileToCopy} ==> "${dest}"`);
         await fs.copy(fileToCopy, dest, {recursive: true});
         console.log(`Finished copying ${fileToCopy} ==> "${dest}"`);
     });
-    await Promise.all(promises);
+    await Promise.all(copyFilePromises);
+
     console.log('Pruning dependencies');
     await new Promise((resolve, reject) => {
         childProcess.exec('npm prune --production', {
@@ -100,12 +117,23 @@ console.log(`Starting to package project into ${destFile}`);
         archive.finalize();
     });
 
-    const tarPromise = createArchive('tar', {
-        gzip: true
-    }, `${distDirectory}/${destFile}.tgz`, buildDir);
+    const archivePromises = [];
+    if (process.env.REDERLY_PACKAGER_ARCHIVE !== 'false' && process.env.REDERLY_PACKAGER_ARCHIVE_TAR !== 'false') {
+        const tarPromise = createArchive('tar', {
+            gzip: true
+        }, `${distDirectory}/${destFile}.tgz`, buildDir);
+        archivePromises.push(tarPromise);    
+    } else {
+        console.log('REDERLY_PACKAGER_ARCHIVE or REDERLY_PACKAGER_ARCHIVE_TAR is set to false, skipping tar');
+    }
 
-    const zipPromise = createArchive('zip', null, `${distDirectory}/${destFile}.zip`, buildDir);
+    if (process.env.REDERLY_PACKAGER_ARCHIVE !== 'false' && process.env.REDERLY_PACKAGER_ARCHIVE_ZIP !== 'false') {
+        const zipPromise = createArchive('zip', null, `${distDirectory}/${destFile}.zip`, buildDir);
+        archivePromises.push(zipPromise);    
+    } else {
+        console.log('REDERLY_PACKAGER_ARCHIVE or REDERLY_PACKAGER_ARCHIVE_ZIP is set to false, skipping zip');
+    }
 
-    await Promise.all([tarPromise, zipPromise]);
+    await Promise.all(archivePromises);
     console.log('Packaging complete');
 })();

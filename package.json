@@ -109,7 +109,9 @@
     "sequelize:migrations:devundo": "npm run sequelize -- db:migrate:undo:all --to 20201112094400-curriculum-assessments.js",
     "sequelize:built:migrations": "sequelize -- db:migrate",
     "lint": "eslint src/ --ext .ts",
-    "clean": "if [ -d ts-built ]; then rm -r ts-built; fi;"
+    "clean": "if [ -d ts-built ]; then rm -r ts-built; fi;",
+    "package": "node ./package.js",
+    "build:package": "npm run build && npm run package"
   },
   "nodemonConfig": {
     "ignore": [

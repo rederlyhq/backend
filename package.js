@@ -17,10 +17,10 @@ const archiver = require('archiver');
 const builtDirectory = 'ts-built';
 
 const {
-    REDERLY_PACKAGER_ARCHIVE,
-    REDERLY_PACKAGER_ARCHIVE_ZIP,
-    REDERLY_PACKAGER_ARCHIVE_TAR,
-    REDERLY_PACKAGER_DEST_FILE
+    REDERLY_PACKAGER_ARCHIVE = null,
+    REDERLY_PACKAGER_ARCHIVE_ZIP = null,
+    REDERLY_PACKAGER_ARCHIVE_TAR = null,
+    REDERLY_PACKAGER_DEST_FILE = null
 } = process.env;
 
 console.log(`Env: ${JSON.stringify({

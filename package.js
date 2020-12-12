@@ -4,7 +4,6 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const fs = require('fs-extra');
 const childProcess = require('child_process');
-const tar = require('tar');
 const archiver = require('archiver');
 
 // set -e;
@@ -77,16 +76,32 @@ console.log(`Starting to package project into ${destFile}`);
     }
     await fs.mkdir(distDirectory);
 
-    const tarPromise =  (async () => {
+    const tarPromise = new Promise((resolve, reject) => {
         console.log('Packing into tgz');
         const file = `${distDirectory}/${destFile}.tgz`;
-        const result = await tar.create({
-            file: file,
-            gzip: true,
-        }, [buildDir]);
-        console.log(`Tarring ${buildDir} ==> ${file} complete`);
-        return result;
-    })();
+        const tarArchive = archiver('tar', {
+            gzip: true
+        });
+        let errored = false;
+        tarArchive.on('error', err => {
+            errored = true;
+            reject(err);
+        });
+
+        tarArchive.on('close', () => {
+            if (errored) {
+                console.error('Tar archive already errored and now it is closing, ignoring');
+            } else {
+                console.log(`Tarring ${buildDir} ==> ${file} complete`);
+                resolve(tarArchive.pointer());
+            }
+        });
+
+        const outputStream = fs.createWriteStream(file);
+        tarArchive.pipe(outputStream);
+        tarArchive.directory(buildDir, buildDir);
+        tarArchive.finalize();
+    });
 
     const zipPromise = new Promise((resolve, reject) => {
         console.log('Packing into zip');

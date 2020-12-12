@@ -76,57 +76,35 @@ console.log(`Starting to package project into ${destFile}`);
     }
     await fs.mkdir(distDirectory);
 
-    const tarPromise = new Promise((resolve, reject) => {
-        console.log('Packing into tgz');
-        const file = `${distDirectory}/${destFile}.tgz`;
-        const tarArchive = archiver('tar', {
-            gzip: true
-        });
+    const createArchive = (format, options, outputFile, inputDirectory) => new Promise((resolve, reject) => {
+        console.log(`Packing into ${outputFile}`);
+        const archive = archiver(format, options);
         let errored = false;
-        tarArchive.on('error', err => {
+        archive.on('error', err => {
             errored = true;
             reject(err);
         });
 
-        tarArchive.on('close', () => {
+        archive.on('close', () => {
             if (errored) {
-                console.error('Tar archive already errored and now it is closing, ignoring');
+                console.error(`Archive ${inputDirectory} ==> ${outputFile} already errored and now it is closing, ignoring`);
             } else {
-                console.log(`Tarring ${buildDir} ==> ${file} complete`);
-                resolve(tarArchive.pointer());
+                console.log(`Archive ${inputDirectory} ==> ${outputFile} complete`);
+                resolve(archive.pointer());
             }
         });
 
-        const outputStream = fs.createWriteStream(file);
-        tarArchive.pipe(outputStream);
-        tarArchive.directory(buildDir, buildDir);
-        tarArchive.finalize();
+        const outputStream = fs.createWriteStream(outputFile);
+        archive.pipe(outputStream);
+        archive.directory(inputDirectory, inputDirectory);
+        archive.finalize();
     });
 
-    const zipPromise = new Promise((resolve, reject) => {
-        console.log('Packing into zip');
-        const file = `${distDirectory}/${destFile}.zip`;
-        const zipArchive = archiver('zip');
-        let errored = false;
-        zipArchive.on('error', err => {
-            errored = true;
-            reject(err);
-        });
+    const tarPromise = createArchive('tar', {
+        gzip: true
+    }, `${distDirectory}/${destFile}.tgz`, buildDir);
 
-        zipArchive.on('close', () => {
-            if (errored) {
-                console.error('Zip archive already errored and now it is closing, ignoring');
-            } else {
-                console.log(`Zipping ${buildDir} ==> ${file} complete`);
-                resolve(zipArchive.pointer());
-            }
-        });
-
-        const outputStream = fs.createWriteStream(file);
-        zipArchive.pipe(outputStream);
-        zipArchive.directory(buildDir, buildDir);
-        zipArchive.finalize();
-    });
+    const zipPromise = createArchive('zip', null, `${distDirectory}/${destFile}.zip`, buildDir);
 
     await Promise.all([tarPromise, zipPromise]);
     console.log('Packaging complete');

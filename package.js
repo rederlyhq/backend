@@ -5,6 +5,7 @@
 const fs = require('fs-extra');
 const childProcess = require('child_process');
 const tar = require('tar');
+const archiver = require('archiver');
 
 // set -e;
 // mkdir build;
@@ -59,7 +60,7 @@ console.log(`Starting to package project into ${destFile}`);
             cwd: buildDir
         }, (error, out, err) => {
             console.log(`Prune out: ${out}`);
-            console.log(`Prune err: ${err}`);
+            console.error(`Prune err: ${err}`);
             if (error) {
                 reject(error);
             } else {
@@ -68,14 +69,50 @@ console.log(`Starting to package project into ${destFile}`);
         });
     });
 
-    const distDirectory = 'builds';
-    if (!await fs.pathExists(distDirectory)) {
-        await fs.mkdir(distDirectory);
+    const distDirectory = 'package-outputs';
+    if (await fs.pathExists(distDirectory)) {
+        await fs.remove(distDirectory, {
+            recursive: true
+        });
     }
+    await fs.mkdir(distDirectory);
 
-    console.log('Packing into tgz');
-    await tar.create({
-        file: `${distDirectory}/${destFile}.tgz`,
-        gzip: true,
-    }, [buildDir]);
+    const tarPromise =  (async () => {
+        console.log('Packing into tgz');
+        const file = `${distDirectory}/${destFile}.tgz`;
+        const result = await tar.create({
+            file: file,
+            gzip: true,
+        }, [buildDir]);
+        console.log(`Tarring ${buildDir} ==> ${file} complete`);
+        return result;
+    })();
+
+    const zipPromise = new Promise((resolve, reject) => {
+        console.log('Packing into zip');
+        const file = `${distDirectory}/${destFile}.zip`;
+        const zipArchive = archiver('zip');
+        let errored = false;
+        zipArchive.on('error', err => {
+            errored = true;
+            reject(err);
+        });
+
+        zipArchive.on('close', () => {
+            if (errored) {
+                console.error('Zip archive already errored and now it is closing, ignoring');
+            } else {
+                console.log(`Zipping ${buildDir} ==> ${file} complete`);
+                resolve(zipArchive.pointer());
+            }
+        });
+
+        const outputStream = fs.createWriteStream(file);
+        zipArchive.pipe(outputStream);
+        zipArchive.directory(buildDir, buildDir);
+        zipArchive.finalize();
+    });
+
+    await Promise.all([tarPromise, zipPromise]);
+    console.log('Packaging complete');
 })();

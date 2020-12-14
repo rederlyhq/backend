@@ -12,6 +12,8 @@ const DELETE_EVENT_ENDPOINT = path.posix.join(BASE_PATH, '/delete_job/');
 export interface SchedulerHelperConfigurations {
     apiKey: string;
     baseURL: string;
+    schedulerRequestTimeout: number;
+    schedulerResponseTimeout: number;
 };
 
 export enum HttpMethod {
@@ -47,15 +49,20 @@ interface DeleteJobOptions {
 export class SchedulerHelper {
     private readonly apiKey: string;
     private readonly axios: AxiosInstance;
-    
+    private readonly schedulerResponseTimeout: number;
+
     constructor({
         apiKey,
         baseURL,
+        schedulerRequestTimeout,
+        schedulerResponseTimeout
     }: SchedulerHelperConfigurations) {
         this.apiKey = apiKey;
+        this.schedulerResponseTimeout = schedulerResponseTimeout;
         this.axios = axios.create({
             baseURL: baseURL,
             responseType: 'json',
+            timeout: schedulerRequestTimeout
         });
     }
 
@@ -116,7 +123,7 @@ export class SchedulerHelper {
             url,
             data,
             headers = 'User-Agent: NULL',
-            timeout = 30,
+            timeout = this.schedulerResponseTimeout,
             sslCertBypass = false,
         }
     }: ScheduleJob): Promise<AxiosResponse<unknown>> => {
@@ -147,6 +154,8 @@ export class SchedulerHelper {
 const schedulerHelper = new SchedulerHelper({
     // Not implemented
     apiKey: '9cb638fda0429506a2a6afd23accaa52',
-    baseURL: configurations.scheduler.basePath
+    baseURL: configurations.scheduler.basePath,
+    schedulerRequestTimeout: configurations.scheduler.schedulerRequestTimeout,
+    schedulerResponseTimeout: configurations.scheduler.schedulerResponseTimeout,
 });
 export default schedulerHelper;

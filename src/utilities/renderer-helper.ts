@@ -15,6 +15,7 @@ import urljoin = require('url-join');
 const rendererAxios = axios.create({
     baseURL: configurations.renderer.url,
     responseType: 'json',
+    timeout: configurations.renderer.requestTimeout
 });
 
 // TODO switch over to new endpoint
@@ -199,6 +200,12 @@ class RendererHelper {
 
     getOutputFormatForRole = (role: Role): OutputFormat => this.getOutputFormatForPermission(this.getPermissionForRole(role));
 
+    // (nearly) identical to that used in ProblemIframe
+    // run StudentWorkbook.submitted through _.omitBy(isPrevious) to compare to StudentGrade.currentProblemState
+    isPrevious = (_value: unknown, key: string): boolean => {
+        return /^previous_/.test(key);
+    };
+
     cleanRendererResponseForTheDatabase = (resp: RendererResponse): Partial<RendererResponse> => {
         // I don't know if this method could be used if we needed nested keys
         // I'm back and forth between using _.pick and joi validation
@@ -251,6 +258,7 @@ class RendererHelper {
         processAnswers,
         format = 'json',
         formData,
+        answersSubmitted,
         showCorrectAnswers = false
     }: GetProblemParameters): Promise<unknown> {
         if (!_.isNil(problemSource)) {
@@ -272,6 +280,7 @@ class RendererHelper {
             numCorrect,
             numIncorrect,
             processAnswers,
+            answersSubmitted,
             showCorrectAnswers: showCorrectAnswers ? 'true' : undefined
         };
 
@@ -373,6 +382,11 @@ class RendererHelper {
         }
     }
 
+    /**
+     * TODO fix return
+     * catalog a pg file that exists returns an empty string
+     * @param param0 
+     */
     catalog = async ({
         basePath,
         maxDepth,
@@ -396,6 +410,30 @@ class RendererHelper {
                     return {};
                 }
                 throw new WrappedError(`${errorMessagePrefix}; response: ${JSON.stringify(e.response?.data)}`, e);
+            }
+            // Some application error occurred
+            throw new WrappedError(errorMessagePrefix, e);
+        }
+    }
+
+    isPathAccessibleToRenderer = async ({
+        problemPath
+    }: {
+        problemPath: string;
+    }): Promise<boolean> => {
+        try {
+            const catalogResult = await this.catalog({
+                basePath: problemPath,
+                maxDepth: 0
+            });
+            // right now catalog returns empty string if you catalog a pg file
+            return catalogResult as unknown === '';
+        } catch (err) {
+            const errorMessagePrefix = `Could not check path accessibility "${problemPath}"`;
+            const e = err.cause;
+            if(isAxiosError(e) && e.response?.status === 403) {
+                logger.debug('Path forbidden');
+                return false;
             }
             // Some application error occurred
             throw new WrappedError(errorMessagePrefix, e);

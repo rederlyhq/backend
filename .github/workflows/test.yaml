@@ -1,0 +1,35 @@
+name: Node.js CI
+
+on: [pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [12.x]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v1
+    - name: NPM install
+      uses: bahmutov/npm-install@v1
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - name: Build
+      run: npm run build
+      env:
+        CI: false # TODO consistent with frontend but I don't think this matters
+    # Test needs to be before check build since the dev dependencies get pruned
+    # - name: Test
+    #   run: npm test
+    #   env:
+    #     CI: true
+    - name: Prune dependencies for production
+      run: npm prune --production
+    - name: Check Build
+      run: npm run run:built:test-run # this script runs the application without connecting the server or database, therefore it goes through all the imports and everything

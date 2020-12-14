@@ -1,19 +1,17 @@
 import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
-export interface CourseQuestionAssessmentInfoInterface {
+export interface CurriculumQuestionAssessmentInfoInterface {
     id: number;
-    courseWWTopicQuestionId: number;
-    curriculumQuestionAssessmentInfoId: number;
+    curriculumWWTopicQuestionId: number;
     randomSeedSet: Array<number>;
     additionalProblemPaths: Array<string>;
     active: boolean;
 }
-export default class CourseQuestionAssessmentInfo extends Model implements CourseQuestionAssessmentInfoInterface {
+export default class CurriculumQuestionAssessmentInfo extends Model implements CurriculumQuestionAssessmentInfoInterface {
 
     public id!: number;
-    public courseWWTopicQuestionId!: number;
-    public curriculumQuestionAssessmentInfoId!: number;
+    public curriculumWWTopicQuestionId!: number;
     public randomSeedSet!: Array<number>;
     public additionalProblemPaths!: Array<string>;
     public active!: boolean;
@@ -28,54 +26,49 @@ export default class CourseQuestionAssessmentInfo extends Model implements Cours
     static createAssociations(): void {
         // This is a hack to add the associations later to avoid cyclic dependencies
         /* eslint-disable @typescript-eslint/no-use-before-define */
-        CourseQuestionAssessmentInfo.belongsTo(CourseWWTopicQuestion, {
-            foreignKey: 'courseWWTopicQuestionId',
+        CurriculumQuestionAssessmentInfo.belongsTo(CurriculumWWTopicQuestion, {
+            foreignKey: 'curriculumWWTopicQuestionId',
             targetKey: 'id',
-            as: 'courseTopicQuestion'
+            as: 'curriculumTopicQuestion'
         });
-
+        
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }
 
-CourseQuestionAssessmentInfo.init({
+CurriculumQuestionAssessmentInfo.init({
     id: {
-        field: 'course_question_assessment_info_id',
+        field: 'curriculum_question_assessment_info_id',
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
     },
-    courseWWTopicQuestionId: {
-        field: 'course_topic_question_id',
+    curriculumWWTopicQuestionId: {
+        field: 'curriculum_topic_question_id',
         type: DataTypes.INTEGER,
         allowNull: false,
     },
-    curriculumQuestionAssessmentInfoId: {
-        field: 'curriculum_question_assessment_info_id',
-        type: DataTypes.INTEGER,
-        allowNull: true,
-    },
     randomSeedSet: {
-        field: 'course_question_assessment_info_random_seed_set',
+        field: 'curriculum_question_assessment_info_random_seed_set',
         type: DataTypes.ARRAY(DataTypes.INTEGER),
         allowNull: false,
         defaultValue: []
     },
     additionalProblemPaths: {
-        field: 'course_question_assessment_info_additional_problem_paths',
+        field: 'curriculum_question_assessment_info_additional_problem_paths',
         type: DataTypes.ARRAY(DataTypes.TEXT),
         allowNull: false,
         defaultValue: []
     },
     active: {
-        field: 'course_question_assessment_info_active',
+        field: 'curriculum_question_assessment_info_active',
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: true,
     },
 }, {
-    tableName: 'course_question_assessment_info',
+    tableName: 'curriculum_question_assessment_info',
     sequelize: appSequelize, // this bit is important
 });
 
-import CourseWWTopicQuestion from './course-ww-topic-question';
+import CurriculumWWTopicQuestion from './curriculum-ww-topic-question';

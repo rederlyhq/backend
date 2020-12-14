@@ -3,6 +3,7 @@ import '../extensions';
 // TODO change logger to just use console in this case
 import logger from '../utilities/logger';
 import '../global-error-handlers';
+import * as pug from 'pug';
 
 const enabledMarker = new Array(20).join('*');
 const disabledMarker = new Array(20).join('#');
@@ -12,17 +13,13 @@ if (configurations.email.enabled) {
     logger.info(`${disabledMarker} EMAIL DISABLED ${disabledMarker}`);
 }
 
-import { sync } from '../database';
+// Pug playground doesn't specifically need the database.
+// import { sync } from '../database';
 
 
 (async (): Promise<void> => {
-    try {
-        await sync();
-        logger.info('Playground start');
-        logger.info('Playground done');
-    } catch (e) {
-        logger.error('Could not start up', e);
-        // Used a larger number so that we could determine by the error code that this was an application error
-        process.exit(87);
-    }
+    // logger.info('Playground start');
+    const test = pug.compileFile('src/email-templates/verification.pug');
+    console.log(test({verifyToken: 'test123'}));
+    // logger.info('Playground done');
 })();

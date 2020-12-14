@@ -48,9 +48,7 @@ router.get('/statistics/units',
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             next(httpResponse.Ok('Fetched successfully', {
                 data: stats,
-                totalAverage: _.mean(stats.map(s => (s.get({plain: true}) as any).averageScore)),
-                totalOpenAverage: _.mean(stats.map(s => (s.get({plain: true}) as any).openAverage)),
-                totalDeadAverage: _.mean(stats.map(s => (s.get({plain: true}) as any).closedAverage)),
+                ...courseController.getAveragesFromStatistics(stats),
             }));
         } catch (e) {
             next(e);
@@ -72,7 +70,10 @@ router.get('/statistics/topics',
             });
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            next(httpResponse.Ok('Fetched successfully', {data: stats, totalAverage: _.mean(stats.map(s => (s.get({plain: true}) as any).averageScore))}));
+            next(httpResponse.Ok('Fetched successfully', {
+                data: stats,
+                ...courseController.getAveragesFromStatistics(stats),
+            }));
         } catch (e) {
             next(e);
         }
@@ -93,7 +94,10 @@ router.get('/statistics/questions',
             });
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            next(httpResponse.Ok('Fetched successfully', {data: stats, totalAverage: _.mean(stats.map(s => (s.get({plain: true}) as any).averageScore))}));
+            next(httpResponse.Ok('Fetched successfully', {
+                data: stats,
+                ...courseController.getAveragesFromStatistics(stats),
+            }));
         } catch (e) {
             next(e);
         }

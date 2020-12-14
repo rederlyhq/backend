@@ -2743,6 +2743,36 @@ class CourseController {
         });
     }
 
+    getAveragesFromStatistics(stats: Array<CourseUnitContent | CourseTopicContent | CourseWWTopicQuestion>):
+    {
+        totalAverage: number;
+        totalOpenAverage: number;
+        totalDeadAverage: number;
+    } {
+
+        type AverageArraysObject = {averageScores: number[]; openAverages: number[]; deadAverages: number[]};
+
+        const averageArraysObject = stats.reduce(
+            (accum: AverageArraysObject, s) => {
+                // Casting as any because using custom column names.
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const data: any = s.get({plain: true});
+                return {
+                    averageScores: [...accum.averageScores, data.averageScore],
+                    openAverages: [...accum.openAverages, data.openAverage],
+                    deadAverages: [...accum.deadAverages, data.deadAverage],
+                };
+            },
+            {averageScores: [], openAverages: [], deadAverages: []}
+        );
+
+        return {
+            totalAverage: _.mean(averageArraysObject.averageScores),
+            totalOpenAverage: _.mean(averageArraysObject.openAverages),
+            totalDeadAverage: _.mean(averageArraysObject.deadAverages),
+        };
+    }
+
     async canUserGetQuestions(options: CanUserGetQuestionsOptions): Promise<CanUserGetQuestionsResult> {
         const {userId, courseTopicContentId, studentTopicAssessmentInfoId} = options;
         let message = '';

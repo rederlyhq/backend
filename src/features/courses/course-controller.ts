@@ -2452,8 +2452,9 @@ class CourseController {
         }
 
         // Calculate the OPEN grades only
-        const getOpenAverageGroups = (): Array<sequelize.ProjectionAlias> => {
-            const pointsEarnedOpen = `SUM(
+        // Adds pointsEarnedOpen, pointsAvailableOpen, and openAverage (or equivalent dead/Dead fields) to the query.
+        const getAverageGroupsBeforeDate = (beforeDate: 'startDate' | 'deadDate'): Array<sequelize.ProjectionAlias> => {
+            const pointsEarned = `SUM(
                 CASE
                     WHEN "topics->questions".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
                         AND
@@ -2462,65 +2463,29 @@ class CourseController {
                     THEN ${StudentGrade.rawAttributes.effectiveScore.field} * "topics->questions".${CourseWWTopicQuestion.rawAttributes.weight.field}
                     ELSE 0
                 END)`;
-            const pointsAvailableOpen = `SUM(
+            const pointsAvailable = `SUM(
                 CASE
                     WHEN "topics->questions".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
                         AND
-                            ("topics".${CourseTopicContent.rawAttributes.startDate.field} < NOW()
-                            OR "topics->studentTopicOverride".${StudentTopicOverride.rawAttributes.startDate.field} < NOW())
+                            ("topics".${CourseTopicContent.rawAttributes[beforeDate].field} < NOW()
+                            OR "topics->studentTopicOverride".${StudentTopicOverride.rawAttributes[beforeDate].field} < NOW())
                     THEN "topics->questions".${CourseWWTopicQuestion.rawAttributes.weight.field}
                     ELSE 0
                 END)`;
-            const averageScoreAttributeOpen = sequelize.literal(`
-                CASE WHEN ${pointsAvailableOpen} = 0 THEN
+            const averageScoreAttribute = sequelize.literal(`
+                CASE WHEN ${pointsAvailable} = 0 THEN
                     NULL
                 ELSE
-                    ${pointsEarnedOpen} / ${pointsAvailableOpen}
+                    ${pointsEarned} / ${pointsAvailable}
                 END
             `);
 
             return [
-                [pointsEarnedOpen, 'pointsEarnedOpen'],
-                [pointsAvailableOpen, 'pointsAvailableOpen'],
-                [averageScoreAttributeOpen, 'openAverage'],
+                [pointsEarned, `pointsEarned${beforeDate === 'startDate' ? 'Open' : 'Dead'}`],
+                [pointsAvailable, `pointsAvailable${beforeDate === 'startDate' ? 'Open' : 'Dead'}`],
+                [averageScoreAttribute, `${beforeDate === 'startDate' ? 'dpen' : 'dead'}Average`],
             ]
         }
-
-        // Calculate the DEAD grades only
-        const getDeadAverageGroups = (): Array<sequelize.ProjectionAlias> => {
-            const pointsEarnedDead = `SUM(
-                CASE
-                    WHEN "topics->questions".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
-                        AND
-                            ("topics".${CourseTopicContent.rawAttributes.deadDate.field} < NOW()
-                            OR "topics->studentTopicOverride".${StudentTopicOverride.rawAttributes.deadDate.field} < NOW())
-                    THEN ${StudentGrade.rawAttributes.effectiveScore.field} * "topics->questions".${CourseWWTopicQuestion.rawAttributes.weight.field}
-                    ELSE 0
-                END)`;
-            const pointsAvailableDead = `SUM(
-                CASE
-                    WHEN "topics->questions".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
-                        AND
-                            ("topics".${CourseTopicContent.rawAttributes.deadDate.field} < NOW()
-                            OR "topics->studentTopicOverride".${StudentTopicOverride.rawAttributes.deadDate.field} < NOW())
-                    THEN "topics->questions".${CourseWWTopicQuestion.rawAttributes.weight.field}
-                    ELSE 0
-                END)`;
-            const averageScoreAttributeDead = sequelize.literal(`
-                CASE WHEN ${pointsAvailableDead} = 0 THEN
-                    NULL
-                ELSE
-                    ${pointsEarnedDead} / ${pointsAvailableDead}
-                END
-            `);
-
-            return [
-                [pointsEarnedDead, 'pointsEarnedDead'],
-                [pointsAvailableDead, 'pointsAvailableDead'],
-                [averageScoreAttributeDead, 'deadAverage'],
-            ]
-        }
-
 
         // const completionPercentAttribute = sequelize.literal(`
         // CASE WHEN COUNT("topics->questions->grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN
@@ -2541,8 +2506,8 @@ class CourseController {
                 'name',
                 [sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
                 ...averageScoreGroup,
-                ...getOpenAverageGroups(),
-                ...getDeadAverageGroups(),
+                ...getAverageGroupsBeforeDate('startDate'),
+                ...getAverageGroupsBeforeDate('deadDate'),
                 [sequelize.fn('count', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
                 [sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'],
                 [sequelize.literal(`count(CASE WHEN "topics->questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN "topics->questions->grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],

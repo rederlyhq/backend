@@ -48,7 +48,7 @@ router.get('/statistics/units',
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             next(httpResponse.Ok('Fetched successfully', {
                 data: stats,
-                ...courseController.getAveragesFromStatistics(stats),
+                ...courseController.getAveragesFromStatistics2(stats),
             }));
         } catch (e) {
             next(e);

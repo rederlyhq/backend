@@ -2425,9 +2425,14 @@ class CourseController {
         }).omitBy(_.isNil).value() as sequelize.WhereOptions;
 
         let averageScoreAttribute;
+        // This is averageScoreAttribute, with points earned/available if applicable.
+        let averageScoreGroup: Array<sequelize.ProjectionAlias>;
+        let pointsEarned;
+        let pointsAvailable;
+
         if (followQuestionRules) {
-            const pointsEarned = `SUM("topics->questions->grades".${StudentGrade.rawAttributes.effectiveScore.field} * "topics->questions".${CourseWWTopicQuestion.rawAttributes.weight.field})`;
-            const pointsAvailable = `SUM(CASE WHEN "topics->questions".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE THEN "topics->questions".${CourseWWTopicQuestion.rawAttributes.weight.field} ELSE 0 END)`;
+            pointsEarned = `SUM("topics->questions->grades".${StudentGrade.rawAttributes.effectiveScore.field} * "topics->questions".${CourseWWTopicQuestion.rawAttributes.weight.field})`;
+            pointsAvailable = `SUM(CASE WHEN "topics->questions".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE THEN "topics->questions".${CourseWWTopicQuestion.rawAttributes.weight.field} ELSE 0 END)`;
             averageScoreAttribute = sequelize.literal(`
                 CASE WHEN ${pointsAvailable} = 0 THEN
                     NULL
@@ -2435,8 +2440,15 @@ class CourseController {
                     ${pointsEarned} / ${pointsAvailable}
                 END
             `);
+
+            averageScoreGroup = [
+                [pointsEarned, 'pointsEarned'],
+                [pointsAvailable, 'pointsAvailable'],
+                [averageScoreAttribute, 'averageScore']
+            ];
         } else {
             averageScoreAttribute = sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
+            averageScoreGroup = [[averageScoreAttribute, 'averageScore']];
         }
 
         // Calculate the OPEN grades only
@@ -2506,15 +2518,18 @@ class CourseController {
         // END`);
         const completionPercentAttribute = sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
 
-
         return CourseUnitContent.findAll({
             where,
             attributes: [
                 'id',
                 'name',
                 [sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
-                [averageScoreAttribute, 'averageScore'],
+                ...averageScoreGroup,
+                [pointsEarnedOpen, 'pointsEarnedOpen'],
+                [pointsAvailableOpen, 'pointsAvailableOpen'],
                 [averageScoreAttributeOpen, 'openAverage'],
+                [pointsEarnedDead, 'pointsEarnedDead'],
+                [pointsAvailableDead, 'pointsAvailableDead'],
                 [averageScoreAttributeDead, 'deadAverage'],
                 [sequelize.fn('count', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
                 [sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'],
@@ -2853,8 +2868,14 @@ class CourseController {
                 'id',
                 [sequelize.literal(`'Problem ' || "${CourseWWTopicQuestion.name}".${CourseWWTopicQuestion.rawAttributes.problemNumber.field}`), 'name'],
                 [sequelize.fn('avg', sequelize.col(`grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
+                // [pointsEarned, 'pointsEarned'],
+                // [pointsAvailable, 'pointsAvailable'],
                 [sequelize.fn('avg', scoreField), 'averageScore'],
+                [pointsEarnedOpen, 'pointsEarnedOpen'],
+                [pointsAvailableOpen, 'pointsAvailableOpen'],
                 [averageScoreAttributeOpen, 'openAverage'],
+                [pointsEarnedDead, 'pointsEarnedDead'],
+                [pointsAvailableDead, 'pointsAvailableDead'],
                 [averageScoreAttributeDead, 'deadAverage'],
                 [sequelize.fn('avg', sequelize.col(`grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'],
                 [sequelize.fn('count', sequelize.col(`grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
@@ -2867,6 +2888,52 @@ class CourseController {
                 ['problemNumber', 'asc']
             ],
         });
+    }
+
+    getAveragesFromStatistics2(stats: Array<CourseUnitContent | CourseTopicContent | CourseWWTopicQuestion>):
+    {
+        totalAverage: number | null;
+        totalOpenAverage: number | null;
+        totalDeadAverage: number | null;
+    } {
+        console.log('Got stats', stats);
+        const points = stats.reduce(
+            (accum: {
+                pointsEarned: number;
+                pointsAvailable: number;
+                pointsEarnedOpen: number;
+                pointsAvailableOpen: number;
+                pointsEarnedDead: number;
+                pointsAvailableDead: number;
+            }, s) => {
+                // Casting as any because using custom column names.
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const data: any = s.get({plain: true});
+                console.log(accum);
+                return {
+                    pointsEarned: accum.pointsEarned + parseFloat(data.pointsEarned),
+                    pointsAvailable: accum.pointsAvailable + parseFloat(data.pointsAvailable),
+                    pointsEarnedOpen: accum.pointsEarnedOpen + parseFloat(data.pointsEarnedOpen),
+                    pointsAvailableOpen: accum.pointsAvailableOpen + parseFloat(data.pointsAvailableOpen),
+                    pointsEarnedDead:accum.pointsEarnedDead + parseFloat(data.pointsEarnedDead),
+                    pointsAvailableDead: accum.pointsAvailableDead + parseFloat(data.pointsAvailableDead),
+                };
+            },
+            {
+                pointsEarned: 0,
+                pointsAvailable: 0,
+                pointsEarnedOpen: 0,
+                pointsAvailableOpen: 0,
+                pointsEarnedDead: 0,
+                pointsAvailableDead: 0,
+            }
+        );
+
+        return {
+            totalAverage: points.pointsAvailable === 0 ? null : points.pointsEarned / points.pointsAvailable,
+            totalOpenAverage: points.pointsAvailableOpen === 0 ? null : points.pointsEarnedOpen / points.pointsAvailableOpen,
+            totalDeadAverage: points.pointsAvailableDead === 0 ? null : points.pointsEarnedDead / points.pointsAvailableDead,
+        };
     }
 
     getAveragesFromStatistics(stats: Array<CourseUnitContent | CourseTopicContent | CourseWWTopicQuestion>):

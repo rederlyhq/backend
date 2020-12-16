@@ -58,6 +58,36 @@ interface FindFilesResult {
     defFiles: { [key: string]: FindFilesDefFileResult };
 }
 
+export const findFilesFromPGFile = async (contentRootPath: string, pgFilePathFromDefFile: string): Promise<FindFilesPGFileResult> => {
+    const pgFilePath = path.join(contentRootPath, pgFilePathFromDefFile);
+    const pgFileResult: FindFilesPGFileResult = {
+        pgFilePathFromDefFile: pgFilePathFromDefFile,
+        pgFilePathOnDisk: pgFilePath,
+        assetFiles: {}
+    };
+    try {
+        const pgFileStats = await fsPromises.lstat(pgFilePath);
+        if (!pgFileStats.isFile()) {
+            throw new RederlyError(`${pgFilePath} is not a file`);
+        }
+        const pgFileContent = (await fsPromises.readFile(pgFilePath)).toString();
+        const imageInPGFileMatches = getAllMatches(imageInPGFileRegex, pgFileContent);
+        await imageInPGFileMatches.asyncForEach(async (imageInPGFileMatch) => {
+            const imagePath = imageInPGFileMatch[1] ?? imageInPGFileMatch[2];
+            const assetFileResult: FindFilesAssetFileResult = {
+                assetFilePathFromPgFile: imagePath,
+                assetFilePath: path.join(path.dirname(pgFilePath), imagePath),
+            };
+            pgFileResult.assetFiles[imagePath] = assetFileResult;
+            console.log(`imagePath: ${imagePath}`);
+        });
+    } catch (e) {
+        // logger.error(`Could not find pg file ${pgFilePath}`, e);
+    }
+    // console.log(pgFilePath);
+    return pgFileResult;
+};
+
 export const findFilesFromDefFile = async (contentRootPath: string, defFilePath: string): Promise<FindFilesDefFileResult> => {
     const defFileRelativePath = path.relative(contentRootPath, defFilePath);
     const defFileResult: FindFilesDefFileResult = {
@@ -69,33 +99,9 @@ export const findFilesFromDefFile = async (contentRootPath: string, defFilePath:
     const pgFileInDefFileMatches = getAllMatches(pgFileInDefFileRegex, defFileContent);
     await pgFileInDefFileMatches.asyncForEach(async (pgFileInDefFileMatch) => {
         const pgFilePathFromDefFile = pgFileInDefFileMatch[1];
-        const pgFilePath = path.join(contentRootPath, pgFilePathFromDefFile);
-        const pgFileResult: FindFilesPGFileResult = {
-            pgFilePathFromDefFile: pgFilePathFromDefFile,
-            pgFilePathOnDisk: pgFilePath,
-            assetFiles: {}
-        };
+        const pgFileResult = await findFilesFromPGFile(contentRootPath, pgFilePathFromDefFile);
         defFileResult.pgFiles[pgFilePathFromDefFile] = pgFileResult;
-        try {
-            const pgFileStats = await fsPromises.lstat(pgFilePath);
-            if (!pgFileStats.isFile()) {
-                throw new RederlyError(`${pgFilePath} is not a file`);
-            }
-            const pgFileContent = (await fsPromises.readFile(pgFilePath)).toString();
-            const imageInPGFileMatches = getAllMatches(imageInPGFileRegex, pgFileContent);
-            await imageInPGFileMatches.asyncForEach(async (imageInPGFileMatch) => {
-                const imagePath = imageInPGFileMatch[1] ?? imageInPGFileMatch[2];
-                const assetFileResult: FindFilesAssetFileResult = {
-                    assetFilePathFromPgFile: imagePath,
-                    assetFilePath: path.join(path.dirname(pgFilePath), imagePath),
-                };
-                pgFileResult.assetFiles[imagePath] = assetFileResult;
-                console.log(`imagePath: ${imagePath}`);
-            });
-        } catch (e) {
-            // logger.error(`Could not find pg file ${pgFilePath}`, e);
-        }
-        // console.log(pgFilePath);
+
     });
     return defFileResult;
 };

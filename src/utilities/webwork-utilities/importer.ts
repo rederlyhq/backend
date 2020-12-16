@@ -39,16 +39,19 @@ const getContentRoot = async (filePath: string): Promise<string> => {
 
 interface FindFilesAssetFileResult {
     assetFilePathFromPgFile: string;
+    assetFilePath: string;
 }
 
 interface FindFilesPGFileResult {
     pgFilePathFromDefFile: string;
+    pgFilePathOnDisk: string;
     assetFiles: { [key: string]: FindFilesAssetFileResult };
 }
 
 interface FindFilesDefFileResult {
     pgFiles: { [key: string]: FindFilesPGFileResult };
-    defFilePath: string;
+    defFileRelativePath: string;
+    defFileAbsolutePath: string;
 }
 
 interface FindFilesResult {
@@ -64,18 +67,21 @@ export const findFiles = async (filePath: string): Promise<FindFilesResult> => {
         defFiles: {}
     };
     await defFiles.asyncForEach(async (defFilePath) => {
+        const defFileRelativePath = path.relative(filePath, defFilePath);
         const defFileResult: FindFilesDefFileResult = {
-            defFilePath: defFilePath,
+            defFileAbsolutePath: defFilePath,
+            defFileRelativePath: defFileRelativePath,
             pgFiles: {}
         };
-        result.defFiles[defFilePath] = defFileResult;
+        result.defFiles[defFileRelativePath] = defFileResult;
         const defFileContent = (await fsPromises.readFile (defFilePath)).toString();
         const pgFileInDefFileMatches = getAllMatches(pgFileInDefFileRegex, defFileContent);
         await pgFileInDefFileMatches.asyncForEach(async (pgFileInDefFileMatch) => {
             const pgFilePathFromDefFile = pgFileInDefFileMatch[1];
             const pgFilePath = path.join(contentRootPath, pgFilePathFromDefFile);
             const pgFileResult: FindFilesPGFileResult = {
-                pgFilePathFromDefFile: pgFilePath,
+                pgFilePathFromDefFile: pgFilePathFromDefFile,
+                pgFilePathOnDisk: pgFilePath,
                 assetFiles: {}
             };
             defFileResult.pgFiles[pgFilePath] = pgFileResult;
@@ -89,7 +95,8 @@ export const findFiles = async (filePath: string): Promise<FindFilesResult> => {
                 await imageInPGFileMatches.asyncForEach(async (imageInPGFileMatch) => {
                     const imagePath = imageInPGFileMatch[1] ?? imageInPGFileMatch[2];
                     const assetFileResult: FindFilesAssetFileResult = {
-                        assetFilePathFromPgFile: imagePath
+                        assetFilePathFromPgFile: imagePath,
+                        assetFilePath: path.join(path.dirname(pgFilePath), imagePath),
                     };
                     pgFileResult.assetFiles[imagePath] = assetFileResult;
                     console.log(`imagePath: ${imagePath}`);

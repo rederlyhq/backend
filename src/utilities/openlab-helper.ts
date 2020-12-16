@@ -13,7 +13,10 @@ import formHelper, { unmergeStrategies } from './form-helper';
 const openLabAxios = axios.create({
     baseURL: configurations.openlab.url,
     responseType: 'text',
-    timeout: configurations.openlab.requestTimeout
+    timeout: configurations.openlab.requestTimeout,
+    params: {
+        webwork: 1,
+    }
 });
 
 const OPENLAB_QS = qs.stringify({webwork: 1});
@@ -62,7 +65,7 @@ class OpenLabHelper {
         const resultFormData = formHelper.objectToFormData({object: params, unmerge: unmergeStrategies.unmergeUniqueKeysByIndex});
 
         try {
-            const resp = await openLabAxios.post(OPENLAB_QS, resultFormData?.getBuffer(), {
+            const resp = await openLabAxios.post(`?${OPENLAB_QS}`, resultFormData?.getBuffer(), {
                 headers: resultFormData?.getHeaders()
             });
 

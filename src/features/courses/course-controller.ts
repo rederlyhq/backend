@@ -3951,7 +3951,11 @@ You should be able to reply to the student's email address (${options.student.em
             showSolutions: false,
             permissionLevel: 0,
         });
-        const rawHTML = rendererHelper.cleanRendererResponseForTheResponse(renderResponse as RendererResponse) as string;
+        const rawHTML = rendererHelper.cleanRendererResponseForTheResponse(renderResponse as RendererResponse).renderedHTML;
+
+        if (_.isNil(rawHTML)) {
+            throw new RederlyError('Someone tried to ask for help on a problem with empty renderedHTML');
+        }
 
         return {
             problem,

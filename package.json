@@ -90,7 +90,7 @@
     "start": "ts-node src/index.ts",
     "start:watch": "nodemon ./src/index.ts",
     "start:debug": "node --inspect=5858 -r ts-node/register ./src/index.ts",
-    "start:debug:watch": "nodemon --inspect ./src/index.ts",
+    "start:debug:watch": "nodemon --inspect=5858 ./src/index.ts",
     "cli": "ts-node ./src/cli.ts",
     "cli:debug": "node --inspect=5859 -r ts-node/register ./src/cli.ts",
     "cli:debug:watch": "nodemon --inspect=5859 ./src/cli.ts",

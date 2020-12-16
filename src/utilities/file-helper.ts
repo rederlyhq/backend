@@ -4,13 +4,28 @@ import logger from './logger';
 
 const fsPromises = fse.promises;
 
+type RecursiveListFilesInDirectoryFilterFunction = (filePath: string) => boolean;
 export const listFilters = {
-    endsWith: (endsWith: string) => (filePath: string): boolean => {
-        return filePath.endsWith(endsWith);
+    /**
+     * This method takes a string that a path must end with and returns a function that takes that path and compares
+     * USAGE: await recursiveListFilesInDirectory('./', result, listFilters.endsWith('-route-validation.ts'));
+     * @param endsWith The end of file paths to filter out
+     */
+    endsWith: (endsWith: string, caseSensitive = true) => (filePath: string): boolean => {
+        let filePathTransformed = filePath;
+        let endsWithTransformed = endsWith;
+        if (caseSensitive === false) {
+            filePathTransformed = filePath.toLowerCase();
+            endsWithTransformed = endsWith.toLowerCase();
+        }
+        return filePathTransformed.endsWith(endsWithTransformed);
+    },
+    matches: (pattern: RegExp): RecursiveListFilesInDirectoryFilterFunction => (filePath: string): boolean => {
+        return pattern.test(filePath);
     }
 };
 
-export const recursiveListFilesInDirectory = async (filePath: string, result: string[], filter: (filePath: string) => boolean): Promise<string[]> => {
+export const recursiveListFilesInDirectory = async (filePath: string, result: string[], filter: RecursiveListFilesInDirectoryFilterFunction): Promise<string[]> => {
     const fileStats = await fsPromises.lstat(filePath);
     if (fileStats.isDirectory()) {
         const files = await fsPromises.readdir(filePath);

@@ -6,6 +6,45 @@ import RederlyError from '../../exceptions/rederly-error';
 import { getAllMatches } from '../string-helper';
 const fsPromises = fse.promises;
 
+interface FindFilesAssetFileOptions {
+    assetFilePathFromPgFile: string;
+    pgFilePath: string;
+}
+
+interface FindFilesAssetFileResult {
+    assetFilePathFromPgFile: string;
+    assetFilePath: string;
+}
+
+interface FindFilesPGFileOptions {
+    contentRootPath: string;
+    pgFilePathFromDefFile: string;
+}
+
+interface FindFilesPGFileResult {
+    pgFilePathFromDefFile: string;
+    pgFilePathOnDisk: string;
+    assetFiles: { [key: string]: FindFilesAssetFileResult };
+}
+
+interface FindFilesDefFileOptions {
+    contentRootPath: string;
+    defFilePath: string;
+}
+interface FindFilesDefFileResult {
+    pgFiles: { [key: string]: FindFilesPGFileResult };
+    defFileRelativePath: string;
+    defFileAbsolutePath: string;
+}
+
+interface FindFilesOptions {
+    filePath: string;
+}
+
+interface FindFilesResult {
+    defFiles: { [key: string]: FindFilesDefFileResult };
+}
+
 export const findDefFiles = (filePath: string): Promise<Array<string>> => {
     return recursiveListFilesInDirectory(filePath, [], listFilters.endsWith('.def', false));
 };
@@ -37,28 +76,7 @@ const getContentRoot = async (filePath: string): Promise<string> => {
     return path.resolve(filePath);
 };
 
-interface FindFilesAssetFileResult {
-    assetFilePathFromPgFile: string;
-    assetFilePath: string;
-}
-
-interface FindFilesPGFileResult {
-    pgFilePathFromDefFile: string;
-    pgFilePathOnDisk: string;
-    assetFiles: { [key: string]: FindFilesAssetFileResult };
-}
-
-interface FindFilesDefFileResult {
-    pgFiles: { [key: string]: FindFilesPGFileResult };
-    defFileRelativePath: string;
-    defFileAbsolutePath: string;
-}
-
-interface FindFilesResult {
-    defFiles: { [key: string]: FindFilesDefFileResult };
-}
-
-export const checkImageFiles = (assetFilePathFromPgFile: string, pgFilePath: string): FindFilesAssetFileResult => {
+export const checkImageFiles = ({ assetFilePathFromPgFile, pgFilePath }: FindFilesAssetFileOptions): FindFilesAssetFileResult => {
     const assetFilePath = path.join(path.dirname(pgFilePath), assetFilePathFromPgFile);
     const assetFileResult: FindFilesAssetFileResult = {
         assetFilePathFromPgFile: assetFilePathFromPgFile,
@@ -67,7 +85,7 @@ export const checkImageFiles = (assetFilePathFromPgFile: string, pgFilePath: str
     return assetFileResult;
 };
 
-export const findFilesFromPGFile = async (contentRootPath: string, pgFilePathFromDefFile: string): Promise<FindFilesPGFileResult> => {
+export const findFilesFromPGFile = async ({ contentRootPath, pgFilePathFromDefFile }: FindFilesPGFileOptions): Promise<FindFilesPGFileResult> => {
     const pgFilePath = path.join(contentRootPath, pgFilePathFromDefFile);
     const pgFileResult: FindFilesPGFileResult = {
         pgFilePathFromDefFile: pgFilePathFromDefFile,
@@ -83,7 +101,7 @@ export const findFilesFromPGFile = async (contentRootPath: string, pgFilePathFro
         const imageInPGFileMatches = getAllMatches(imageInPGFileRegex, pgFileContent);
         await imageInPGFileMatches.asyncForEach(async (imageInPGFileMatch) => {
             const imagePath = imageInPGFileMatch[1] ?? imageInPGFileMatch[2];
-            pgFileResult.assetFiles[imagePath] = checkImageFiles(imagePath, pgFilePath);
+            pgFileResult.assetFiles[imagePath] = checkImageFiles({ assetFilePathFromPgFile: imagePath, pgFilePath });
         });
     } catch (e) {
         // logger.error(`Could not find pg file ${pgFilePath}`, e);
@@ -92,7 +110,7 @@ export const findFilesFromPGFile = async (contentRootPath: string, pgFilePathFro
     return pgFileResult;
 };
 
-export const findFilesFromDefFile = async (contentRootPath: string, defFilePath: string): Promise<FindFilesDefFileResult> => {
+export const findFilesFromDefFile = async ({ contentRootPath, defFilePath }: FindFilesDefFileOptions): Promise<FindFilesDefFileResult> => {
     const defFileRelativePath = path.relative(contentRootPath, defFilePath);
     const defFileResult: FindFilesDefFileResult = {
         defFileAbsolutePath: defFilePath,
@@ -103,14 +121,14 @@ export const findFilesFromDefFile = async (contentRootPath: string, defFilePath:
     const pgFileInDefFileMatches = getAllMatches(pgFileInDefFileRegex, defFileContent);
     await pgFileInDefFileMatches.asyncForEach(async (pgFileInDefFileMatch) => {
         const pgFilePathFromDefFile = pgFileInDefFileMatch[1];
-        const pgFileResult = await findFilesFromPGFile(contentRootPath, pgFilePathFromDefFile);
+        const pgFileResult = await findFilesFromPGFile({ contentRootPath, pgFilePathFromDefFile });
         defFileResult.pgFiles[pgFilePathFromDefFile] = pgFileResult;
 
     });
     return defFileResult;
 };
 
-export const findFiles = async (filePath: string): Promise<FindFilesResult> => {
+export const findFiles = async ({ filePath }: FindFilesOptions): Promise<FindFilesResult> => {
     const contentRootPath = await getContentRoot(filePath);
 
     const defFiles = await findDefFiles(contentRootPath);
@@ -118,7 +136,7 @@ export const findFiles = async (filePath: string): Promise<FindFilesResult> => {
         defFiles: {}
     };
     await defFiles.asyncForEach(async (defFilePath) => {
-        const defFileResult = await findFilesFromDefFile(contentRootPath, defFilePath);
+        const defFileResult = await findFilesFromDefFile({ contentRootPath, defFilePath });
         result.defFiles[defFileResult.defFileRelativePath] = defFileResult;
     });
     return result;

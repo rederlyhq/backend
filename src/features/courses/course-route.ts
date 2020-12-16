@@ -32,6 +32,7 @@ import RederlyError from '../../exceptions/rederly-error';
 import * as tar from 'tar';
 import * as nodePath from 'path';
 import * as fs from 'fs';
+import { findDefFiles, findFiles } from '../../utilities/webwork-utilities/importer';
 
 const fileUpload = multer();
 
@@ -48,7 +49,7 @@ router.post('/abc',
     tempFileUpload,
     asyncHandler(async (req: RederlyExpressRequest, res: unknown, next: NextFunction) => {
         const workingDirectory = `${nodePath.dirname(req.file.path)}/${nodePath.basename(req.file.originalname, nodePath.extname(req.file.originalname))}`;
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             fs.mkdir(workingDirectory, (err: Error | null) => {
                 if (err) {
                     reject(err);
@@ -61,7 +62,10 @@ router.post('/abc',
             file: req.file.path,
             cwd: workingDirectory
         });
-        next(httpResponse.Ok());
+        const result = await findFiles({
+            filePath: workingDirectory
+        });
+        next(httpResponse.Ok(null, result));
     }));
 
 router.get('/statistics/units',

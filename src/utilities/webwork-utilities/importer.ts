@@ -7,13 +7,13 @@ import { getAllMatches } from '../string-helper';
 const fsPromises = fse.promises;
 
 interface FindFilesAssetFileOptions {
-    assetFilePathFromPgFile: string;
+    imageFilePathFromPgFile: string;
     pgFilePath: string;
 }
 
-interface FindFilesAssetFileResult {
-    assetFilePathFromPgFile: string;
-    assetFilePath: string;
+interface FindFilesImageFileResult {
+    imageFilePathFromPgFile: string;
+    imageFilePath: string;
 }
 
 interface FindFilesPGFileOptions {
@@ -24,7 +24,7 @@ interface FindFilesPGFileOptions {
 interface FindFilesPGFileResult {
     pgFilePathFromDefFile: string;
     pgFilePathOnDisk: string;
-    assetFiles: { [key: string]: FindFilesAssetFileResult };
+    imageFiles: { [key: string]: FindFilesImageFileResult };
 }
 
 interface FindFilesDefFileOptions {
@@ -76,11 +76,11 @@ const getContentRoot = async (filePath: string): Promise<string> => {
     return path.resolve(filePath);
 };
 
-export const checkImageFiles = ({ assetFilePathFromPgFile, pgFilePath }: FindFilesAssetFileOptions): FindFilesAssetFileResult => {
-    const assetFilePath = path.join(path.dirname(pgFilePath), assetFilePathFromPgFile);
-    const assetFileResult: FindFilesAssetFileResult = {
-        assetFilePathFromPgFile: assetFilePathFromPgFile,
-        assetFilePath: assetFilePath,
+export const checkImageFiles = ({ imageFilePathFromPgFile, pgFilePath }: FindFilesAssetFileOptions): FindFilesImageFileResult => {
+    const imageFilePath = path.join(path.dirname(pgFilePath), imageFilePathFromPgFile);
+    const assetFileResult: FindFilesImageFileResult = {
+        imageFilePathFromPgFile: imageFilePathFromPgFile,
+        imageFilePath: imageFilePath,
     };
     return assetFileResult;
 };
@@ -90,7 +90,7 @@ export const findFilesFromPGFile = async ({ contentRootPath, pgFilePathFromDefFi
     const pgFileResult: FindFilesPGFileResult = {
         pgFilePathFromDefFile: pgFilePathFromDefFile,
         pgFilePathOnDisk: pgFilePath,
-        assetFiles: {}
+        imageFiles: {}
     };
     try {
         const pgFileStats = await fsPromises.lstat(pgFilePath);
@@ -101,7 +101,7 @@ export const findFilesFromPGFile = async ({ contentRootPath, pgFilePathFromDefFi
         const imageInPGFileMatches = getAllMatches(imageInPGFileRegex, pgFileContent);
         await imageInPGFileMatches.asyncForEach(async (imageInPGFileMatch) => {
             const imagePath = imageInPGFileMatch[1] ?? imageInPGFileMatch[2];
-            pgFileResult.assetFiles[imagePath] = checkImageFiles({ assetFilePathFromPgFile: imagePath, pgFilePath });
+            pgFileResult.imageFiles[imagePath] = checkImageFiles({ imageFilePathFromPgFile: imagePath, pgFilePath });
         });
     } catch (e) {
         // logger.error(`Could not find pg file ${pgFilePath}`, e);

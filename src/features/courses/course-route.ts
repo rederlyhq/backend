@@ -29,6 +29,7 @@ import AttemptsExceededException from '../../exceptions/attempts-exceeded-except
 import attachmentHelper from '../../utilities/attachments-helper';
 import urljoin = require('url-join');
 import RederlyError from '../../exceptions/rederly-error';
+import { getAveragesFromStatistics } from './statistics-helper';
 
 const fileUpload = multer();
 
@@ -48,7 +49,7 @@ router.get('/statistics/units',
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             next(httpResponse.Ok('Fetched successfully', {
                 data: stats,
-                ...courseController.getAveragesFromStatistics(stats),
+                ...getAveragesFromStatistics(stats),
             }));
         } catch (e) {
             next(e);
@@ -72,7 +73,7 @@ router.get('/statistics/topics',
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             next(httpResponse.Ok('Fetched successfully', {
                 data: stats,
-                ...courseController.getAveragesFromStatistics(stats),
+                ...getAveragesFromStatistics(stats),
             }));
         } catch (e) {
             next(e);
@@ -96,7 +97,7 @@ router.get('/statistics/questions',
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             next(httpResponse.Ok('Fetched successfully', {
                 data: stats,
-                ...courseController.getAveragesFromStatistics(stats),
+                ...getAveragesFromStatistics(stats),
             }));
         } catch (e) {
             next(e);

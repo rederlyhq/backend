@@ -1,4 +1,4 @@
-import { Model, DataTypes, HasManyGetAssociationsMixin } from 'sequelize';
+import { Model, DataTypes, HasManyGetAssociationsMixin, HasOneGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
 export default class Course extends Model {
@@ -57,6 +57,7 @@ export default class Course extends Model {
     public readonly instructor?: User;
 
     public getEnrolledStudents!: HasManyGetAssociationsMixin<StudentEnrollment>;
+    public getInstructor!: HasOneGetAssociationMixin<User>;
 }
 
 Course.init({

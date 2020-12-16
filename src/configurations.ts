@@ -151,6 +151,10 @@ const configurations = {
         url: readStringValue('RENDERER_URL', 'http://localhost:3000'),
         requestTimeout: readIntValue('RENDERER_REQUEST_TIMEOUT', 75000),
     },
+    openlab: {
+        url: readStringValue('OPENLAB_URL', 'https://openlab.citytech.cuny.edu/ol-webwork/?webwork=1'),
+        requestTimeout: readIntValue('OPENLAB_REQUEST_TIMEOUT', 75000)
+    },
     jira: {
         email: readStringValue('JIRA_EMAIL', ''),
         apiKey: readStringValue('JIRA_API_KEY', ''),

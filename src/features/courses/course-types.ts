@@ -588,3 +588,20 @@ export interface GetAllContentForVersionOptions {
     topicId: number;
     userId: number;
 }
+
+export interface PrepareOpenLabRedirectOptions {
+    questionId: number;
+    user: User;
+    baseURL: string;
+}
+
+export interface OpenLabRedirectInfo {
+    problem: number;
+    problemSetId: string;
+    courseId: string;
+    problemPath: string;
+    email: string[];
+    studentName: string;
+    emailURL: string;
+    rawHTML: string;
+}

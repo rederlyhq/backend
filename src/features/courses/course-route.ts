@@ -655,7 +655,10 @@ router.get('/question/:id/openlab',
 
         const user = await req.session.getUser();
         const { id: questionId } = req.params as GetQuestionRequest.params;
-        const baseURL = req.originalUrl.replace('/question.*', '');
+        const baseURL = req.headers['rederly-origin'] as string | undefined // need this because it incorrectly thinks it can be an array
+        if (_.isNil(baseURL)) {
+            throw new RederlyError('Could not determine the base URL from the ask for help request');
+        }
 
         const openLabRedirectInfo = await courseController.prepareOpenLabRedirect({user, questionId, baseURL});
         const openLabResponse = await openLabHelper.askForHelp(openLabRedirectInfo);

@@ -47,7 +47,7 @@ class OpenLabHelper {
             // die -- we must have the renderedHTML for OpenLab
             // and we don't have any anonymous ways of id-ing the users involved...
             logger.error(`OpenLab query requested for ${problemPath} by a student in ${courseId}`);
-            throw new WrappedError('Request to OpenLab came back empty');
+            throw new RederlyError('Request to OpenLab came back empty');
         }
         const params = {
             problem,

@@ -3898,7 +3898,7 @@ You should be able to reply to the student's email address (${options.student.em
                                 {
                                     model: ProblemAttachment,
                                     as: 'problemAttachments',
-                                    attributes: ['id', 'cloudFilename', 'userLocalFilename'],
+                                    attributes: ['id', 'cloudFilename', 'userLocalFilename', 'updatedAt'],
                                     where: {
                                         active: true,
                                     }

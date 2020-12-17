@@ -1,5 +1,6 @@
 import logger from '../utilities/logger';
 import rendererHelper from '../utilities/renderer-helper';
+import * as nodePath from 'path';
 
 const isPathAccessibleToRenderer = async () => {
     let path = 'abc';
@@ -18,6 +19,14 @@ const isPathAccessibleToRenderer = async () => {
     logger.info(`isPathAccessibleToRenderer path:${path}; result:${await rendererHelper.isPathAccessibleToRenderer({ problemPath: path })}`);
     path = 'Library/NAU/setProbability/samplespace.pg';
     logger.info(`isPathAccessibleToRenderer path:${path}; result:${await rendererHelper.isPathAccessibleToRenderer({ problemPath: path })}`);
+};
+
+export const upload = async (): Promise<void> => {
+    const result = await rendererHelper.uploadAsset({
+        filePath: nodePath.resolve(__dirname, 'playground-renderer-functions.ts'),
+        rendererPath: 'private/testassets/image.png'
+    });
+    logger.info(result);
 };
 
 const runRendererPlayground = async (): Promise<void> => {

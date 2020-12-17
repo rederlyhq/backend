@@ -96,4 +96,5 @@ const runRendererPlayground = async (): Promise<void> => {
 
     await isPathAccessibleToRenderer();
 };
+export const run = runRendererPlayground;
 export default runRendererPlayground;

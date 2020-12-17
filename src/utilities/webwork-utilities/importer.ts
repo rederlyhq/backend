@@ -6,22 +6,22 @@ import RederlyError from '../../exceptions/rederly-error';
 import { getAllMatches } from '../string-helper';
 const fsPromises = fse.promises;
 
-interface FindFilesImageFileOptions {
+export interface FindFilesImageFileOptions {
     imageFilePathFromPgFile: string;
     pgFilePath: string;
 }
 
-interface FindFilesImageFileResult {
+export interface FindFilesImageFileResult {
     imageFilePathFromPgFile: string;
     imageFilePath: string;
 }
 
-interface FindFilesPGFileOptions {
+export interface FindFilesPGFileOptions {
     contentRootPath: string;
     pgFilePathFromDefFile: string;
 }
 
-interface FindFilesPGFileResult {
+export interface FindFilesPGFileResult {
     pgFilePathFromDefFile: string;
     pgFilePathOnDisk: string;
     assetFiles: {
@@ -29,21 +29,22 @@ interface FindFilesPGFileResult {
     };
 }
 
-interface FindFilesDefFileOptions {
+export interface FindFilesDefFileOptions {
     contentRootPath: string;
     defFilePath: string;
 }
-interface FindFilesDefFileResult {
+
+export interface FindFilesDefFileResult {
     pgFiles: { [key: string]: FindFilesPGFileResult };
     defFileRelativePath: string;
     defFileAbsolutePath: string;
 }
 
-interface FindFilesOptions {
+export interface FindFilesOptions {
     filePath: string;
 }
 
-interface FindFilesResult {
+export interface FindFilesResult {
     defFiles: { [key: string]: FindFilesDefFileResult };
 }
 
@@ -143,5 +144,6 @@ export const findFiles = async ({ filePath }: FindFilesOptions): Promise<FindFil
         const defFileResult = await findFilesFromDefFile({ contentRootPath, defFilePath });
         result.defFiles[defFileResult.defFileRelativePath] = defFileResult;
     });
+
     return result;
 };

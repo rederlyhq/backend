@@ -588,3 +588,9 @@ export interface GetAllContentForVersionOptions {
     topicId: number;
     userId: number;
 }
+
+export interface ImportTarballOptions {
+    filePath: string;
+    fileName: string;
+    courseId: number;
+}

@@ -29,10 +29,6 @@ import AttemptsExceededException from '../../exceptions/attempts-exceeded-except
 import attachmentHelper from '../../utilities/attachments-helper';
 import urljoin = require('url-join');
 import RederlyError from '../../exceptions/rederly-error';
-import * as tar from 'tar';
-import * as nodePath from 'path';
-import * as fs from 'fs';
-import { findDefFiles, findFiles } from '../../utilities/webwork-utilities/importer';
 
 const fileUpload = multer();
 
@@ -48,22 +44,10 @@ const tempFileUpload: Handler = (...args) => {
 router.post('/abc',
     tempFileUpload,
     asyncHandler(async (req: RederlyExpressRequest, res: unknown, next: NextFunction) => {
-        const workingDirectory = `${nodePath.dirname(req.file.path)}/${nodePath.basename(req.file.originalname, nodePath.extname(req.file.originalname))}`;
-        await new Promise<void>((resolve, reject) => {
-            fs.mkdir(workingDirectory, (err: Error | null) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve();
-                }
-            });    
-        });
-        await tar.x({
-            file: req.file.path,
-            cwd: workingDirectory
-        });
-        const result = await findFiles({
-            filePath: workingDirectory
+        const result = await courseController.importCourseTarball({
+            filePath: req.file.path,
+            fileName: req.file.originalname,
+            courseId: 1
         });
         next(httpResponse.Ok(null, result));
     }));

@@ -16,6 +16,12 @@ export default class Course extends Model {
             as: 'instructor'
         });
 
+        Course.belongsTo(University, {
+            foreignKey: 'universityId',
+            targetKey: 'id',
+            as: 'university'
+        });
+
         Course.belongsTo(Curriculum, {
             foreignKey: 'curriculumId',
             targetKey: 'id',
@@ -58,6 +64,7 @@ export default class Course extends Model {
 
     public getEnrolledStudents!: HasManyGetAssociationsMixin<StudentEnrollment>;
     public getInstructor!: HasOneGetAssociationMixin<User>;
+    public getUniversity!: HasOneGetAssociationMixin<University>;
 }
 
 Course.init({
@@ -133,3 +140,4 @@ import User from './user';
 import StudentEnrollment from './student-enrollment';
 import CourseUnitContent from './course-unit-content';
 import Curriculum from './curriculum';
+import University from './university';

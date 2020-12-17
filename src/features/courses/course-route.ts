@@ -1062,7 +1062,16 @@ router.get('/:id',
         try {
             const params = req.params as GetCourseRequest.params;
             const course = await courseController.getCourseById(params.id);
-            next(httpResponse.Ok('Fetched successfully', course));
+            const university = await course.getUniversity({
+                where: {
+                    active: true,
+                }
+            });
+            const canAskForHelp = university?.universityName === 'CityTech' ?? false;
+            next(httpResponse.Ok('Fetched successfully', {
+                ...course.get({plain: true}),
+                canAskForHelp,
+            }));
         } catch (e) {
             next(e);
         }

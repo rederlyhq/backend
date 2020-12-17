@@ -3928,6 +3928,9 @@ You should be able to reply to the student's email address (${options.student.em
         } 
 
         const grade = await this.getGradeForQuestion({questionId, userId: user.id});
+        if (_.isNil(grade)) {
+            throw new WrappedError('Cannot ask for help on a question that has not been assigned.');
+        }
         const unit = await topic.getUnit();
         const course = await unit.getCourse();
         // TODO: fetch all enrolled users and pull any with permission > student
@@ -3941,17 +3944,17 @@ You should be able to reply to the student's email address (${options.student.em
         const courseId = course.name;
         const problemPath = question.webworkQuestionPath;
         const email = [instructorEmail];
-        const studentName = user.firstName+' '+user.lastName;
+        const studentName = `${user.firstName} ${user.lastName}`;
         const emailURL = `${baseURL}/common/courses/${course.id}/topic/${topic.id}/grading?problemId=${question.id}&userId=${user.id}`;
         const renderResponse = await rendererHelper.getProblem({
             sourceFilePath: problemPath,
-            problemSeed: grade?.randomSeed,
+            problemSeed: grade.randomSeed,
             outputformat: OutputFormat.STATIC,
             showHints: false,
             showSolutions: false,
             permissionLevel: 0,
-        });
-        const rawHTML = rendererHelper.cleanRendererResponseForTheResponse(renderResponse as RendererResponse).renderedHTML;
+        }) as RendererResponse;
+        const rawHTML = renderResponse.renderedHTML;
 
         if (_.isNil(rawHTML)) {
             throw new RederlyError('Someone tried to ask for help on a problem with empty renderedHTML');

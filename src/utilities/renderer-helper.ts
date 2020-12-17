@@ -18,6 +18,7 @@ const rendererAxios = axios.create({
     timeout: configurations.renderer.requestTimeout
 });
 
+// TODO switch over to new endpoint
 // the proxy we are using doesn't work with the new renderer endpoint (i'm guessing the hyphen is the problem)
 // I plan to swap the proxy and hope that fixes the problem, otherwise a deeper dive is required
 export const RENDERER_ENDPOINT = '/rendered';

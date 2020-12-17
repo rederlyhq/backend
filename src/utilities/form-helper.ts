@@ -9,7 +9,7 @@ interface UnmergeStrategyOptions {
     form: FormData;
 }
 
-type UnmergeStrategyFunction = ({ key, array, form }: { key: string; array: Array<string | Blob>; form: FormData }) => void;
+type UnmergeStrategyFunction = ({ key, array, form }: UnmergeStrategyOptions) => void;
 
 export const unmergeStrategies = {
     // unmerge strategies for arrays contained in objects -> form-data

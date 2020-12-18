@@ -67,7 +67,7 @@ export const findDefFiles = (filePath: string): Promise<Array<string>> => {
  * r.test('source_file=ab.pg') // true
  */
 const pgFileInDefFileRegex = /^\s*source_file\s*=\s*(.*?\.pg\s*$)/igm;
-const imageInPGFileRegex = /image\s*\(\s*(?:(?:'(.+?)')|(?:"(.+?)"))\s*(?:,.*)?\)/g;
+const imageInPGFileRegex = /(?<!#.*)image\s*\(\s*('.+?'|".+?")\s*(?:,(?:\s|.)*?)?\)/g;
 
 const getContentRoot = async (filePath: string): Promise<string> => {
     const files = await fsPromises.readdir(filePath);
@@ -116,7 +116,9 @@ export const findFilesFromPGFile = async ({ contentRootPath, pgFilePathFromDefFi
             const pgFileContent = (await fsPromises.readFile(pgFilePath)).toString();
             const imageInPGFileMatches = getAllMatches(imageInPGFileRegex, pgFileContent);
             await imageInPGFileMatches.asyncForEach(async (imageInPGFileMatch) => {
-                const imagePath = imageInPGFileMatch[1] ?? imageInPGFileMatch[2];
+                let imagePath = imageInPGFileMatch[1];
+                // The capture group has the quotes in them, this strips those quotes off
+                imagePath = imagePath.substring(1, imagePath.length - 1);
                 pgFileResult.assetFiles.imageFiles[imagePath] = checkImageFiles({ imageFilePathFromPgFile: imagePath, pgFilePath });
             });    
         }

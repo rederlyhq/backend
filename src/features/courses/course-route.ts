@@ -29,6 +29,7 @@ import AttemptsExceededException from '../../exceptions/attempts-exceeded-except
 import attachmentHelper from '../../utilities/attachments-helper';
 import urljoin = require('url-join');
 import RederlyError from '../../exceptions/rederly-error';
+import { getAveragesFromStatistics } from './statistics-helper';
 
 const fileUpload = multer();
 
@@ -44,7 +45,12 @@ router.get('/statistics/units',
                 },
                 followQuestionRules: !_.isNil(req.query.userId)
             });
-            next(httpResponse.Ok('Fetched successfully', stats));
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            next(httpResponse.Ok('Fetched successfully', {
+                data: stats,
+                ...getAveragesFromStatistics(stats),
+            }));
         } catch (e) {
             next(e);
         }
@@ -63,7 +69,12 @@ router.get('/statistics/topics',
                 },
                 followQuestionRules: !_.isNil(req.query.userId)
             });
-            next(httpResponse.Ok('Fetched successfully', stats));
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            next(httpResponse.Ok('Fetched successfully', {
+                data: stats,
+                ...getAveragesFromStatistics(stats),
+            }));
         } catch (e) {
             next(e);
         }
@@ -82,7 +93,12 @@ router.get('/statistics/questions',
                 },
                 followQuestionRules: !_.isNil(req.query.userId)
             });
-            next(httpResponse.Ok('Fetched successfully', stats));
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            next(httpResponse.Ok('Fetched successfully', {
+                data: stats,
+                ...getAveragesFromStatistics(stats),
+            }));
         } catch (e) {
             next(e);
         }
@@ -209,9 +225,9 @@ router.get('/questions',
         }
 
         const {
-            message, 
-            userCanGetQuestions, 
-            topic, 
+            message,
+            userCanGetQuestions,
+            topic,
             version
         } = await courseController.canUserGetQuestions({
             userId,
@@ -612,7 +628,7 @@ router.get('/question/:id/raw',
 
         const { id: questionId } = req.params as GetQuestionRawRequest.params;
         const { userId } = req.query as GetQuestionRawRequest.query;
-        
+
         const question = await courseController.getQuestionWithoutRenderer({
                 id: questionId,
                 userId,
@@ -620,7 +636,7 @@ router.get('/question/:id/raw',
         next(httpResponse.Ok('Fetched question successfully', question));
     }));
 
-router.get('/question/:id/grade', 
+router.get('/question/:id/grade',
     authenticationMiddleware,
     validate(getQuestionGradeValidation),
     // This is a typescript workaround since it tries to use the type extractMap
@@ -659,14 +675,14 @@ router.get('/question/:id',
         try {
             // check to see if we should allow this question to be viewed
             const {
-                userCanViewQuestion, 
+                userCanViewQuestion,
                 message
             } = await courseController.canUserViewQuestionId({
-                user: requestingUser, 
-                questionId, 
+                user: requestingUser,
+                questionId,
                 studentTopicAssessmentInfoId
             });
-                
+
             if (userCanViewQuestion === false) throw new IllegalArgumentException(message);
 
             const question = await courseController.getQuestion({
@@ -708,7 +724,7 @@ router.post('/assessment/topic/:id/submit/:version/auto',
                 next(httpResponse.Ok('Attempts exceeded skipping auto submit'));
             } else {
                 logger.error('Auto submit ran into uncaught error', e);
-                throw e;    
+                throw e;
             }
         }
     }));
@@ -978,7 +994,7 @@ router.get('/',
         }
     }));
 
-// This returns information about a specific topic. Currently, it only 
+// This returns information about a specific topic. Currently, it only
 // returns extension information if a specific user is passed.
 router.get('/topic/:id',
     authenticationMiddleware,
@@ -1139,7 +1155,7 @@ router.get('/attachments/list',
             studentGradeInstanceId: req.query.studentGradeInstanceId,
             studentWorkbookId: req.query.studentWorkbookId,
         });
-        
+
         next(httpResponse.Ok('Attachments fetched successfully', {
             attachments: result,
             baseUrl: configurations.attachments.baseUrl

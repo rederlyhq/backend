@@ -152,7 +152,7 @@ const configurations = {
         requestTimeout: readIntValue('RENDERER_REQUEST_TIMEOUT', 75000),
     },
     openlab: {
-        url: readStringValue('OPENLAB_URL', 'https://openlab.citytech.cuny.edu/ol-webwork/'),
+        url: readStringValue('OPENLAB_URL', ''),
         requestTimeout: readIntValue('OPENLAB_REQUEST_TIMEOUT', 75000)
     },
     jira: {

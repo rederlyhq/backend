@@ -8,10 +8,13 @@ FROM node:10-alpine as builder
 # set working directory
 WORKDIR /app
 
-COPY . ./
-
 # install app dependencies
+COPY package.json ./
+COPY package-lock.json ./
 RUN npm install --silent
+
+# Seems like this would be a problem if you already locally had node modules
+COPY . ./
 
 # Builds and creates the package, does not create an archive
 RUN REDERLY_PACKAGER_ARCHIVE=false npm run build:package

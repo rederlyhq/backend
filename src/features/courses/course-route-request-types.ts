@@ -17,6 +17,12 @@ export namespace CreateCourseRequest {
     export type body = Joi.extractType<typeof validations.createCourseValidation.body>;
 };
 
+export namespace PostImportCourseArchiveRequest {
+    export type params = Joi.extractType<typeof validations.postImportCourseArchiveValidation.params>;
+    export type query = Joi.extractType<typeof validations.postImportCourseArchiveValidation.query>;
+    export type body = Joi.extractType<typeof validations.postImportCourseArchiveValidation.body>;
+};
+
 export namespace CreateQuestionsForTopicFromDefFileRequest {
     export type params = Joi.extractType<typeof validations.createQuestionsForTopicFromDefFileValidation.params>;
     export type query = Joi.extractType<typeof validations.createQuestionsForTopicFromDefFileValidation.query>;

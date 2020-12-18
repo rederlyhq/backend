@@ -433,10 +433,13 @@ class RendererHelper {
         rendererPath,
         filePath
     }: UploadAssetOptions): Promise<string> => {
-        const resultFormData = new FormData();
-        resultFormData.append('path', rendererPath);
-        resultFormData.append('file', fs.createReadStream(filePath));
-
+        const resultFormData = formHelper.objectToFormData({
+            object: {
+                path: rendererPath,
+                file: fs.createReadStream(filePath)    
+            }
+        });
+        
         try {
             const resp = await rendererAxios.post<string>(RENDERER_UPLOAD_ENDPOINT, resultFormData, {
                 headers: resultFormData?.getHeaders(),

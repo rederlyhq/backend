@@ -32,6 +32,7 @@ import IllegalArgumentException from '../../exceptions/illegal-argument-exceptio
 import ForbiddenError from '../../exceptions/forbidden-error';
 import RederlyExtendedError from '../../exceptions/rederly-extended-error';
 import StudentGradeInstance from '../../database/models/student-grade-instance';
+import sequelize = require('sequelize');
 
 const {
     sessionLife
@@ -146,6 +147,14 @@ class UserController {
                 'firstName',
                 'lastName',
                 'email',
+            ],
+            order: [
+                // TODO: A global frontend flag that controls the sort order of lastName vs firstName.
+                // Ignoring nulls because Sequelize fields should exist.
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                [sequelize.fn('lower', sequelize.col(User.rawAttributes.firstName.field!)), 'ASC'],
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                [sequelize.fn('lower', sequelize.col(User.rawAttributes.lastName.field!)), 'ASC'],
             ]
         });
     }

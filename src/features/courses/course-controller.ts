@@ -53,6 +53,7 @@ import StudentGradeInstanceProblemAttachment from '../../database/models/student
 import StudentWorkbookProblemAttachment from '../../database/models/student-workbook-problem-attachment';
 import emailHelper from '../../utilities/email-helper';
 import * as utilities from '../../utilities/utilities';
+import { getAverageGroupsBeforeDate, QUESTION_SQL_NAME, STUDENTTOPICOVERRIDE_SQL_NAME, TOPIC_SQL_NAME } from './statistics-helper';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -2194,7 +2195,17 @@ class CourseController {
                     active: true
                 },
                 include: unitInclude || [],
-            }];
+            },
+            {
+                model: StudentTopicOverride,
+                as: 'studentTopicOverride',
+                attributes: [],
+                required: false,
+                where: {
+                    active: true
+                }
+            }
+        ];
         }
 
         let questionInclude;
@@ -2236,12 +2247,80 @@ class CourseController {
                 END
             `);
 
-            attributes = [
-                [averageScoreAttribute, 'average'],
-                [sequelize.literal(pendingProblemCountCalculationString), 'pendingProblemCount'],
-                [sequelize.literal(masteredProblemCountCalculationString), 'masteredProblemCount'],
-                [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
-            ];
+            // If the topicId isn't present (and implicitly, the questionId as well),
+            // include average grades for open-topics only and dead-topics only.
+            if (_.isNil(topicId)) {
+                // Calculate the OPEN grades only
+                const pointsEarnedOpen = `SUM(
+                    CASE
+                        WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
+                            AND
+                                ("question->topic".${CourseTopicContent.rawAttributes.startDate.field} < NOW()
+                                OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.startDate.field} < NOW())
+                        THEN ${StudentGrade.rawAttributes.effectiveScore.field} * "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
+                        ELSE 0
+                    END)`;
+                const pointsAvailableOpen = `SUM(
+                    CASE
+                        WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
+                            AND
+                                ("question->topic".${CourseTopicContent.rawAttributes.startDate.field} < NOW()
+                                OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.startDate.field} < NOW())
+                        THEN "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
+                        ELSE 0
+                    END)`;
+                const averageScoreAttributeOpen = sequelize.literal(`
+                    CASE WHEN ${pointsAvailableOpen} = 0 THEN
+                        NULL
+                    ELSE
+                        ${pointsEarnedOpen} / ${pointsAvailableOpen}
+                    END
+                `);
+
+                // Calculate the DEAD grades only
+                const pointsEarnedDead = `SUM(
+                    CASE
+                        WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
+                            AND
+                                ("question->topic".${CourseTopicContent.rawAttributes.deadDate.field} < NOW()
+                                OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.deadDate.field} < NOW())
+                        THEN ${StudentGrade.rawAttributes.effectiveScore.field} * "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
+                        ELSE 0
+                    END)`;
+                const pointsAvailableDead = `SUM(
+                    CASE
+                        WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
+                            AND
+                                ("question->topic".${CourseTopicContent.rawAttributes.deadDate.field} < NOW()
+                                OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.deadDate.field} < NOW())
+                        THEN "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
+                        ELSE 0
+                    END)`;
+                const averageScoreAttributeDead = sequelize.literal(`
+                    CASE WHEN ${pointsAvailableDead} = 0 THEN
+                        NULL
+                    ELSE
+                        ${pointsEarnedDead} / ${pointsAvailableDead}
+                    END
+                `);
+
+                attributes = [
+                    [averageScoreAttribute, 'average'],
+                    [averageScoreAttributeOpen, 'openAverage'],
+                    [averageScoreAttributeDead, 'deadAverage'],
+                    [sequelize.literal(pendingProblemCountCalculationString), 'pendingProblemCount'],
+                    [sequelize.literal(masteredProblemCountCalculationString), 'masteredProblemCount'],
+                    [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
+                ];
+            } else {
+                attributes = [
+                    [averageScoreAttribute, 'average'],
+                    [sequelize.literal(pendingProblemCountCalculationString), 'pendingProblemCount'],
+                    [sequelize.literal(masteredProblemCountCalculationString), 'masteredProblemCount'],
+                    [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
+                ];
+            }
+
             // TODO This group needs to match the alias below, I'd like to find a better way to do this
             group = [`user.${User.rawAttributes.id.field}`,
                 `user.${User.rawAttributes.firstName.field}`,
@@ -2347,19 +2426,15 @@ class CourseController {
         }).omitBy(_.isNil).value() as sequelize.WhereOptions;
 
         let averageScoreAttribute;
+        // This is averageScoreAttribute, with points earned/available if applicable.
+        let averageScoreGroup: Array<sequelize.ProjectionAlias>;
         if (followQuestionRules) {
-            const pointsEarned = `SUM("topics->questions->grades".${StudentGrade.rawAttributes.effectiveScore.field} * "topics->questions".${CourseWWTopicQuestion.rawAttributes.weight.field})`;
-            const pointsAvailable = `SUM(CASE WHEN "topics->questions".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE THEN "topics->questions".${CourseWWTopicQuestion.rawAttributes.weight.field} ELSE 0 END)`;
-            averageScoreAttribute = sequelize.literal(`
-                CASE WHEN ${pointsAvailable} = 0 THEN
-                    NULL
-                ELSE
-                    ${pointsEarned} / ${pointsAvailable}
-                END
-            `);
+            averageScoreGroup = getAverageGroupsBeforeDate('all', TOPIC_SQL_NAME.INCLUDED_AS_TOPICS, QUESTION_SQL_NAME.CHILDREN_OF_INCLUDED_TOPICS, STUDENTTOPICOVERRIDE_SQL_NAME.NOT_INCLUDED);
         } else {
             averageScoreAttribute = sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
+            averageScoreGroup = [[averageScoreAttribute, 'averageScore']];
         }
+
 
         // const completionPercentAttribute = sequelize.literal(`
         // CASE WHEN COUNT("topics->questions->grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN
@@ -2373,14 +2448,15 @@ class CourseController {
         // END`);
         const completionPercentAttribute = sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
 
-
         return CourseUnitContent.findAll({
             where,
             attributes: [
                 'id',
                 'name',
                 [sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
-                [averageScoreAttribute, 'averageScore'],
+                ...averageScoreGroup,
+                ...getAverageGroupsBeforeDate('startDate', TOPIC_SQL_NAME.INCLUDED_AS_TOPICS, QUESTION_SQL_NAME.CHILDREN_OF_INCLUDED_TOPICS, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_INCLUDED_TOPICS),
+                ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.INCLUDED_AS_TOPICS, QUESTION_SQL_NAME.CHILDREN_OF_INCLUDED_TOPICS, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_INCLUDED_TOPICS),
                 [sequelize.fn('count', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
                 [sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'],
                 [sequelize.literal(`count(CASE WHEN "topics->questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN "topics->questions->grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
@@ -2409,7 +2485,14 @@ class CourseController {
                             active: true,
                         }
                     }]
-                }]
+                },
+                {
+                    model: StudentTopicOverride,
+                    as: 'studentTopicOverride',
+                    attributes: [],
+                    required: false,
+                }
+            ]
             }],
             group: [`${CourseUnitContent.name}.${CourseUnitContent.rawAttributes.id.field}`, `${CourseUnitContent.name}.${CourseUnitContent.rawAttributes.id.field}`],
             order: [
@@ -2435,23 +2518,31 @@ class CourseController {
             [`$questions.grades.${StudentGrade.rawAttributes.userId.field}$`]: userId,
         }).omitBy(_.isNil).value() as sequelize.WhereOptions;
 
-        const include: sequelize.IncludeOptions[] = [{
-            model: CourseWWTopicQuestion,
-            as: 'questions',
-            attributes: [],
-            where: {
-                active: true,
-                hidden: false
-            },
-            include: [{
-                model: StudentGrade,
-                as: 'grades',
+        const include: sequelize.IncludeOptions[] = [
+            {
+                model: CourseWWTopicQuestion,
+                as: 'questions',
                 attributes: [],
                 where: {
-                    active: true
-                }
-            }]
-        }];
+                    active: true,
+                    hidden: false
+                },
+                include: [{
+                    model: StudentGrade,
+                    as: 'grades',
+                    attributes: [],
+                    where: {
+                        active: true
+                    }
+                }]
+            },
+            {
+                model: StudentTopicOverride,
+                as: 'studentTopicOverride',
+                attributes: [],
+                required: false,
+            }
+        ];
 
         if (!_.isNil(courseId)) {
             include.push({
@@ -2465,18 +2556,16 @@ class CourseController {
         }
 
         let averageScoreAttribute;
+        // This is averageScoreAttribute, with points earned/available if applicable.
+        let averageScoreGroup: Array<sequelize.ProjectionAlias>;
+
         if (followQuestionRules) {
-            const pointsEarned = `SUM("questions->grades".${StudentGrade.rawAttributes.effectiveScore.field} * "questions".${CourseWWTopicQuestion.rawAttributes.weight.field})`;
-            const pointsAvailable = `SUM(CASE WHEN "questions".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE THEN "questions".${CourseWWTopicQuestion.rawAttributes.weight.field} ELSE 0 END)`;
-            averageScoreAttribute = sequelize.literal(`
-                CASE WHEN ${pointsAvailable} = 0 THEN
-                    NULL
-                ELSE
-                    ${pointsEarned} / ${pointsAvailable}
-                END
-            `);
+            averageScoreGroup = getAverageGroupsBeforeDate('all', TOPIC_SQL_NAME.ROOT_OF_QUERY, QUESTION_SQL_NAME.INCLUDED_AS_QUESTIONS, STUDENTTOPICOVERRIDE_SQL_NAME.NOT_INCLUDED);
         } else {
             averageScoreAttribute = sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
+            averageScoreGroup = [
+                [averageScoreAttribute, 'averageScore']
+            ];
         }
 
         // const completionPercentAttribute = sequelize.literal(`
@@ -2497,7 +2586,9 @@ class CourseController {
                 'id',
                 'name',
                 [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
-                [averageScoreAttribute, 'averageScore'],
+                ...averageScoreGroup,
+                ...getAverageGroupsBeforeDate('startDate', TOPIC_SQL_NAME.ROOT_OF_QUERY, QUESTION_SQL_NAME.INCLUDED_AS_QUESTIONS, STUDENTTOPICOVERRIDE_SQL_NAME.INCLUDED_AS_STUDENTTOPICOVERRIDE),
+                ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.ROOT_OF_QUERY, QUESTION_SQL_NAME.INCLUDED_AS_QUESTIONS, STUDENTTOPICOVERRIDE_SQL_NAME.INCLUDED_AS_STUDENTTOPICOVERRIDE),
                 [sequelize.fn('count', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
                 [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'],
                 [sequelize.literal(`count(CASE WHEN "questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN "questions->grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
@@ -2553,6 +2644,12 @@ class CourseController {
                     where: {
                         active: true
                     }
+                },
+                {
+                    model: StudentTopicOverride,
+                    as: 'studentTopicOverride',
+                    attributes: [],
+                    required: false,
                 }]
             });
         }
@@ -2587,7 +2684,12 @@ class CourseController {
                 'id',
                 [sequelize.literal(`'Problem ' || "${CourseWWTopicQuestion.name}".${CourseWWTopicQuestion.rawAttributes.problemNumber.field}`), 'name'],
                 [sequelize.fn('avg', sequelize.col(`grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
+                // [pointsEarned, 'pointsEarned'],
+                // [pointsAvailable, 'pointsAvailable'],
                 [sequelize.fn('avg', scoreField), 'averageScore'],
+                ...getAverageGroupsBeforeDate('all', TOPIC_SQL_NAME.INCLUDED_AS_SINGLE_TOPIC, QUESTION_SQL_NAME.ROOT_OF_QUERY, STUDENTTOPICOVERRIDE_SQL_NAME.NOT_INCLUDED),
+                ...getAverageGroupsBeforeDate('startDate', TOPIC_SQL_NAME.INCLUDED_AS_SINGLE_TOPIC, QUESTION_SQL_NAME.ROOT_OF_QUERY, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_SINGLE_INC_TOPIC),
+                ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.INCLUDED_AS_SINGLE_TOPIC, QUESTION_SQL_NAME.ROOT_OF_QUERY, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_SINGLE_INC_TOPIC),
                 [sequelize.fn('avg', sequelize.col(`grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'],
                 [sequelize.fn('count', sequelize.col(`grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
                 [sequelize.literal(`count(CASE WHEN "grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
@@ -3491,7 +3593,7 @@ class CourseController {
                 } else {
                     problemScoresReturn = {total: problemScores.total};
                 }
-            }            
+            }
 
             return { problemScores: problemScoresReturn, bestVersionScore: bestVersionScoreReturn, bestOverallVersion: bestOverallVersionReturn};
         });
@@ -3898,7 +4000,7 @@ You should be able to reply to the student's email address (${options.student.em
                                 {
                                     model: ProblemAttachment,
                                     as: 'problemAttachments',
-                                    attributes: ['id', 'cloudFilename', 'userLocalFilename'],
+                                    attributes: ['id', 'cloudFilename', 'userLocalFilename', 'updatedAt'],
                                     where: {
                                         active: true,
                                     }

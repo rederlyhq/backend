@@ -168,7 +168,10 @@ const configurations = {
     logging: {
         loggingLevel,
         loggingLevelForFile,
-        loggingLevelForConsole
+        loggingLevelForConsole,
+        urlInMeta: readBooleanValue('LOGGING_URL_IN_META', false),
+        metaInLogs: readBooleanValue('LOGGING_META_IN_LOGS', false),
+        logJson: readBooleanValue('LOGGING_LOG_JSON', isProduction(nodeEnv)),
     },
     scheduler: {
         basePath: readStringValue('SCHEDULER_BASE_PATH','http://localhost:3003'),

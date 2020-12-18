@@ -19,6 +19,7 @@ import IllegalArgumentException from './exceptions/illegal-argument-exception';
 import ForbiddenError from './exceptions/forbidden-error';
 import * as _ from 'lodash';
 import * as nodeUrl from 'url';
+import { rederlyRequestNamespaceMiddleware } from './middleware/rederly-request-namespace';
 
 interface ErrorResponse {
     statusCode: number;
@@ -138,9 +139,13 @@ app.use((req, res, next) => {
     next();
 });
 
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// The line: app.use(bodyParser.json()); clears the namespace for some reason :shrug:
+app.use(rederlyRequestNamespaceMiddleware);
 
 app.use(passport.initialize());
 

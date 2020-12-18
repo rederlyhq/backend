@@ -1,4 +1,4 @@
-import { Model, DataTypes, HasManyGetAssociationsMixin } from 'sequelize';
+import { Model, DataTypes, HasManyGetAssociationsMixin, HasOneGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
 export default class Course extends Model {
@@ -14,6 +14,12 @@ export default class Course extends Model {
             foreignKey: 'instructorId',
             targetKey: 'id',
             as: 'instructor'
+        });
+
+        Course.belongsTo(University, {
+            foreignKey: 'universityId',
+            targetKey: 'id',
+            as: 'university'
         });
 
         Course.belongsTo(Curriculum, {
@@ -57,6 +63,8 @@ export default class Course extends Model {
     public readonly instructor?: User;
 
     public getEnrolledStudents!: HasManyGetAssociationsMixin<StudentEnrollment>;
+    public getInstructor!: HasOneGetAssociationMixin<User>;
+    public getUniversity!: HasOneGetAssociationMixin<University>;
 }
 
 Course.init({
@@ -132,3 +140,4 @@ import User from './user';
 import StudentEnrollment from './student-enrollment';
 import CourseUnitContent from './course-unit-content';
 import Curriculum from './curriculum';
+import University from './university';

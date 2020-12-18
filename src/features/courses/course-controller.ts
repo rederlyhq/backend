@@ -16,7 +16,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -4017,6 +4017,61 @@ You should be able to reply to the student's email address (${options.student.em
 
         const baseUrl = configurations.attachments.baseUrl;
         return {user: user, topic: data, baseUrl};
+    }
+
+    async prepareOpenLabRedirect(options: PrepareOpenLabRedirectOptions): Promise<OpenLabRedirectInfo> {
+        const {user, questionId, baseURL} = options;
+        // if question belongs to an exam, they may not proceed
+        // exam questions should not be posted to OpenLab
+        const question = await courseRepository.getQuestion({id: questionId, userId: user.id});
+        const topic = await question.getTopic();
+        if (topic.topicTypeId === 2) {
+            throw new RederlyError('Exam problems cannot be submitted to the OpenLab.');
+        } 
+
+        const grade = await this.getGradeForQuestion({questionId, userId: user.id});
+        if (_.isNil(grade)) {
+            throw new WrappedError('Cannot ask for help on a question that has not been assigned.');
+        }
+        const unit = await topic.getUnit();
+        const course = await unit.getCourse();
+        // TODO: fetch all enrolled users and pull any with permission > student
+        // course.getEnrolled().forEach( email.push if role > student )
+        // support for TAs receiving notifications
+        const instructor = await course.getInstructor();
+        const instructorEmail = `Prof. ${instructor.lastName} <${instructor.email}>`;
+
+        const problem = question.problemNumber;
+        const problemSetId = topic.name;
+        const courseId = course.name;
+        const problemPath = question.webworkQuestionPath;
+        const email = [instructorEmail];
+        const studentName = `${user.firstName} ${user.lastName}`;
+        const emailURL = `${baseURL}/common/courses/${course.id}/topic/${topic.id}/grading?problemId=${question.id}&userId=${user.id}`;
+        const renderResponse = await rendererHelper.getProblem({
+            sourceFilePath: problemPath,
+            problemSeed: grade.randomSeed,
+            outputformat: OutputFormat.STATIC,
+            showHints: false,
+            showSolutions: false,
+            permissionLevel: 0,
+        }) as RendererResponse;
+        const rawHTML = renderResponse.renderedHTML;
+
+        if (_.isNil(rawHTML)) {
+            throw new RederlyError('Someone tried to ask for help on a problem with empty renderedHTML');
+        }
+
+        return {
+            problem,
+            problemSetId,
+            courseId,
+            problemPath,
+            email,
+            studentName,
+            emailURL,
+            rawHTML,
+        };
     }
 }
 

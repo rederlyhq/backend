@@ -291,6 +291,14 @@ export const getQuestionRawValidation = {
     body: {}
 };
 
+export const getQuestionOpenLabValidation = {
+    params: {
+        id: Joi.number().required(),
+    },
+    query: {},
+    body: {}
+};
+
 export const getQuestionValidation = {
     params: {
         id: Joi.number().required()

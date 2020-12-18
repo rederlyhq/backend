@@ -1,6 +1,7 @@
 import fse = require('fs-extra');
 import path = require('path');
 import logger from './logger';
+import * as _ from 'lodash';
 
 const fsPromises = fse.promises;
 
@@ -45,4 +46,22 @@ export const recursiveListFilesInDirectory = async (filePath: string, result: st
         logger.error(`recursiveListFilesInDirectory: not a file, symbolic link, or directory: ${filePath}`);
     }
     return result;
+};
+
+export enum TAR_EXTENSION {
+    GZ_SINGLE = '.tgz',
+    GZ_DOUBLE = '.tar.gz'
+}
+
+export const determineTarExtension = (filename: string): TAR_EXTENSION | null => {
+    const lower = filename.toLowerCase();
+    if (lower.endsWith(TAR_EXTENSION.GZ_SINGLE)) return TAR_EXTENSION.GZ_SINGLE;
+    else if (lower.endsWith(TAR_EXTENSION.GZ_DOUBLE)) return TAR_EXTENSION.GZ_DOUBLE;
+    else return null;
+};
+
+export const stripTarGZExtension = (filename: string): string | null => {
+    const tarExtension = determineTarExtension(filename);
+    if (_.isNull(tarExtension)) return null;
+    else return filename.substring(0, filename.length - tarExtension.length);
 };

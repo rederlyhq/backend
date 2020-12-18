@@ -8,6 +8,7 @@ import CourseUnitContent from '../../database/models/course-unit-content';
 import CourseTopicContent, { CourseTopicContentInterface } from '../../database/models/course-topic-content';
 import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface } from '../../database/models/course-ww-topic-question';
 import rendererHelper, { GetProblemParameters, OutputFormat, RendererResponse } from '../../utilities/renderer-helper';
+import { stripTarGZExtension } from '../../utilities/file-helper';
 import StudentWorkbook from '../../database/models/student-workbook';
 import StudentGrade from '../../database/models/student-grade';
 import StudentGradeInstance from '../../database/models/student-grade-instance';
@@ -4025,8 +4026,12 @@ You should be able to reply to the student's email address (${options.student.em
         return {user: user, topic: data, baseUrl};
     }
 
-    async importCourseTarball ({ filePath, fileName, courseId, userUUID }: ImportTarballOptions): Promise<unknown> {
-        const workingDirectory = `${nodePath.dirname(filePath)}/${nodePath.basename(fileName, nodePath.extname(fileName))}`;
+    async importCourseTarball ({ filePath, fileName, courseId, userUUID }: ImportTarballOptions): Promise<CourseUnitContent> {
+        const workingDirectoryName = stripTarGZExtension(nodePath.basename(fileName));
+        if (_.isNull(workingDirectoryName)) {
+            throw new IllegalArgumentException('File must be a `.tar.gz` or a `.tgz` file!');
+        }
+        const workingDirectory = `${nodePath.dirname(filePath)}/${workingDirectoryName}`;
         await fs.promises.mkdir(workingDirectory);
         await tar.x({
             file: filePath,
@@ -4070,8 +4075,10 @@ You should be able to reply to the student's email address (${options.student.em
             });
         });
 
-        return await useDatabaseTransaction(async () => {
-            const unitName = `Tarball import ${new Date().getTime()}`;
+        return useDatabaseTransaction(async (): Promise<CourseUnitContent> => {
+            const unitName = `${workingDirectoryName} Course Archive Import`;
+            // Fore dev it's nice to have a timestamp to avoid conflicts
+            // const unitName = `${workingDirectoryName} Course Archive Import ${new Date().getTime()}`;
             const unit = await this.createUnit({
                 courseId: courseId,
                 name: unitName

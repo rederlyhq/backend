@@ -64,7 +64,13 @@ router.post('/:id/import-archive',
             courseId: parseInt(req.params.id, 10),
             userUUID: user.uuid,
         });
-        next(httpResponse.Ok(null, result));
+        next(httpResponse.Ok(null, {
+            // avoid infinite chain
+            ...result.get({plain: true}),
+            // I'm doing bad things with the model and adding the topics after the fact
+            // sequelize isn't serializing that on the way down so I need to do this manually
+            topics: result.topics
+        }));
     }));
 
 router.get('/statistics/units',

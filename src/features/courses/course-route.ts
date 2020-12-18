@@ -37,18 +37,30 @@ const tempFileUpload: Handler = (...args) => {
     const next: NextFunction = args[2];
     if (_.isNil(req.requestId)) {
         next(new RederlyError('Request is missing request id'));
+        return;
     }
     multer({dest:`./tmp/${req.requestId}`}).single('file')(...args);
 };
 
-router.post('/abc',
+router.post('/:id/import-archive',
+    authenticationMiddleware,
+    // validate(getStatisticsOnUnitsValidation),
     tempFileUpload,
     asyncHandler(async (req: RederlyExpressRequest, res: unknown, next: NextFunction) => {
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+        const user = await req.session.getUser({
+            where: {
+                active: true
+            }
+        });
+
         const result = await courseController.importCourseTarball({
             filePath: req.file.path,
             fileName: req.file.originalname,
-            courseId: 1,
-            userUUID: 'TODO',
+            courseId: parseInt(req.params.id, 10),
+            userUUID: user.uuid,
         });
         next(httpResponse.Ok(null, result));
     }));

@@ -3938,8 +3938,8 @@ You should be able to reply to the student's email address (${options.student.em
         await Object.values(discoveredFiles.defFiles).asyncForEach(async (defFile: FindFilesDefFileResult) => {
             await  Object.values(defFile.pgFiles).asyncForEach(async (pgFile: FindFilesPGFileResult) => {
                 if (pgFile.pgFileExists) {
-                    const fileDir = `private/my/${'TODO'}/${course.name.replace(/\s/g, '_')}/${defFile.defFileName}`;
-                    const savedPath = `${fileDir}/${pgFile.pgFileName}.pg`;
+                    const fileDir = `private/my/${'TODO'}/${course.name.replace(/\s/g, '_')}/${defFile.topicName}`;
+                    const savedPath = `${fileDir}/${pgFile.pgFileName}`;
                     await rendererHelper.saveProblemSource({
                         problemSource: (await fs.promises.readFile(pgFile.pgFilePathOnDisk)).toString(),
                         writeFilePath: savedPath

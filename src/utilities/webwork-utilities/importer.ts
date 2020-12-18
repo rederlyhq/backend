@@ -43,7 +43,7 @@ export interface FindFilesDefFileResult {
     pgFiles: { [key: string]: FindFilesPGFileResult };
     defFileRelativePath: string;
     defFileAbsolutePath: string;
-    defFileName: string;
+    topicName: string;
 }
 
 export interface FindFilesOptions {
@@ -97,7 +97,7 @@ export const checkImageFiles = ({ imageFilePathFromPgFile, pgFilePath }: FindFil
 
 export const findFilesFromPGFile = async ({ contentRootPath, pgFilePathFromDefFile }: FindFilesPGFileOptions): Promise<FindFilesPGFileResult> => {
     const pgFilePath = path.join(contentRootPath, pgFilePathFromDefFile);
-    const pgFileName = path.basename(pgFilePath, path.extname(pgFilePath));
+    const pgFileName = path.basename(pgFilePath);
     const pgFileResult: FindFilesPGFileResult = {
         pgFilePathFromDefFile: pgFilePathFromDefFile,
         pgFilePathOnDisk: pgFilePath,
@@ -128,11 +128,17 @@ export const findFilesFromPGFile = async ({ contentRootPath, pgFilePathFromDefFi
 
 export const findFilesFromDefFile = async ({ contentRootPath, defFilePath }: FindFilesDefFileOptions): Promise<FindFilesDefFileResult> => {
     const defFileRelativePath = path.relative(contentRootPath, defFilePath);
-    const defFileName = path.basename(defFileRelativePath, path.extname(defFileRelativePath));
+    let topicName = path.basename(defFileRelativePath, path.extname(defFileRelativePath));
+    if(topicName.substring(0, 3).toLowerCase() === 'set') {
+        topicName = topicName.substring(3);
+    } else {
+        logger.warn(`Def file ${topicName} does not start with set`);
+    }
+    
     const defFileResult: FindFilesDefFileResult = {
         defFileAbsolutePath: defFilePath,
         defFileRelativePath: defFileRelativePath,
-        defFileName: defFileName,
+        topicName: topicName,
         pgFiles: {}
     };
     const defFileContent = (await fsPromises.readFile (defFilePath)).toString();

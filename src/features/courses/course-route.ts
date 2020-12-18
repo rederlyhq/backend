@@ -5,7 +5,7 @@ import validate from '../../middleware/joi-validator';
 import { authenticationMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
-import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation, deleteEnrollmentValidation, createAssessmentVersionValidation, extendCourseTopicForUserValidation, extendCourseTopicQuestionValidation, getTopicValidation, submitAssessmentVersionValidation, endAssessmentVersionValidation, previewQuestionValidation, gradeAssessmentValidation, getAttachmentPresignedURLValidation, postAttachmentValidation, listAttachmentsValidation, deleteAttachmentValidation, emailProfValidation, readQuestionValidation, saveQuestionValidation, catalogValidation, getVersionValidation, getQuestionRawValidation, getQuestionGradeValidation } from './course-route-validation';
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation, deleteEnrollmentValidation, createAssessmentVersionValidation, extendCourseTopicForUserValidation, extendCourseTopicQuestionValidation, getTopicValidation, submitAssessmentVersionValidation, endAssessmentVersionValidation, previewQuestionValidation, gradeAssessmentValidation, getAttachmentPresignedURLValidation, postAttachmentValidation, listAttachmentsValidation, deleteAttachmentValidation, emailProfValidation, readQuestionValidation, saveQuestionValidation, catalogValidation, getVersionValidation, getQuestionRawValidation, getQuestionGradeValidation, getQuestionOpenLabValidation } from './course-route-validation';
 import NotFoundError from '../../exceptions/not-found-error';
 import multer = require('multer');
 import * as proxy from 'express-http-proxy';
@@ -29,6 +29,8 @@ import AttemptsExceededException from '../../exceptions/attempts-exceeded-except
 import attachmentHelper from '../../utilities/attachments-helper';
 import urljoin = require('url-join');
 import RederlyError from '../../exceptions/rederly-error';
+import openLabHelper from '../../utilities/openlab-helper';
+import { getAveragesFromStatistics } from './statistics-helper';
 
 const fileUpload = multer();
 
@@ -77,7 +79,12 @@ router.get('/statistics/units',
                 },
                 followQuestionRules: !_.isNil(req.query.userId)
             });
-            next(httpResponse.Ok('Fetched successfully', stats));
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            next(httpResponse.Ok('Fetched successfully', {
+                data: stats,
+                ...getAveragesFromStatistics(stats),
+            }));
         } catch (e) {
             next(e);
         }
@@ -96,7 +103,12 @@ router.get('/statistics/topics',
                 },
                 followQuestionRules: !_.isNil(req.query.userId)
             });
-            next(httpResponse.Ok('Fetched successfully', stats));
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            next(httpResponse.Ok('Fetched successfully', {
+                data: stats,
+                ...getAveragesFromStatistics(stats),
+            }));
         } catch (e) {
             next(e);
         }
@@ -115,7 +127,12 @@ router.get('/statistics/questions',
                 },
                 followQuestionRules: !_.isNil(req.query.userId)
             });
-            next(httpResponse.Ok('Fetched successfully', stats));
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            next(httpResponse.Ok('Fetched successfully', {
+                data: stats,
+                ...getAveragesFromStatistics(stats),
+            }));
         } catch (e) {
             next(e);
         }
@@ -242,9 +259,9 @@ router.get('/questions',
         }
 
         const {
-            message, 
-            userCanGetQuestions, 
-            topic, 
+            message,
+            userCanGetQuestions,
+            topic,
             version
         } = await courseController.canUserGetQuestions({
             userId,
@@ -645,7 +662,7 @@ router.get('/question/:id/raw',
 
         const { id: questionId } = req.params as GetQuestionRawRequest.params;
         const { userId } = req.query as GetQuestionRawRequest.query;
-        
+
         const question = await courseController.getQuestionWithoutRenderer({
                 id: questionId,
                 userId,
@@ -653,7 +670,7 @@ router.get('/question/:id/raw',
         next(httpResponse.Ok('Fetched question successfully', question));
     }));
 
-router.get('/question/:id/grade', 
+router.get('/question/:id/grade',
     authenticationMiddleware,
     validate(getQuestionGradeValidation),
     // This is a typescript workaround since it tries to use the type extractMap
@@ -675,6 +692,29 @@ router.get('/question/:id/grade',
 
     }));
 
+router.get('/question/:id/openlab',
+    authenticationMiddleware,
+    validate(getQuestionOpenLabValidation),
+    // This is a typescript workaround since it tries to use the type extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetQuestionGradeRequest.body, unknown>, res: Response, next: NextFunction) => {
+        if (_.isNil(req.session)) {
+            throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+
+        const user = await req.session.getUser();
+        const { id: questionId } = req.params as GetQuestionRequest.params;
+        const baseURL = req.headers['rederly-origin'] as string | undefined; // need this because it incorrectly thinks it can be an array
+        if (_.isNil(baseURL)) {
+            throw new RederlyError('Could not determine the base URL from the ask for help request');
+        }
+
+        const openLabRedirectInfo = await courseController.prepareOpenLabRedirect({user, questionId, baseURL});
+        const openLabResponse = await openLabHelper.askForHelp(openLabRedirectInfo);
+
+        next(httpResponse.Ok('Data sent to OpenLab successfully', openLabResponse));
+    }));
+
 router.get('/question/:id',
     authenticationMiddleware,
     validate(getQuestionValidation),
@@ -692,14 +732,14 @@ router.get('/question/:id',
         try {
             // check to see if we should allow this question to be viewed
             const {
-                userCanViewQuestion, 
+                userCanViewQuestion,
                 message
             } = await courseController.canUserViewQuestionId({
-                user: requestingUser, 
-                questionId, 
+                user: requestingUser,
+                questionId,
                 studentTopicAssessmentInfoId
             });
-                
+
             if (userCanViewQuestion === false) throw new IllegalArgumentException(message);
 
             const question = await courseController.getQuestion({
@@ -741,7 +781,7 @@ router.post('/assessment/topic/:id/submit/:version/auto',
                 next(httpResponse.Ok('Attempts exceeded skipping auto submit'));
             } else {
                 logger.error('Auto submit ran into uncaught error', e);
-                throw e;    
+                throw e;
             }
         }
     }));
@@ -1011,7 +1051,7 @@ router.get('/',
         }
     }));
 
-// This returns information about a specific topic. Currently, it only 
+// This returns information about a specific topic. Currently, it only
 // returns extension information if a specific user is passed.
 router.get('/topic/:id',
     authenticationMiddleware,
@@ -1074,7 +1114,16 @@ router.get('/:id',
         try {
             const params = req.params as GetCourseRequest.params;
             const course = await courseController.getCourseById(params.id);
-            next(httpResponse.Ok('Fetched successfully', course));
+            const university = await course.getUniversity({
+                where: {
+                    active: true,
+                }
+            });
+            const canAskForHelp = university?.universityName === 'CityTech' ?? false;
+            next(httpResponse.Ok('Fetched successfully', {
+                ...course.get({plain: true}),
+                canAskForHelp,
+            }));
         } catch (e) {
             next(e);
         }
@@ -1172,7 +1221,7 @@ router.get('/attachments/list',
             studentGradeInstanceId: req.query.studentGradeInstanceId,
             studentWorkbookId: req.query.studentWorkbookId,
         });
-        
+
         next(httpResponse.Ok('Attachments fetched successfully', {
             attachments: result,
             baseUrl: configurations.attachments.baseUrl

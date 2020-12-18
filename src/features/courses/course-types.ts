@@ -591,6 +591,23 @@ export interface GetAllContentForVersionOptions {
     userId: number;
 }
 
+export interface PrepareOpenLabRedirectOptions {
+    questionId: number;
+    user: User;
+    baseURL: string;
+}
+
+export interface OpenLabRedirectInfo {
+    problem: number;
+    problemSetId: string;
+    courseId: string;
+    problemPath: string;
+    email: string[];
+    studentName: string;
+    emailURL: string;
+    rawHTML: string;
+}
+
 export interface ImportTarballOptions {
     filePath: string;
     fileName: string;

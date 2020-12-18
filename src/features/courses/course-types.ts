@@ -16,6 +16,7 @@ import StudentTopicQuestionOverride from '../../database/models/student-topic-qu
 import { DeepPartial } from '../../utilities/typescript-helpers';
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 import ProblemAttachment from '../../database/models/problem-attachment';
+import { FindFilesDefFileResult } from '../../utilities/webwork-utilities/importer';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -426,6 +427,7 @@ export interface CreateGradeInstancesForAssessmentOptions {
 export interface CreateQuestionsForTopicFromDefFileContentOptions {
     webworkDefFileContent: string;
     courseTopicId: number;
+    defFileDiscoveryResult?: FindFilesDefFileResult;
 }
 
 export interface DeleteQuestionsOptions {

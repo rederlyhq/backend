@@ -53,11 +53,10 @@ import StudentGradeInstanceProblemAttachment from '../../database/models/student
 import StudentWorkbookProblemAttachment from '../../database/models/student-workbook-problem-attachment';
 import emailHelper from '../../utilities/email-helper';
 import * as utilities from '../../utilities/utilities';
-import { FindFilesResult, findFiles, FindFilesDefFileResult, FindFilesPGFileResult, FindFilesImageFileResult } from '../../utilities/webwork-utilities/importer';
+import { findFiles, FindFilesDefFileResult, FindFilesPGFileResult, FindFilesImageFileResult } from '../../utilities/webwork-utilities/importer';
 import * as nodePath from 'path';
 import * as tar from 'tar';
 import * as fs from 'fs';
-import TopicType from '../../database/models/topic-type';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -1110,11 +1109,13 @@ class CourseController {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return useDatabaseTransaction<any>((): Promise<any> => {
             return parsedWebworkDef.problems.asyncForEach(async (problem: Problem) => {
+                const pgFilePath = options.defFileDiscoveryResult?.pgFiles[problem.source_file ?? '']?.resolvedRendererPath ?? problem.source_file;
+                
                 return this.addQuestion({
                     // active: true,
                     courseTopicContentId: options.courseTopicId,
                     problemNumber: ++lastProblemNumber,
-                    webworkQuestionPath: problem.source_file,
+                    webworkQuestionPath: pgFilePath,
                     weight: parseInt(problem.value ?? '1'),
                     maxAttempts: parseInt(problem.max_attempts ?? '-1'),
                     hidden: false,
@@ -3991,6 +3992,7 @@ You should be able to reply to the student's email address (${options.student.em
                 await this.createQuestionsForTopicFromDefFileContent({
                     webworkDefFileContent: (await fs.promises.readFile(defFile.defFileAbsolutePath)).toString(),
                     courseTopicId: topic.id,
+                    defFileDiscoveryResult: defFile
                 });
                 // TODO This is bad (mutating a sequelize object)
                 unit.topics?.push(topic);

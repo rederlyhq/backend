@@ -42,7 +42,7 @@ console.log(`Starting to package project into ${destFile}`);
  */
 (async () => {
     if (!await fs.pathExists(builtDirectory)) {
-        throw new Error ('you hve to build first');
+        throw new Error ('you have to build first');
     }
     if (await fs.pathExists(buildDir)) {
         console.log('Cleaning build directory');

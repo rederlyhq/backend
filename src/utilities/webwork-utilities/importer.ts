@@ -14,6 +14,8 @@ export interface FindFilesImageFileOptions {
 export interface FindFilesImageFileResult {
     imageFilePathFromPgFile: string;
     imageFilePath: string;
+    imageFileName: string;
+    resolvedRendererPath?: string;
 }
 
 export interface FindFilesPGFileOptions {
@@ -24,6 +26,9 @@ export interface FindFilesPGFileOptions {
 export interface FindFilesPGFileResult {
     pgFilePathFromDefFile: string;
     pgFilePathOnDisk: string;
+    pgFileName: string;
+    pgFileExists: boolean;
+    resolvedRendererPath?: string;
     assetFiles: {
         imageFiles: { [key: string]: FindFilesImageFileResult };
     };
@@ -38,6 +43,7 @@ export interface FindFilesDefFileResult {
     pgFiles: { [key: string]: FindFilesPGFileResult };
     defFileRelativePath: string;
     defFileAbsolutePath: string;
+    defFileName: string;
 }
 
 export interface FindFilesOptions {
@@ -84,42 +90,49 @@ export const checkImageFiles = ({ imageFilePathFromPgFile, pgFilePath }: FindFil
     const imageFileResult: FindFilesImageFileResult = {
         imageFilePathFromPgFile: imageFilePathFromPgFile,
         imageFilePath: imageFilePath,
+        imageFileName: path.basename(imageFilePathFromPgFile)
     };
     return imageFileResult;
 };
 
 export const findFilesFromPGFile = async ({ contentRootPath, pgFilePathFromDefFile }: FindFilesPGFileOptions): Promise<FindFilesPGFileResult> => {
     const pgFilePath = path.join(contentRootPath, pgFilePathFromDefFile);
+    const pgFileName = path.basename(pgFilePath, path.extname(pgFilePath));
     const pgFileResult: FindFilesPGFileResult = {
         pgFilePathFromDefFile: pgFilePathFromDefFile,
         pgFilePathOnDisk: pgFilePath,
+        pgFileName: pgFileName,
+        pgFileExists: await fse.pathExists(pgFilePath),
         assetFiles: {
             imageFiles: {}
         }
     };
     try {
-        const pgFileStats = await fsPromises.lstat(pgFilePath);
-        if (!pgFileStats.isFile()) {
-            throw new RederlyError(`${pgFilePath} is not a file`);
+        if (pgFileResult.pgFileExists) {
+            const pgFileStats = await fsPromises.lstat(pgFilePath);
+            if (!pgFileStats.isFile()) {
+                throw new RederlyError(`${pgFilePath} is not a file`);
+            }
+            const pgFileContent = (await fsPromises.readFile(pgFilePath)).toString();
+            const imageInPGFileMatches = getAllMatches(imageInPGFileRegex, pgFileContent);
+            await imageInPGFileMatches.asyncForEach(async (imageInPGFileMatch) => {
+                const imagePath = imageInPGFileMatch[1] ?? imageInPGFileMatch[2];
+                pgFileResult.assetFiles.imageFiles[imagePath] = checkImageFiles({ imageFilePathFromPgFile: imagePath, pgFilePath });
+            });    
         }
-        const pgFileContent = (await fsPromises.readFile(pgFilePath)).toString();
-        const imageInPGFileMatches = getAllMatches(imageInPGFileRegex, pgFileContent);
-        await imageInPGFileMatches.asyncForEach(async (imageInPGFileMatch) => {
-            const imagePath = imageInPGFileMatch[1] ?? imageInPGFileMatch[2];
-            pgFileResult.assetFiles.imageFiles[imagePath] = checkImageFiles({ imageFilePathFromPgFile: imagePath, pgFilePath });
-        });
     } catch (e) {
-        // logger.error(`Could not find pg file ${pgFilePath}`, e);
+        logger.error(`Could not read pg file ${pgFilePath}`, e);
     }
-    // console.log(pgFilePath);
     return pgFileResult;
 };
 
 export const findFilesFromDefFile = async ({ contentRootPath, defFilePath }: FindFilesDefFileOptions): Promise<FindFilesDefFileResult> => {
     const defFileRelativePath = path.relative(contentRootPath, defFilePath);
+    const defFileName = path.basename(defFileRelativePath, path.extname(defFileRelativePath));
     const defFileResult: FindFilesDefFileResult = {
         defFileAbsolutePath: defFilePath,
         defFileRelativePath: defFileRelativePath,
+        defFileName: defFileName,
         pgFiles: {}
     };
     const defFileContent = (await fsPromises.readFile (defFilePath)).toString();

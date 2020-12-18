@@ -3928,13 +3928,41 @@ You should be able to reply to the student's email address (${options.student.em
             file: filePath,
             cwd: workingDirectory
         });
-        
+
         const discoveredFiles = await findFiles({ filePath: workingDirectory });
-        Object.values(discoveredFiles.defFiles).forEach((defFiles: FindFilesDefFileResult) => {
-            Object.values(defFiles.pgFiles).forEach((pgFiles: FindFilesPGFileResult) => {
-                Object.values(pgFiles.assetFiles.imageFiles).forEach((imageFile: FindFilesImageFileResult) => {
-                    // imageFile.imageFilePath
-                });
+
+        const course = await courseRepository.getCourse({
+            id: courseId
+        });
+
+        await Object.values(discoveredFiles.defFiles).asyncForEach(async (defFile: FindFilesDefFileResult) => {
+            await  Object.values(defFile.pgFiles).asyncForEach(async (pgFile: FindFilesPGFileResult) => {
+                if (pgFile.pgFileExists) {
+                    const fileDir = `private/my/${'TODO'}/${course.name.replace(/\s/g, '_')}/${defFile.defFileName}`;
+                    const savedPath = `${fileDir}/${pgFile.pgFileName}.pg`;
+                    await rendererHelper.saveProblemSource({
+                        problemSource: (await fs.promises.readFile(pgFile.pgFilePathOnDisk)).toString(),
+                        writeFilePath: savedPath
+                    });    
+                    pgFile.resolvedRendererPath = savedPath;
+                    await  Object.values(pgFile.assetFiles.imageFiles).asyncForEach(async (imageFile: FindFilesImageFileResult) => {
+                        const savedPath = `${fileDir}/${imageFile.imageFileName}`;
+                        await rendererHelper.uploadAsset({
+                            filePath: imageFile.imageFilePath,
+                            rendererPath: savedPath
+                        });
+                        imageFile.resolvedRendererPath = savedPath;
+                    });
+                } else {
+                    const contribPath = `Contrib/${pgFile.pgFilePathFromDefFile}`;
+                    const isAccessible = await rendererHelper.isPathAccessibleToRenderer({
+                        problemPath: contribPath
+                    });
+                    if (!isAccessible) {
+                        throw new RederlyError('Could not find pg file in contrib or from tarball');
+                    }
+                    pgFile.resolvedRendererPath = contribPath;
+                }
             });
         });
         return discoveredFiles;

@@ -593,4 +593,5 @@ export interface ImportTarballOptions {
     filePath: string;
     fileName: string;
     courseId: number;
+    userUUID: string;
 }

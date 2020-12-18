@@ -47,7 +47,8 @@ router.post('/abc',
         const result = await courseController.importCourseTarball({
             filePath: req.file.path,
             fileName: req.file.originalname,
-            courseId: 1
+            courseId: 1,
+            userUUID: 'TODO',
         });
         next(httpResponse.Ok(null, result));
     }));

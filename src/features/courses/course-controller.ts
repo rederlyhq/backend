@@ -57,6 +57,7 @@ import { FindFilesResult, findFiles, FindFilesDefFileResult, FindFilesPGFileResu
 import * as nodePath from 'path';
 import * as tar from 'tar';
 import * as fs from 'fs';
+import TopicType from '../../database/models/topic-type';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -414,7 +415,7 @@ class CourseController {
         return courseRepository.createUnit(courseUnitContent);
     }
 
-    async createTopic(courseTopicContent: CourseTopicContent): Promise<CourseTopicContent> {
+    async createTopic(courseTopicContent: Partial<CourseTopicContent>): Promise<CourseTopicContent> {
         if (_.isNil(courseTopicContent.startDate) || _.isNil(courseTopicContent.endDate) || _.isNil(courseTopicContent.deadDate)) {
             if (_.isNil(courseTopicContent.courseUnitContentId)) {
                 throw new Error('Cannot assume start, end or dead date if a unit is not supplied');
@@ -3921,7 +3922,7 @@ You should be able to reply to the student's email address (${options.student.em
         return {user: user, topic: data, baseUrl};
     }
 
-    async importCourseTarball ({ filePath, fileName, courseId }: ImportTarballOptions): Promise<FindFilesResult> {
+    async importCourseTarball ({ filePath, fileName, courseId, userUUID }: ImportTarballOptions): Promise<unknown> {
         const workingDirectory = `${nodePath.dirname(filePath)}/${nodePath.basename(fileName, nodePath.extname(fileName))}`;
         await fs.promises.mkdir(workingDirectory);
         await tar.x({
@@ -3938,7 +3939,7 @@ You should be able to reply to the student's email address (${options.student.em
         await Object.values(discoveredFiles.defFiles).asyncForEach(async (defFile: FindFilesDefFileResult) => {
             await  Object.values(defFile.pgFiles).asyncForEach(async (pgFile: FindFilesPGFileResult) => {
                 if (pgFile.pgFileExists) {
-                    const fileDir = `private/my/${'TODO'}/${course.name.replace(/\s/g, '_')}/${defFile.topicName}`;
+                    const fileDir = `private/my/${userUUID}/${course.name.replace(/\s/g, '_')}/${defFile.topicName}`;
                     const savedPath = `${fileDir}/${pgFile.pgFileName}`;
                     await rendererHelper.saveProblemSource({
                         problemSource: (await fs.promises.readFile(pgFile.pgFilePathOnDisk)).toString(),
@@ -3965,7 +3966,37 @@ You should be able to reply to the student's email address (${options.student.em
                 }
             });
         });
-        return discoveredFiles;
+
+        return await useDatabaseTransaction(async () => {
+            const unitName = `Tarball import ${new Date().getTime()}`;
+            const unit = await this.createUnit({
+                courseId: courseId,
+                name: unitName
+            });
+            // TODO This is bad (mutating a sequelize object)
+            unit.topics = [];
+
+            // Can't use async for each because these can't be done in parallel
+            // get next content order needs to wait for the previous one to finish
+            for (const key in discoveredFiles.defFiles) {
+                const defFile = discoveredFiles.defFiles[key];
+                const topic = await this.createTopic({
+                    name: defFile.topicName,
+                    startDate: course.end,
+                    endDate: course.end,
+                    deadDate: course.end,
+                    courseUnitContentId: unit.id,
+                    topicTypeId: 1, // TODO grab from def file, and grabbing other exam attributes
+                });
+                await this.createQuestionsForTopicFromDefFileContent({
+                    webworkDefFileContent: (await fs.promises.readFile(defFile.defFileAbsolutePath)).toString(),
+                    courseTopicId: topic.id,
+                });
+                // TODO This is bad (mutating a sequelize object)
+                unit.topics?.push(topic);
+            }
+            return unit;
+        });
     }
 }
 

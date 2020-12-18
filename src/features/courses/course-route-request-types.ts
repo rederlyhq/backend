@@ -125,6 +125,12 @@ export namespace GetQuestionRawRequest {
     export type body = Joi.extractType<typeof validations.getQuestionRawValidation.body>;
 };
 
+export namespace GetQuestionOpenLabRequest {
+    export type params = Joi.extractType<typeof validations.getQuestionOpenLabValidation.params>;
+    export type query = Joi.extractType<typeof validations.getQuestionOpenLabValidation.query>;
+    export type body = Joi.extractType<typeof validations.getQuestionOpenLabValidation.body>;
+};
+
 export namespace GetQuestionRequest {
     export type params = Joi.extractType<typeof validations.getQuestionValidation.params>;
     export type query = Joi.extractType<typeof validations.getQuestionValidation.query>;

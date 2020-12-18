@@ -14,7 +14,7 @@ import * as _ from 'lodash';
 import configurations from '../../configurations';
 import WrappedError from '../../exceptions/wrapped-error';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
-import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest, ExtendCourseTopicQuestionRequest, CreateAssessmentVersionRequest, SubmitAssessmentVersionRequest, UpdateGradeInstanceRequest, EndAssessmentVersionRequest, PreviewQuestionRequest, GradeAssessmentRequest, GetAttachmentPresignedURLRequest, PostAttachmentRequest, ListAttachmentsRequest, DeleteAttachmentRequest, EmailProfRequest, ReadQuestionRequest, SaveQuestionRequest, CatalogRequest, GetVersionRequest, GetQuestionRawRequest, GetQuestionGradeRequest, PostImportCourseArchiveRequest } from './course-route-request-types';
+import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest, ExtendCourseTopicQuestionRequest, CreateAssessmentVersionRequest, SubmitAssessmentVersionRequest, UpdateGradeInstanceRequest, EndAssessmentVersionRequest, PreviewQuestionRequest, GradeAssessmentRequest, GetAttachmentPresignedURLRequest, PostAttachmentRequest, ListAttachmentsRequest, DeleteAttachmentRequest, EmailProfRequest, ReadQuestionRequest, SaveQuestionRequest, CatalogRequest, GetVersionRequest, GetQuestionRawRequest, GetQuestionGradeRequest, PostImportCourseArchiveRequest, GetQuestionOpenLabRequest } from './course-route-request-types';
 import Boom = require('boom');
 import { Constants } from '../../constants';
 import Role from '../permissions/roles';
@@ -700,13 +700,13 @@ router.get('/question/:id/openlab',
     validate(getQuestionOpenLabValidation),
     // This is a typescript workaround since it tries to use the type extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetQuestionGradeRequest.body, unknown>, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetQuestionOpenLabRequest.body, GetQuestionOpenLabRequest.query>, res: Response, next: NextFunction) => {
         if (_.isNil(req.session)) {
             throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
         const user = await req.session.getUser();
-        const { id: questionId } = req.params as GetQuestionRequest.params;
+        const { id: questionId } = req.params as GetQuestionOpenLabRequest.params;
         const baseURL = req.headers['rederly-origin'] as string | undefined; // need this because it incorrectly thinks it can be an array
         if (_.isNil(baseURL)) {
             throw new RederlyError('Could not determine the base URL from the ask for help request');

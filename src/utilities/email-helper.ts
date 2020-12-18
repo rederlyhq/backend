@@ -6,6 +6,7 @@ import _ = require('lodash');
 // There is no type def for sendgrid-transport
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const sgTransport = require('nodemailer-sendgrid-transport');
+import SES = require('aws-sdk/clients/ses');
 import * as Email from 'email-templates';
 import RederlyError from '../exceptions/rederly-error';
 import path = require('path');
@@ -50,7 +51,11 @@ class EmailHelper {
             }
         };
 
-        this.client = nodemailer.createTransport(sgTransport(clientOptions));
+        this.client = nodemailer.createTransport({
+            SES: new SES({
+                apiVersion: '2010-12-01'
+            })
+        });
         this.mailer = new Email({
             views: {
                 root: path.resolve('assets/emails')

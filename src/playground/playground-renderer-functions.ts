@@ -2,7 +2,7 @@ import logger from '../utilities/logger';
 import rendererHelper from '../utilities/renderer-helper';
 import * as nodePath from 'path';
 
-const isPathAccessibleToRenderer = async () => {
+const isPathAccessibleToRenderer = async (): Promise<void> => {
     let path = 'abc';
     logger.info(`isPathAccessibleToRenderer path:${path}; result:${await rendererHelper.isPathAccessibleToRenderer({ problemPath: path })}`);
     path = 'private/templates/barebones.pg';

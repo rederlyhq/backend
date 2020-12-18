@@ -31,23 +31,14 @@ import urljoin = require('url-join');
 import RederlyError from '../../exceptions/rederly-error';
 import openLabHelper from '../../utilities/openlab-helper';
 import { getAveragesFromStatistics } from './statistics-helper';
+import { rederlyTempFileWrapper } from '../../middleware/rederly-temp-file-wrapper';
 
 const fileUpload = multer();
-
-const tempFileUpload: Handler = (...args) => {
-    const req: RederlyExpressRequest = args[0];
-    const next: NextFunction = args[2];
-    if (_.isNil(req.requestId)) {
-        next(new RederlyError('Request is missing request id'));
-        return;
-    }
-    multer({dest:`./tmp/${req.requestId}`}).single('file')(...args);
-};
 
 router.post('/:id/import-archive',
     authenticationMiddleware,
     // validate(getStatisticsOnUnitsValidation),
-    tempFileUpload,
+    rederlyTempFileWrapper((tmpFilePath: string) => multer({dest: tmpFilePath}).single('file')),
     asyncHandler(async (req: RederlyExpressRequest, res: unknown, next: NextFunction) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);

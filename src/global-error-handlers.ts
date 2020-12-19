@@ -20,4 +20,28 @@ process.on('unhandledRejection', (error: any) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 process.on('uncaughtException', (error: any) => {
     logger.error(`An uncaught error occurred "${error?.stack ?? error}"`);
+    // Should exit according to node docs https://nodejs.org/api/process.html#process_warning_using_uncaughtexception_correctly
+    process.exit(1);
+});
+
+/**
+ * Make sure that on exit cleanup tasks are performed
+ */
+const cleanExit = (): void => process.exit(0);
+/**
+ * We do not want to add these events until the application has loaded
+ * If we don't have the setTimeout it wait for the entire app the load before you can quit (which is very annoying in development)
+ */
+setTimeout(() => {
+    //catches ctrl+c event
+    process.on('SIGINT', cleanExit);
+
+    // catches "kill pid" (for example: nodemon restart)
+    process.on('SIGUSR1', cleanExit);
+    process.on('SIGUSR2', cleanExit);
+
+
+    process.on('exit', function() {
+        logger.info('Application shutting down');
+    });
 });

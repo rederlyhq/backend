@@ -93,3 +93,7 @@ export const testConsistentRequests = async (): Promise<unknown> => {
         iterations: 60, // 60 requests, with the above this is 600 seconds == 10 minutes
     });
 };
+
+export const run = async (): Promise<void> => {
+    logger.info('No run set up');
+};

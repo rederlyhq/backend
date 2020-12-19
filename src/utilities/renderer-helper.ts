@@ -10,6 +10,7 @@ import NotFoundError from '../exceptions/not-found-error';
 import WrappedError from '../exceptions/wrapped-error';
 import { RederlyExtendedJoi } from '../extensions/rederly-extended-joi';
 import urljoin = require('url-join');
+import * as fs from'fs';
 import formHelper, { unmergeStrategies } from './form-helper';
 
 const rendererAxios = axios.create({
@@ -27,6 +28,7 @@ export const NEW_RENDERER_ENDPOINT = '/render-api';
 export const RENDERER_LOAD_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'tap');
 export const RENDERER_SAVE_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'can');
 export const RENDERER_CATALOG_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'cat');
+export const RENDERER_UPLOAD_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'upload');
 
 export enum OutputFormat {
     SINGLE = 'single',
@@ -68,6 +70,15 @@ export interface SaveProblemSourceOptions {
 export interface CatalogOptions {
     basePath: string;
     maxDepth: number;
+}
+
+export interface IsPathAccessibleToRendererOptions {
+    problemPath: string;
+}
+
+export interface UploadAssetOptions {
+    rendererPath: string;
+    filePath: string;
 }
 
 
@@ -398,9 +409,7 @@ class RendererHelper {
 
     isPathAccessibleToRenderer = async ({
         problemPath
-    }: {
-        problemPath: string;
-    }): Promise<boolean> => {
+    }: IsPathAccessibleToRendererOptions): Promise<boolean> => {
         try {
             const catalogResult = await this.catalog({
                 basePath: problemPath,
@@ -414,6 +423,33 @@ class RendererHelper {
             if(isAxiosError(e) && e.response?.status === 403) {
                 logger.debug('Path forbidden');
                 return false;
+            }
+            // Some application error occurred
+            throw new WrappedError(errorMessagePrefix, e);
+        }
+    }
+
+    uploadAsset = async ({
+        rendererPath,
+        filePath
+    }: UploadAssetOptions): Promise<string> => {
+        const resultFormData = formHelper.objectToFormData({
+            object: {
+                path: rendererPath,
+                file: fs.createReadStream(filePath)    
+            }
+        });
+        
+        try {
+            const resp = await rendererAxios.post<string>(RENDERER_UPLOAD_ENDPOINT, resultFormData, {
+                headers: resultFormData?.getHeaders(),
+            });
+
+            return resp.data;
+        } catch (e) {
+            const errorMessagePrefix = `Could not upload "${rendererPath}"`;
+            if(isAxiosError(e)) {
+                throw new WrappedError(`${errorMessagePrefix}; response: ${JSON.stringify(e.response?.data ?? e.stack)}`, e);
             }
             // Some application error occurred
             throw new WrappedError(errorMessagePrefix, e);

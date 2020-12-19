@@ -20,6 +20,9 @@ import ForbiddenError from './exceptions/forbidden-error';
 import * as _ from 'lodash';
 import * as nodeUrl from 'url';
 import { rederlyRequestNamespaceMiddleware } from './middleware/rederly-request-namespace';
+import { RederlyExpressRequest } from './extensions/rederly-express-request';
+import { v4 as uuidv4 } from 'uuid';
+import * as fs from 'fs';
 
 interface ErrorResponse {
     statusCode: number;
@@ -36,6 +39,11 @@ const {
 } = configurations.server.limiter;
 
 const app = express();
+
+app.use((req: RederlyExpressRequest, res: unknown, next: NextFunction) => {
+    req.requestId = uuidv4();
+    next();
+});
 
 app.use(morgan((tokens, req, res) => {
     const responseTime = parseInt(tokens['response-time'](req, res) ?? '', 10);
@@ -151,6 +159,68 @@ app.use(passport.initialize());
 
 app.use(basePath, router);
 
+// This is a developer option, it will be logged as a warning if it is on in production
+if (configurations.app.autoDeleteTemp) {
+    const tmpFolderPath = './tmp';
+    const deleteTmpFolder = (): void => {
+        logger.debug('Deleting temp file');
+        fs.access(tmpFolderPath, (accessError: Error | null) => {
+            if (!accessError) {
+                fs.rmdir(tmpFolderPath, { recursive: true }, (rmError: Error | null) => {
+                    if (rmError) {
+                        logger.error(`Removing temp files: could not delete  ${tmpFolderPath}`, rmError);
+                    }
+                });
+            } else {
+                // This only happens on startup and shutdown
+                logger.debug(`Removing temp files: could not access ${tmpFolderPath} (may not have been created)`, accessError);
+            }
+        });    
+    };
+    /**
+     * The on exit handler has to be sync otherwise callbacks never get executed
+     */
+    const deleteTmpFolderSync = (): void => {
+        try {
+            logger.debug('Deleting temp file sync');
+            try {
+                fs.accessSync(tmpFolderPath);
+            } catch (e) {
+                logger.debug(`Removing temp files: could not access ${tmpFolderPath} (may not have been created)`, e);
+            }
+
+            try {
+                fs.rmdirSync(tmpFolderPath, { recursive: true });
+            } catch (e) {
+                logger.error(`Removing temp files: could not delete  ${tmpFolderPath}`, e);
+            }
+        } catch (e) {
+            // Everything should be try catched above, adding extra error handling because uncaught error results in the application staying open
+            logger.error('TSNH deleteTmpFolderSync failed', e);
+        }
+    };
+    deleteTmpFolder();
+    process.on('exit', deleteTmpFolderSync);
+    // request temp file cleanup
+    app.use((obj: unknown, req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
+        if (!_.isNil(req.requestId)) {
+            const requestTmpPath = `./tmp/${req.requestId}`;
+            fs.access(requestTmpPath, (accessError: Error | null) => {
+                if (!accessError) {
+                    fs.rmdir(requestTmpPath, { recursive: true }, (rmError: Error | null) => {
+                        if (rmError) {
+                            logger.error(`Removing temp files: could not delete  ${requestTmpPath}`, rmError);
+                        }
+                    });
+                } else {
+                    // This is extremely common so it is a little more verbose then I want to leave in there
+                    // logger.debug(`Removing temp files: could not access ${requestTmpPath} (may not have been created)`, accessError);
+                }
+            });
+        }
+        next(obj);
+    });
+}
 
 // General Exception Handler
 // next is a required parameter, without having it requests result in a response of object

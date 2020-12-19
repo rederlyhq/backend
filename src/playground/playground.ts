@@ -4,6 +4,10 @@ import '../extensions';
 import logger from '../utilities/logger';
 import '../global-error-handlers';
 
+// import * as pugPlay from './playground-pug';
+// import * as rendererPlay from './playground-renderer-functions';
+// import * as schedulerPlay from './playground-scheduler-functions';
+
 const enabledMarker = new Array(20).join('*');
 const disabledMarker = new Array(20).join('#');
 if (configurations.email.enabled) {

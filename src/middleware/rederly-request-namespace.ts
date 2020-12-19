@@ -3,7 +3,6 @@ import express = require('express');
 import { RederlyExpressRequest } from '../extensions/rederly-express-request';
 import * as core from 'express-serve-static-core';
 import * as nodeUrl from 'url';
-import { v4 as uuidv4 } from 'uuid';
 
 export enum RederlyRequestNamespaceKey {
     userId = 'userId',
@@ -43,11 +42,8 @@ export const rederlyRequestNamespaceSet = <P extends core.Params = core.ParamsDi
     });
     
     rederlyRequestNamespaceInterface.url = url;
+    rederlyRequestNamespaceInterface.requestId = req.requestId;
 
-
-    if (!rederlyRequestNamespaceInterface.requestId) {
-        rederlyRequestNamespaceInterface.requestId = uuidv4();
-    }
     rederlyRequestNamespaceInterface.userId = req.session?.userId;
 };
 

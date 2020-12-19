@@ -12,7 +12,7 @@ export default class CourseUnitContent extends Model {
     public getCourse!: BelongsToGetAssociationMixin<Course>;
 
     public readonly course!: Course;
-    public readonly topics?: CourseTopicContent[];
+    public topics?: CourseTopicContent[];
 
     // timestamps!
     public readonly createdAt!: Date;

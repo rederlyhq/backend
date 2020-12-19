@@ -8,6 +8,7 @@ import CourseUnitContent from '../../database/models/course-unit-content';
 import CourseTopicContent, { CourseTopicContentInterface } from '../../database/models/course-topic-content';
 import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface } from '../../database/models/course-ww-topic-question';
 import rendererHelper, { GetProblemParameters, OutputFormat, RendererResponse } from '../../utilities/renderer-helper';
+import { stripTarGZExtension } from '../../utilities/file-helper';
 import StudentWorkbook from '../../database/models/student-workbook';
 import StudentGrade from '../../database/models/student-grade';
 import StudentGradeInstance from '../../database/models/student-grade-instance';
@@ -16,7 +17,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -53,6 +54,10 @@ import StudentGradeInstanceProblemAttachment from '../../database/models/student
 import StudentWorkbookProblemAttachment from '../../database/models/student-workbook-problem-attachment';
 import emailHelper from '../../utilities/email-helper';
 import * as utilities from '../../utilities/utilities';
+import { findFiles, FindFilesDefFileResult, FindFilesPGFileResult, FindFilesImageFileResult } from '../../utilities/webwork-utilities/importer';
+import * as nodePath from 'path';
+import * as tar from 'tar';
+import * as fs from 'fs';
 import { getAverageGroupsBeforeDate, QUESTION_SQL_NAME, STUDENTTOPICOVERRIDE_SQL_NAME, TOPIC_SQL_NAME } from './statistics-helper';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
@@ -411,7 +416,7 @@ class CourseController {
         return courseRepository.createUnit(courseUnitContent);
     }
 
-    async createTopic(courseTopicContent: CourseTopicContent): Promise<CourseTopicContent> {
+    async createTopic(courseTopicContent: Partial<CourseTopicContent>): Promise<CourseTopicContent> {
         if (_.isNil(courseTopicContent.startDate) || _.isNil(courseTopicContent.endDate) || _.isNil(courseTopicContent.deadDate)) {
             if (_.isNil(courseTopicContent.courseUnitContentId)) {
                 throw new Error('Cannot assume start, end or dead date if a unit is not supplied');
@@ -1106,11 +1111,13 @@ class CourseController {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return useDatabaseTransaction<any>((): Promise<any> => {
             return parsedWebworkDef.problems.asyncForEach(async (problem: Problem) => {
+                const pgFilePath = options.defFileDiscoveryResult?.pgFiles[problem.source_file ?? '']?.resolvedRendererPath ?? problem.source_file;
+                
                 return this.addQuestion({
                     // active: true,
                     courseTopicContentId: options.courseTopicId,
                     problemNumber: ++lastProblemNumber,
-                    webworkQuestionPath: problem.source_file,
+                    webworkQuestionPath: pgFilePath,
                     weight: parseInt(problem.value ?? '1'),
                     maxAttempts: parseInt(problem.max_attempts ?? '-1'),
                     hidden: false,
@@ -4017,6 +4024,90 @@ You should be able to reply to the student's email address (${options.student.em
 
         const baseUrl = configurations.attachments.baseUrl;
         return {user: user, topic: data, baseUrl};
+    }
+
+    async importCourseTarball ({ filePath, fileName, courseId, userUUID }: ImportTarballOptions): Promise<CourseUnitContent> {
+        const workingDirectoryName = stripTarGZExtension(nodePath.basename(fileName));
+        if (_.isNull(workingDirectoryName)) {
+            throw new IllegalArgumentException('File must be a `.tar.gz` or a `.tgz` file!');
+        }
+        const workingDirectory = `${nodePath.dirname(filePath)}/${workingDirectoryName}`;
+        await fs.promises.mkdir(workingDirectory);
+        await tar.x({
+            file: filePath,
+            cwd: workingDirectory
+        });
+
+        const discoveredFiles = await findFiles({ filePath: workingDirectory });
+
+        const course = await courseRepository.getCourse({
+            id: courseId
+        });
+
+        await Object.values(discoveredFiles.defFiles).asyncForEach(async (defFile: FindFilesDefFileResult) => {
+            await  Object.values(defFile.pgFiles).asyncForEach(async (pgFile: FindFilesPGFileResult) => {
+                if (pgFile.pgFileExists) {
+                    const fileDir = `private/my/${userUUID}/${course.name.replace(/\s/g, '_')}/${defFile.topicName}`;
+                    const savedPath = `${fileDir}/${pgFile.pgFileName}`;
+                    await rendererHelper.saveProblemSource({
+                        problemSource: (await fs.promises.readFile(pgFile.pgFilePathOnDisk)).toString(),
+                        writeFilePath: savedPath
+                    });    
+                    pgFile.resolvedRendererPath = savedPath;
+                    await  Object.values(pgFile.assetFiles.imageFiles).asyncForEach(async (imageFile: FindFilesImageFileResult) => {
+                        const savedPath = `${fileDir}/${imageFile.imageFileName}`;
+                        await rendererHelper.uploadAsset({
+                            filePath: imageFile.imageFilePath,
+                            rendererPath: savedPath
+                        });
+                        imageFile.resolvedRendererPath = savedPath;
+                    });
+                } else {
+                    const contribPath = `Contrib/${pgFile.pgFilePathFromDefFile}`;
+                    const isAccessible = await rendererHelper.isPathAccessibleToRenderer({
+                        problemPath: contribPath
+                    });
+                    if (!isAccessible) {
+                        throw new RederlyError('Could not find pg file in contrib or from tarball');
+                    }
+                    pgFile.resolvedRendererPath = contribPath;
+                }
+            });
+        });
+
+        return useDatabaseTransaction(async (): Promise<CourseUnitContent> => {
+            const unitName = `${workingDirectoryName} Course Archive Import`;
+            // Fore dev it's nice to have a timestamp to avoid conflicts
+            // const unitName = `${workingDirectoryName} Course Archive Import ${new Date().getTime()}`;
+            const unit = await this.createUnit({
+                courseId: courseId,
+                name: unitName
+            });
+            // TODO This is bad (mutating a sequelize object)
+            unit.topics = [];
+
+            // Can't use async for each because these can't be done in parallel
+            // get next content order needs to wait for the previous one to finish
+            for (const key in discoveredFiles.defFiles) {
+                const defFile = discoveredFiles.defFiles[key];
+                const topic = await this.createTopic({
+                    name: defFile.topicName,
+                    startDate: course.end,
+                    endDate: course.end,
+                    deadDate: course.end,
+                    courseUnitContentId: unit.id,
+                    topicTypeId: 1, // TODO grab from def file, and grabbing other exam attributes
+                });
+                await this.createQuestionsForTopicFromDefFileContent({
+                    webworkDefFileContent: (await fs.promises.readFile(defFile.defFileAbsolutePath)).toString(),
+                    courseTopicId: topic.id,
+                    defFileDiscoveryResult: defFile
+                });
+                // TODO This is bad (mutating a sequelize object)
+                unit.topics?.push(topic);
+            }
+            return unit;
+        });
     }
 
     async prepareOpenLabRedirect(options: PrepareOpenLabRedirectOptions): Promise<OpenLabRedirectInfo> {

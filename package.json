@@ -34,11 +34,14 @@
     "qs": "^6.9.4",
     "sequelize": "^5.22.3",
     "sequelize-cli": "^5.5.1",
+    "tar": "^6.0.5",
     "url-join": "^4.0.1",
     "uuid": "^7.0.3",
+    "fs-extra": "^9.0.1",
     "winston": "^3.3.3"
   },
   "devDependencies": {
+    "@types/archiver": "^5.1.0",
     "@types/bcrypt": "^3.0.0",
     "@types/bluebird": "^3.5.33",
     "@types/body-parser": "^1.19.0",
@@ -50,6 +53,7 @@
     "@types/express-http-proxy": "^1.6.1",
     "@types/express-rate-limit": "^5.1.0",
     "@types/extend": "^3.0.1",
+    "@types/fs-extra": "^9.0.5",
     "@types/hapi__joi": "^15.0.4",
     "@types/jest": "^26.0.19",
     "@types/jira-client": "^6.13.1",
@@ -64,6 +68,7 @@
     "@types/pug": "^2.0.4",
     "@types/qs": "^6.9.5",
     "@types/sequelize": "^4.28.9",
+    "@types/tar": "^4.0.4",
     "@types/url-join": "^4.0.0",
     "@types/uuid": "^7.0.4",
     "@types/validator": "^13.1.1",
@@ -71,6 +76,7 @@
     "@typescript-eslint/eslint-plugin": "^2.34.0",
     "@typescript-eslint/parser": "^2.34.0",
     "acorn": "^7.4.1",
+    "archiver": "^5.1.0",
     "eslint": "^6.8.0",
     "jest": "^26.6.3",
     "nodemon": "^2.0.6",
@@ -82,18 +88,18 @@
     "test": "jest",
     "test-run": "ts-node src/test-run.ts",
     "start": "ts-node src/index.ts",
-    "start:watch": "nodemon -x npm start",
+    "start:watch": "nodemon ./src/index.ts",
     "start:debug": "node --inspect=5858 -r ts-node/register ./src/index.ts",
-    "start:debug:watch": "nodemon -x npm run start:debug",
+    "start:debug:watch": "nodemon --inspect=5858 ./src/index.ts",
     "cli": "ts-node ./src/cli.ts",
     "cli:debug": "node --inspect=5859 -r ts-node/register ./src/cli.ts",
-    "cli:debug:watch": "nodemon -x npm run cli:debug",
+    "cli:debug:watch": "nodemon --inspect=5859 ./src/cli.ts",
     "play": "ts-node src/playground/playground.ts",
     "play:debug": "node --inspect=5860 -r ts-node/register ./src/playground/playground.ts",
-    "play:debug:watch": "nodemon -x npm run play:debug",
+    "play:debug:watch": "nodemon --inspect=5860 ./src/playground/playground.ts",
     "generate-route-types": "ts-node src/generate-route-types.ts",
     "generate-route-types:debug": "node --inspect=5860 -r ts-node/register ./src/generate-route-types.ts",
-    "generate-route-types:debug:watch": "nodemon -x npm run generate-route-types:debug",
+    "generate-route-types:debug:watch": "nodemon --inspect=5860 ./src/generate-route-types.ts",
     "build": "npm run clean && tsc",
     "build:run": "npm run build && npm run run:build",
     "run:build": "node ts-built/index.js",
@@ -103,7 +109,9 @@
     "sequelize:migrations:devundo": "npm run sequelize -- db:migrate:undo:all --to 20201112094400-curriculum-assessments.js",
     "sequelize:built:migrations": "sequelize -- db:migrate",
     "lint": "eslint src/ --ext .ts",
-    "clean": "if [ -d ts-built ]; then rm -r ts-built; fi;"
+    "clean": "if [ -d ts-built ]; then rm -r ts-built; fi;",
+    "package": "node ./package.js",
+    "build:package": "npm run build && npm run package"
   },
   "nodemonConfig": {
     "ignore": [
@@ -113,7 +121,11 @@
     "watch": [
       "src"
     ],
-    "ext": "ts"
+    "ext": "ts",
+    "execMap": {
+      "ts": "node --require ts-node/register"
+    },
+    "signal": "SIGINT"
   },
   "repository": {
     "type": "git",

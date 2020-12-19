@@ -171,6 +171,7 @@ CourseTopicContent.init({
         field: 'course_topic_content_partial_extend',
         type: DataTypes.BOOLEAN,
         allowNull: false,
+        defaultValue: false
     },
 }, {
     tableName: 'course_topic_content',

@@ -19,6 +19,14 @@ export const createCourseValidation = {
     }
 };
 
+export const postImportCourseArchiveValidation = {
+    params: {
+        courseId: Joi.number().required()
+    },
+    query: {},
+    body: {}
+};
+
 export const createQuestionsForTopicFromDefFileValidation = {
     params: {},
     query: {
@@ -288,6 +296,14 @@ export const getQuestionRawValidation = {
     query: {
         userId: Joi.number().required(),
     },
+    body: {}
+};
+
+export const getQuestionOpenLabValidation = {
+    params: {
+        id: Joi.number().required(),
+    },
+    query: {},
     body: {}
 };
 

@@ -1,5 +1,33 @@
 import logger from '../utilities/logger';
 import rendererHelper from '../utilities/renderer-helper';
+import * as nodePath from 'path';
+
+const isPathAccessibleToRenderer = async (): Promise<void> => {
+    let path = 'abc';
+    logger.info(`isPathAccessibleToRenderer path:${path}; result:${await rendererHelper.isPathAccessibleToRenderer({ problemPath: path })}`);
+    path = 'private/templates/barebones.pg';
+    logger.info(`isPathAccessibleToRenderer path:${path}; result:${await rendererHelper.isPathAccessibleToRenderer({ problemPath: path })}`);
+    path = 'private/our/CUNY/Statistics/BCC/Stats/qwerqwer.pg';
+    logger.info(`isPathAccessibleToRenderer path:${path}; result:${await rendererHelper.isPathAccessibleToRenderer({ problemPath: path })}`);
+    path = 'private/our/CUNY/Statistics/BCC/Stats/standard_normal1.pg';
+    logger.info(`isPathAccessibleToRenderer path:${path}; result:${await rendererHelper.isPathAccessibleToRenderer({ problemPath: path })}`);
+    path = 'Contrib/CUNY/CityTech/Calculus/setDerivatives_-_Limit_Definition/diff-quotient-intro.pg';
+    logger.info(`isPathAccessibleToRenderer path:${path}; result:${await rendererHelper.isPathAccessibleToRenderer({ problemPath: path })}`);
+    path = 'Contrib/CUNY/CityTech/Calculus/setDerivatives_-_Limit_Definition';
+    logger.info(`isPathAccessibleToRenderer path:${path}; result:${await rendererHelper.isPathAccessibleToRenderer({ problemPath: path })}`);
+    path = 'Contrib/CUNY/CityTech/Calculus/setDerivatives_-_Limit_Definition/';
+    logger.info(`isPathAccessibleToRenderer path:${path}; result:${await rendererHelper.isPathAccessibleToRenderer({ problemPath: path })}`);
+    path = 'Library/NAU/setProbability/samplespace.pg';
+    logger.info(`isPathAccessibleToRenderer path:${path}; result:${await rendererHelper.isPathAccessibleToRenderer({ problemPath: path })}`);
+};
+
+export const upload = async (): Promise<void> => {
+    const result = await rendererHelper.uploadAsset({
+        filePath: nodePath.resolve(__dirname, 'playground-renderer-functions.ts'),
+        rendererPath: 'private/testassets/image.png'
+    });
+    logger.info(result);
+};
 
 const runRendererPlayground = async (): Promise<void> => {
     const date = new Date();
@@ -74,5 +102,8 @@ const runRendererPlayground = async (): Promise<void> => {
         `
     });
     logger.info(JSON.stringify(getProblemResult, null, 2));
+
+    await isPathAccessibleToRenderer();
 };
+export const run = runRendererPlayground;
 export default runRendererPlayground;

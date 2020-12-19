@@ -16,6 +16,7 @@ import StudentTopicQuestionOverride from '../../database/models/student-topic-qu
 import { DeepPartial } from '../../utilities/typescript-helpers';
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 import ProblemAttachment from '../../database/models/problem-attachment';
+import { FindFilesDefFileResult } from '../../utilities/webwork-utilities/importer';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -426,6 +427,7 @@ export interface CreateGradeInstancesForAssessmentOptions {
 export interface CreateQuestionsForTopicFromDefFileContentOptions {
     webworkDefFileContent: string;
     courseTopicId: number;
+    defFileDiscoveryResult?: FindFilesDefFileResult;
 }
 
 export interface DeleteQuestionsOptions {
@@ -587,4 +589,28 @@ export interface GetStudentTopicOverrideOptions {
 export interface GetAllContentForVersionOptions {
     topicId: number;
     userId: number;
+}
+
+export interface PrepareOpenLabRedirectOptions {
+    questionId: number;
+    user: User;
+    baseURL: string;
+}
+
+export interface OpenLabRedirectInfo {
+    problem: number;
+    problemSetId: string;
+    courseId: string;
+    problemPath: string;
+    email: string[];
+    studentName: string;
+    emailURL: string;
+    rawHTML: string;
+}
+
+export interface ImportTarballOptions {
+    filePath: string;
+    fileName: string;
+    courseId: number;
+    userUUID: string;
 }

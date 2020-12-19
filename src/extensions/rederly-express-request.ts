@@ -13,4 +13,5 @@ export interface RederlyExpressRequest<P extends core.Params = core.ParamsDictio
     };
     // Any information already defined in the request
     meta?: MetaType;
+    requestId?: string;
 }

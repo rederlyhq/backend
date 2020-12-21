@@ -379,6 +379,8 @@ class UserController {
             });
             emailSent = configurations.email.enabled;
         } catch (e) {
+            // TODO: Does it make sense to set emailSent to false here?
+            // emailSent = false
             logger.error(e);
         }
         return emailSent;

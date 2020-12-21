@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
-    "@aws-sdk/client-ses": "^3.0.0",
     "@hapi/joi": "^15.1.1",
+    "aws-sdk": "^2.815.0",
     "axios": "^0.19.2",
     "bcrypt": "^5.0.0",
     "body-parser": "^1.19.0",
@@ -20,6 +20,7 @@
     "express-rate-limit": "^5.2.3",
     "extend": "^3.0.2",
     "form-data": "^3.0.0",
+    "fs-extra": "^9.0.1",
     "jira-client": "^6.21.1",
     "joi-extract-type": "^15.0.8",
     "lodash": "^4.17.20",
@@ -38,7 +39,6 @@
     "tar": "^6.0.5",
     "url-join": "^4.0.1",
     "uuid": "^7.0.3",
-    "fs-extra": "^9.0.1",
     "winston": "^3.3.3"
   },
   "devDependencies": {

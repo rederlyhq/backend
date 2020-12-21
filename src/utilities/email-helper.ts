@@ -6,7 +6,7 @@ import _ = require('lodash');
 import * as Email from 'email-templates';
 import RederlyError from '../exceptions/rederly-error';
 import path = require('path');
-import { SES } from '@aws-sdk/client-ses';
+import * as aws from 'aws-sdk';
 
 interface EmailHelperOptions {
     user: string;
@@ -38,7 +38,7 @@ class EmailHelper {
         this.from = options.from;
 
         this.client = nodemailer.createTransport({
-            SES: new SES({
+            SES: new aws.SES({
                 apiVersion: '2010-12-01',
                 credentials: {
                     accessKeyId: configurations.email.awsAccessKeyId,

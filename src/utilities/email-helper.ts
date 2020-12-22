@@ -45,7 +45,8 @@ class EmailHelper {
                     secretAccessKey: configurations.email.awsSecretKey,
                 },
                 region: configurations.email.awsRegion,
-            })
+            }),
+            sendingRate: configurations.email.sendingRate ?? undefined,
         });
 
         this.mailer = new Email({

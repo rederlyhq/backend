@@ -139,6 +139,7 @@ const configurations = {
         awsAccessKeyId: readStringValue('AWS_SES_ACCESS_KEY', ''),
         awsSecretKey: readStringValue('AWS_SES_SECRET_KEY', ''),
         awsRegion: readStringValue('AWS_REGION', 'us-east-2'),
+        sendingRate: readIntValue('EMAIL_SENDING_RATE'),
     },
     auth: {
         // in minutes - defaults to 1 day

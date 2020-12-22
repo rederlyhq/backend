@@ -76,3 +76,9 @@ export namespace EmailUsersRequest {
     export type query = Joi.extractType<typeof validations.emailUsersValidation.query>;
     export type body = Joi.extractType<typeof validations.emailUsersValidation.body>;
 };
+
+export namespace UserStatusRequest {
+    export type params = Joi.extractType<typeof validations.userStatusValidation.params>;
+    export type query = Joi.extractType<typeof validations.userStatusValidation.query>;
+    export type body = Joi.extractType<typeof validations.userStatusValidation.body>;
+};

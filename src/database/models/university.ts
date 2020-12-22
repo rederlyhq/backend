@@ -9,6 +9,7 @@ export default class University extends Model {
   public profEmailDomain!: string;
   public studentEmailDomain!: string;
   public verifyInstitutionalEmail!: boolean;
+  public paidUntil!: Date;
 
   // timestamps!
   public readonly createdAt!: Date;
@@ -71,6 +72,12 @@ University.init({
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: true
+  },
+  paidUntil: {
+    field: 'university_paid_until',
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: appSequelize.literal('NOW()'),
   },
 }, {
   tableName: 'university',

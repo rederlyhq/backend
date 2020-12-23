@@ -34,9 +34,16 @@ export interface FindFilesPGFileResult {
     };
 }
 
+export interface BucketDefFileResult {
+    parentDefFile: string;
+    bucketDefFile: string;
+    pgFilePathFromDefFile: string;
+};
+
 export interface FindFilesDefFileOptions {
     contentRootPath: string;
     defFilePath: string;
+    bucketDefFiles: { [key: string]: BucketDefFileResult };
 }
 
 export interface FindFilesDefFileResult {
@@ -44,6 +51,7 @@ export interface FindFilesDefFileResult {
     defFileRelativePath: string;
     defFileAbsolutePath: string;
     topicName: string;
+    bucketDefFiles: { [key: string]: FindFilesDefFileResult};
 }
 
 export interface FindFilesOptions {
@@ -52,6 +60,7 @@ export interface FindFilesOptions {
 
 export interface FindFilesResult {
     defFiles: { [key: string]: FindFilesDefFileResult };
+    bucketDefFiles: { [key: string]: BucketDefFileResult };
 }
 
 export const findDefFiles = (filePath: string): Promise<Array<string>> => {
@@ -66,9 +75,15 @@ export const findDefFiles = (filePath: string): Promise<Array<string>> => {
  * r.test('source_file=ab.pg') // false
  * r.test('source_file=ab.pg') // true
  */
-const pgFileInDefFileRegex = /^\s*source_file\s*=\s*(.*?\.pg\s*$)/igm;
+// const pgFileInDefFileRegex = /^\s*source_file\s*=\s*(.*?\.pg\s*$)/igm;
+const pgFileInDefFileRegex = /^\s*source_file\s*=\s*(?:(group:\S*?|\S*?\.pg)\s*$)/igm;
 const imageInPGFileRegex = /(?<!#.*)image\s*\(\s*('.+?'|".+?")\s*(?:,(?:\s|.)*?)?\)/g;
 
+/**
+ * This method determines the root directory of an upload
+ * webwork course archive has the following structure: /${TOPIC_NAME}/templates/${TEMPLATE_CONTENT}
+ * webwork custom archive or doombot's script have the following structure /${TEMPLATE_CONTENT}
+ */
 const getContentRoot = async (filePath: string): Promise<string> => {
     const files = await fsPromises.readdir(filePath);
     if (files.length === 1) {
@@ -85,6 +100,9 @@ const getContentRoot = async (filePath: string): Promise<string> => {
     return path.resolve(filePath);
 };
 
+/**
+ * This method processes each image file
+ */
 export const checkImageFiles = ({ imageFilePathFromPgFile, pgFilePath }: FindFilesImageFileOptions): FindFilesImageFileResult => {
     const imageFilePath = path.join(path.dirname(pgFilePath), imageFilePathFromPgFile);
     const imageFileResult: FindFilesImageFileResult = {
@@ -95,6 +113,10 @@ export const checkImageFiles = ({ imageFilePathFromPgFile, pgFilePath }: FindFil
     return imageFileResult;
 };
 
+/**
+ * This method processes each pg file
+ * Iterate through each pg file and find assets (static images)
+ */
 export const findFilesFromPGFile = async ({ contentRootPath, pgFilePathFromDefFile }: FindFilesPGFileOptions): Promise<FindFilesPGFileResult> => {
     const pgFilePath = path.join(contentRootPath, pgFilePathFromDefFile);
     const pgFileName = path.basename(pgFilePath);
@@ -128,7 +150,12 @@ export const findFilesFromPGFile = async ({ contentRootPath, pgFilePathFromDefFi
     return pgFileResult;
 };
 
-export const findFilesFromDefFile = async ({ contentRootPath, defFilePath }: FindFilesDefFileOptions): Promise<FindFilesDefFileResult> => {
+/**
+ * This method processes each def file
+ * Iterate through each def file and find the pg files
+ * Iterate through each pg file and find assets (static images)
+ */
+export const findFilesFromDefFile = async ({ contentRootPath, defFilePath, bucketDefFiles }: FindFilesDefFileOptions): Promise<FindFilesDefFileResult> => {
     const defFileRelativePath = path.relative(contentRootPath, defFilePath);
     let topicName = path.basename(defFileRelativePath, path.extname(defFileRelativePath));
     if(topicName.substring(0, 3).toLowerCase() === 'set') {
@@ -141,29 +168,58 @@ export const findFilesFromDefFile = async ({ contentRootPath, defFilePath }: Fin
         defFileAbsolutePath: defFilePath,
         defFileRelativePath: defFileRelativePath,
         topicName: topicName,
-        pgFiles: {}
+        pgFiles: {},
+        bucketDefFiles: {}
     };
     const defFileContent = (await fsPromises.readFile (defFilePath)).toString();
     const pgFileInDefFileMatches = getAllMatches(pgFileInDefFileRegex, defFileContent);
     await pgFileInDefFileMatches.asyncForEach(async (pgFileInDefFileMatch) => {
         const pgFilePathFromDefFile = pgFileInDefFileMatch[1];
-        const pgFileResult = await findFilesFromPGFile({ contentRootPath, pgFilePathFromDefFile });
-        defFileResult.pgFiles[pgFilePathFromDefFile] = pgFileResult;
-
+        if (pgFilePathFromDefFile.startsWith('group:')) {
+            // DO EXAM THINGS
+            bucketDefFiles[pgFilePathFromDefFile] = {
+                bucketDefFile: `set${pgFilePathFromDefFile.substring('group:'.length)}.def`,
+                parentDefFile: defFileRelativePath,
+                pgFilePathFromDefFile: pgFilePathFromDefFile,
+            };
+        } else {
+            const pgFileResult = await findFilesFromPGFile({ contentRootPath, pgFilePathFromDefFile });
+            defFileResult.pgFiles[pgFilePathFromDefFile] = pgFileResult;    
+        }
     });
     return defFileResult;
 };
 
+/**
+ * This method will discover all def files in a given path
+ * It then processes the def files:
+ * Iterate through each def file and find the pg files
+ * Iterate through each pg file and find assets (static images)
+ */
 export const findFiles = async ({ filePath }: FindFilesOptions): Promise<FindFilesResult> => {
     const contentRootPath = await getContentRoot(filePath);
 
     const defFiles = await findDefFiles(contentRootPath);
     const result: FindFilesResult = {
-        defFiles: {}
+        defFiles: {},
+        bucketDefFiles: {}
     };
+    
     await defFiles.asyncForEach(async (defFilePath) => {
-        const defFileResult = await findFilesFromDefFile({ contentRootPath, defFilePath });
+        const defFileResult = await findFilesFromDefFile({ contentRootPath, defFilePath, bucketDefFiles: result.bucketDefFiles });
         result.defFiles[defFileResult.defFileRelativePath] = defFileResult;
+    });
+
+    // associate buckets with parent def files
+    Object.values(result.bucketDefFiles).forEach(bucketResult => {
+        result.defFiles[bucketResult.parentDefFile].bucketDefFiles[bucketResult.bucketDefFile] = result.defFiles[bucketResult.bucketDefFile];
+    });
+
+    // Avoid processing buckets as topics
+    // can not delete in the iteration above in case there are buckets of buckets
+    // or shared buckets
+    Object.values(result.bucketDefFiles).forEach(bucketResult => {
+        delete result.defFiles[bucketResult.bucketDefFile];
     });
 
     return result;

@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import courseController from './course-controller';
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator';
-import { authenticationMiddleware } from '../../middleware/auth';
+import { authenticationMiddleware, paidMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
 import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation, deleteEnrollmentValidation, createAssessmentVersionValidation, extendCourseTopicForUserValidation, extendCourseTopicQuestionValidation, getTopicValidation, submitAssessmentVersionValidation, endAssessmentVersionValidation, previewQuestionValidation, gradeAssessmentValidation, getAttachmentPresignedURLValidation, postAttachmentValidation, listAttachmentsValidation, deleteAttachmentValidation, emailProfValidation, readQuestionValidation, saveQuestionValidation, catalogValidation, getVersionValidation, getQuestionRawValidation, getQuestionGradeValidation, getQuestionOpenLabValidation, postImportCourseArchiveValidation } from './course-route-validation';
@@ -38,6 +38,7 @@ const fileUpload = multer();
 router.post('/:courseId/import-archive',
     authenticationMiddleware,
     validate(postImportCourseArchiveValidation),
+    paidMiddleware('Importing content from an archive'),
     rederlyTempFileWrapper((tmpFilePath: string) => multer({dest: tmpFilePath}).single('file')),
     // This is due to a typescript issue where the type mismatches extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -144,6 +145,7 @@ router.get('/statistics/questions',
 router.post('/def',
     authenticationMiddleware,
     validate(createQuestionsForTopicFromDefFileValidation),
+    paidMiddleware('Importing a topic'),
     fileUpload.single('def-file'),
     asyncHandler(async (req: RederlyExpressRequest<CreateQuestionsForTopicFromDefFileRequest.params, unknown, CreateQuestionsForTopicFromDefFileRequest.body, unknown>, _res: Response, next: NextFunction) => {
         const query = req.query as CreateQuestionsForTopicFromDefFileRequest.query;
@@ -159,6 +161,7 @@ router.post('/def',
 router.post('/',
     authenticationMiddleware,
     validate(createCourseValidation),
+    paidMiddleware('Creating a new course'),
     asyncHandler(async (req: RederlyExpressRequest<CreateCourseRequest.params, unknown, CreateCourseRequest.body, unknown>, _res: Response, next: NextFunction) => {
         const query = req.query as CreateCourseRequest.query;
         try {
@@ -192,6 +195,7 @@ router.post('/',
 router.post('/unit',
     authenticationMiddleware,
     validate(createCourseUnitValidation),
+    paidMiddleware('Adding units'),
     asyncHandler(async (req: RederlyExpressRequest<CreateCourseUnitRequest.params, unknown, CreateCourseUnitRequest.body, CreateCourseUnitRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const newUnit = await courseController.createUnit({
@@ -207,6 +211,7 @@ router.post('/unit',
 router.post('/topic',
     authenticationMiddleware,
     validate(createCourseTopicValidation),
+    paidMiddleware('Adding topics'),
     asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
         const newTopic = await courseController.createTopic({
             ...req.body
@@ -310,6 +315,7 @@ router.get('/topic/:topicId/version/:userId',
 router.put('/topic/extend',
     authenticationMiddleware,
     validate(extendCourseTopicForUserValidation),
+    paidMiddleware('Modifying topic settings'),
     asyncHandler(
         async (req: RederlyExpressRequest<ExtendCourseTopicForUserRequest.params, ExtendCourseTopicForUserRequest.body, ExtendCourseTopicForUserRequest.query, unknown>, _res: Response, next: NextFunction) => {
             const query = req.query as ExtendCourseTopicForUserRequest.query;
@@ -332,6 +338,7 @@ router.put('/topic/extend',
 router.put('/topic/:id',
     authenticationMiddleware,
     validate(updateCourseTopicValidation),
+    paidMiddleware('Modifying topic settings'),
     // This is due to a typescript issue where the type mismatches extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseTopicRequest.body, UpdateCourseTopicRequest.query>, _res: Response, next: NextFunction) => {
@@ -433,6 +440,7 @@ router.get('/assessment/topic/:id/start',
 router.delete('/unit/:id',
     authenticationMiddleware,
     validate(deleteCourseUnitValidation),
+    paidMiddleware('Deleting units'),
     // This is due to a typescript issue where the type mismatches extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, DeleteCourseUnitRequest.body, DeleteCourseUnitRequest.query>, _res: Response, next: NextFunction) => {
@@ -454,6 +462,7 @@ router.delete('/unit/:id',
 router.delete('/topic/:id',
     authenticationMiddleware,
     validate(deleteCourseTopicValidation),
+    paidMiddleware('Deleting topics'),
     // This is due to a typescript issue where the type mismatches extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, DeleteCourseTopicRequest.body, DeleteCourseTopicRequest.query>, _res: Response, next: NextFunction) => {
@@ -475,6 +484,7 @@ router.delete('/topic/:id',
 router.delete('/question/:id',
     authenticationMiddleware,
     validate(deleteCourseQuestionValidation),
+    paidMiddleware('Deleting questions'),
     // This is due to a typescript issue where the type mismatches extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, DeleteCourseQuestionRequest.body, DeleteCourseQuestionRequest.query>, _res: Response, next: NextFunction) => {
@@ -496,6 +506,7 @@ router.delete('/question/:id',
 router.put('/unit/:id',
     authenticationMiddleware,
     validate(updateCourseUnitValidation),
+    paidMiddleware('Updating units'),
     // This is to work around "extractMap" error
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseUnitRequest.body, UpdateCourseUnitRequest.query>, _res: Response, next: NextFunction) => {
@@ -574,6 +585,7 @@ router.put('/question/grade/instance/:id',
 router.put('/question/extend',
     authenticationMiddleware,
     validate(extendCourseTopicQuestionValidation),
+    paidMiddleware('Modifying questions'),
     // This is due to a typescript issue where the type mismatches extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, ExtendCourseTopicQuestionRequest.body, unknown, any, unknown>, _res: Response, next: NextFunction) => {
@@ -594,6 +606,7 @@ router.put('/question/extend',
 router.put('/question/:id',
     authenticationMiddleware,
     validate(updateCourseTopicQuestionValidation),
+    paidMiddleware('Modifying questions'),
     // This is to work around "extractMap" error
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseTopicQuestionRequest.body, UpdateCourseTopicQuestionRequest.query>, _res: Response, next: NextFunction) => {
@@ -615,6 +628,7 @@ router.put('/question/:id',
 router.put('/:id',
     authenticationMiddleware,
     validate(updateCourseValidation),
+    paidMiddleware('Modifying courses'),
     // This is to work around "extractMap" error
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseRequest.body, UpdateCourseRequest.query>, _res: Response, next: NextFunction) => {
@@ -641,6 +655,7 @@ router.put('/:id',
 router.post('/question',
     authenticationMiddleware,
     validate(createCourseTopicQuestionValidation),
+    paidMiddleware('Adding questions'),
     asyncHandler(async (req: RederlyExpressRequest<CreateCourseTopicQuestionRequest.params, unknown, CreateCourseTopicQuestionRequest.body, CreateCourseTopicQuestionRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const newQuestion = await courseController.addQuestion({
@@ -1177,6 +1192,7 @@ router.post('/enroll/:code',
 router.delete('/enroll',
     authenticationMiddleware,
     validate(deleteEnrollmentValidation),
+    paidMiddleware('Un-enrolling users'),
     asyncHandler(async (req: RederlyExpressRequest<DeleteEnrollmentRequest.params, unknown, DeleteEnrollmentRequest.body, DeleteEnrollmentRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const success = await courseController.softDeleteEnrollment({

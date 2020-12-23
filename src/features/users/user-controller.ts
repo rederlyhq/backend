@@ -414,6 +414,7 @@ class UserController {
         }
 
         userObject.universityId = university.id;
+        userObject.paidUntil = university.paidUntil;
         userObject.verifyToken = uuidv4();
         userObject.verifyTokenExpiresAt = moment().add(configurations.auth.verifyInstutionalEmailTokenLife, 'minutes').toDate();
         userObject.password = await hashPassword(userObject.password);

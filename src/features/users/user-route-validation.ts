@@ -100,3 +100,9 @@ export const emailUsersValidation = {
         content: Joi.string().required(),
     },
 };
+
+export const userStatusValidation = {
+    params: {},
+    query: {},
+    body: {},
+};

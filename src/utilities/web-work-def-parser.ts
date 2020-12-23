@@ -66,6 +66,18 @@ export class Problem {
 export default class WebWorkDef {
     public problems: Array<Problem> = [];
     public assignmentType?: string;
+    public openDate?: string;
+    public dueDate?: string;
+    public attemptsPerVersion?: string;
+    public timeInterval?: string;
+    public versionsPerInterval?: string;
+    public versionTimeLimit?: string;
+    public problemRandOrder?: string;
+    public problemsPerPage?: string;
+    public hideScore?: string;
+    public hideScoreByProblem?: string;
+    public hideWork?: string;
+    public capTimeLimit?: string;
 
     constructor(content: string) {
         const lines = content.split('\n');
@@ -118,5 +130,17 @@ export default class WebWorkDef {
                 }
             }
         }
+    }
+
+    isExam(): boolean {
+        return this.assignmentType?.toLowerCase() === 'gateway';
+    }
+
+    static characterBoolean = (value: string | undefined) => {
+        return value === 'Y'
+    }
+
+    static numberBoolean = (value: string | undefined) => {
+        return value ? Boolean(parseInt(value, 0)) : false;
     }
 }

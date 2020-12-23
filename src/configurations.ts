@@ -135,7 +135,11 @@ const configurations = {
         enabled: readBooleanValue('EMAIL_ENABLED', false),
         user: readStringValue('EMAIL_USER', ''),
         key: readStringValue('EMAIL_KEY', ''),
-        from: readStringValue('EMAIL_FROM', '')
+        from: readStringValue('EMAIL_FROM', ''),
+        awsAccessKeyId: readStringValue('AWS_SES_ACCESS_KEY', ''),
+        awsSecretKey: readStringValue('AWS_SES_SECRET_KEY', ''),
+        awsRegion: readStringValue('AWS_REGION', 'us-east-2'),
+        sendingRate: readIntValue('EMAIL_SENDING_RATE'),
     },
     auth: {
         // in minutes - defaults to 1 day

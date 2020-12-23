@@ -228,7 +228,7 @@ app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
     if (obj instanceof AlreadyExistsError || obj instanceof NotFoundError || obj instanceof IllegalArgumentException) {
         next(Boom.badRequest(obj.message, obj.data));
     } else if (obj instanceof ForbiddenError) {
-        next(Boom.forbidden());
+        next(Boom.forbidden(obj.message, obj.data));
     } else {
         next(obj);
     }

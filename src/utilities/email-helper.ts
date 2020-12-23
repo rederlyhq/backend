@@ -66,18 +66,13 @@ class EmailHelper {
                 ]
             },
             transport: this.client,
-            send: true,
+            send: configurations.email.enabled,
         });
     }
 
     // Returns the object that sendgrid returns which is any
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sendEmail(options: SendEmailOptions): Promise<any> {
-        if (!configurations.email.enabled) {
-            logger.warn('Email is disabled, returning empty promise...');
-            return Promise.resolve();
-        }
-
         if (_.isNil(options.content) && _.isNil(options.template)) {
             logger.error('Email requires either content (text) or template (pug) to be set.');
             throw new RederlyError('Missing content for email.');

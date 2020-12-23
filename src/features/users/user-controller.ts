@@ -169,10 +169,14 @@ class UserController {
         const emailPromises = [];
         for (let i = 0; i < users.length; i++) {
             emailPromises.push(emailHelper.sendEmail({
-                content: emailOptions.content,
+                template: 'generic',
                 subject: emailOptions.subject,
                 email: users[i].email,
                 replyTo: emailOptions.replyTo,
+                locals: {
+                    HEADING_TEXT: emailOptions.subject,
+                    BODY_TEXT: emailOptions.content,
+                }
             }));
         }
 

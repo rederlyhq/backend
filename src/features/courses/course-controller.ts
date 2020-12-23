@@ -39,7 +39,7 @@ import StudentGradeOverride from '../../database/models/student-grade-override';
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 import StudentTopicAssessmentOverride from '../../database/models/student-topic-assessment-override';
 import TopicAssessmentInfo, {TopicAssessmentInfoInterface} from '../../database/models/topic-assessment-info';
-import CourseQuestionAssessmentInfo, { CourseQuestionAssessmentInfoInterface } from '../../database/models/course-question-assessment-info';
+import CourseQuestionAssessmentInfo from '../../database/models/course-question-assessment-info';
 import schedulerHelper from '../../utilities/scheduler-helper';
 import configurations from '../../configurations';
 // Had an error using standard import
@@ -4155,9 +4155,9 @@ You should be able to reply to the student's email address (${options.student.em
         await saveAndResolveProblems(discoveredFiles.defFiles);
 
         return useDatabaseTransaction(async (): Promise<CourseUnitContent> => {
-            // const unitName = `${workingDirectoryName} Course Archive Import`;
+            const unitName = `${workingDirectoryName} Course Archive Import`;
             // Fore dev it's nice to have a timestamp to avoid conflicts
-            const unitName = `${workingDirectoryName} Course Archive Import ${new Date().getTime()}`;
+            // const unitName = `${workingDirectoryName} Course Archive Import ${new Date().getTime()}`;
             const unit = await this.createUnit({
                 courseId: courseId,
                 name: unitName
@@ -4185,26 +4185,29 @@ You should be able to reply to the student's email address (${options.student.em
                     let timeInterval: number | undefined = undefined;
                     if (!_.isNil(parsedWebworkDef.timeInterval)) {
                         timeInterval = parseInt(parsedWebworkDef.timeInterval, 10);
+
                         if (_.isNaN(timeInterval)) {
                             throw new IllegalArgumentException(`The def file: ${defFile.defFileRelativePath} has an invalid time interval: ${parsedWebworkDef.timeInterval}.`);
                         }
+
+                        timeInterval /= 60;
+
                         if (timeInterval > 0) {
                             if (_.isNil(parsedWebworkDef.openDate) || _.isNil(parsedWebworkDef.dueDate)) {
                                 throw new IllegalArgumentException(`The def file: ${defFile.defFileRelativePath} is missing the open or due date.`);
                             }
                             const examDuration = moment(parsedWebworkDef.dueDate).diff(moment(parsedWebworkDef.openDate));
+                            // / 60000 to convert to minutes
                             possibleIntervals = examDuration / 60000 / timeInterval;
                         }
-
-
                     }
                     const topicAssessmentInfo: Partial<TopicAssessmentInfoInterface> = _.omitBy({
                         // id,
                         courseTopicContentId: topic.id,
-                        duration: parsedWebworkDef.versionTimeLimit ? parseInt(parsedWebworkDef.versionTimeLimit, 10) : undefined,
+                        duration: parsedWebworkDef.versionTimeLimit ? (parseInt(parsedWebworkDef.versionTimeLimit, 10) / 60) : undefined,
                         hardCutoff: WebWorkDef.characterBoolean(parsedWebworkDef.capTimeLimit),
                         hideHints: undefined,
-                        hideProblemsAfterFinish: undefined,
+                        hideProblemsAfterFinish: WebWorkDef.characterBoolean(parsedWebworkDef.hideWork),
                         maxGradedAttemptsPerVersion: parsedWebworkDef.attemptsPerVersion ? parseInt(parsedWebworkDef.attemptsPerVersion, 10) : undefined,
                         maxVersions: parsedWebworkDef.versionsPerInterval ? (parseInt(parsedWebworkDef.versionsPerInterval, 10) * possibleIntervals) : undefined,
                         randomizeOrder: WebWorkDef.numberBoolean(parsedWebworkDef.problemRandOrder),

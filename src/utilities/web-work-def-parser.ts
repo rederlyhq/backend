@@ -136,11 +136,11 @@ export default class WebWorkDef {
         return this.assignmentType?.toLowerCase() === 'gateway';
     }
 
-    static characterBoolean = (value: string | undefined) => {
-        return value === 'Y'
+    static characterBoolean = (value: string | undefined): boolean => {
+        return value === 'Y';
     }
 
-    static numberBoolean = (value: string | undefined) => {
-        return value ? Boolean(parseInt(value, 0)) : false;
+    static numberBoolean = (value: string | undefined): boolean => {
+        return value !== undefined ? Boolean(parseInt(value, 0)) : false;
     }
 }

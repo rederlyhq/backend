@@ -1,6 +1,6 @@
 
 # The instructions for the first stage
-FROM node:10-alpine as builder
+FROM node:14.15.3-alpine as builder
 
 # set to production to run build
 #ARG NODE_ENV=development
@@ -22,7 +22,7 @@ RUN REDERLY_PACKAGER_ARCHIVE=false npm run build:package
 RUN npm run sequelize:built:migrations
 
 # The instructions for second stage
-FROM node:10-alpine
+FROM node:14.15.3-alpine
 
 #WORKDIR /app
 COPY --from=builder /app/build ./rederly

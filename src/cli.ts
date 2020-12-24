@@ -55,9 +55,14 @@ const cleanupWorkbooks = async (): Promise<void> => {
     });
 };
 
+const noop = (): void => {
+    logger.info('noop performed');
+};
+
 const commandLookup: {[key: string]: () => unknown} = {
     ['sync-missing-grades']: syncMissingGrades,
-    ['cleanup-workbooks']: cleanupWorkbooks
+    ['cleanup-workbooks']: cleanupWorkbooks,
+    ['noop']: noop,
 };
 
 (async (): Promise<void> => {
@@ -65,7 +70,9 @@ const commandLookup: {[key: string]: () => unknown} = {
         // This cannot be below sync otherwise an unhandled rejection is logged and the error is empty
         await configurations.loadPromise;
 
-        await sync();
+        if (configurations.db.sync) {
+            await sync();
+        }
 
         logger.info('Running CLI');
         const command = process.argv[2]?.toLowerCase();

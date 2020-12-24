@@ -17,7 +17,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -38,7 +38,7 @@ import IllegalArgumentException from '../../exceptions/illegal-argument-exceptio
 import StudentGradeOverride from '../../database/models/student-grade-override';
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 import StudentTopicAssessmentOverride from '../../database/models/student-topic-assessment-override';
-import TopicAssessmentInfo from '../../database/models/topic-assessment-info';
+import TopicAssessmentInfo, {TopicAssessmentInfoInterface} from '../../database/models/topic-assessment-info';
 import CourseQuestionAssessmentInfo from '../../database/models/course-question-assessment-info';
 import schedulerHelper from '../../utilities/scheduler-helper';
 import configurations from '../../configurations';
@@ -54,7 +54,7 @@ import StudentGradeInstanceProblemAttachment from '../../database/models/student
 import StudentWorkbookProblemAttachment from '../../database/models/student-workbook-problem-attachment';
 import emailHelper from '../../utilities/email-helper';
 import * as utilities from '../../utilities/utilities';
-import { findFiles, FindFilesDefFileResult, FindFilesPGFileResult, FindFilesImageFileResult } from '../../utilities/webwork-utilities/importer';
+import { findFiles, FindFilesDefFileResult, FindFilesPGFileResult, FindFilesImageFileResult, BucketDefFileResult } from '../../utilities/webwork-utilities/importer';
 import * as nodePath from 'path';
 import * as tar from 'tar';
 import * as fs from 'fs';
@@ -1104,25 +1104,99 @@ class CourseController {
         return courseRepository.createQuestion(question);
     }
 
-    async createQuestionsForTopicFromDefFileContent(options: CreateQuestionsForTopicFromDefFileContentOptions): Promise<CourseWWTopicQuestion[]> {
-        const parsedWebworkDef = new WebWorkDef(options.webworkDefFileContent);
+    getAdditionalPathsFromBuckets = ({
+        defFileDiscoveryResult: {
+            defFileResult,
+            bucketDefFiles
+        },
+        pgFilePath,
+        result = []
+    }: {
+        defFileDiscoveryResult: {
+            defFileResult: FindFilesDefFileResult;
+            bucketDefFiles: { [key: string]: BucketDefFileResult };
+        };
+        pgFilePath: string;
+        result?: Array<string>;
+    }): Array<string> => {
+        const bucketDefFileMap = bucketDefFiles[pgFilePath];
+        const subDefFileResult = defFileResult.bucketDefFiles[bucketDefFileMap.bucketDefFile];
+        Object.values(subDefFileResult.pgFiles).forEach(pgFileResult => {
+            // Buckets of buckets
+            if(pgFileResult.pgFilePathFromDefFile.startsWith('group:')) {
+                // Recursion!
+                this.getAdditionalPathsFromBuckets({
+                    defFileDiscoveryResult: {
+                        defFileResult: subDefFileResult,
+                        bucketDefFiles: bucketDefFiles
+                    },
+                    pgFilePath: pgFileResult.pgFilePathFromDefFile,
+                    result: result
+                });
+            } else {
+                if (_.isNil(pgFileResult.resolvedRendererPath)) {
+                    throw new IllegalArgumentException(`${pgFileResult.pgFilePathFromDefFile} was not resolved (check if on disk or check renderer)`);
+                } else {
+                    result.push(pgFileResult.resolvedRendererPath);
+                }
+            }
+        });
+
+        return result;
+    };
+    
+    async createQuestionsForTopicFromDefFileContent(options: CreateQuestionsForTopicFromDefFileContentOptions | CreateQuestionsForTopicFromParsedDefFileOptions): Promise<CourseWWTopicQuestion[]> {
+        const hasParsed = (options: CreateQuestionsForTopicFromDefFileContentOptions | CreateQuestionsForTopicFromParsedDefFileOptions): options is CreateQuestionsForTopicFromParsedDefFileOptions => options.hasOwnProperty(nameof<CreateQuestionsForTopicFromParsedDefFileOptions>('parsedWebworkDef'));
+
+        const parsedWebworkDef: WebWorkDef = hasParsed(options) ? options.parsedWebworkDef : new WebWorkDef(options.webworkDefFileContent);
         let lastProblemNumber = await courseRepository.getLatestProblemNumberForTopic(options.courseTopicId) || 0;
         // TODO fix typings - remove any
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return useDatabaseTransaction<any>((): Promise<any> => {
             return parsedWebworkDef.problems.asyncForEach(async (problem: Problem) => {
-                const pgFilePath = options.defFileDiscoveryResult?.pgFiles[problem.source_file ?? '']?.resolvedRendererPath ?? problem.source_file;
-                
-                return this.addQuestion({
-                    // active: true,
-                    courseTopicContentId: options.courseTopicId,
-                    problemNumber: ++lastProblemNumber,
-                    webworkQuestionPath: pgFilePath,
-                    weight: parseInt(problem.value ?? '1'),
-                    maxAttempts: parseInt(problem.max_attempts ?? '-1'),
-                    hidden: false,
-                    optional: false
-                });
+                const pgFilePath = options.defFileDiscoveryResult?.defFileResult.pgFiles[problem.source_file ?? '']?.resolvedRendererPath ?? problem.source_file;
+                if (pgFilePath?.startsWith('group:')) {
+                    if(_.isNil(options.defFileDiscoveryResult)) {
+                        throw new IllegalArgumentException('Cannot import buckets without archive import');
+                    } else if (!parsedWebworkDef.isExam()) {
+                        throw new IllegalArgumentException('Can only import buckets / group for exams');
+                    }
+                    const result = this.getAdditionalPathsFromBuckets({
+                        defFileDiscoveryResult: options.defFileDiscoveryResult,
+                        pgFilePath: pgFilePath,
+                    });
+                    const problemPath = result.shift();
+                    const question = await this.addQuestion({
+                        // active: true,
+                        courseTopicContentId: options.courseTopicId,
+                        problemNumber: ++lastProblemNumber,
+                        webworkQuestionPath: problemPath,
+                        weight: parseInt(problem.value ?? '1'),
+                        maxAttempts: parseInt(problem.max_attempts ?? '-1'),
+                        hidden: false,
+                        optional: false
+                    });
+
+                    await CourseQuestionAssessmentInfo.create({
+                        additionalProblemPaths: result,
+                        courseWWTopicQuestionId: question.id,
+                        randomSeedSet: []
+                    });
+
+
+                    return question;
+                } else {
+                    return this.addQuestion({
+                        // active: true,
+                        courseTopicContentId: options.courseTopicId,
+                        problemNumber: ++lastProblemNumber,
+                        webworkQuestionPath: pgFilePath,
+                        weight: parseInt(problem.value ?? '1'),
+                        maxAttempts: parseInt(problem.max_attempts ?? '-1'),
+                        hidden: false,
+                        optional: false
+                    });
+                }
             });
         });
     }
@@ -4044,36 +4118,41 @@ You should be able to reply to the student's email address (${options.student.em
             id: courseId
         });
 
-        await Object.values(discoveredFiles.defFiles).asyncForEach(async (defFile: FindFilesDefFileResult) => {
-            await  Object.values(defFile.pgFiles).asyncForEach(async (pgFile: FindFilesPGFileResult) => {
-                if (pgFile.pgFileExists) {
-                    const fileDir = `private/my/${userUUID}/${course.name.replace(/\s/g, '_')}/${defFile.topicName}`;
-                    const savedPath = `${fileDir}/${pgFile.pgFileName}`;
-                    await rendererHelper.saveProblemSource({
-                        problemSource: (await fs.promises.readFile(pgFile.pgFilePathOnDisk)).toString(),
-                        writeFilePath: savedPath
-                    });    
-                    pgFile.resolvedRendererPath = savedPath;
-                    await  Object.values(pgFile.assetFiles.imageFiles).asyncForEach(async (imageFile: FindFilesImageFileResult) => {
-                        const savedPath = `${fileDir}/${imageFile.imageFileName}`;
-                        await rendererHelper.uploadAsset({
-                            filePath: imageFile.imageFilePath,
-                            rendererPath: savedPath
+        const saveAndResolveProblems = async (defFiles: { [key: string]: FindFilesDefFileResult }): Promise<void> => {
+            await Object.values(defFiles).asyncForEach(async (defFile: FindFilesDefFileResult) => {
+                await  Object.values(defFile.pgFiles).asyncForEach(async (pgFile: FindFilesPGFileResult) => {
+                    if (pgFile.pgFileExists) {
+                        const fileDir = `private/my/${userUUID}/${course.name.replace(/\s/g, '_')}/${defFile.topicName}`;
+                        const savedPath = `${fileDir}/${pgFile.pgFileName}`;
+                        await rendererHelper.saveProblemSource({
+                            problemSource: (await fs.promises.readFile(pgFile.pgFilePathOnDisk)).toString(),
+                            writeFilePath: savedPath
+                        });    
+                        pgFile.resolvedRendererPath = savedPath;
+                        await  Object.values(pgFile.assetFiles.imageFiles).asyncForEach(async (imageFile: FindFilesImageFileResult) => {
+                            const savedPath = `${fileDir}/${imageFile.imageFileName}`;
+                            await rendererHelper.uploadAsset({
+                                filePath: imageFile.imageFilePath,
+                                rendererPath: savedPath
+                            });
+                            imageFile.resolvedRendererPath = savedPath;
                         });
-                        imageFile.resolvedRendererPath = savedPath;
-                    });
-                } else {
-                    const contribPath = `Contrib/${pgFile.pgFilePathFromDefFile}`;
-                    const isAccessible = await rendererHelper.isPathAccessibleToRenderer({
-                        problemPath: contribPath
-                    });
-                    if (!isAccessible) {
-                        throw new RederlyError('Could not find pg file in contrib or from tarball');
+                    } else {
+                        const contribPath = `Contrib/${pgFile.pgFilePathFromDefFile}`;
+                        const isAccessible = await rendererHelper.isPathAccessibleToRenderer({
+                            problemPath: contribPath
+                        });
+                        if (!isAccessible) {
+                            throw new IllegalArgumentException(`Could not find pg file: "${pgFile.pgFilePathFromDefFile}" from def file: "${defFile.defFileRelativePath} in contrib or from archive import`);
+                        }
+                        pgFile.resolvedRendererPath = contribPath;
                     }
-                    pgFile.resolvedRendererPath = contribPath;
-                }
+                });
+                await saveAndResolveProblems(defFile.bucketDefFiles);
             });
-        });
+        };
+
+        await saveAndResolveProblems(discoveredFiles.defFiles);
 
         return useDatabaseTransaction(async (): Promise<CourseUnitContent> => {
             const unitName = `${workingDirectoryName} Course Archive Import`;
@@ -4090,18 +4169,62 @@ You should be able to reply to the student's email address (${options.student.em
             // get next content order needs to wait for the previous one to finish
             for (const key in discoveredFiles.defFiles) {
                 const defFile = discoveredFiles.defFiles[key];
+                const parsedWebworkDef = new WebWorkDef((await fs.promises.readFile(defFile.defFileAbsolutePath)).toString());
                 const topic = await this.createTopic({
                     name: defFile.topicName,
                     startDate: course.end,
                     endDate: course.end,
                     deadDate: course.end,
                     courseUnitContentId: unit.id,
-                    topicTypeId: 1, // TODO grab from def file, and grabbing other exam attributes
+                    // TODO use enum
+                    topicTypeId: parsedWebworkDef.isExam() ? 2 : 1,
                 });
+
+                if (parsedWebworkDef.isExam()) {
+                    let possibleIntervals = 1;
+                    let timeInterval: number | undefined = undefined;
+                    if (!_.isNil(parsedWebworkDef.timeInterval)) {
+                        timeInterval = parseInt(parsedWebworkDef.timeInterval, 10);
+
+                        if (_.isNaN(timeInterval)) {
+                            throw new IllegalArgumentException(`The def file: ${defFile.defFileRelativePath} has an invalid time interval: ${parsedWebworkDef.timeInterval}.`);
+                        }
+
+                        timeInterval /= 60;
+
+                        if (timeInterval > 0) {
+                            if (_.isNil(parsedWebworkDef.openDate) || _.isNil(parsedWebworkDef.dueDate)) {
+                                throw new IllegalArgumentException(`The def file: ${defFile.defFileRelativePath} is missing the open or due date.`);
+                            }
+                            const examDuration = moment(parsedWebworkDef.dueDate).diff(moment(parsedWebworkDef.openDate));
+                            // / 60000 to convert to minutes
+                            possibleIntervals = examDuration / 60000 / timeInterval;
+                        }
+                    }
+                    const topicAssessmentInfo: Partial<TopicAssessmentInfoInterface> = _.omitBy({
+                        // id,
+                        courseTopicContentId: topic.id,
+                        duration: parsedWebworkDef.versionTimeLimit ? (parseInt(parsedWebworkDef.versionTimeLimit, 10) / 60) : undefined,
+                        hardCutoff: WebWorkDef.characterBoolean(parsedWebworkDef.capTimeLimit),
+                        hideHints: undefined,
+                        hideProblemsAfterFinish: WebWorkDef.characterBoolean(parsedWebworkDef.hideWork),
+                        maxGradedAttemptsPerVersion: parsedWebworkDef.attemptsPerVersion ? parseInt(parsedWebworkDef.attemptsPerVersion, 10) : undefined,
+                        maxVersions: parsedWebworkDef.versionsPerInterval ? (parseInt(parsedWebworkDef.versionsPerInterval, 10) * possibleIntervals) : undefined,
+                        randomizeOrder: WebWorkDef.numberBoolean(parsedWebworkDef.problemRandOrder),
+                        showItemizedResults: !WebWorkDef.characterBoolean(parsedWebworkDef.hideScoreByProblem),
+                        showTotalGradeImmediately: !WebWorkDef.characterBoolean(parsedWebworkDef.hideScore),
+                        versionDelay: timeInterval
+                    }, _.isUndefined);
+                    await TopicAssessmentInfo.create(topicAssessmentInfo);
+                }
+                
                 await this.createQuestionsForTopicFromDefFileContent({
-                    webworkDefFileContent: (await fs.promises.readFile(defFile.defFileAbsolutePath)).toString(),
+                    parsedWebworkDef: parsedWebworkDef,
                     courseTopicId: topic.id,
-                    defFileDiscoveryResult: defFile
+                    defFileDiscoveryResult: {
+                        defFileResult: defFile,
+                        bucketDefFiles: discoveredFiles.bucketDefFiles
+                    }
                 });
                 // TODO This is bad (mutating a sequelize object)
                 unit.topics?.push(topic);

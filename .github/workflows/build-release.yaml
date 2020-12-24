@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [12.x]
+        node-version: [14.15.3]
     steps:
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
@@ -35,6 +35,11 @@ jobs:
         env:
           REDERLY_PACKAGER_DEST_FILE: ${{ steps.get_file_name.outputs.result }}
           CI: false # TODO Linting errors cause the build to fail when CI is true (default)
+      - name: Try build
+        run: npm --prefix build run cli:built noop
+        env:
+          DB_SYNC: false
+          FAIL_ON_MISSING_CONFIGURATIONS: false
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1

@@ -130,6 +130,7 @@ const configurations = {
         user: readStringValue('DB_USER', 'postgres'),
         password: readStringValue('DB_PASSWORD', 'password'),
         logging: readBooleanValue('DB_LOGGING', false),
+        sync: readBooleanValue('DB_SYNC', false),
     },
     email: {
         enabled: readBooleanValue('EMAIL_ENABLED', false),

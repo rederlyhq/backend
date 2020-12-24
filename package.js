@@ -20,14 +20,16 @@ const {
     REDERLY_PACKAGER_ARCHIVE = null,
     REDERLY_PACKAGER_ARCHIVE_ZIP = null,
     REDERLY_PACKAGER_ARCHIVE_TAR = null,
-    REDERLY_PACKAGER_DEST_FILE = null
+    REDERLY_PACKAGER_DEST_FILE = null,
+    REDERLY_PACKAGER_PRESERVE_NODE_MODULES = null,
 } = process.env;
 
 console.log(`Env: ${JSON.stringify({
     REDERLY_PACKAGER_ARCHIVE,
     REDERLY_PACKAGER_ARCHIVE_ZIP,
     REDERLY_PACKAGER_ARCHIVE_TAR,
-    REDERLY_PACKAGER_DEST_FILE
+    REDERLY_PACKAGER_DEST_FILE,
+    REDERLY_PACKAGER_PRESERVE_NODE_MODULES
 }, null, 2)}`);
 
 const destFile = process.argv[2] || REDERLY_PACKAGER_DEST_FILE || 'dist';
@@ -57,7 +59,6 @@ console.log(`Starting to package project into ${destFile}`);
     const filesToCopy = [
         'assets',
         builtDirectory,
-        'node_modules',
         'package.json',
         'package-lock.json'
     ];
@@ -68,6 +69,22 @@ console.log(`Starting to package project into ${destFile}`);
         await fs.copy(fileToCopy, dest, {recursive: true});
         console.log(`Finished copying ${fileToCopy} ==> "${dest}"`);
     });
+
+    if (REDERLY_PACKAGER_PRESERVE_NODE_MODULES !== 'false') {
+        const fileToCopy = 'node_modules';
+        const dest = `${buildDir}/${fileToCopy}`;
+        console.log(`Copying ${fileToCopy} ==> "${dest}"`);
+        const nodeModulesPromise = fs.copy(fileToCopy, dest, {recursive: true});
+        copyFilePromises.push(nodeModulesPromise);
+        console.log(`Finished copying ${fileToCopy} ==> "${dest}"`);
+    } else {
+        const fileToMove = 'node_modules';
+        const dest = `${buildDir}/${fileToMove}`;
+        console.log(`Moving ${fileToMove} ==> "${dest}"`);
+        const nodeModulesPromise = fs.move(fileToMove, dest, {recursive: true});
+        copyFilePromises.push(nodeModulesPromise);
+        console.log(`Finished moving ${fileToMove} ==> "${dest}"`);
+    }
     await Promise.all(copyFilePromises);
 
     console.log('Pruning dependencies');

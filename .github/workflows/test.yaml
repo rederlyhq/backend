@@ -9,7 +9,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [12.x]
+        node-version: [14.15.3]
 
     steps:
     - name: Checkout code
@@ -20,16 +20,20 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
-    - name: Build
-      run: npm run build
+    # Needs to be before the try build step since it prunes dependencies
+    - name: Test
+      run: npm test
       env:
-        CI: false # TODO consistent with frontend but I don't think this matters
-    # Test needs to be before check build since the dev dependencies get pruned
-    # - name: Test
-    #   run: npm test
-    #   env:
-    #     CI: true
-    - name: Prune dependencies for production
-      run: npm prune --production
-    - name: Check Build
-      run: npm run run:built:test-run # this script runs the application without connecting the server or database, therefore it goes through all the imports and everything
+        CI: true
+    - name: Build and package
+      run: npm run build:package
+      env:
+        REDERLY_PACKAGER_ARCHIVE: false
+        # Can't preserve packages because try build will find the node module in the parent directory
+        REDERLY_PACKAGER_PRESERVE_NODE_MODULES: false
+        CI: false # TODO Linting errors cause the build to fail when CI is true (default)
+    - name: Try build
+      run: npm --prefix build run cli:built noop
+      env:
+        DB_SYNC: false
+        FAIL_ON_MISSING_CONFIGURATIONS: false

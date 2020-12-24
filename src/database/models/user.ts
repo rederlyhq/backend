@@ -23,6 +23,7 @@ export default class User extends Model {
   public forgotPasswordToken?: string;
   public forgotPasswordTokenExpiresAt!: Date
   public uuid!: string;
+  public paidUntil!: Date;
 
   public courseEnrollments?: StudentEnrollment[]
 
@@ -190,6 +191,12 @@ User.init({
       allowNull: false,
       unique: true,
       defaultValue: DataTypes.UUIDV4
+  },
+  paidUntil: {
+      field: 'user_paid_until',
+	    type: DataTypes.DATE,
+	    allowNull: false,
+      defaultValue: appSequelize.literal('NOW()'),
   },
 }, {
   tableName: 'users',

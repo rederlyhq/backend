@@ -379,6 +379,7 @@ class UserController {
             });
             emailSent = configurations.email.enabled;
         } catch (e) {
+            // TODO: Does it make sense for this to be rethrown?
             logger.error(e);
         }
         return emailSent;
@@ -413,6 +414,7 @@ class UserController {
         }
 
         userObject.universityId = university.id;
+        userObject.paidUntil = university.paidUntil;
         userObject.verifyToken = uuidv4();
         userObject.verifyTokenExpiresAt = moment().add(configurations.auth.verifyInstutionalEmailTokenLife, 'minutes').toDate();
         userObject.password = await hashPassword(userObject.password);

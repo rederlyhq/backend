@@ -9,7 +9,7 @@ interface TopicAssessmentInfoOverridesInterface {
     versionDelay: number;
 }
 
-interface TopicAssessmentInfoInterface extends TopicAssessmentInfoOverridesInterface {
+export interface TopicAssessmentInfoInterface extends TopicAssessmentInfoOverridesInterface {
     id: number;
     courseTopicContentId: number;
     hardCutoff: boolean;

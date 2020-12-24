@@ -1,10 +1,11 @@
 {
   "name": "backend",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "",
   "main": "index.js",
   "dependencies": {
     "@hapi/joi": "^15.1.1",
+    "aws-sdk": "^2.815.0",
     "axios": "^0.19.2",
     "bcrypt": "^5.0.0",
     "body-parser": "^1.19.0",
@@ -19,6 +20,7 @@
     "express-rate-limit": "^5.2.3",
     "extend": "^3.0.2",
     "form-data": "^3.0.0",
+    "fs-extra": "^9.0.1",
     "jira-client": "^6.21.1",
     "joi-extract-type": "^15.0.8",
     "lodash": "^4.17.20",
@@ -37,7 +39,6 @@
     "tar": "^6.0.5",
     "url-join": "^4.0.1",
     "uuid": "^7.0.3",
-    "fs-extra": "^9.0.1",
     "winston": "^3.3.3"
   },
   "devDependencies": {
@@ -86,12 +87,12 @@
   },
   "scripts": {
     "test": "jest",
-    "test-run": "ts-node src/test-run.ts",
     "start": "ts-node src/index.ts",
     "start:watch": "nodemon ./src/index.ts",
     "start:debug": "node --inspect=5858 -r ts-node/register ./src/index.ts",
     "start:debug:watch": "nodemon --inspect=5858 ./src/index.ts",
     "cli": "ts-node ./src/cli.ts",
+    "cli:built": "node ./ts-built/cli.js",
     "cli:debug": "node --inspect=5859 -r ts-node/register ./src/cli.ts",
     "cli:debug:watch": "nodemon --inspect=5859 ./src/cli.ts",
     "play": "ts-node src/playground/playground.ts",
@@ -103,7 +104,6 @@
     "build": "npm run clean && tsc",
     "build:run": "npm run build && npm run run:build",
     "run:build": "node ts-built/index.js",
-    "run:built:test-run": "node ts-built/test-run.js",
     "sequelize": "npm run build && sequelize",
     "sequelize:migrations": "npm run sequelize -- db:migrate",
     "sequelize:migrations:devundo": "npm run sequelize -- db:migrate:undo:all --to 20201112094400-curriculum-assessments.js",

@@ -22,7 +22,7 @@ import * as nodeUrl from 'url';
 import { rederlyRequestNamespaceMiddleware } from './middleware/rederly-request-namespace';
 import { RederlyExpressRequest } from './extensions/rederly-express-request';
 import { v4 as uuidv4 } from 'uuid';
-import * as fs from 'fs';
+import * as fse from 'fs-extra';
 
 interface ErrorResponse {
     statusCode: number;
@@ -162,20 +162,19 @@ app.use(basePath, router);
 // This is a developer option, it will be logged as a warning if it is on in production
 if (configurations.app.autoDeleteTemp) {
     const tmpFolderPath = './tmp';
-    const deleteTmpFolder = (): void => {
+    const deleteTmpFolder = async (): Promise<void> => {
         logger.debug('Deleting temp file');
-        fs.access(tmpFolderPath, (accessError: Error | null) => {
-            if (!accessError) {
-                fs.rmdir(tmpFolderPath, { recursive: true }, (rmError: Error | null) => {
-                    if (rmError) {
-                        logger.error(`Removing temp files: could not delete  ${tmpFolderPath}`, rmError);
-                    }
-                });
-            } else {
-                // This only happens on startup and shutdown
-                logger.debug(`Removing temp files: could not access ${tmpFolderPath} (may not have been created)`, accessError);
+        try {
+            await fse.promises.access(tmpFolderPath);
+            try {
+                await fse.remove(tmpFolderPath);
+            } catch (rmError) {
+                logger.error(`Removing temp files: could not delete  ${tmpFolderPath}`, rmError);
             }
-        });    
+        } catch (accessError) {
+            // This only happens on startup and shutdown
+            logger.debug(`Removing temp files: could not access ${tmpFolderPath} (may not have been created)`, accessError);
+        }
     };
     /**
      * The on exit handler has to be sync otherwise callbacks never get executed
@@ -184,13 +183,13 @@ if (configurations.app.autoDeleteTemp) {
         try {
             logger.debug('Deleting temp file sync');
             try {
-                fs.accessSync(tmpFolderPath);
+                fse.accessSync(tmpFolderPath);
             } catch (e) {
                 logger.debug(`Removing temp files: could not access ${tmpFolderPath} (may not have been created)`, e);
             }
 
             try {
-                fs.rmdirSync(tmpFolderPath, { recursive: true });
+                fse.removeSync(tmpFolderPath);
             } catch (e) {
                 logger.error(`Removing temp files: could not delete  ${tmpFolderPath}`, e);
             }
@@ -202,21 +201,20 @@ if (configurations.app.autoDeleteTemp) {
     deleteTmpFolder();
     process.on('exit', deleteTmpFolderSync);
     // request temp file cleanup
-    app.use((obj: unknown, req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
+    app.use(async (obj: unknown, req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
         if (!_.isNil(req.requestId)) {
             const requestTmpPath = `./tmp/${req.requestId}`;
-            fs.access(requestTmpPath, (accessError: Error | null) => {
-                if (!accessError) {
-                    fs.rmdir(requestTmpPath, { recursive: true }, (rmError: Error | null) => {
-                        if (rmError) {
-                            logger.error(`Removing temp files: could not delete  ${requestTmpPath}`, rmError);
-                        }
-                    });
-                } else {
-                    // This is extremely common so it is a little more verbose then I want to leave in there
-                    // logger.debug(`Removing temp files: could not access ${requestTmpPath} (may not have been created)`, accessError);
+            try {
+                await fse.promises.access(requestTmpPath);
+                try {
+                    await fse.remove(requestTmpPath);
+                } catch (rmError) {
+                    logger.error(`Removing temp files: could not delete  ${requestTmpPath}`, rmError);
                 }
-            });
+            } catch {
+                // This is extremely common so it is a little more verbose then I want to leave in there
+                // logger.debug(`Removing temp files: could not access ${requestTmpPath} (may not have been created)`, accessError);
+            }
         }
         next(obj);
     });
@@ -230,7 +228,7 @@ app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
     if (obj instanceof AlreadyExistsError || obj instanceof NotFoundError || obj instanceof IllegalArgumentException) {
         next(Boom.badRequest(obj.message, obj.data));
     } else if (obj instanceof ForbiddenError) {
-        next(Boom.forbidden());
+        next(Boom.forbidden(obj.message, obj.data));
     } else {
         next(obj);
     }
@@ -269,10 +267,10 @@ app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
 });
 
 export const listen = (): Promise<null> => {
-    return new Promise((resolve) => {
+    return new Promise<null>((resolve) => {
         app.listen(port, () => {
             logger.info(`Server started up and listening on port: ${port}`);
-            resolve();
+            resolve(null);
         });
     });
 };

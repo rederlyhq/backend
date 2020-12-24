@@ -3,12 +3,10 @@ import logger from '../utilities/logger';
 import nodemailer = require('nodemailer');
 import Mail = require('nodemailer/lib/mailer');
 import _ = require('lodash');
-// There is no type def for sendgrid-transport
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const sgTransport = require('nodemailer-sendgrid-transport');
 import * as Email from 'email-templates';
 import RederlyError from '../exceptions/rederly-error';
 import path = require('path');
+import * as aws from 'aws-sdk';
 
 interface EmailHelperOptions {
     user: string;
@@ -39,18 +37,18 @@ class EmailHelper {
         this.key = options.key;
         this.from = options.from;
 
-        const clientOptions = {
-            auth: {
-                // defined configuartion param
-                // eslint-disable-next-line @typescript-eslint/camelcase
-                api_user: this.user,
-                // defined configuartion param
-                // eslint-disable-next-line @typescript-eslint/camelcase
-                api_key: this.key, // TODO figure out why api key doesn't work
-            }
-        };
+        this.client = nodemailer.createTransport({
+            SES: new aws.SES({
+                apiVersion: '2010-12-01',
+                credentials: {
+                    accessKeyId: configurations.email.awsAccessKeyId,
+                    secretAccessKey: configurations.email.awsSecretKey,
+                },
+                region: configurations.email.awsRegion,
+            }),
+            sendingRate: configurations.email.sendingRate ?? undefined,
+        });
 
-        this.client = nodemailer.createTransport(sgTransport(clientOptions));
         this.mailer = new Email({
             views: {
                 root: path.resolve('assets/emails')

@@ -16,7 +16,8 @@ import StudentTopicQuestionOverride from '../../database/models/student-topic-qu
 import { DeepPartial } from '../../utilities/typescript-helpers';
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 import ProblemAttachment from '../../database/models/problem-attachment';
-import { FindFilesDefFileResult } from '../../utilities/webwork-utilities/importer';
+import { BucketDefFileResult, FindFilesDefFileResult } from '../../utilities/webwork-utilities/importer';
+import WebWorkDef from '../../utilities/web-work-def-parser';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -424,10 +425,21 @@ export interface CreateGradeInstancesForAssessmentOptions {
     requestURL?: string;
 }
 
-export interface CreateQuestionsForTopicFromDefFileContentOptions {
-    webworkDefFileContent: string;
+// not exporting since this is meant to be abstract
+interface CreateQuestionsForTopicFromDefFileOptions {
     courseTopicId: number;
-    defFileDiscoveryResult?: FindFilesDefFileResult;
+    defFileDiscoveryResult?: {
+        defFileResult: FindFilesDefFileResult;
+        bucketDefFiles: { [key: string]: BucketDefFileResult };
+    };
+}
+
+export interface CreateQuestionsForTopicFromDefFileContentOptions extends CreateQuestionsForTopicFromDefFileOptions {
+    webworkDefFileContent: string;
+}
+
+export interface CreateQuestionsForTopicFromParsedDefFileOptions extends CreateQuestionsForTopicFromDefFileOptions {
+    parsedWebworkDef: WebWorkDef;
 }
 
 export interface DeleteQuestionsOptions {

@@ -4138,14 +4138,20 @@ You should be able to reply to the student's email address (${options.student.em
                             imageFile.resolvedRendererPath = savedPath;
                         });
                     } else {
-                        const contribPath = `Contrib/${pgFile.pgFilePathFromDefFile}`;
-                        const isAccessible = await rendererHelper.isPathAccessibleToRenderer({
-                            problemPath: contribPath
+                        let resolvedPath = pgFile.pgFilePathFromDefFile;
+                        let isAccessible = await rendererHelper.isPathAccessibleToRenderer({
+                            problemPath: resolvedPath
                         });
                         if (!isAccessible) {
-                            throw new IllegalArgumentException(`Could not find pg file: "${pgFile.pgFilePathFromDefFile}" from def file: "${defFile.defFileRelativePath} in contrib or from archive import`);
+                            resolvedPath = `Contrib/${pgFile.pgFilePathFromDefFile}`;
+                            isAccessible = await rendererHelper.isPathAccessibleToRenderer({
+                                problemPath: resolvedPath
+                            });
+                            if (!isAccessible) {
+                                throw new IllegalArgumentException(`Could not find pg file: "${pgFile.pgFilePathFromDefFile}" from def file: "${defFile.defFileRelativePath} from archive import or OPL`);
+                            }
                         }
-                        pgFile.resolvedRendererPath = contribPath;
+                        pgFile.resolvedRendererPath = resolvedPath;
                     }
                 });
                 await saveAndResolveProblems(defFile.bucketDefFiles);
@@ -4215,17 +4221,26 @@ You should be able to reply to the student's email address (${options.student.em
                         showTotalGradeImmediately: !WebWorkDef.characterBoolean(parsedWebworkDef.hideScore),
                         versionDelay: timeInterval
                     }, _.isUndefined);
-                    await TopicAssessmentInfo.create(topicAssessmentInfo);
+                    try {
+                        await TopicAssessmentInfo.create(topicAssessmentInfo);
+                    } catch (e) {
+                        throw new WrappedError(`Failed to create topic assessment info for ${defFile.defFileRelativePath}`, e);
+                    }
                 }
                 
-                await this.createQuestionsForTopicFromDefFileContent({
-                    parsedWebworkDef: parsedWebworkDef,
-                    courseTopicId: topic.id,
-                    defFileDiscoveryResult: {
-                        defFileResult: defFile,
-                        bucketDefFiles: discoveredFiles.bucketDefFiles
-                    }
-                });
+                try {
+                    await this.createQuestionsForTopicFromDefFileContent({
+                        parsedWebworkDef: parsedWebworkDef,
+                        courseTopicId: topic.id,
+                        defFileDiscoveryResult: {
+                            defFileResult: defFile,
+                            bucketDefFiles: discoveredFiles.bucketDefFiles
+                        }
+                    });
+                } catch (e) {
+                    throw new WrappedError(`Failed to add questions to topic for ${defFile.defFileRelativePath}`, e);
+                }
+
                 // TODO This is bad (mutating a sequelize object)
                 unit.topics?.push(topic);
             }

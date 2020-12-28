@@ -4202,7 +4202,8 @@ You should be able to reply to the student's email address (${options.student.em
                             if (_.isNil(parsedWebworkDef.openDate) || _.isNil(parsedWebworkDef.dueDate)) {
                                 throw new IllegalArgumentException(`The def file: ${defFile.defFileRelativePath} is missing the open or due date.`);
                             }
-                            const examDuration = moment(parsedWebworkDef.dueDate).diff(moment(parsedWebworkDef.openDate));
+                            const webworkDateFormat = 'MM/DD/YYYY [at] HH:mma';
+                            const examDuration = moment(parsedWebworkDef.dueDate, webworkDateFormat).diff(moment(parsedWebworkDef.openDate, webworkDateFormat));
                             // / 60000 to convert to minutes
                             possibleIntervals = examDuration / 60000 / timeInterval;
                         }

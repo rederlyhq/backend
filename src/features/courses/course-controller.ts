@@ -302,6 +302,10 @@ class CourseController {
             where[`$enrolledStudents.${StudentEnrollment.rawAttributes.userId.field}$`] = options.filter.enrolledUserId;
         }
 
+        if (!_.has(where, 'active')) {
+            where.active = true;
+        }
+
         return Course.findAll({
             where,
             include,

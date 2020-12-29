@@ -94,9 +94,7 @@ class EmailHelper {
         if (options.template) {
             return this.mailer.send({
                 template: options.template,
-                message: {
-                    to: options.email,
-                },
+                message: email,
                 locals: options.locals,
             });
         } else {

@@ -4106,6 +4106,7 @@ You should be able to reply to the student's email address (${options.student.em
 
     async importCourseTarball ({ filePath, fileName, courseId, userUUID }: ImportTarballOptions): Promise<CourseUnitContent> {
         // TODO remove
+        const startTime = new Date().getTime();
         logger.info(`Import Course Archive start ${new Date()}`);
         const workingDirectoryName = stripTarGZExtension(nodePath.basename(fileName));
         if (_.isNull(workingDirectoryName)) {
@@ -4126,11 +4127,11 @@ You should be able to reply to the student's email address (${options.student.em
         }
 
         // TODO remove
-        logger.info(`Import Course Archive extracted ${new Date()}`);
+        logger.info(`Import Course Archive extracted ${new Date().getTime() - startTime} ${new Date()}`);
         const discoveredFiles = await findFiles({ filePath: workingDirectory });
 
         // TODO remove
-        logger.info(`Import Course Archive exported ${new Date()}`);
+        logger.info(`Import Course Archive exported ${new Date().getTime() - startTime} ${new Date()}`);
 
         const course = await courseRepository.getCourse({
             id: courseId
@@ -4205,12 +4206,12 @@ You should be able to reply to the student's email address (${options.student.em
             });
         };
         // TODO remove
-        logger.info(`Import Course Archive Send to renderer ${new Date()}`);
+        logger.info(`Import Course Archive Send to renderer ${new Date().getTime() - startTime} ${new Date()}`);
         await saveAndResolveProblems(discoveredFiles.defFiles);
         // TODO remove
-        logger.info(`Import Course Archive Send to renderer done ${new Date()}`);
+        logger.info(`Import Course Archive Sending information to the database ${new Date().getTime() - startTime} ${new Date()}`);
 
-        return useDatabaseTransaction(async (): Promise<CourseUnitContent> => {
+        const result = await useDatabaseTransaction(async (): Promise<CourseUnitContent> => {
             const unitName = `${workingDirectoryName} Course Archive Import`;
             // Fore dev it's nice to have a timestamp to avoid conflicts
             // const unitName = `${workingDirectoryName} Course Archive Import ${new Date().getTime()}`;
@@ -4300,6 +4301,8 @@ You should be able to reply to the student's email address (${options.student.em
             }
             return unit;
         });
+        logger.info(`Import Course Archive complete ${new Date().getTime() - startTime} ${new Date()}`);
+        return result;
     }
 
     async prepareOpenLabRedirect(options: PrepareOpenLabRedirectOptions): Promise<OpenLabRedirectInfo> {

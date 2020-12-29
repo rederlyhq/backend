@@ -2332,6 +2332,16 @@ class CourseController {
                 END
             `);
 
+            const pointsEarnedSystem = `SUM(${StudentGrade.rawAttributes.partialCreditBestScore.field} * "question".${CourseWWTopicQuestion.rawAttributes.weight.field})`;
+            const pointsAvailableSystem = `SUM(CASE WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE THEN "question".${CourseWWTopicQuestion.rawAttributes.weight.field} ELSE 0 END)`;
+            const systemScoreAttribute = sequelize.literal(`
+                CASE WHEN ${pointsAvailableSystem} = 0 THEN
+                    NULL
+                ELSE
+                    ${pointsEarnedSystem} / ${pointsAvailableSystem}
+                END
+            `);
+
             // If the topicId isn't present (and implicitly, the questionId as well),
             // include average grades for open-topics only and dead-topics only.
             if (_.isNil(topicId)) {
@@ -2400,6 +2410,7 @@ class CourseController {
             } else {
                 attributes = [
                     [averageScoreAttribute, 'average'],
+                    [systemScoreAttribute, 'systemScore'],
                     [sequelize.literal(pendingProblemCountCalculationString), 'pendingProblemCount'],
                     [sequelize.literal(masteredProblemCountCalculationString), 'masteredProblemCount'],
                     [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],

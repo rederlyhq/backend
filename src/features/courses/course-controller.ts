@@ -302,6 +302,10 @@ class CourseController {
             where[`$enrolledStudents.${StudentEnrollment.rawAttributes.userId.field}$`] = options.filter.enrolledUserId;
         }
 
+        if (!_.has(where, 'active')) {
+            where.active = true;
+        }
+
         return Course.findAll({
             where,
             include,
@@ -1135,7 +1139,7 @@ class CourseController {
                 });
             } else {
                 if (_.isNil(pgFileResult.resolvedRendererPath)) {
-                    throw new IllegalArgumentException(`${pgFileResult.pgFilePathFromDefFile} was not resolved (check if on disk or check renderer)`);
+                    throw new RederlyError(`${pgFileResult.pgFilePathFromDefFile} was not resolved (check if on disk or check renderer)`);
                 } else {
                     result.push(pgFileResult.resolvedRendererPath);
                 }
@@ -4101,6 +4105,8 @@ You should be able to reply to the student's email address (${options.student.em
     }
 
     async importCourseTarball ({ filePath, fileName, courseId, userUUID }: ImportTarballOptions): Promise<CourseUnitContent> {
+        // TODO remove
+        logger.info(`Import Course Archive start ${new Date()}`);
         const workingDirectoryName = stripTarGZExtension(nodePath.basename(fileName));
         if (_.isNull(workingDirectoryName)) {
             throw new IllegalArgumentException('File must be a `.tar.gz` or a `.tgz` file!');
@@ -4112,13 +4118,19 @@ You should be able to reply to the student's email address (${options.student.em
             cwd: workingDirectory
         });
 
+        // TODO remove
+        logger.info(`Import Course Archive extracted ${new Date()}`);
         const discoveredFiles = await findFiles({ filePath: workingDirectory });
+
+        // TODO remove
+        logger.info(`Import Course Archive exported ${new Date()}`);
 
         const course = await courseRepository.getCourse({
             id: courseId
         });
 
         const saveAndResolveProblems = async (defFiles: { [key: string]: FindFilesDefFileResult }): Promise<void> => {
+            const missingFileError: Array<string> = [];
             await Object.values(defFiles).asyncForEach(async (defFile: FindFilesDefFileResult) => {
                 await  Object.values(defFile.pgFiles).asyncForEach(async (pgFile: FindFilesPGFileResult) => {
                     if (pgFile.pgFileExists) {
@@ -4138,21 +4150,37 @@ You should be able to reply to the student's email address (${options.student.em
                             imageFile.resolvedRendererPath = savedPath;
                         });
                     } else {
-                        const contribPath = `Contrib/${pgFile.pgFilePathFromDefFile}`;
-                        const isAccessible = await rendererHelper.isPathAccessibleToRenderer({
-                            problemPath: contribPath
+                        let resolvedPath = pgFile.pgFilePathFromDefFile;
+                        let isAccessible = await rendererHelper.isPathAccessibleToRenderer({
+                            problemPath: resolvedPath
                         });
                         if (!isAccessible) {
-                            throw new IllegalArgumentException(`Could not find pg file: "${pgFile.pgFilePathFromDefFile}" from def file: "${defFile.defFileRelativePath} in contrib or from archive import`);
+                            resolvedPath = `Contrib/${pgFile.pgFilePathFromDefFile}`;
+                            isAccessible = await rendererHelper.isPathAccessibleToRenderer({
+                                problemPath: resolvedPath
+                            });
+                            if (!isAccessible) {
+                                missingFileError.push(`"${pgFile.pgFilePathFromDefFile}" from "${defFile.defFileRelativePath}"`);
+                                if (missingFileError.length >= configurations.importer.missingFileThreshold) {
+                                    const errorMessage = `Could not find the following pg files in the archive or in the OPL: ${missingFileError.join(', ')}`;
+                                    if (missingFileError.length === configurations.importer.missingFileThreshold) {
+                                        logger.error(errorMessage);
+                                    }
+                                    throw new IllegalArgumentException(errorMessage);
+                                }
+                            }
                         }
-                        pgFile.resolvedRendererPath = contribPath;
+                        pgFile.resolvedRendererPath = resolvedPath;
                     }
                 });
                 await saveAndResolveProblems(defFile.bucketDefFiles);
             });
         };
-
+        // TODO remove
+        logger.info(`Import Course Archive Send to renderer ${new Date()}`);
         await saveAndResolveProblems(discoveredFiles.defFiles);
+        // TODO remove
+        logger.info(`Import Course Archive Send to renderer done ${new Date()}`);
 
         return useDatabaseTransaction(async (): Promise<CourseUnitContent> => {
             const unitName = `${workingDirectoryName} Course Archive Import`;
@@ -4196,7 +4224,11 @@ You should be able to reply to the student's email address (${options.student.em
                             if (_.isNil(parsedWebworkDef.openDate) || _.isNil(parsedWebworkDef.dueDate)) {
                                 throw new IllegalArgumentException(`The def file: ${defFile.defFileRelativePath} is missing the open or due date.`);
                             }
-                            const examDuration = moment(parsedWebworkDef.dueDate).diff(moment(parsedWebworkDef.openDate));
+                            // The format from webwork has a timezone (i.e. EDT, EST)
+                            // However moment didn't have a nice way to format with the timezone
+                            // This should not be a problem unless the start and end date are in different timezones (daylight savings)
+                            const webworkDateFormat = 'MM/DD/YYYY [at] HH:mma';
+                            const examDuration = moment(parsedWebworkDef.dueDate, webworkDateFormat).diff(moment(parsedWebworkDef.openDate, webworkDateFormat));
                             // / 60000 to convert to minutes
                             possibleIntervals = examDuration / 60000 / timeInterval;
                         }
@@ -4215,17 +4247,26 @@ You should be able to reply to the student's email address (${options.student.em
                         showTotalGradeImmediately: !WebWorkDef.characterBoolean(parsedWebworkDef.hideScore),
                         versionDelay: timeInterval
                     }, _.isUndefined);
-                    await TopicAssessmentInfo.create(topicAssessmentInfo);
+                    try {
+                        await TopicAssessmentInfo.create(topicAssessmentInfo);
+                    } catch (e) {
+                        throw new WrappedError(`Failed to create topic assessment info for ${defFile.defFileRelativePath}`, e);
+                    }
                 }
                 
-                await this.createQuestionsForTopicFromDefFileContent({
-                    parsedWebworkDef: parsedWebworkDef,
-                    courseTopicId: topic.id,
-                    defFileDiscoveryResult: {
-                        defFileResult: defFile,
-                        bucketDefFiles: discoveredFiles.bucketDefFiles
-                    }
-                });
+                try {
+                    await this.createQuestionsForTopicFromDefFileContent({
+                        parsedWebworkDef: parsedWebworkDef,
+                        courseTopicId: topic.id,
+                        defFileDiscoveryResult: {
+                            defFileResult: defFile,
+                            bucketDefFiles: discoveredFiles.bucketDefFiles
+                        }
+                    });
+                } catch (e) {
+                    throw new WrappedError(`Failed to add questions to topic for ${defFile.defFileRelativePath}`, e);
+                }
+
                 // TODO This is bad (mutating a sequelize object)
                 unit.topics?.push(topic);
             }

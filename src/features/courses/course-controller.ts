@@ -4113,10 +4113,17 @@ You should be able to reply to the student's email address (${options.student.em
         }
         const workingDirectory = `${nodePath.dirname(filePath)}/${workingDirectoryName}`;
         await fs.promises.mkdir(workingDirectory);
-        await tar.x({
-            file: filePath,
-            cwd: workingDirectory
-        });
+        try {
+            await tar.x({
+                file: filePath,
+                cwd: workingDirectory
+            });
+        } catch (e) {
+            if (e.code === 'TAR_BAD_ARCHIVE') {
+                throw new IllegalArgumentException('The archive you have uploaded is corrupted and could not be extracted');
+            }
+            throw new WrappedError('Could not upload tar file', e);
+        }
 
         // TODO remove
         logger.info(`Import Course Archive extracted ${new Date()}`);

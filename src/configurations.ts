@@ -196,6 +196,9 @@ const configurations = {
         failOnMissingConfigurations: readBooleanValue('FAIL_ON_MISSING_CONFIGURATIONS', isProduction),
         autoDeleteTemp: readBooleanValue('AUTO_DELETE_TEMP_FILES', true)
     },
+    importer: {
+        missingFileThreshold: readIntValue('IMPORTER_MISSING_FILE_THRESHOLD', 10)
+    },
     loadPromise: new Promise<void>((resolve, reject) => {
         // Avoid cyclic dependency by deferring the logging until after all the imports are done
         setTimeout(() => {

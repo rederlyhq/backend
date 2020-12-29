@@ -29,13 +29,38 @@ interface GenericTemplateOptions {
     locals: {
         SUBJECT_TEXT: string;
         BODY_TEXT: string;
-    }
+    },
 }
 
 interface VerificationTemplateOptions {
     template: 'verification',
     locals: {
         verifyUrl: string | URL;
+    },
+}
+
+// This allows us to use default attachments for templates without having to pass them into every function.
+// We could do this in the constructor, but if the attachment isn't used, it gets added as an actual attackment.
+const getTemplateAttachments = (template: 'generic' | 'verification') => {
+    switch (template) {
+        case 'verification':
+            return [{
+                filename: 'favicon.png',
+                path: 'assets/emails/rederly_favicon.png',
+                cid: 'favicon'
+            },];
+        case 'generic':
+            return [
+                {
+                  filename: 'rederly_logo.png',
+                  path: 'assets/emails/rederly-logo-dark.png',
+                  cid: 'dark_logo'
+                },
+            ];
+        default:
+            // All templates should at least have default branding.
+            logger.error(`An unknown template ${template} was used.`);
+            return [];
     }
 }
 
@@ -73,16 +98,6 @@ class EmailHelper {
                 // Default attachments for all emails without the email client automatically blocking them.
                 // GMail and Outlook do not support base64 data-urls.
                 attachments: [
-                    {
-                      filename: 'favicon.png',
-                      path: 'assets/emails/rederly_favicon.png',
-                      cid: 'favicon'
-                    },
-                    {
-                      filename: 'rederly_logo.png',
-                      path: 'assets/emails/rederly-logo-dark.png',
-                      cid: 'dark_logo'
-                    },
                 ]
             },
             transport: this.client,
@@ -109,7 +124,12 @@ class EmailHelper {
         if (options.template) {
             return this.mailer.send({
                 template: options.template,
-                message: email,
+                message: {
+                    ...email,
+                    attachments: [
+                        ...getTemplateAttachments(options.template),
+                    ]
+                },
                 locals: options.locals,
             });
         } else {

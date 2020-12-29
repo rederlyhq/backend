@@ -62,7 +62,12 @@ class EmailHelper {
                       filename: 'favicon.png',
                       path: 'assets/emails/rederly_favicon.png',
                       cid: 'favicon'
-                    }
+                    },
+                    {
+                      filename: 'rederly_logo.png',
+                      path: 'assets/emails/rederly-logo-dark.png',
+                      cid: 'dark_logo'
+                    },
                 ]
             },
             transport: this.client,

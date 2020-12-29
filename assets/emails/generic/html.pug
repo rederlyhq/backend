@@ -1,31 +1,17 @@
 doctype html
 head
-  include ../generic/head.pug
+  include ./head.pug
 center(style='width: 100%; background-color: #f1f1f1;')
-  div(style='display: none; font-size: 1px;max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden; mso-hide: all; font-family: sans-serif;')
-    | &zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
   .email-container(style='max-width: 600px; margin: 0 auto;')
     // BEGIN BODY
+    include ./header.pug
     table(align='center' role='presentation' cellspacing='0' cellpadding='0' border='0' width='100%' style='margin: auto;')
-      tr
-        td.bg_white(valign='top' style='padding: 1em 2.5em 0 2.5em;')
-          table(role='presentation' border='0' cellpadding='0' cellspacing='0' width='100%')
-            tr
-              td.logo(style='text-align: center;')
-                h1
-                  a(href='#') Rederly
-      // end tr
       tr
         td.hero.bg_white(valign='middle' style='padding: 2em 0 4em 0;')
           table(role='presentation' border='0' cellpadding='0' cellspacing='0' width='100%')
             tr
               td(style='padding: 0 2.5em; text-align: center; padding-bottom: 3em;')
-                .text
-                  h2 HEADING_TEXT
-            tr
-              td(style='text-align: center;')
-                img(src='cid:favicon' alt='Rederly Logo')
-                p BODY_TEXT
+                  p= `${BODY_TEXT}`
       // end tr
       // 1 Column Text + Button : END
-    include ../generic/footer.pug
+    include ./footer.pug

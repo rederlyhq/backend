@@ -4008,7 +4008,12 @@ You should be able to reply to the student's email address (${options.student.em
 `;
 
         return emailHelper.sendEmail({
+            template: 'generic',
             content: poorMansTemplate,
+            locals: {
+                SUBJECT_TEXT: `${options.student.firstName} - Topic ${topic.id} - Question ${options.question.id}`,
+                BODY_TEXT: poorMansTemplate,
+            },
             email: course.instructor.email,
             subject: `${options.student.firstName} - Topic ${topic.id} - Question ${options.question.id}`,
             replyTo: options.student.email,

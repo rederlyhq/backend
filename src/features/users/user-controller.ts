@@ -174,7 +174,7 @@ class UserController {
                 email: users[i].email,
                 replyTo: emailOptions.replyTo,
                 locals: {
-                    HEADING_TEXT: emailOptions.subject,
+                    SUBJECT_TEXT: emailOptions.subject,
                     BODY_TEXT: emailOptions.content,
                 }
             }));

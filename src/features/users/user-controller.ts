@@ -170,13 +170,12 @@ class UserController {
         for (let i = 0; i < users.length; i++) {
             emailPromises.push(emailHelper.sendEmail({
                 template: 'generic',
-                subject: emailOptions.subject,
-                email: users[i].email,
-                replyTo: emailOptions.replyTo,
                 locals: {
                     SUBJECT_TEXT: emailOptions.subject,
                     BODY_TEXT: emailOptions.content,
-                }
+                },
+                email: users[i].email,
+                replyTo: emailOptions.replyTo,
             }));
         }
 
@@ -375,11 +374,10 @@ class UserController {
         try {
             await emailHelper.sendEmail({
                 template: 'verification',
-                email: user.email,
-                subject: 'Welcome to Rederly! Please verify your account.',
                 locals: {
                     verifyUrl: verifyURL
-                }
+                },
+                email: user.email,
             });
             emailSent = configurations.email.enabled;
         } catch (e) {
@@ -480,18 +478,23 @@ class UserController {
         }
         const user = result.updatedRecords[0];
         const resetURL = new URL(`/forgot-password/${user.forgotPasswordToken}`, baseUrl);
+        const poorMansTemplate = `Hello ${user.firstName},
+
+        To reset your password please follow this link: ${resetURL}
+        
+        If you received this email in error please contact support@rederly.com
+        
+        All the best,
+        The Rederly Team
+        `;
         await emailHelper.sendEmail({
             email,
+            template: 'generic',
+            locals: {
+                SUBJECT_TEXT: 'Reset Rederly Password',
+                BODY_TEXT: poorMansTemplate,
+            },
             subject: 'Reset Rederly Password',
-            content: `Hello ${user.firstName},
-
-To reset your password please follow this link: ${resetURL}
-
-If you received this email in error please contact support@rederly.com
-
-All the best,
-The Rederly Team
-`
         });
     }
 

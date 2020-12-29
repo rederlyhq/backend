@@ -14,14 +14,29 @@ interface EmailHelperOptions {
     from: string;
 }
 
-interface SendEmailOptions {
+type TemplateOptions = GenericTemplateOptions | VerificationTemplateOptions;
+
+type SendEmailOptions = TemplateOptions & {
     email: string;
     content?: string;
-    subject: string;
+    subject?: string;
     replyTo?: string;
-    locals?: object;
-    template?: string;
     // attachments: File;
+}
+
+interface GenericTemplateOptions {
+    template: 'generic',
+    locals: {
+        SUBJECT_TEXT: string;
+        BODY_TEXT: string;
+    }
+}
+
+interface VerificationTemplateOptions {
+    template: 'verification',
+    locals: {
+        verifyUrl: string | URL;
+    }
 }
 
 class EmailHelper {

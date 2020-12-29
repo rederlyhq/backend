@@ -4164,8 +4164,9 @@ You should be able to reply to the student's email address (${options.student.em
                     if (pgFile.pgFileExists) {
                         const fileDir = `private/my/${userUUID}/${course.name.replace(/\s/g, '_')}/${defFile.topicName}`;
                         const savedPath = `${fileDir}/${pgFile.pgFileName}`;
+                        const pgFileContent = await fs.promises.readFile(pgFile.pgFilePathOnDisk);
                         await rendererHelper.saveProblemSource({
-                            problemSource: (await fs.promises.readFile(pgFile.pgFilePathOnDisk)).toString(),
+                            problemSource: pgFileContent.toString(),
                             writeFilePath: savedPath
                         });    
                         pgFile.resolvedRendererPath = savedPath;

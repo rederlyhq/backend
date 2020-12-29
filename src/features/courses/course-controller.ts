@@ -4137,7 +4137,27 @@ You should be able to reply to the student's email address (${options.student.em
         });
 
         const saveAndResolveProblems = async (defFiles: { [key: string]: FindFilesDefFileResult }): Promise<void> => {
-            const missingFileError: Array<string> = [];
+            const missingPGFileErrors: Array<string> = [];
+            const missingAssetFileErrors: Array<string> = [];
+            const missingFileErrorCheck = (): void => {
+                const errorLength = missingAssetFileErrors.length + missingPGFileErrors.length;
+                if (errorLength >= configurations.importer.missingFileThreshold) {
+                    let errorMessage = '';
+                    if (!_.isEmpty(missingPGFileErrors)) {
+                        errorMessage += `Could not find the following pg files in the archive or in the OPL: ${missingPGFileErrors.join(', ')}.\n`;
+                    }
+
+                    if (!_.isEmpty(missingAssetFileErrors)) {
+                        errorMessage += `Could not find the following image files in the archive: ${missingAssetFileErrors.join(', ')}.\n`;
+                    }
+
+                    if (errorLength === configurations.importer.missingFileThreshold) {
+                        logger.error(errorMessage);
+                    }
+                    throw new IllegalArgumentException(errorMessage);
+                }
+            };
+
             await Object.values(defFiles).asyncForEach(async (defFile: FindFilesDefFileResult) => {
                 await  Object.values(defFile.pgFiles).asyncForEach(async (pgFile: FindFilesPGFileResult) => {
                     if (pgFile.pgFileExists) {
@@ -4149,12 +4169,18 @@ You should be able to reply to the student's email address (${options.student.em
                         });    
                         pgFile.resolvedRendererPath = savedPath;
                         await  Object.values(pgFile.assetFiles.imageFiles).asyncForEach(async (imageFile: FindFilesImageFileResult) => {
-                            const savedPath = `${fileDir}/${imageFile.imageFileName}`;
-                            await rendererHelper.uploadAsset({
-                                filePath: imageFile.imageFilePath,
-                                rendererPath: savedPath
-                            });
-                            imageFile.resolvedRendererPath = savedPath;
+                            if (imageFile.imageFileExists) {
+                                const savedPath = `${fileDir}/${imageFile.imageFileName}`;
+                                await rendererHelper.uploadAsset({
+                                    filePath: imageFile.imageFilePath,
+                                    rendererPath: savedPath
+                                });
+                                imageFile.resolvedRendererPath = savedPath;    
+                            } else {
+                                missingAssetFileErrors.push(`"${imageFile.imageFilePathFromPgFile}" from "${pgFile.pgFilePathFromDefFile}" from "${defFile.defFileRelativePath}"`);
+                                // This method throws an error, therefore it doesn't need to return
+                                missingFileErrorCheck();
+                            }
                         });
                     } else {
                         let resolvedPath = pgFile.pgFilePathFromDefFile;
@@ -4167,14 +4193,9 @@ You should be able to reply to the student's email address (${options.student.em
                                 problemPath: resolvedPath
                             });
                             if (!isAccessible) {
-                                missingFileError.push(`"${pgFile.pgFilePathFromDefFile}" from "${defFile.defFileRelativePath}"`);
-                                if (missingFileError.length >= configurations.importer.missingFileThreshold) {
-                                    const errorMessage = `Could not find the following pg files in the archive or in the OPL: ${missingFileError.join(', ')}`;
-                                    if (missingFileError.length === configurations.importer.missingFileThreshold) {
-                                        logger.error(errorMessage);
-                                    }
-                                    throw new IllegalArgumentException(errorMessage);
-                                }
+                                missingPGFileErrors.push(`"${pgFile.pgFilePathFromDefFile}" from "${defFile.defFileRelativePath}"`);
+                                // This method throws an error, therefore it doesn't need to return
+                                missingFileErrorCheck();
                             }
                         }
                         pgFile.resolvedRendererPath = resolvedPath;

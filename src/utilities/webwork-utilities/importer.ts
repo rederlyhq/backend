@@ -16,6 +16,7 @@ export interface FindFilesImageFileResult {
     imageFilePath: string;
     imageFileName: string;
     resolvedRendererPath?: string;
+    imageFileExists: boolean;
 }
 
 export interface FindFilesPGFileOptions {
@@ -103,12 +104,13 @@ const getContentRoot = async (filePath: string): Promise<string> => {
 /**
  * This method processes each image file
  */
-export const checkImageFiles = ({ imageFilePathFromPgFile, pgFilePath }: FindFilesImageFileOptions): FindFilesImageFileResult => {
+export const checkImageFiles = async ({ imageFilePathFromPgFile, pgFilePath }: FindFilesImageFileOptions): Promise<FindFilesImageFileResult> => {
     const imageFilePath = path.join(path.dirname(pgFilePath), imageFilePathFromPgFile);
     const imageFileResult: FindFilesImageFileResult = {
         imageFilePathFromPgFile: imageFilePathFromPgFile,
         imageFilePath: imageFilePath,
-        imageFileName: path.basename(imageFilePathFromPgFile)
+        imageFileName: path.basename(imageFilePathFromPgFile),
+        imageFileExists: await fse.pathExists(imageFilePath),
     };
     return imageFileResult;
 };
@@ -141,7 +143,7 @@ export const findFilesFromPGFile = async ({ contentRootPath, pgFilePathFromDefFi
                 let imagePath = imageInPGFileMatch[1];
                 // The capture group has the quotes in them, this strips those quotes off
                 imagePath = imagePath.substring(1, imagePath.length - 1);
-                pgFileResult.assetFiles.imageFiles[imagePath] = checkImageFiles({ imageFilePathFromPgFile: imagePath, pgFilePath });
+                pgFileResult.assetFiles.imageFiles[imagePath] = await checkImageFiles({ imageFilePathFromPgFile: imagePath, pgFilePath });
             });    
         }
     } catch (e) {

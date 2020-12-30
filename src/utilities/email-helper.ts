@@ -25,23 +25,23 @@ type SendEmailOptions = TemplateOptions & {
 }
 
 interface GenericTemplateOptions {
-    template: 'generic',
+    template: 'generic';
     locals: {
         SUBJECT_TEXT: string;
         BODY_TEXT: string;
-    },
+    };
 }
 
 interface VerificationTemplateOptions {
-    template: 'verification',
+    template: 'verification';
     locals: {
         verifyUrl: string | URL;
-    },
+    };
 }
 
 // This allows us to use default attachments for templates without having to pass them into every function.
 // We could do this in the constructor, but if the attachment isn't used, it gets added as an actual attackment.
-const getTemplateAttachments = (template: 'generic' | 'verification') => {
+const getTemplateAttachments = (template: 'generic' | 'verification'): {filename: string; path: string; cid: string}[] => {
     switch (template) {
         case 'verification':
             return [{
@@ -62,7 +62,7 @@ const getTemplateAttachments = (template: 'generic' | 'verification') => {
             logger.error(`An unknown template ${template} was used.`);
             return [];
     }
-}
+};
 
 class EmailHelper {
     private user: string;

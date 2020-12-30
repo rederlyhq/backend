@@ -14,15 +14,55 @@ interface EmailHelperOptions {
     from: string;
 }
 
-interface SendEmailOptions {
+type TemplateOptions = GenericTemplateOptions | VerificationTemplateOptions;
+
+type SendEmailOptions = TemplateOptions & {
     email: string;
     content?: string;
-    subject: string;
+    subject?: string;
     replyTo?: string;
-    locals?: object;
-    template?: string;
     // attachments: File;
 }
+
+interface GenericTemplateOptions {
+    template: 'generic';
+    locals: {
+        SUBJECT_TEXT: string;
+        BODY_TEXT: string;
+    };
+}
+
+interface VerificationTemplateOptions {
+    template: 'verification';
+    locals: {
+        verifyUrl: string | URL;
+    };
+}
+
+// This allows us to use default attachments for templates without having to pass them into every function.
+// We could do this in the constructor, but if the attachment isn't used, it gets added as an actual attackment.
+const getTemplateAttachments = (template: 'generic' | 'verification'): {filename: string; path: string; cid: string}[] => {
+    switch (template) {
+        case 'verification':
+            return [{
+                filename: 'favicon.png',
+                path: 'assets/emails/rederly_favicon.png',
+                cid: 'favicon'
+            },];
+        case 'generic':
+            return [
+                {
+                  filename: 'rederly_logo.png',
+                  path: 'assets/emails/rederly-logo-dark.png',
+                  cid: 'dark_logo'
+                },
+            ];
+        default:
+            // All templates should at least have default branding.
+            logger.error(`An unknown template ${template} was used.`);
+            return [];
+    }
+};
 
 class EmailHelper {
     private user: string;
@@ -58,26 +98,16 @@ class EmailHelper {
                 // Default attachments for all emails without the email client automatically blocking them.
                 // GMail and Outlook do not support base64 data-urls.
                 attachments: [
-                    {
-                      filename: 'favicon.png',
-                      path: 'assets/emails/rederly_favicon.png',
-                      cid: 'favicon'
-                    }
                 ]
             },
             transport: this.client,
-            send: true,
+            send: configurations.email.enabled,
         });
     }
 
     // Returns the object that sendgrid returns which is any
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sendEmail(options: SendEmailOptions): Promise<any> {
-        if (!configurations.email.enabled) {
-            logger.warn('Email is disabled, returning empty promise...');
-            return Promise.resolve();
-        }
-
         if (_.isNil(options.content) && _.isNil(options.template)) {
             logger.error('Email requires either content (text) or template (pug) to be set.');
             throw new RederlyError('Missing content for email.');
@@ -95,7 +125,10 @@ class EmailHelper {
             return this.mailer.send({
                 template: options.template,
                 message: {
-                    to: options.email,
+                    ...email,
+                    attachments: [
+                        ...getTemplateAttachments(options.template),
+                    ]
                 },
                 locals: options.locals,
             });

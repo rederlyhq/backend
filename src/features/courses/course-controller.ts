@@ -64,6 +64,8 @@ import { getAverageGroupsBeforeDate, QUESTION_SQL_NAME, STUDENTTOPICOVERRIDE_SQL
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
 
+const ABSOLUTE_RENDERER_PATH_REGEX = /^(:?private\/|Contrib\/|webwork-open-problem-library\/|Library\/)/;
+
 class CourseController {
     getCourseById(id: number): Promise<Course> {
         return Course.findOne({
@@ -3049,7 +3051,7 @@ class CourseController {
                                 required: true,
                                 as: 'questions',
                                 attributes: [],
-                                // This where is ok here because we just don't want results to propogate past this point
+                                // This where is ok here because we just don't want results to propagate past this point
                                 where: {
                                     id: questionId
                                 },
@@ -4138,11 +4140,11 @@ You should be able to reply to the student's email address (${options.student.em
         }
 
         // TODO remove
-        logger.info(`Import Course Archive extracted ${new Date().getTime() - startTime} ${new Date()}`);
+        logger.info(`Import Course Archive extracted, discovering files now ${new Date().getTime() - startTime} ${new Date()}`);
         const discoveredFiles = await findFiles({ filePath: workingDirectory });
 
         // TODO remove
-        logger.info(`Import Course Archive exported ${new Date().getTime() - startTime} ${new Date()}`);
+        logger.info(`Import Course Archive discovered files, fetching course ${new Date().getTime() - startTime} ${new Date()}`);
 
         const course = await courseRepository.getCourse({
             id: courseId
@@ -4173,6 +4175,29 @@ You should be able to reply to the student's email address (${options.student.em
             await Object.values(defFiles).asyncForEach(async (defFile: FindFilesDefFileResult) => {
                 await  Object.values(defFile.pgFiles).asyncForEach(async (pgFile: FindFilesPGFileResult) => {
                     if (pgFile.pgFileExists) {
+                        // If the path does not start with the usual starting points
+                        // and it is not a local file
+                        // then check if it is already in the renderer
+                        if (ABSOLUTE_RENDERER_PATH_REGEX.test(pgFile.pgFilePathFromDefFile) === false && pgFile.pgFilePathFromDefFile.startsWith('local') === false) {
+                            const tryPath = `Contrib/${pgFile.pgFilePathFromDefFile}`;
+                            const isAccessible = await rendererHelper.isPathAccessibleToRenderer({
+                                problemPath: tryPath
+                            });
+
+                            if (isAccessible) {
+                                // It's a secret to everyone #ZeldaReference
+                                // Potentially if someone had a sym link to private files with a university name
+                                // and named their file to match contrib - but the file was different
+                                // and used the script that follows sym links
+                                // That would result in the fetching of the wrong problem
+                                // TSNH
+                                pgFile.resolvedRendererPath = tryPath;
+                                return;
+                            }
+                            // /^local/ should always be true at this point (doesn't have to be but generally)
+                        }
+
+                        // At this point the file is not on the renderer
                         const fileDir = `private/my/${userUUID}/${course.name.replace(/\s/g, '_')}/${defFile.topicName}`;
                         const savedPath = `${fileDir}/${pgFile.pgFileName}`;
                         const pgFileContent = await fs.promises.readFile(pgFile.pgFilePathOnDisk);
@@ -4196,32 +4221,29 @@ You should be able to reply to the student's email address (${options.student.em
                             }
                         });
                     } else {
-                        let resolvedPath = pgFile.pgFilePathFromDefFile;
-                        let isAccessible = await rendererHelper.isPathAccessibleToRenderer({
+                        const resolvedPath = ABSOLUTE_RENDERER_PATH_REGEX.test(pgFile.pgFilePathFromDefFile) ? pgFile.pgFilePathFromDefFile : `Contrib/${pgFile.pgFilePathFromDefFile}`;
+                        // It is not accessible if it was not found on disk
+                        // or it was not found by the renderer 
+                        const isAccessible = pgFile.pgFilePathFromDefFile.startsWith('local') === false && await rendererHelper.isPathAccessibleToRenderer({
                             problemPath: resolvedPath
                         });
                         if (!isAccessible) {
-                            resolvedPath = `Contrib/${pgFile.pgFilePathFromDefFile}`;
-                            isAccessible = await rendererHelper.isPathAccessibleToRenderer({
-                                problemPath: resolvedPath
-                            });
-                            if (!isAccessible) {
-                                missingPGFileErrors.push(`"${pgFile.pgFilePathFromDefFile}" from "${defFile.defFileRelativePath}"`);
-                                // This method throws an error, therefore it doesn't need to return
-                                missingFileErrorCheck();
-                            }
+                            missingPGFileErrors.push(`"${pgFile.pgFilePathFromDefFile}" from "${defFile.defFileRelativePath}"`);
+                            // This method throws an error, therefore it doesn't need to return
+                            missingFileErrorCheck();
+                        } else {
+                            pgFile.resolvedRendererPath = resolvedPath;
                         }
-                        pgFile.resolvedRendererPath = resolvedPath;
                     }
                 });
                 await saveAndResolveProblems(defFile.bucketDefFiles);
             });
         };
         // TODO remove
-        logger.info(`Import Course Archive Send to renderer ${new Date().getTime() - startTime} ${new Date()}`);
+        logger.info(`Import Course Archive fetched course, Sending to renderer ${new Date().getTime() - startTime} ${new Date()}`);
         await saveAndResolveProblems(discoveredFiles.defFiles);
         // TODO remove
-        logger.info(`Import Course Archive Sending information to the database ${new Date().getTime() - startTime} ${new Date()}`);
+        logger.info(`Import Course Archive sent to renderer, Sending information to the database ${new Date().getTime() - startTime} ${new Date()}`);
 
         const result = await useDatabaseTransaction(async (): Promise<CourseUnitContent> => {
             const unitName = `${workingDirectoryName} Course Archive Import`;

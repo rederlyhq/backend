@@ -55,6 +55,7 @@ export default class Course extends Model {
     public semesterCode!: string;
 
     public units?: CourseUnitContent[];
+    public enrolledStudents?: StudentEnrollment[];
 
     // timestamps!
     public readonly createdAt!: Date;

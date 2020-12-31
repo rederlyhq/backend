@@ -2428,10 +2428,8 @@ class CourseController {
                 // Calculate the OPEN grades only
                 const pointsEarnedOpen = `SUM(
                     CASE
-                        WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
-                            AND
-                                ("question->topic".${CourseTopicContent.rawAttributes.startDate.field} < NOW()
-                                OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.startDate.field} < NOW())
+                        WHEN ("question->topic".${CourseTopicContent.rawAttributes.startDate.field} < NOW()
+                            OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.startDate.field} < NOW())
                         THEN ${StudentGrade.rawAttributes.effectiveScore.field} * "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
                         ELSE 0
                     END)`;
@@ -2455,10 +2453,8 @@ class CourseController {
                 // Calculate the DEAD grades only
                 const pointsEarnedDead = `SUM(
                     CASE
-                        WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
-                            AND
-                                ("question->topic".${CourseTopicContent.rawAttributes.deadDate.field} < NOW()
-                                OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.deadDate.field} < NOW())
+                        WHEN ("question->topic".${CourseTopicContent.rawAttributes.deadDate.field} < NOW()
+                            OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.deadDate.field} < NOW())
                         THEN ${StudentGrade.rawAttributes.effectiveScore.field} * "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
                         ELSE 0
                     END)`;
@@ -2496,7 +2492,7 @@ class CourseController {
                     [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
                 ];
             }
-
+            
             // TODO This group needs to match the alias below, I'd like to find a better way to do this
             group = [`user.${User.rawAttributes.id.field}`,
                 `user.${User.rawAttributes.firstName.field}`,

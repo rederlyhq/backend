@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import configurations from '../configurations';
 import Role from '../features/permissions/roles';
 import * as _ from 'lodash';
@@ -13,11 +13,35 @@ import urljoin = require('url-join');
 import * as fs from'fs';
 import formHelper, { unmergeStrategies } from './form-helper';
 
+// h/t -- https://stackoverflow.com/a/45460625
+function scheduleRequests(axiosInstance: AxiosInstance, intervalMs: number): void {
+    let lastInvocationTime: number | undefined = undefined;
+    const scheduler = (config: AxiosRequestConfig): AxiosRequestConfig | Promise<AxiosRequestConfig> => {
+        const now = Date.now();
+        if (lastInvocationTime) {
+            lastInvocationTime += intervalMs;
+            const waitPeriodForThisRequest = lastInvocationTime - now;
+            if (waitPeriodForThisRequest > 0) {
+                return new Promise((resolve) => {
+                    setTimeout(
+                        () => resolve(config),
+                        waitPeriodForThisRequest);
+                });
+            }
+        }
+        lastInvocationTime = now;
+        return config;
+    };
+    axiosInstance.interceptors.request.use(scheduler);
+}
+
 const rendererAxios = axios.create({
     baseURL: configurations.renderer.url,
     responseType: 'json',
     timeout: configurations.renderer.requestTimeout
 });
+
+scheduleRequests(rendererAxios, 3);
 
 // TODO switch over to new endpoint
 // the proxy we are using doesn't work with the new renderer endpoint (i'm guessing the hyphen is the problem)

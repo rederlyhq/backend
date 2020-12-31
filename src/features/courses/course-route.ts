@@ -60,15 +60,9 @@ router.post('/:courseId/import-archive',
             filePath: req.file.path,
             fileName: req.file.originalname,
             courseId: params.courseId,
-            userUUID: user.uuid,
+            user: user,
         });
-        next(httpResponse.Ok(null, {
-            // avoid infinite chain
-            ...result.get({plain: true}),
-            // I'm doing bad things with the model and adding the topics after the fact
-            // sequelize isn't serializing that on the way down so I need to do this manually
-            topics: result.topics
-        }));
+        next(httpResponse.Ok(null, result));
     }));
 
 router.get('/statistics/units',
@@ -657,15 +651,13 @@ router.post('/question',
     validate(createCourseTopicQuestionValidation),
     paidMiddleware('Adding questions'),
     asyncHandler(async (req: RederlyExpressRequest<CreateCourseTopicQuestionRequest.params, unknown, CreateCourseTopicQuestionRequest.body, CreateCourseTopicQuestionRequest.query>, _res: Response, next: NextFunction) => {
-        try {
-            const newQuestion = await courseController.addQuestion({
+        const newQuestion = await courseController.addQuestion({
+            question: {
                 ...req.body
-            });
-            // TODO handle not found case
-            next(httpResponse.Created('Course Question created successfully', newQuestion));
-        } catch (e) {
-            next(e);
-        }
+            }
+        });
+        // TODO handle not found case
+        next(httpResponse.Created('Course Question created successfully', newQuestion));
     }));
 
 router.get('/question/:id/raw',

@@ -17,7 +17,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, ImportCourseTarballResult, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions, AddQuestionOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -63,6 +63,8 @@ import { getAverageGroupsBeforeDate, QUESTION_SQL_NAME, STUDENTTOPICOVERRIDE_SQL
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
+
+const ABSOLUTE_RENDERER_PATH_REGEX = /^(:?private\/|Contrib\/|webwork-open-problem-library\/|Library\/)/;
 
 class CourseController {
     getCourseById(id: number): Promise<Course> {
@@ -1148,6 +1150,73 @@ class CourseController {
 
         return result;
     };
+
+    async getEnrolledUserIdsInCourse({ courseId }: { courseId: number }): Promise<Array<number>> {
+        const course = await Course.findOne({
+            where: {
+                id: courseId
+            },
+            attributes: [],
+            include: [{
+                model: StudentEnrollment,
+                as: 'enrolledStudents',
+                attributes: ['userId'],
+            }]
+        });
+
+        if (_.isNil(course)) {
+            throw new RederlyError('getEnrolledUserIdsInCourse: Invalid course id');
+        }
+        const enrolledStudents = course.enrolledStudents;
+        if (_.isNil(enrolledStudents)) {
+            throw new RederlyError('getEnrolledUserIdsInCourse: course was missing enrolledStudents');
+        }
+        return enrolledStudents.map(enrolledStudent => enrolledStudent.userId);
+    }
+
+    async getEnrolledUserIdsInTopic({ topicId }: { topicId: number }): Promise<Array<number>> {
+        const topics = await CourseTopicContent.findAll({
+            where: {
+                id: topicId
+            },
+            attributes: [],
+            include: [{
+                model: CourseUnitContent,
+                as: 'unit',
+                attributes: ['courseId'],
+                include:[{
+                    model: Course,
+                    as: 'course',
+                    attributes: ['id'],
+                    include: [{
+                        model: StudentEnrollment,
+                        as: 'enrolledStudents',
+                        attributes: ['userId'],
+                    }]
+                }]
+            }]
+        });
+
+        if (topics.length === 0) {
+            throw new RederlyError('getEnrolledUserIdsInTopic: fetch for topics had 0 results');
+        }
+        if (topics.length > 1) {
+            logger.warn('getEnrolledUserIdsInTopic fetched more than 1 topic, expected only one');
+        }
+        const unit = topics[0].unit;
+        if (_.isNil(unit)) {
+            throw new RederlyError('getEnrolledUserIdsInTopic: topic was missing unit');
+        }
+        const course = unit.course;
+        if (_.isNil(course)) {
+            throw new RederlyError('getEnrolledUserIdsInTopic: course is missing from the unit');
+        }
+        const enrolledStudents = course.enrolledStudents;
+        if (_.isNil(enrolledStudents)) {
+            throw new RederlyError('getEnrolledUserIdsInTopic: course was missing enrolledStudents');
+        }
+        return enrolledStudents.map(enrolledStudent => enrolledStudent.userId);
+    }
     
     async createQuestionsForTopicFromDefFileContent(options: CreateQuestionsForTopicFromDefFileContentOptions | CreateQuestionsForTopicFromParsedDefFileOptions): Promise<CourseWWTopicQuestion[]> {
         const hasParsed = (options: CreateQuestionsForTopicFromDefFileContentOptions | CreateQuestionsForTopicFromParsedDefFileOptions): options is CreateQuestionsForTopicFromParsedDefFileOptions => options.hasOwnProperty(nameof<CreateQuestionsForTopicFromParsedDefFileOptions>('parsedWebworkDef'));
@@ -1156,7 +1225,11 @@ class CourseController {
         let lastProblemNumber = await courseRepository.getLatestProblemNumberForTopic(options.courseTopicId) || 0;
         // TODO fix typings - remove any
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return useDatabaseTransaction<any>((): Promise<any> => {
+        return useDatabaseTransaction<any>(async (): Promise<any> => {
+            const userIds = options.userIds ?? await this.getEnrolledUserIdsInTopic({
+                topicId: options.courseTopicId
+            });
+
             return parsedWebworkDef.problems.asyncForEach(async (problem: Problem) => {
                 const pgFilePath = options.defFileDiscoveryResult?.defFileResult.pgFiles[problem.source_file ?? '']?.resolvedRendererPath ?? problem.source_file;
                 if (pgFilePath?.startsWith('group:')) {
@@ -1171,14 +1244,17 @@ class CourseController {
                     });
                     const problemPath = result.shift();
                     const question = await this.addQuestion({
-                        // active: true,
-                        courseTopicContentId: options.courseTopicId,
-                        problemNumber: ++lastProblemNumber,
-                        webworkQuestionPath: problemPath,
-                        weight: parseInt(problem.value ?? '1'),
-                        maxAttempts: parseInt(problem.max_attempts ?? '-1'),
-                        hidden: false,
-                        optional: false
+                        question: {
+                            // active: true,
+                            courseTopicContentId: options.courseTopicId,
+                            problemNumber: ++lastProblemNumber,
+                            webworkQuestionPath: problemPath,
+                            weight: parseInt(problem.value ?? '1'),
+                            maxAttempts: parseInt(problem.max_attempts ?? '-1'),
+                            hidden: false,
+                            optional: false
+                        },
+                        userIds: userIds
                     });
 
                     await CourseQuestionAssessmentInfo.create({
@@ -1191,25 +1267,29 @@ class CourseController {
                     return question;
                 } else {
                     return this.addQuestion({
-                        // active: true,
-                        courseTopicContentId: options.courseTopicId,
-                        problemNumber: ++lastProblemNumber,
-                        webworkQuestionPath: pgFilePath,
-                        weight: parseInt(problem.value ?? '1'),
-                        maxAttempts: parseInt(problem.max_attempts ?? '-1'),
-                        hidden: false,
-                        optional: false
+                        question: {
+                            // active: true,
+                            courseTopicContentId: options.courseTopicId,
+                            problemNumber: ++lastProblemNumber,
+                            webworkQuestionPath: pgFilePath,
+                            weight: parseInt(problem.value ?? '1'),
+                            maxAttempts: parseInt(problem.max_attempts ?? '-1'),
+                            hidden: false,
+                            optional: false
+                        },
+                        userIds: userIds
                     });
                 }
             });
         });
     }
 
-    async addQuestion(question: Partial<CourseWWTopicQuestion>): Promise<CourseWWTopicQuestion> {
+    async addQuestion(options: AddQuestionOptions): Promise<CourseWWTopicQuestion> {
         return await useDatabaseTransaction(async () => {
-            const result = await this.createQuestion(question);
+            const result = await this.createQuestion(options.question);
             await this.createGradesForQuestion({
-                questionId: result.id
+                questionId: result.id,
+                userIds: options.userIds
             });
             return result;
         });
@@ -1861,7 +1941,7 @@ class CourseController {
                     }
 
                     if(_.isNil(question) || _.isNil(topic)) {
-                        throw new Error('This cannot be undefined, strict is confused because of transaction callback');
+                        throw new RederlyError('TSNH: This cannot be undefined, strict is confused because of transaction callback');
                     }
 
                     await this.gradeSubmission({
@@ -2348,10 +2428,8 @@ class CourseController {
                 // Calculate the OPEN grades only
                 const pointsEarnedOpen = `SUM(
                     CASE
-                        WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
-                            AND
-                                ("question->topic".${CourseTopicContent.rawAttributes.startDate.field} < NOW()
-                                OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.startDate.field} < NOW())
+                        WHEN ("question->topic".${CourseTopicContent.rawAttributes.startDate.field} < NOW()
+                            OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.startDate.field} < NOW())
                         THEN ${StudentGrade.rawAttributes.effectiveScore.field} * "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
                         ELSE 0
                     END)`;
@@ -2375,10 +2453,8 @@ class CourseController {
                 // Calculate the DEAD grades only
                 const pointsEarnedDead = `SUM(
                     CASE
-                        WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
-                            AND
-                                ("question->topic".${CourseTopicContent.rawAttributes.deadDate.field} < NOW()
-                                OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.deadDate.field} < NOW())
+                        WHEN ("question->topic".${CourseTopicContent.rawAttributes.deadDate.field} < NOW()
+                            OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.deadDate.field} < NOW())
                         THEN ${StudentGrade.rawAttributes.effectiveScore.field} * "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
                         ELSE 0
                     END)`;
@@ -2416,7 +2492,7 @@ class CourseController {
                     [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
                 ];
             }
-
+            
             // TODO This group needs to match the alias below, I'd like to find a better way to do this
             group = [`user.${User.rawAttributes.id.field}`,
                 `user.${User.rawAttributes.firstName.field}`,
@@ -2531,7 +2607,6 @@ class CourseController {
             averageScoreGroup = [[averageScoreAttribute, 'averageScore']];
         }
 
-
         // const completionPercentAttribute = sequelize.literal(`
         // CASE WHEN COUNT("topics->questions->grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN
         //     count(
@@ -2544,6 +2619,11 @@ class CourseController {
         // END`);
         const completionPercentAttribute = sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
 
+        const closedAndOpenedGroups = followQuestionRules ? [
+            ...getAverageGroupsBeforeDate('startDate', TOPIC_SQL_NAME.INCLUDED_AS_TOPICS, QUESTION_SQL_NAME.CHILDREN_OF_INCLUDED_TOPICS, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_INCLUDED_TOPICS),
+            ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.INCLUDED_AS_TOPICS, QUESTION_SQL_NAME.CHILDREN_OF_INCLUDED_TOPICS, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_INCLUDED_TOPICS),
+        ] : [];
+
         return CourseUnitContent.findAll({
             where,
             attributes: [
@@ -2551,8 +2631,7 @@ class CourseController {
                 'name',
                 [sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
                 ...averageScoreGroup,
-                ...getAverageGroupsBeforeDate('startDate', TOPIC_SQL_NAME.INCLUDED_AS_TOPICS, QUESTION_SQL_NAME.CHILDREN_OF_INCLUDED_TOPICS, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_INCLUDED_TOPICS),
-                ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.INCLUDED_AS_TOPICS, QUESTION_SQL_NAME.CHILDREN_OF_INCLUDED_TOPICS, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_INCLUDED_TOPICS),
+                ...closedAndOpenedGroups,
                 [sequelize.fn('count', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
                 [sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'],
                 [sequelize.literal(`count(CASE WHEN "topics->questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN "topics->questions->grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
@@ -2676,6 +2755,11 @@ class CourseController {
         // END`);
         const completionPercentAttribute = sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
 
+        const closedAndOpenedGroups = followQuestionRules ? [
+            ...getAverageGroupsBeforeDate('startDate', TOPIC_SQL_NAME.ROOT_OF_QUERY, QUESTION_SQL_NAME.INCLUDED_AS_QUESTIONS, STUDENTTOPICOVERRIDE_SQL_NAME.INCLUDED_AS_STUDENTTOPICOVERRIDE),
+            ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.ROOT_OF_QUERY, QUESTION_SQL_NAME.INCLUDED_AS_QUESTIONS, STUDENTTOPICOVERRIDE_SQL_NAME.INCLUDED_AS_STUDENTTOPICOVERRIDE),
+        ] : [];
+
         return CourseTopicContent.findAll({
             where,
             attributes: [
@@ -2683,8 +2767,7 @@ class CourseController {
                 'name',
                 [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
                 ...averageScoreGroup,
-                ...getAverageGroupsBeforeDate('startDate', TOPIC_SQL_NAME.ROOT_OF_QUERY, QUESTION_SQL_NAME.INCLUDED_AS_QUESTIONS, STUDENTTOPICOVERRIDE_SQL_NAME.INCLUDED_AS_STUDENTTOPICOVERRIDE),
-                ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.ROOT_OF_QUERY, QUESTION_SQL_NAME.INCLUDED_AS_QUESTIONS, STUDENTTOPICOVERRIDE_SQL_NAME.INCLUDED_AS_STUDENTTOPICOVERRIDE),
+                ...closedAndOpenedGroups,
                 [sequelize.fn('count', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
                 [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'],
                 [sequelize.literal(`count(CASE WHEN "questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN "questions->grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
@@ -2774,6 +2857,12 @@ class CourseController {
         // END`);
         const completionPercentAttribute = sequelize.fn('avg', sequelize.col(`grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
 
+        const closedAndOpenedGroups = followQuestionRules ? [
+            // ...getAverageGroupsBeforeDate('all', TOPIC_SQL_NAME.INCLUDED_AS_SINGLE_TOPIC, QUESTION_SQL_NAME.ROOT_OF_QUERY, STUDENTTOPICOVERRIDE_SQL_NAME.NOT_INCLUDED),
+            ...getAverageGroupsBeforeDate('startDate', TOPIC_SQL_NAME.INCLUDED_AS_SINGLE_TOPIC, QUESTION_SQL_NAME.ROOT_OF_QUERY, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_SINGLE_INC_TOPIC),
+            ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.INCLUDED_AS_SINGLE_TOPIC, QUESTION_SQL_NAME.ROOT_OF_QUERY, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_SINGLE_INC_TOPIC),
+        ] : [];
+
         return CourseWWTopicQuestion.findAll({
             where,
             attributes: [
@@ -2783,9 +2872,7 @@ class CourseController {
                 // [pointsEarned, 'pointsEarned'],
                 // [pointsAvailable, 'pointsAvailable'],
                 [sequelize.fn('avg', scoreField), 'averageScore'],
-                ...getAverageGroupsBeforeDate('all', TOPIC_SQL_NAME.INCLUDED_AS_SINGLE_TOPIC, QUESTION_SQL_NAME.ROOT_OF_QUERY, STUDENTTOPICOVERRIDE_SQL_NAME.NOT_INCLUDED),
-                ...getAverageGroupsBeforeDate('startDate', TOPIC_SQL_NAME.INCLUDED_AS_SINGLE_TOPIC, QUESTION_SQL_NAME.ROOT_OF_QUERY, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_SINGLE_INC_TOPIC),
-                ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.INCLUDED_AS_SINGLE_TOPIC, QUESTION_SQL_NAME.ROOT_OF_QUERY, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_SINGLE_INC_TOPIC),
+                ...closedAndOpenedGroups,
                 [sequelize.fn('avg', sequelize.col(`grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'],
                 [sequelize.fn('count', sequelize.col(`grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
                 [sequelize.literal(`count(CASE WHEN "grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
@@ -3049,7 +3136,7 @@ class CourseController {
                                 required: true,
                                 as: 'questions',
                                 attributes: [],
-                                // This where is ok here because we just don't want results to propogate past this point
+                                // This where is ok here because we just don't want results to propagate past this point
                                 where: {
                                     id: questionId
                                 },
@@ -3097,16 +3184,20 @@ class CourseController {
     async createGradesForQuestion(options: CreateGradesForQuestionOptions): Promise<number> {
         return useDatabaseTransaction(async (): Promise<number> => {
             const { questionId } = options;
-            const results = await this.getUsersThatRequireGradeForQuestion({
-                questionId
-            });
-            await results.asyncForEach(async (result) => {
+            let userIds: Array<number> | undefined = options.userIds;
+            if (_.isNil(userIds)) {
+                const results = await this.getUsersThatRequireGradeForQuestion({
+                    questionId
+                });
+                userIds = results.map(result => result.userId);    
+            }
+            await userIds.asyncForEach(async (userId: number) => {
                 await this.createNewStudentGrade({
                     courseTopicQuestionId: questionId,
-                    userId: result.userId
+                    userId: userId
                 });
             });
-            return results.length;
+            return userIds.length;
         });
     }
 
@@ -4004,11 +4095,15 @@ Here is the message that was sent:
 
 ${options.content}
 
-You should be able to reply to the student's email address (${options.student.email}) by replying to this message.
+You can contact your student at ${options.student.email} or by replying to this email.
 `;
 
         return emailHelper.sendEmail({
-            content: poorMansTemplate,
+            template: 'generic',
+            locals: {
+                SUBJECT_TEXT: `${options.student.firstName} - Topic ${topic.id} - Question ${options.question.id}`,
+                BODY_TEXT: poorMansTemplate,
+            },
             email: course.instructor.email,
             subject: `${options.student.firstName} - Topic ${topic.id} - Question ${options.question.id}`,
             replyTo: options.student.email,
@@ -4115,7 +4210,7 @@ You should be able to reply to the student's email address (${options.student.em
         return {user: user, topic: data, baseUrl};
     }
 
-    async importCourseTarball ({ filePath, fileName, courseId, userUUID }: ImportTarballOptions): Promise<CourseUnitContent> {
+    async importCourseTarball ({ filePath, fileName, courseId, user }: ImportTarballOptions): Promise<ImportCourseTarballResult> {
         // TODO remove
         const startTime = new Date().getTime();
         logger.info(`Import Course Archive start ${new Date()}`);
@@ -4138,44 +4233,75 @@ You should be able to reply to the student's email address (${options.student.em
         }
 
         // TODO remove
-        logger.info(`Import Course Archive extracted ${new Date().getTime() - startTime} ${new Date()}`);
+        logger.info(`Import Course Archive extracted, discovering files now ${new Date().getTime() - startTime} ${new Date()}`);
         const discoveredFiles = await findFiles({ filePath: workingDirectory });
 
         // TODO remove
-        logger.info(`Import Course Archive exported ${new Date().getTime() - startTime} ${new Date()}`);
+        logger.info(`Import Course Archive discovered files, fetching course ${new Date().getTime() - startTime} ${new Date()}`);
 
         const course = await courseRepository.getCourse({
             id: courseId
         });
 
-        const saveAndResolveProblems = async (defFiles: { [key: string]: FindFilesDefFileResult }): Promise<void> => {
-            const missingPGFileErrors: Array<string> = [];
-            const missingAssetFileErrors: Array<string> = [];
-            const missingFileErrorCheck = (): void => {
-                const errorLength = missingAssetFileErrors.length + missingPGFileErrors.length;
-                if (errorLength >= configurations.importer.missingFileThreshold) {
-                    let errorMessage = '';
-                    if (!_.isEmpty(missingPGFileErrors)) {
-                        errorMessage += `Could not find the following pg files in the archive or in the OPL: ${missingPGFileErrors.join(', ')}.\n`;
-                    }
+        let rendererSavePGFileRequests = 0;
+        let rendererSaveAssetRequests = 0;
+        let rendererAccessibleRequests = 0;
+        const missingPGFileErrors: Array<string> = [];
+        const missingAssetFileErrors: Array<string> = [];
+        const missingFileErrorCheck = (): string => {
+            const errorLength = missingAssetFileErrors.length + missingPGFileErrors.length;
+            let errorMessage = '';
+            if (!_.isEmpty(missingPGFileErrors)) {
+                errorMessage += `Could not find the following pg files in the archive or in the OPL: ${missingPGFileErrors.join(', ')}.\n`;
+            }
 
-                    if (!_.isEmpty(missingAssetFileErrors)) {
-                        errorMessage += `Could not find the following image files in the archive: ${missingAssetFileErrors.join(', ')}.\n`;
-                    }
+            if (!_.isEmpty(missingAssetFileErrors)) {
+                errorMessage += `Could not find the following image files in the archive: ${missingAssetFileErrors.join(', ')}.\n`;
+            }
 
-                    if (errorLength === configurations.importer.missingFileThreshold) {
-                        logger.error(errorMessage);
-                    }
-                    throw new IllegalArgumentException(errorMessage);
+            if (errorLength >= configurations.importer.missingFileThreshold) {
+                if (errorLength === configurations.importer.missingFileThreshold) {
+                    logger.error(errorMessage);
                 }
-            };
-
+                throw new IllegalArgumentException(errorMessage, {
+                    missingAssetFileErrors,
+                    missingPGFileErrors
+                });
+            }
+            return errorMessage;
+        };
+        const saveAndResolveProblems = async (defFiles: { [key: string]: FindFilesDefFileResult }): Promise<void> => {
             await Object.values(defFiles).asyncForEach(async (defFile: FindFilesDefFileResult) => {
                 await  Object.values(defFile.pgFiles).asyncForEach(async (pgFile: FindFilesPGFileResult) => {
                     if (pgFile.pgFileExists) {
-                        const fileDir = `private/my/${userUUID}/${course.name.replace(/\s/g, '_')}/${defFile.topicName}`;
+                        // If the path does not start with the usual starting points
+                        // and it is not a local file
+                        // then check if it is already in the renderer
+                        if (ABSOLUTE_RENDERER_PATH_REGEX.test(pgFile.pgFilePathFromDefFile) === false && pgFile.pgFilePathFromDefFile.startsWith('local') === false) {
+                            const tryPath = `Contrib/${pgFile.pgFilePathFromDefFile}`;
+                            rendererAccessibleRequests++;
+                            const isAccessible = await rendererHelper.isPathAccessibleToRenderer({
+                                problemPath: tryPath
+                            });
+
+                            if (isAccessible) {
+                                // It's a secret to everyone #ZeldaReference
+                                // Potentially if someone had a sym link to private files with a university name
+                                // and named their file to match contrib - but the file was different
+                                // and used the script that follows sym links
+                                // That would result in the fetching of the wrong problem
+                                // TSNH
+                                pgFile.resolvedRendererPath = tryPath;
+                                return;
+                            }
+                            // /^local/ should always be true at this point (doesn't have to be but generally)
+                        }
+
+                        // At this point the file is not on the renderer
+                        const fileDir = `private/my/${user.uuid}/${course.name.replace(/\s/g, '_')}/${defFile.topicName}`;
                         const savedPath = `${fileDir}/${pgFile.pgFileName}`;
                         const pgFileContent = await fs.promises.readFile(pgFile.pgFilePathOnDisk);
+                        rendererSavePGFileRequests++;
                         await rendererHelper.saveProblemSource({
                             problemSource: pgFileContent.toString(),
                             writeFilePath: savedPath
@@ -4184,6 +4310,7 @@ You should be able to reply to the student's email address (${options.student.em
                         await  Object.values(pgFile.assetFiles.imageFiles).asyncForEach(async (imageFile: FindFilesImageFileResult) => {
                             if (imageFile.imageFileExists) {
                                 const savedPath = `${fileDir}/${imageFile.imageFileName}`;
+                                rendererSaveAssetRequests++;
                                 await rendererHelper.uploadAsset({
                                     filePath: imageFile.imageFilePath,
                                     rendererPath: savedPath
@@ -4196,34 +4323,34 @@ You should be able to reply to the student's email address (${options.student.em
                             }
                         });
                     } else {
-                        let resolvedPath = pgFile.pgFilePathFromDefFile;
-                        let isAccessible = await rendererHelper.isPathAccessibleToRenderer({
+                        const resolvedPath = ABSOLUTE_RENDERER_PATH_REGEX.test(pgFile.pgFilePathFromDefFile) ? pgFile.pgFilePathFromDefFile : `Contrib/${pgFile.pgFilePathFromDefFile}`;
+                        // It is not accessible if it was not found on disk
+                        // or it was not found by the renderer
+                        const notLocalFile = pgFile.pgFilePathFromDefFile.startsWith('local') === false;
+                        notLocalFile && rendererAccessibleRequests++;
+                        const isAccessible = notLocalFile && await rendererHelper.isPathAccessibleToRenderer({
                             problemPath: resolvedPath
                         });
                         if (!isAccessible) {
-                            resolvedPath = `Contrib/${pgFile.pgFilePathFromDefFile}`;
-                            isAccessible = await rendererHelper.isPathAccessibleToRenderer({
-                                problemPath: resolvedPath
-                            });
-                            if (!isAccessible) {
-                                missingPGFileErrors.push(`"${pgFile.pgFilePathFromDefFile}" from "${defFile.defFileRelativePath}"`);
-                                // This method throws an error, therefore it doesn't need to return
-                                missingFileErrorCheck();
-                            }
+                            missingPGFileErrors.push(`"${pgFile.pgFilePathFromDefFile}" from "${defFile.defFileRelativePath}"`);
+                            // This method throws an error, therefore it doesn't need to return
+                            missingFileErrorCheck();
+                        } else {
+                            pgFile.resolvedRendererPath = resolvedPath;
                         }
-                        pgFile.resolvedRendererPath = resolvedPath;
                     }
                 });
                 await saveAndResolveProblems(defFile.bucketDefFiles);
             });
         };
         // TODO remove
-        logger.info(`Import Course Archive Send to renderer ${new Date().getTime() - startTime} ${new Date()}`);
+        logger.info(`Import Course Archive fetched course, Sending to renderer ${new Date().getTime() - startTime} ${new Date()}`);
         await saveAndResolveProblems(discoveredFiles.defFiles);
         // TODO remove
-        logger.info(`Import Course Archive Sending information to the database ${new Date().getTime() - startTime} ${new Date()}`);
+        logger.info(`Import Course Archive sent to renderer, Sending information to the database ${new Date().getTime() - startTime} ${new Date()}`);
 
-        const result = await useDatabaseTransaction(async (): Promise<CourseUnitContent> => {
+        const topics: Array<CourseTopicContent> = [];
+        const unit: CourseUnitContent = await useDatabaseTransaction(async (): Promise<CourseUnitContent> => {
             const unitName = `${workingDirectoryName} Course Archive Import`;
             // Fore dev it's nice to have a timestamp to avoid conflicts
             // const unitName = `${workingDirectoryName} Course Archive Import ${new Date().getTime()}`;
@@ -4231,8 +4358,6 @@ You should be able to reply to the student's email address (${options.student.em
                 courseId: courseId,
                 name: unitName
             });
-            // TODO This is bad (mutating a sequelize object)
-            unit.topics = [];
 
             // Can't use async for each because these can't be done in parallel
             // get next content order needs to wait for the previous one to finish
@@ -4296,25 +4421,67 @@ You should be able to reply to the student's email address (${options.student.em
                 }
                 
                 try {
+                    const userIds = await this.getEnrolledUserIdsInCourse({
+                        courseId: courseId
+                    });
                     await this.createQuestionsForTopicFromDefFileContent({
                         parsedWebworkDef: parsedWebworkDef,
                         courseTopicId: topic.id,
                         defFileDiscoveryResult: {
                             defFileResult: defFile,
                             bucketDefFiles: discoveredFiles.bucketDefFiles
-                        }
+                        },
+                        userIds: userIds
                     });
                 } catch (e) {
                     throw new WrappedError(`Failed to add questions to topic for ${defFile.defFileRelativePath}`, e);
                 }
 
-                // TODO This is bad (mutating a sequelize object)
-                unit.topics?.push(topic);
+                topics.push(topic);
+            }
+
+            const errorMessage = missingFileErrorCheck();
+            // TODO remove once we track warnings in the application
+            if(!_.isEmpty(errorMessage)) {
+                logger.warn(`importCourseArchive succeeded with warnings: ${errorMessage}`);
+                emailHelper.sendEmail({
+                    template: 'generic',
+                    email: user.email,
+                    locals: {
+                        SUBJECT_TEXT: `${workingDirectoryName} archive import`,
+                        BODY_TEXT: `Hello Professor ${user.lastName},
+
+                        Your course archive upload (${nodePath.basename(fileName)}) was successfully imported into your course (${course.name}), however there were a few files missing:
+                        
+                        ${errorMessage}
+
+                        All the best,
+                        The Rederly Team
+                        `
+                    },
+                })
+                .catch(e => logger.error('importCourseTarball: Could not send professor email with archive warnings', e));
             }
             return unit;
         });
-        logger.info(`Import Course Archive complete ${new Date().getTime() - startTime} ${new Date()}`);
-        return result;
+
+        logger.info(`Import Course Archive complete ${JSON.stringify({
+            rendererSavePGFileRequests,
+            rendererSaveAssetRequests,
+            rendererAccessibleRequests,
+        })} ${new Date().getTime() - startTime} ${new Date()}`);
+
+        return {
+            unit: {
+                // avoid infinite chain
+                ...unit.get({plain: true}),
+                topics: topics
+            },
+            missingFileErrors: {
+                missingPGFileErrors: missingPGFileErrors,
+                missingAssetFileErrors: missingAssetFileErrors,
+            }
+        };
     }
 
     async prepareOpenLabRedirect(options: PrepareOpenLabRedirectOptions): Promise<OpenLabRedirectInfo> {

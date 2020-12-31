@@ -399,6 +399,7 @@ export interface DeleteUserEnrollmentOptions {
 
 export interface CreateGradesForQuestionOptions {
     questionId: number;
+    userIds?: Array<number>;
 }
 
 export interface CreateNewStudentGradeOptions {
@@ -428,6 +429,7 @@ export interface CreateGradeInstancesForAssessmentOptions {
 // not exporting since this is meant to be abstract
 interface CreateQuestionsForTopicFromDefFileOptions {
     courseTopicId: number;
+    userIds?: Array<number>;
     defFileDiscoveryResult?: {
         defFileResult: FindFilesDefFileResult;
         bucketDefFiles: { [key: string]: BucketDefFileResult };
@@ -624,5 +626,17 @@ export interface ImportTarballOptions {
     filePath: string;
     fileName: string;
     courseId: number;
-    userUUID: string;
+    user: User;
+}
+
+export interface ImportCourseTarballResult {
+    unit: Partial<CourseUnitContent>;
+    missingFileErrors: {
+        missingPGFileErrors: Array<string>;
+        missingAssetFileErrors: Array<string>;
+    };
+}
+export interface AddQuestionOptions {
+    question: Partial<CourseWWTopicQuestion>;
+    userIds?: Array<number>;
 }

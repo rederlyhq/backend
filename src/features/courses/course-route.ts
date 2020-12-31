@@ -657,15 +657,13 @@ router.post('/question',
     validate(createCourseTopicQuestionValidation),
     paidMiddleware('Adding questions'),
     asyncHandler(async (req: RederlyExpressRequest<CreateCourseTopicQuestionRequest.params, unknown, CreateCourseTopicQuestionRequest.body, CreateCourseTopicQuestionRequest.query>, _res: Response, next: NextFunction) => {
-        try {
-            const newQuestion = await courseController.addQuestion({
+        const newQuestion = await courseController.addQuestion({
+            question: {
                 ...req.body
-            });
-            // TODO handle not found case
-            next(httpResponse.Created('Course Question created successfully', newQuestion));
-        } catch (e) {
-            next(e);
-        }
+            }
+        });
+        // TODO handle not found case
+        next(httpResponse.Created('Course Question created successfully', newQuestion));
     }));
 
 router.get('/question/:id/raw',

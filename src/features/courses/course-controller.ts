@@ -17,7 +17,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions, AddQuestionOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -63,6 +63,8 @@ import { getAverageGroupsBeforeDate, QUESTION_SQL_NAME, STUDENTTOPICOVERRIDE_SQL
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
+
+const ABSOLUTE_RENDERER_PATH_REGEX = /^(:?private\/|Contrib\/|webwork-open-problem-library\/|Library\/)/;
 
 class CourseController {
     getCourseById(id: number): Promise<Course> {
@@ -1148,6 +1150,73 @@ class CourseController {
 
         return result;
     };
+
+    async getEnrolledUserIdsInCourse({ courseId }: { courseId: number }): Promise<Array<number>> {
+        const course = await Course.findOne({
+            where: {
+                id: courseId
+            },
+            attributes: [],
+            include: [{
+                model: StudentEnrollment,
+                as: 'enrolledStudents',
+                attributes: ['userId'],
+            }]
+        });
+
+        if (_.isNil(course)) {
+            throw new RederlyError('getEnrolledUserIdsInCourse: Invalid course id');
+        }
+        const enrolledStudents = course.enrolledStudents;
+        if (_.isNil(enrolledStudents)) {
+            throw new RederlyError('getEnrolledUserIdsInCourse: course was missing enrolledStudents');
+        }
+        return enrolledStudents.map(enrolledStudent => enrolledStudent.userId);
+    }
+
+    async getEnrolledUserIdsInTopic({ topicId }: { topicId: number }): Promise<Array<number>> {
+        const topics = await CourseTopicContent.findAll({
+            where: {
+                id: topicId
+            },
+            attributes: [],
+            include: [{
+                model: CourseUnitContent,
+                as: 'unit',
+                attributes: ['courseId'],
+                include:[{
+                    model: Course,
+                    as: 'course',
+                    attributes: ['id'],
+                    include: [{
+                        model: StudentEnrollment,
+                        as: 'enrolledStudents',
+                        attributes: ['userId'],
+                    }]
+                }]
+            }]
+        });
+
+        if (topics.length === 0) {
+            throw new RederlyError('getEnrolledUserIdsInTopic: fetch for topics had 0 results');
+        }
+        if (topics.length > 1) {
+            logger.warn('getEnrolledUserIdsInTopic fetched more than 1 topic, expected only one');
+        }
+        const unit = topics[0].unit;
+        if (_.isNil(unit)) {
+            throw new RederlyError('getEnrolledUserIdsInTopic: topic was missing unit');
+        }
+        const course = unit.course;
+        if (_.isNil(course)) {
+            throw new RederlyError('getEnrolledUserIdsInTopic: course is missing from the unit');
+        }
+        const enrolledStudents = course.enrolledStudents;
+        if (_.isNil(enrolledStudents)) {
+            throw new RederlyError('getEnrolledUserIdsInTopic: course was missing enrolledStudents');
+        }
+        return enrolledStudents.map(enrolledStudent => enrolledStudent.userId);
+    }
     
     async createQuestionsForTopicFromDefFileContent(options: CreateQuestionsForTopicFromDefFileContentOptions | CreateQuestionsForTopicFromParsedDefFileOptions): Promise<CourseWWTopicQuestion[]> {
         const hasParsed = (options: CreateQuestionsForTopicFromDefFileContentOptions | CreateQuestionsForTopicFromParsedDefFileOptions): options is CreateQuestionsForTopicFromParsedDefFileOptions => options.hasOwnProperty(nameof<CreateQuestionsForTopicFromParsedDefFileOptions>('parsedWebworkDef'));
@@ -1156,7 +1225,11 @@ class CourseController {
         let lastProblemNumber = await courseRepository.getLatestProblemNumberForTopic(options.courseTopicId) || 0;
         // TODO fix typings - remove any
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return useDatabaseTransaction<any>((): Promise<any> => {
+        return useDatabaseTransaction<any>(async (): Promise<any> => {
+            const userIds = options.userIds ?? await this.getEnrolledUserIdsInTopic({
+                topicId: options.courseTopicId
+            });
+
             return parsedWebworkDef.problems.asyncForEach(async (problem: Problem) => {
                 const pgFilePath = options.defFileDiscoveryResult?.defFileResult.pgFiles[problem.source_file ?? '']?.resolvedRendererPath ?? problem.source_file;
                 if (pgFilePath?.startsWith('group:')) {
@@ -1171,14 +1244,17 @@ class CourseController {
                     });
                     const problemPath = result.shift();
                     const question = await this.addQuestion({
-                        // active: true,
-                        courseTopicContentId: options.courseTopicId,
-                        problemNumber: ++lastProblemNumber,
-                        webworkQuestionPath: problemPath,
-                        weight: parseInt(problem.value ?? '1'),
-                        maxAttempts: parseInt(problem.max_attempts ?? '-1'),
-                        hidden: false,
-                        optional: false
+                        question: {
+                            // active: true,
+                            courseTopicContentId: options.courseTopicId,
+                            problemNumber: ++lastProblemNumber,
+                            webworkQuestionPath: problemPath,
+                            weight: parseInt(problem.value ?? '1'),
+                            maxAttempts: parseInt(problem.max_attempts ?? '-1'),
+                            hidden: false,
+                            optional: false
+                        },
+                        userIds: userIds
                     });
 
                     await CourseQuestionAssessmentInfo.create({
@@ -1191,25 +1267,29 @@ class CourseController {
                     return question;
                 } else {
                     return this.addQuestion({
-                        // active: true,
-                        courseTopicContentId: options.courseTopicId,
-                        problemNumber: ++lastProblemNumber,
-                        webworkQuestionPath: pgFilePath,
-                        weight: parseInt(problem.value ?? '1'),
-                        maxAttempts: parseInt(problem.max_attempts ?? '-1'),
-                        hidden: false,
-                        optional: false
+                        question: {
+                            // active: true,
+                            courseTopicContentId: options.courseTopicId,
+                            problemNumber: ++lastProblemNumber,
+                            webworkQuestionPath: pgFilePath,
+                            weight: parseInt(problem.value ?? '1'),
+                            maxAttempts: parseInt(problem.max_attempts ?? '-1'),
+                            hidden: false,
+                            optional: false
+                        },
+                        userIds: userIds
                     });
                 }
             });
         });
     }
 
-    async addQuestion(question: Partial<CourseWWTopicQuestion>): Promise<CourseWWTopicQuestion> {
+    async addQuestion(options: AddQuestionOptions): Promise<CourseWWTopicQuestion> {
         return await useDatabaseTransaction(async () => {
-            const result = await this.createQuestion(question);
+            const result = await this.createQuestion(options.question);
             await this.createGradesForQuestion({
-                questionId: result.id
+                questionId: result.id,
+                userIds: options.userIds
             });
             return result;
         });
@@ -3049,7 +3129,7 @@ class CourseController {
                                 required: true,
                                 as: 'questions',
                                 attributes: [],
-                                // This where is ok here because we just don't want results to propogate past this point
+                                // This where is ok here because we just don't want results to propagate past this point
                                 where: {
                                     id: questionId
                                 },
@@ -3097,16 +3177,20 @@ class CourseController {
     async createGradesForQuestion(options: CreateGradesForQuestionOptions): Promise<number> {
         return useDatabaseTransaction(async (): Promise<number> => {
             const { questionId } = options;
-            const results = await this.getUsersThatRequireGradeForQuestion({
-                questionId
-            });
-            await results.asyncForEach(async (result) => {
+            let userIds: Array<number> | undefined = options.userIds;
+            if (_.isNil(userIds)) {
+                const results = await this.getUsersThatRequireGradeForQuestion({
+                    questionId
+                });
+                userIds = results.map(result => result.userId);    
+            }
+            await userIds.asyncForEach(async (userId: number) => {
                 await this.createNewStudentGrade({
                     courseTopicQuestionId: questionId,
-                    userId: result.userId
+                    userId: userId
                 });
             });
-            return results.length;
+            return userIds.length;
         });
     }
 
@@ -4142,16 +4226,19 @@ You can contact your student at ${options.student.email} or by replying to this 
         }
 
         // TODO remove
-        logger.info(`Import Course Archive extracted ${new Date().getTime() - startTime} ${new Date()}`);
+        logger.info(`Import Course Archive extracted, discovering files now ${new Date().getTime() - startTime} ${new Date()}`);
         const discoveredFiles = await findFiles({ filePath: workingDirectory });
 
         // TODO remove
-        logger.info(`Import Course Archive exported ${new Date().getTime() - startTime} ${new Date()}`);
+        logger.info(`Import Course Archive discovered files, fetching course ${new Date().getTime() - startTime} ${new Date()}`);
 
         const course = await courseRepository.getCourse({
             id: courseId
         });
 
+        let rendererSavePGFileRequests = 0;
+        let rendererSaveAssetRequests = 0;
+        let rendererAccessibleRequests = 0;
         const saveAndResolveProblems = async (defFiles: { [key: string]: FindFilesDefFileResult }): Promise<void> => {
             const missingPGFileErrors: Array<string> = [];
             const missingAssetFileErrors: Array<string> = [];
@@ -4177,9 +4264,34 @@ You can contact your student at ${options.student.email} or by replying to this 
             await Object.values(defFiles).asyncForEach(async (defFile: FindFilesDefFileResult) => {
                 await  Object.values(defFile.pgFiles).asyncForEach(async (pgFile: FindFilesPGFileResult) => {
                     if (pgFile.pgFileExists) {
+                        // If the path does not start with the usual starting points
+                        // and it is not a local file
+                        // then check if it is already in the renderer
+                        if (ABSOLUTE_RENDERER_PATH_REGEX.test(pgFile.pgFilePathFromDefFile) === false && pgFile.pgFilePathFromDefFile.startsWith('local') === false) {
+                            const tryPath = `Contrib/${pgFile.pgFilePathFromDefFile}`;
+                            rendererAccessibleRequests++;
+                            const isAccessible = await rendererHelper.isPathAccessibleToRenderer({
+                                problemPath: tryPath
+                            });
+
+                            if (isAccessible) {
+                                // It's a secret to everyone #ZeldaReference
+                                // Potentially if someone had a sym link to private files with a university name
+                                // and named their file to match contrib - but the file was different
+                                // and used the script that follows sym links
+                                // That would result in the fetching of the wrong problem
+                                // TSNH
+                                pgFile.resolvedRendererPath = tryPath;
+                                return;
+                            }
+                            // /^local/ should always be true at this point (doesn't have to be but generally)
+                        }
+
+                        // At this point the file is not on the renderer
                         const fileDir = `private/my/${userUUID}/${course.name.replace(/\s/g, '_')}/${defFile.topicName}`;
                         const savedPath = `${fileDir}/${pgFile.pgFileName}`;
                         const pgFileContent = await fs.promises.readFile(pgFile.pgFilePathOnDisk);
+                        rendererSavePGFileRequests++;
                         await rendererHelper.saveProblemSource({
                             problemSource: pgFileContent.toString(),
                             writeFilePath: savedPath
@@ -4188,6 +4300,7 @@ You can contact your student at ${options.student.email} or by replying to this 
                         await  Object.values(pgFile.assetFiles.imageFiles).asyncForEach(async (imageFile: FindFilesImageFileResult) => {
                             if (imageFile.imageFileExists) {
                                 const savedPath = `${fileDir}/${imageFile.imageFileName}`;
+                                rendererSaveAssetRequests++;
                                 await rendererHelper.uploadAsset({
                                     filePath: imageFile.imageFilePath,
                                     rendererPath: savedPath
@@ -4200,32 +4313,31 @@ You can contact your student at ${options.student.email} or by replying to this 
                             }
                         });
                     } else {
-                        let resolvedPath = pgFile.pgFilePathFromDefFile;
-                        let isAccessible = await rendererHelper.isPathAccessibleToRenderer({
+                        const resolvedPath = ABSOLUTE_RENDERER_PATH_REGEX.test(pgFile.pgFilePathFromDefFile) ? pgFile.pgFilePathFromDefFile : `Contrib/${pgFile.pgFilePathFromDefFile}`;
+                        // It is not accessible if it was not found on disk
+                        // or it was not found by the renderer
+                        const notLocalFile = pgFile.pgFilePathFromDefFile.startsWith('local') === false;
+                        notLocalFile && rendererAccessibleRequests++;
+                        const isAccessible = notLocalFile && await rendererHelper.isPathAccessibleToRenderer({
                             problemPath: resolvedPath
                         });
                         if (!isAccessible) {
-                            resolvedPath = `Contrib/${pgFile.pgFilePathFromDefFile}`;
-                            isAccessible = await rendererHelper.isPathAccessibleToRenderer({
-                                problemPath: resolvedPath
-                            });
-                            if (!isAccessible) {
-                                missingPGFileErrors.push(`"${pgFile.pgFilePathFromDefFile}" from "${defFile.defFileRelativePath}"`);
-                                // This method throws an error, therefore it doesn't need to return
-                                missingFileErrorCheck();
-                            }
+                            missingPGFileErrors.push(`"${pgFile.pgFilePathFromDefFile}" from "${defFile.defFileRelativePath}"`);
+                            // This method throws an error, therefore it doesn't need to return
+                            missingFileErrorCheck();
+                        } else {
+                            pgFile.resolvedRendererPath = resolvedPath;
                         }
-                        pgFile.resolvedRendererPath = resolvedPath;
                     }
                 });
                 await saveAndResolveProblems(defFile.bucketDefFiles);
             });
         };
         // TODO remove
-        logger.info(`Import Course Archive Send to renderer ${new Date().getTime() - startTime} ${new Date()}`);
+        logger.info(`Import Course Archive fetched course, Sending to renderer ${new Date().getTime() - startTime} ${new Date()}`);
         await saveAndResolveProblems(discoveredFiles.defFiles);
         // TODO remove
-        logger.info(`Import Course Archive Sending information to the database ${new Date().getTime() - startTime} ${new Date()}`);
+        logger.info(`Import Course Archive sent to renderer, Sending information to the database ${new Date().getTime() - startTime} ${new Date()}`);
 
         const result = await useDatabaseTransaction(async (): Promise<CourseUnitContent> => {
             const unitName = `${workingDirectoryName} Course Archive Import`;
@@ -4300,13 +4412,17 @@ You can contact your student at ${options.student.email} or by replying to this 
                 }
                 
                 try {
+                    const userIds = await this.getEnrolledUserIdsInCourse({
+                        courseId: courseId
+                    });
                     await this.createQuestionsForTopicFromDefFileContent({
                         parsedWebworkDef: parsedWebworkDef,
                         courseTopicId: topic.id,
                         defFileDiscoveryResult: {
                             defFileResult: defFile,
                             bucketDefFiles: discoveredFiles.bucketDefFiles
-                        }
+                        },
+                        userIds: userIds
                     });
                 } catch (e) {
                     throw new WrappedError(`Failed to add questions to topic for ${defFile.defFileRelativePath}`, e);
@@ -4317,7 +4433,11 @@ You can contact your student at ${options.student.email} or by replying to this 
             }
             return unit;
         });
-        logger.info(`Import Course Archive complete ${new Date().getTime() - startTime} ${new Date()}`);
+        logger.info(`Import Course Archive complete ${JSON.stringify({
+            rendererSavePGFileRequests,
+            rendererSaveAssetRequests,
+            rendererAccessibleRequests,
+        })} ${new Date().getTime() - startTime} ${new Date()}`);
         return result;
     }
 

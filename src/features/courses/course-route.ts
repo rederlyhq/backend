@@ -60,15 +60,9 @@ router.post('/:courseId/import-archive',
             filePath: req.file.path,
             fileName: req.file.originalname,
             courseId: params.courseId,
-            userUUID: user.uuid,
+            user: user,
         });
-        next(httpResponse.Ok(null, {
-            // avoid infinite chain
-            ...result.get({plain: true}),
-            // I'm doing bad things with the model and adding the topics after the fact
-            // sequelize isn't serializing that on the way down so I need to do this manually
-            topics: result.topics
-        }));
+        next(httpResponse.Ok(null, result));
     }));
 
 router.get('/statistics/units',

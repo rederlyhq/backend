@@ -17,7 +17,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions, AddQuestionOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, ImportCourseTarballResult, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions, AddQuestionOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -1941,7 +1941,7 @@ class CourseController {
                     }
 
                     if(_.isNil(question) || _.isNil(topic)) {
-                        throw new Error('This cannot be undefined, strict is confused because of transaction callback');
+                        throw new RederlyError('TSNH: This cannot be undefined, strict is confused because of transaction callback');
                     }
 
                     await this.gradeSubmission({
@@ -4203,7 +4203,7 @@ You can contact your student at ${options.student.email} or by replying to this 
         return {user: user, topic: data, baseUrl};
     }
 
-    async importCourseTarball ({ filePath, fileName, courseId, userUUID }: ImportTarballOptions): Promise<CourseUnitContent> {
+    async importCourseTarball ({ filePath, fileName, courseId, user }: ImportTarballOptions): Promise<ImportCourseTarballResult> {
         // TODO remove
         const startTime = new Date().getTime();
         logger.info(`Import Course Archive start ${new Date()}`);
@@ -4239,28 +4239,31 @@ You can contact your student at ${options.student.email} or by replying to this 
         let rendererSavePGFileRequests = 0;
         let rendererSaveAssetRequests = 0;
         let rendererAccessibleRequests = 0;
-        const saveAndResolveProblems = async (defFiles: { [key: string]: FindFilesDefFileResult }): Promise<void> => {
-            const missingPGFileErrors: Array<string> = [];
-            const missingAssetFileErrors: Array<string> = [];
-            const missingFileErrorCheck = (): void => {
-                const errorLength = missingAssetFileErrors.length + missingPGFileErrors.length;
-                if (errorLength >= configurations.importer.missingFileThreshold) {
-                    let errorMessage = '';
-                    if (!_.isEmpty(missingPGFileErrors)) {
-                        errorMessage += `Could not find the following pg files in the archive or in the OPL: ${missingPGFileErrors.join(', ')}.\n`;
-                    }
+        const missingPGFileErrors: Array<string> = [];
+        const missingAssetFileErrors: Array<string> = [];
+        const missingFileErrorCheck = (): string => {
+            const errorLength = missingAssetFileErrors.length + missingPGFileErrors.length;
+            let errorMessage = '';
+            if (!_.isEmpty(missingPGFileErrors)) {
+                errorMessage += `Could not find the following pg files in the archive or in the OPL: ${missingPGFileErrors.join(', ')}.\n`;
+            }
 
-                    if (!_.isEmpty(missingAssetFileErrors)) {
-                        errorMessage += `Could not find the following image files in the archive: ${missingAssetFileErrors.join(', ')}.\n`;
-                    }
+            if (!_.isEmpty(missingAssetFileErrors)) {
+                errorMessage += `Could not find the following image files in the archive: ${missingAssetFileErrors.join(', ')}.\n`;
+            }
 
-                    if (errorLength === configurations.importer.missingFileThreshold) {
-                        logger.error(errorMessage);
-                    }
-                    throw new IllegalArgumentException(errorMessage);
+            if (errorLength >= configurations.importer.missingFileThreshold) {
+                if (errorLength === configurations.importer.missingFileThreshold) {
+                    logger.error(errorMessage);
                 }
-            };
-
+                throw new IllegalArgumentException(errorMessage, {
+                    missingAssetFileErrors,
+                    missingPGFileErrors
+                });
+            }
+            return errorMessage;
+        };
+        const saveAndResolveProblems = async (defFiles: { [key: string]: FindFilesDefFileResult }): Promise<void> => {
             await Object.values(defFiles).asyncForEach(async (defFile: FindFilesDefFileResult) => {
                 await  Object.values(defFile.pgFiles).asyncForEach(async (pgFile: FindFilesPGFileResult) => {
                     if (pgFile.pgFileExists) {
@@ -4288,7 +4291,7 @@ You can contact your student at ${options.student.email} or by replying to this 
                         }
 
                         // At this point the file is not on the renderer
-                        const fileDir = `private/my/${userUUID}/${course.name.replace(/\s/g, '_')}/${defFile.topicName}`;
+                        const fileDir = `private/my/${user.uuid}/${course.name.replace(/\s/g, '_')}/${defFile.topicName}`;
                         const savedPath = `${fileDir}/${pgFile.pgFileName}`;
                         const pgFileContent = await fs.promises.readFile(pgFile.pgFilePathOnDisk);
                         rendererSavePGFileRequests++;
@@ -4339,7 +4342,8 @@ You can contact your student at ${options.student.email} or by replying to this 
         // TODO remove
         logger.info(`Import Course Archive sent to renderer, Sending information to the database ${new Date().getTime() - startTime} ${new Date()}`);
 
-        const result = await useDatabaseTransaction(async (): Promise<CourseUnitContent> => {
+        const topics: Array<CourseTopicContent> = [];
+        const unit: CourseUnitContent = await useDatabaseTransaction(async (): Promise<CourseUnitContent> => {
             const unitName = `${workingDirectoryName} Course Archive Import`;
             // Fore dev it's nice to have a timestamp to avoid conflicts
             // const unitName = `${workingDirectoryName} Course Archive Import ${new Date().getTime()}`;
@@ -4347,8 +4351,6 @@ You can contact your student at ${options.student.email} or by replying to this 
                 courseId: courseId,
                 name: unitName
             });
-            // TODO This is bad (mutating a sequelize object)
-            unit.topics = [];
 
             // Can't use async for each because these can't be done in parallel
             // get next content order needs to wait for the previous one to finish
@@ -4428,17 +4430,51 @@ You can contact your student at ${options.student.email} or by replying to this 
                     throw new WrappedError(`Failed to add questions to topic for ${defFile.defFileRelativePath}`, e);
                 }
 
-                // TODO This is bad (mutating a sequelize object)
-                unit.topics?.push(topic);
+                topics.push(topic);
+            }
+
+            const errorMessage = missingFileErrorCheck();
+            // TODO remove once we track warnings in the application
+            if(!_.isEmpty(errorMessage)) {
+                logger.warn(`importCourseArchive succeeded with warnings: ${errorMessage}`);
+                emailHelper.sendEmail({
+                    template: 'generic',
+                    email: user.email,
+                    locals: {
+                        SUBJECT_TEXT: `${workingDirectoryName} archive import`,
+                        BODY_TEXT: `Hello Professor ${user.lastName},
+
+                        Your course archive upload (${nodePath.basename(fileName)}) was successfully imported into your course (${course.name}), however there were a few files missing:
+                        
+                        ${errorMessage}
+
+                        All the best,
+                        The Rederly Team
+                        `
+                    },
+                })
+                .catch(e => logger.error('importCourseTarball: Could not send professor email with archive warnings', e));
             }
             return unit;
         });
+
         logger.info(`Import Course Archive complete ${JSON.stringify({
             rendererSavePGFileRequests,
             rendererSaveAssetRequests,
             rendererAccessibleRequests,
         })} ${new Date().getTime() - startTime} ${new Date()}`);
-        return result;
+
+        return {
+            unit: {
+                // avoid infinite chain
+                ...unit.get({plain: true}),
+                topics: topics
+            },
+            missingFileErrors: {
+                missingPGFileErrors: missingPGFileErrors,
+                missingAssetFileErrors: missingAssetFileErrors,
+            }
+        };
     }
 
     async prepareOpenLabRedirect(options: PrepareOpenLabRedirectOptions): Promise<OpenLabRedirectInfo> {

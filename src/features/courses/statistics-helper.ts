@@ -38,22 +38,28 @@ export const getAverageGroupsBeforeDate = (
 ): Array<sequelize.ProjectionAlias> => {
     // Adds the where clause to filter based on topic dates and override dates.
     const beforeDateWhereClause = beforeDate === 'all' ? '' : 
-    `AND
-        ("${topicName}".${CourseTopicContent.rawAttributes[beforeDate].field} < NOW()
-        OR "${studentTopicOverrideName}".${StudentTopicOverride.rawAttributes[beforeDate].field} < NOW())`;
+    `("${topicName}".${CourseTopicContent.rawAttributes[beforeDate].field} < NOW()
+    OR "${studentTopicOverrideName}".${StudentTopicOverride.rawAttributes[beforeDate].field} < NOW())`;
 
-    const pointsEarned = `SUM(
-        CASE
-            WHEN "${questionName}".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
-                ${beforeDateWhereClause}
-            THEN ${StudentGrade.rawAttributes.effectiveScore.field} * "${questionName}".${CourseWWTopicQuestion.rawAttributes.weight.field}
-            ELSE 0
-        END)`;
+    let pointsEarned = '';
+    if (beforeDate === 'all') {
+        pointsEarned = `SUM(${StudentGrade.rawAttributes.effectiveScore.field} * "${questionName}".${CourseWWTopicQuestion.rawAttributes.weight.field})`;
+    } else {
+        pointsEarned = `SUM(
+            CASE
+                WHEN ${beforeDateWhereClause}
+                THEN ${StudentGrade.rawAttributes.effectiveScore.field} * "${questionName}".${CourseWWTopicQuestion.rawAttributes.weight.field}
+                ELSE 0
+            END
+        )`;
+    }
+
+    const AndBeforeDateWhereClause = beforeDateWhereClause === '' ? '' : `AND ${beforeDateWhereClause}`;
 
     const pointsAvailable = `SUM(
         CASE
             WHEN "${questionName}".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
-                ${beforeDateWhereClause}
+            ${AndBeforeDateWhereClause}
             THEN "${questionName}".${CourseWWTopicQuestion.rawAttributes.weight.field}
             ELSE 0
         END)`;

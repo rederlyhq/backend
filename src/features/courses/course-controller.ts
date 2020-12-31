@@ -2428,10 +2428,8 @@ class CourseController {
                 // Calculate the OPEN grades only
                 const pointsEarnedOpen = `SUM(
                     CASE
-                        WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
-                            AND
-                                ("question->topic".${CourseTopicContent.rawAttributes.startDate.field} < NOW()
-                                OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.startDate.field} < NOW())
+                        WHEN ("question->topic".${CourseTopicContent.rawAttributes.startDate.field} < NOW()
+                            OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.startDate.field} < NOW())
                         THEN ${StudentGrade.rawAttributes.effectiveScore.field} * "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
                         ELSE 0
                     END)`;
@@ -2455,10 +2453,8 @@ class CourseController {
                 // Calculate the DEAD grades only
                 const pointsEarnedDead = `SUM(
                     CASE
-                        WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
-                            AND
-                                ("question->topic".${CourseTopicContent.rawAttributes.deadDate.field} < NOW()
-                                OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.deadDate.field} < NOW())
+                        WHEN ("question->topic".${CourseTopicContent.rawAttributes.deadDate.field} < NOW()
+                            OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.deadDate.field} < NOW())
                         THEN ${StudentGrade.rawAttributes.effectiveScore.field} * "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
                         ELSE 0
                     END)`;
@@ -2496,7 +2492,7 @@ class CourseController {
                     [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
                 ];
             }
-
+            
             // TODO This group needs to match the alias below, I'd like to find a better way to do this
             group = [`user.${User.rawAttributes.id.field}`,
                 `user.${User.rawAttributes.firstName.field}`,
@@ -2611,7 +2607,6 @@ class CourseController {
             averageScoreGroup = [[averageScoreAttribute, 'averageScore']];
         }
 
-
         // const completionPercentAttribute = sequelize.literal(`
         // CASE WHEN COUNT("topics->questions->grades".${StudentGrade.rawAttributes.id.field}) > 0 THEN
         //     count(
@@ -2624,6 +2619,11 @@ class CourseController {
         // END`);
         const completionPercentAttribute = sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
 
+        const closedAndOpenedGroups = followQuestionRules ? [
+            ...getAverageGroupsBeforeDate('startDate', TOPIC_SQL_NAME.INCLUDED_AS_TOPICS, QUESTION_SQL_NAME.CHILDREN_OF_INCLUDED_TOPICS, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_INCLUDED_TOPICS),
+            ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.INCLUDED_AS_TOPICS, QUESTION_SQL_NAME.CHILDREN_OF_INCLUDED_TOPICS, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_INCLUDED_TOPICS),
+        ] : [];
+
         return CourseUnitContent.findAll({
             where,
             attributes: [
@@ -2631,8 +2631,7 @@ class CourseController {
                 'name',
                 [sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
                 ...averageScoreGroup,
-                ...getAverageGroupsBeforeDate('startDate', TOPIC_SQL_NAME.INCLUDED_AS_TOPICS, QUESTION_SQL_NAME.CHILDREN_OF_INCLUDED_TOPICS, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_INCLUDED_TOPICS),
-                ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.INCLUDED_AS_TOPICS, QUESTION_SQL_NAME.CHILDREN_OF_INCLUDED_TOPICS, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_INCLUDED_TOPICS),
+                ...closedAndOpenedGroups,
                 [sequelize.fn('count', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
                 [sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'],
                 [sequelize.literal(`count(CASE WHEN "topics->questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN "topics->questions->grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
@@ -2756,6 +2755,11 @@ class CourseController {
         // END`);
         const completionPercentAttribute = sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
 
+        const closedAndOpenedGroups = followQuestionRules ? [
+            ...getAverageGroupsBeforeDate('startDate', TOPIC_SQL_NAME.ROOT_OF_QUERY, QUESTION_SQL_NAME.INCLUDED_AS_QUESTIONS, STUDENTTOPICOVERRIDE_SQL_NAME.INCLUDED_AS_STUDENTTOPICOVERRIDE),
+            ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.ROOT_OF_QUERY, QUESTION_SQL_NAME.INCLUDED_AS_QUESTIONS, STUDENTTOPICOVERRIDE_SQL_NAME.INCLUDED_AS_STUDENTTOPICOVERRIDE),
+        ] : [];
+
         return CourseTopicContent.findAll({
             where,
             attributes: [
@@ -2763,8 +2767,7 @@ class CourseController {
                 'name',
                 [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
                 ...averageScoreGroup,
-                ...getAverageGroupsBeforeDate('startDate', TOPIC_SQL_NAME.ROOT_OF_QUERY, QUESTION_SQL_NAME.INCLUDED_AS_QUESTIONS, STUDENTTOPICOVERRIDE_SQL_NAME.INCLUDED_AS_STUDENTTOPICOVERRIDE),
-                ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.ROOT_OF_QUERY, QUESTION_SQL_NAME.INCLUDED_AS_QUESTIONS, STUDENTTOPICOVERRIDE_SQL_NAME.INCLUDED_AS_STUDENTTOPICOVERRIDE),
+                ...closedAndOpenedGroups,
                 [sequelize.fn('count', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
                 [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'],
                 [sequelize.literal(`count(CASE WHEN "questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN "questions->grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
@@ -2854,6 +2857,12 @@ class CourseController {
         // END`);
         const completionPercentAttribute = sequelize.fn('avg', sequelize.col(`grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
 
+        const closedAndOpenedGroups = followQuestionRules ? [
+            // ...getAverageGroupsBeforeDate('all', TOPIC_SQL_NAME.INCLUDED_AS_SINGLE_TOPIC, QUESTION_SQL_NAME.ROOT_OF_QUERY, STUDENTTOPICOVERRIDE_SQL_NAME.NOT_INCLUDED),
+            ...getAverageGroupsBeforeDate('startDate', TOPIC_SQL_NAME.INCLUDED_AS_SINGLE_TOPIC, QUESTION_SQL_NAME.ROOT_OF_QUERY, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_SINGLE_INC_TOPIC),
+            ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.INCLUDED_AS_SINGLE_TOPIC, QUESTION_SQL_NAME.ROOT_OF_QUERY, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_SINGLE_INC_TOPIC),
+        ] : [];
+
         return CourseWWTopicQuestion.findAll({
             where,
             attributes: [
@@ -2863,9 +2872,7 @@ class CourseController {
                 // [pointsEarned, 'pointsEarned'],
                 // [pointsAvailable, 'pointsAvailable'],
                 [sequelize.fn('avg', scoreField), 'averageScore'],
-                ...getAverageGroupsBeforeDate('all', TOPIC_SQL_NAME.INCLUDED_AS_SINGLE_TOPIC, QUESTION_SQL_NAME.ROOT_OF_QUERY, STUDENTTOPICOVERRIDE_SQL_NAME.NOT_INCLUDED),
-                ...getAverageGroupsBeforeDate('startDate', TOPIC_SQL_NAME.INCLUDED_AS_SINGLE_TOPIC, QUESTION_SQL_NAME.ROOT_OF_QUERY, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_SINGLE_INC_TOPIC),
-                ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.INCLUDED_AS_SINGLE_TOPIC, QUESTION_SQL_NAME.ROOT_OF_QUERY, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_SINGLE_INC_TOPIC),
+                ...closedAndOpenedGroups,
                 [sequelize.fn('avg', sequelize.col(`grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'],
                 [sequelize.fn('count', sequelize.col(`grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
                 [sequelize.literal(`count(CASE WHEN "grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],

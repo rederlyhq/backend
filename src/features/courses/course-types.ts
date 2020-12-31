@@ -626,10 +626,17 @@ export interface ImportTarballOptions {
     filePath: string;
     fileName: string;
     courseId: number;
-    userUUID: string;
+    user: User;
 }
 
+export interface ImportCourseTarballResult {
+    unit: Partial<CourseUnitContent>;
+    missingFileErrors: {
+        missingPGFileErrors: Array<string>;
+        missingAssetFileErrors: Array<string>;
+    };
+}
 export interface AddQuestionOptions {
     question: Partial<CourseWWTopicQuestion>;
     userIds?: Array<number>;
-};
+}

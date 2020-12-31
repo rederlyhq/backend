@@ -4088,11 +4088,15 @@ Here is the message that was sent:
 
 ${options.content}
 
-You should be able to reply to the student's email address (${options.student.email}) by replying to this message.
+You can contact your student at ${options.student.email} or by replying to this email.
 `;
 
         return emailHelper.sendEmail({
-            content: poorMansTemplate,
+            template: 'generic',
+            locals: {
+                SUBJECT_TEXT: `${options.student.firstName} - Topic ${topic.id} - Question ${options.question.id}`,
+                BODY_TEXT: poorMansTemplate,
+            },
             email: course.instructor.email,
             subject: `${options.student.firstName} - Topic ${topic.id} - Question ${options.question.id}`,
             replyTo: options.student.email,

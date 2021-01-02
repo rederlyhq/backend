@@ -287,6 +287,12 @@ export namespace SaveQuestionRequest {
     export type body = Joi.extractType<typeof validations.saveQuestionValidation.body>;
 };
 
+export namespace UploadAssetRequest {
+    export type params = Joi.extractType<typeof validations.uploadAssetValidation.params>;
+    export type query = Joi.extractType<typeof validations.uploadAssetValidation.query>;
+    export type body = Joi.extractType<typeof validations.uploadAssetValidation.body>;
+};
+
 export namespace CatalogRequest {
     export type params = Joi.extractType<typeof validations.catalogValidation.params>;
     export type query = Joi.extractType<typeof validations.catalogValidation.query>;

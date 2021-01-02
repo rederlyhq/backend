@@ -554,6 +554,14 @@ export const saveQuestionValidation = {
     },
 };
 
+export const uploadAssetValidation = {
+    params: {},
+    query: {},
+    body: {
+        relativePath: Joi.string().required(),
+    },
+};
+
 export const catalogValidation = {
     params: {},
     query: {},

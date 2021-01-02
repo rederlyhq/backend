@@ -867,7 +867,8 @@ router.post('/preview',
                 formURL: req.originalUrl,
                 baseURL: '/',
                 ...req.meta?.rendererParams,
-                numIncorrect: req.meta.studentGrade?.numAttempts
+                numIncorrect: req.meta.studentGrade?.numAttempts,
+                problemSeed: req.meta.studentGrade?.randomSeed
             };
             return `${RENDERER_ENDPOINT}?${qs.stringify(params)}`;
         },

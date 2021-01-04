@@ -8,6 +8,7 @@ import CourseUnitContent from '../../database/models/course-unit-content';
 import CourseTopicContent, { CourseTopicContentInterface } from '../../database/models/course-topic-content';
 import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface } from '../../database/models/course-ww-topic-question';
 import rendererHelper, { GetProblemParameters, OutputFormat, RendererResponse } from '../../utilities/renderer-helper';
+import { stripTarGZExtension } from '../../utilities/file-helper';
 import StudentWorkbook from '../../database/models/student-workbook';
 import StudentGrade from '../../database/models/student-grade';
 import StudentGradeInstance from '../../database/models/student-grade-instance';
@@ -16,7 +17,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, ImportCourseTarballResult, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions, AddQuestionOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -37,7 +38,7 @@ import IllegalArgumentException from '../../exceptions/illegal-argument-exceptio
 import StudentGradeOverride from '../../database/models/student-grade-override';
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 import StudentTopicAssessmentOverride from '../../database/models/student-topic-assessment-override';
-import TopicAssessmentInfo from '../../database/models/topic-assessment-info';
+import TopicAssessmentInfo, {TopicAssessmentInfoInterface} from '../../database/models/topic-assessment-info';
 import CourseQuestionAssessmentInfo from '../../database/models/course-question-assessment-info';
 import schedulerHelper from '../../utilities/scheduler-helper';
 import configurations from '../../configurations';
@@ -53,10 +54,17 @@ import StudentGradeInstanceProblemAttachment from '../../database/models/student
 import StudentWorkbookProblemAttachment from '../../database/models/student-workbook-problem-attachment';
 import emailHelper from '../../utilities/email-helper';
 import * as utilities from '../../utilities/utilities';
+import { findFiles, FindFilesDefFileResult, FindFilesPGFileResult, FindFilesImageFileResult, BucketDefFileResult } from '../../utilities/webwork-utilities/importer';
+import * as nodePath from 'path';
+import * as tar from 'tar';
+import * as fs from 'fs';
+import { getAverageGroupsBeforeDate, QUESTION_SQL_NAME, STUDENTTOPICOVERRIDE_SQL_NAME, TOPIC_SQL_NAME } from './statistics-helper';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
+
+const ABSOLUTE_RENDERER_PATH_REGEX = /^(:?private\/|Contrib\/|webwork-open-problem-library\/|Library\/)/;
 
 class CourseController {
     getCourseById(id: number): Promise<Course> {
@@ -296,6 +304,10 @@ class CourseController {
             where[`$enrolledStudents.${StudentEnrollment.rawAttributes.userId.field}$`] = options.filter.enrolledUserId;
         }
 
+        if (!_.has(where, 'active')) {
+            where.active = true;
+        }
+
         return Course.findAll({
             where,
             include,
@@ -410,7 +422,7 @@ class CourseController {
         return courseRepository.createUnit(courseUnitContent);
     }
 
-    async createTopic(courseTopicContent: CourseTopicContent): Promise<CourseTopicContent> {
+    async createTopic(courseTopicContent: Partial<CourseTopicContent>): Promise<CourseTopicContent> {
         if (_.isNil(courseTopicContent.startDate) || _.isNil(courseTopicContent.endDate) || _.isNil(courseTopicContent.deadDate)) {
             if (_.isNil(courseTopicContent.courseUnitContentId)) {
                 throw new Error('Cannot assume start, end or dead date if a unit is not supplied');
@@ -1098,32 +1110,186 @@ class CourseController {
         return courseRepository.createQuestion(question);
     }
 
-    async createQuestionsForTopicFromDefFileContent(options: CreateQuestionsForTopicFromDefFileContentOptions): Promise<CourseWWTopicQuestion[]> {
-        const parsedWebworkDef = new WebWorkDef(options.webworkDefFileContent);
+    getAdditionalPathsFromBuckets = ({
+        defFileDiscoveryResult: {
+            defFileResult,
+            bucketDefFiles
+        },
+        pgFilePath,
+        result = []
+    }: {
+        defFileDiscoveryResult: {
+            defFileResult: FindFilesDefFileResult;
+            bucketDefFiles: { [key: string]: BucketDefFileResult };
+        };
+        pgFilePath: string;
+        result?: Array<string>;
+    }): Array<string> => {
+        const bucketDefFileMap = bucketDefFiles[pgFilePath];
+        const subDefFileResult = defFileResult.bucketDefFiles[bucketDefFileMap.bucketDefFile];
+        Object.values(subDefFileResult.pgFiles).forEach(pgFileResult => {
+            // Buckets of buckets
+            if(pgFileResult.pgFilePathFromDefFile.startsWith('group:')) {
+                // Recursion!
+                this.getAdditionalPathsFromBuckets({
+                    defFileDiscoveryResult: {
+                        defFileResult: subDefFileResult,
+                        bucketDefFiles: bucketDefFiles
+                    },
+                    pgFilePath: pgFileResult.pgFilePathFromDefFile,
+                    result: result
+                });
+            } else {
+                if (_.isNil(pgFileResult.resolvedRendererPath)) {
+                    throw new RederlyError(`${pgFileResult.pgFilePathFromDefFile} was not resolved (check if on disk or check renderer)`);
+                } else {
+                    result.push(pgFileResult.resolvedRendererPath);
+                }
+            }
+        });
+
+        return result;
+    };
+
+    async getEnrolledUserIdsInCourse({ courseId }: { courseId: number }): Promise<Array<number>> {
+        const course = await Course.findOne({
+            where: {
+                id: courseId
+            },
+            attributes: [],
+            include: [{
+                model: StudentEnrollment,
+                as: 'enrolledStudents',
+                attributes: ['userId'],
+            }]
+        });
+
+        if (_.isNil(course)) {
+            throw new RederlyError('getEnrolledUserIdsInCourse: Invalid course id');
+        }
+        const enrolledStudents = course.enrolledStudents;
+        if (_.isNil(enrolledStudents)) {
+            throw new RederlyError('getEnrolledUserIdsInCourse: course was missing enrolledStudents');
+        }
+        return enrolledStudents.map(enrolledStudent => enrolledStudent.userId);
+    }
+
+    async getEnrolledUserIdsInTopic({ topicId }: { topicId: number }): Promise<Array<number>> {
+        const topics = await CourseTopicContent.findAll({
+            where: {
+                id: topicId
+            },
+            attributes: [],
+            include: [{
+                model: CourseUnitContent,
+                as: 'unit',
+                attributes: ['courseId'],
+                include:[{
+                    model: Course,
+                    as: 'course',
+                    attributes: ['id'],
+                    include: [{
+                        model: StudentEnrollment,
+                        as: 'enrolledStudents',
+                        attributes: ['userId'],
+                    }]
+                }]
+            }]
+        });
+
+        if (topics.length === 0) {
+            throw new RederlyError('getEnrolledUserIdsInTopic: fetch for topics had 0 results');
+        }
+        if (topics.length > 1) {
+            logger.warn('getEnrolledUserIdsInTopic fetched more than 1 topic, expected only one');
+        }
+        const unit = topics[0].unit;
+        if (_.isNil(unit)) {
+            throw new RederlyError('getEnrolledUserIdsInTopic: topic was missing unit');
+        }
+        const course = unit.course;
+        if (_.isNil(course)) {
+            throw new RederlyError('getEnrolledUserIdsInTopic: course is missing from the unit');
+        }
+        const enrolledStudents = course.enrolledStudents;
+        if (_.isNil(enrolledStudents)) {
+            throw new RederlyError('getEnrolledUserIdsInTopic: course was missing enrolledStudents');
+        }
+        return enrolledStudents.map(enrolledStudent => enrolledStudent.userId);
+    }
+    
+    async createQuestionsForTopicFromDefFileContent(options: CreateQuestionsForTopicFromDefFileContentOptions | CreateQuestionsForTopicFromParsedDefFileOptions): Promise<CourseWWTopicQuestion[]> {
+        const hasParsed = (options: CreateQuestionsForTopicFromDefFileContentOptions | CreateQuestionsForTopicFromParsedDefFileOptions): options is CreateQuestionsForTopicFromParsedDefFileOptions => options.hasOwnProperty(nameof<CreateQuestionsForTopicFromParsedDefFileOptions>('parsedWebworkDef'));
+
+        const parsedWebworkDef: WebWorkDef = hasParsed(options) ? options.parsedWebworkDef : new WebWorkDef(options.webworkDefFileContent);
         let lastProblemNumber = await courseRepository.getLatestProblemNumberForTopic(options.courseTopicId) || 0;
         // TODO fix typings - remove any
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return useDatabaseTransaction<any>((): Promise<any> => {
+        return useDatabaseTransaction<any>(async (): Promise<any> => {
+            const userIds = options.userIds ?? await this.getEnrolledUserIdsInTopic({
+                topicId: options.courseTopicId
+            });
+
             return parsedWebworkDef.problems.asyncForEach(async (problem: Problem) => {
-                return this.addQuestion({
-                    // active: true,
-                    courseTopicContentId: options.courseTopicId,
-                    problemNumber: ++lastProblemNumber,
-                    webworkQuestionPath: problem.source_file,
-                    weight: parseInt(problem.value ?? '1'),
-                    maxAttempts: parseInt(problem.max_attempts ?? '-1'),
-                    hidden: false,
-                    optional: false
-                });
+                const pgFilePath = options.defFileDiscoveryResult?.defFileResult.pgFiles[problem.source_file ?? '']?.resolvedRendererPath ?? problem.source_file;
+                if (pgFilePath?.startsWith('group:')) {
+                    if(_.isNil(options.defFileDiscoveryResult)) {
+                        throw new IllegalArgumentException('Cannot import buckets without archive import');
+                    } else if (!parsedWebworkDef.isExam()) {
+                        throw new IllegalArgumentException('Can only import buckets / group for exams');
+                    }
+                    const result = this.getAdditionalPathsFromBuckets({
+                        defFileDiscoveryResult: options.defFileDiscoveryResult,
+                        pgFilePath: pgFilePath,
+                    });
+                    const problemPath = result.shift();
+                    const question = await this.addQuestion({
+                        question: {
+                            // active: true,
+                            courseTopicContentId: options.courseTopicId,
+                            problemNumber: ++lastProblemNumber,
+                            webworkQuestionPath: problemPath,
+                            weight: parseInt(problem.value ?? '1'),
+                            maxAttempts: parseInt(problem.max_attempts ?? '-1'),
+                            hidden: false,
+                            optional: false
+                        },
+                        userIds: userIds
+                    });
+
+                    await CourseQuestionAssessmentInfo.create({
+                        additionalProblemPaths: result,
+                        courseWWTopicQuestionId: question.id,
+                        randomSeedSet: []
+                    });
+
+
+                    return question;
+                } else {
+                    return this.addQuestion({
+                        question: {
+                            // active: true,
+                            courseTopicContentId: options.courseTopicId,
+                            problemNumber: ++lastProblemNumber,
+                            webworkQuestionPath: pgFilePath,
+                            weight: parseInt(problem.value ?? '1'),
+                            maxAttempts: parseInt(problem.max_attempts ?? '-1'),
+                            hidden: false,
+                            optional: false
+                        },
+                        userIds: userIds
+                    });
+                }
             });
         });
     }
 
-    async addQuestion(question: Partial<CourseWWTopicQuestion>): Promise<CourseWWTopicQuestion> {
+    async addQuestion(options: AddQuestionOptions): Promise<CourseWWTopicQuestion> {
         return await useDatabaseTransaction(async () => {
-            const result = await this.createQuestion(question);
+            const result = await this.createQuestion(options.question);
             await this.createGradesForQuestion({
-                questionId: result.id
+                questionId: result.id,
+                userIds: options.userIds
             });
             return result;
         });
@@ -1775,7 +1941,7 @@ class CourseController {
                     }
 
                     if(_.isNil(question) || _.isNil(topic)) {
-                        throw new Error('This cannot be undefined, strict is confused because of transaction callback');
+                        throw new RederlyError('TSNH: This cannot be undefined, strict is confused because of transaction callback');
                     }
 
                     await this.gradeSubmission({
@@ -2194,7 +2360,17 @@ class CourseController {
                     active: true
                 },
                 include: unitInclude || [],
-            }];
+            },
+            {
+                model: StudentTopicOverride,
+                as: 'studentTopicOverride',
+                attributes: [],
+                required: false,
+                where: {
+                    active: true
+                }
+            }
+        ];
         }
 
         let questionInclude;
@@ -2236,12 +2412,87 @@ class CourseController {
                 END
             `);
 
-            attributes = [
-                [averageScoreAttribute, 'average'],
-                [sequelize.literal(pendingProblemCountCalculationString), 'pendingProblemCount'],
-                [sequelize.literal(masteredProblemCountCalculationString), 'masteredProblemCount'],
-                [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
-            ];
+            const pointsEarnedSystem = `SUM(${StudentGrade.rawAttributes.partialCreditBestScore.field} * "question".${CourseWWTopicQuestion.rawAttributes.weight.field})`;
+            const pointsAvailableSystem = `SUM(CASE WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE THEN "question".${CourseWWTopicQuestion.rawAttributes.weight.field} ELSE 0 END)`;
+            const systemScoreAttribute = sequelize.literal(`
+                CASE WHEN ${pointsAvailableSystem} = 0 THEN
+                    NULL
+                ELSE
+                    ${pointsEarnedSystem} / ${pointsAvailableSystem}
+                END
+            `);
+
+            // If the topicId isn't present (and implicitly, the questionId as well),
+            // include average grades for open-topics only and dead-topics only.
+            if (_.isNil(topicId)) {
+                // Calculate the OPEN grades only
+                const pointsEarnedOpen = `SUM(
+                    CASE
+                        WHEN ("question->topic".${CourseTopicContent.rawAttributes.startDate.field} < NOW()
+                            OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.startDate.field} < NOW())
+                        THEN ${StudentGrade.rawAttributes.effectiveScore.field} * "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
+                        ELSE 0
+                    END)`;
+                const pointsAvailableOpen = `SUM(
+                    CASE
+                        WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
+                            AND
+                                ("question->topic".${CourseTopicContent.rawAttributes.startDate.field} < NOW()
+                                OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.startDate.field} < NOW())
+                        THEN "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
+                        ELSE 0
+                    END)`;
+                const averageScoreAttributeOpen = sequelize.literal(`
+                    CASE WHEN ${pointsAvailableOpen} = 0 THEN
+                        NULL
+                    ELSE
+                        ${pointsEarnedOpen} / ${pointsAvailableOpen}
+                    END
+                `);
+
+                // Calculate the DEAD grades only
+                const pointsEarnedDead = `SUM(
+                    CASE
+                        WHEN ("question->topic".${CourseTopicContent.rawAttributes.deadDate.field} < NOW()
+                            OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.deadDate.field} < NOW())
+                        THEN ${StudentGrade.rawAttributes.effectiveScore.field} * "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
+                        ELSE 0
+                    END)`;
+                const pointsAvailableDead = `SUM(
+                    CASE
+                        WHEN "question".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
+                            AND
+                                ("question->topic".${CourseTopicContent.rawAttributes.deadDate.field} < NOW()
+                                OR "question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.deadDate.field} < NOW())
+                        THEN "question".${CourseWWTopicQuestion.rawAttributes.weight.field}
+                        ELSE 0
+                    END)`;
+                const averageScoreAttributeDead = sequelize.literal(`
+                    CASE WHEN ${pointsAvailableDead} = 0 THEN
+                        NULL
+                    ELSE
+                        ${pointsEarnedDead} / ${pointsAvailableDead}
+                    END
+                `);
+
+                attributes = [
+                    [averageScoreAttribute, 'average'],
+                    [averageScoreAttributeOpen, 'openAverage'],
+                    [averageScoreAttributeDead, 'deadAverage'],
+                    [sequelize.literal(pendingProblemCountCalculationString), 'pendingProblemCount'],
+                    [sequelize.literal(masteredProblemCountCalculationString), 'masteredProblemCount'],
+                    [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
+                ];
+            } else {
+                attributes = [
+                    [averageScoreAttribute, 'average'],
+                    [systemScoreAttribute, 'systemScore'],
+                    [sequelize.literal(pendingProblemCountCalculationString), 'pendingProblemCount'],
+                    [sequelize.literal(masteredProblemCountCalculationString), 'masteredProblemCount'],
+                    [sequelize.literal(inProgressProblemCountCalculationString), 'inProgressProblemCount'],
+                ];
+            }
+            
             // TODO This group needs to match the alias below, I'd like to find a better way to do this
             group = [`user.${User.rawAttributes.id.field}`,
                 `user.${User.rawAttributes.firstName.field}`,
@@ -2347,18 +2598,13 @@ class CourseController {
         }).omitBy(_.isNil).value() as sequelize.WhereOptions;
 
         let averageScoreAttribute;
+        // This is averageScoreAttribute, with points earned/available if applicable.
+        let averageScoreGroup: Array<sequelize.ProjectionAlias>;
         if (followQuestionRules) {
-            const pointsEarned = `SUM("topics->questions->grades".${StudentGrade.rawAttributes.effectiveScore.field} * "topics->questions".${CourseWWTopicQuestion.rawAttributes.weight.field})`;
-            const pointsAvailable = `SUM(CASE WHEN "topics->questions".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE THEN "topics->questions".${CourseWWTopicQuestion.rawAttributes.weight.field} ELSE 0 END)`;
-            averageScoreAttribute = sequelize.literal(`
-                CASE WHEN ${pointsAvailable} = 0 THEN
-                    NULL
-                ELSE
-                    ${pointsEarned} / ${pointsAvailable}
-                END
-            `);
+            averageScoreGroup = getAverageGroupsBeforeDate('all', TOPIC_SQL_NAME.INCLUDED_AS_TOPICS, QUESTION_SQL_NAME.CHILDREN_OF_INCLUDED_TOPICS, STUDENTTOPICOVERRIDE_SQL_NAME.NOT_INCLUDED);
         } else {
             averageScoreAttribute = sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
+            averageScoreGroup = [[averageScoreAttribute, 'averageScore']];
         }
 
         // const completionPercentAttribute = sequelize.literal(`
@@ -2373,6 +2619,10 @@ class CourseController {
         // END`);
         const completionPercentAttribute = sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
 
+        const closedAndOpenedGroups = followQuestionRules ? [
+            ...getAverageGroupsBeforeDate('startDate', TOPIC_SQL_NAME.INCLUDED_AS_TOPICS, QUESTION_SQL_NAME.CHILDREN_OF_INCLUDED_TOPICS, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_INCLUDED_TOPICS),
+            ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.INCLUDED_AS_TOPICS, QUESTION_SQL_NAME.CHILDREN_OF_INCLUDED_TOPICS, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_INCLUDED_TOPICS),
+        ] : [];
 
         return CourseUnitContent.findAll({
             where,
@@ -2380,7 +2630,8 @@ class CourseController {
                 'id',
                 'name',
                 [sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
-                [averageScoreAttribute, 'averageScore'],
+                ...averageScoreGroup,
+                ...closedAndOpenedGroups,
                 [sequelize.fn('count', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
                 [sequelize.fn('avg', sequelize.col(`topics.questions.grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'],
                 [sequelize.literal(`count(CASE WHEN "topics->questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN "topics->questions->grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
@@ -2409,7 +2660,14 @@ class CourseController {
                             active: true,
                         }
                     }]
-                }]
+                },
+                {
+                    model: StudentTopicOverride,
+                    as: 'studentTopicOverride',
+                    attributes: [],
+                    required: false,
+                }
+            ]
             }],
             group: [`${CourseUnitContent.name}.${CourseUnitContent.rawAttributes.id.field}`, `${CourseUnitContent.name}.${CourseUnitContent.rawAttributes.id.field}`],
             order: [
@@ -2435,23 +2693,31 @@ class CourseController {
             [`$questions.grades.${StudentGrade.rawAttributes.userId.field}$`]: userId,
         }).omitBy(_.isNil).value() as sequelize.WhereOptions;
 
-        const include: sequelize.IncludeOptions[] = [{
-            model: CourseWWTopicQuestion,
-            as: 'questions',
-            attributes: [],
-            where: {
-                active: true,
-                hidden: false
-            },
-            include: [{
-                model: StudentGrade,
-                as: 'grades',
+        const include: sequelize.IncludeOptions[] = [
+            {
+                model: CourseWWTopicQuestion,
+                as: 'questions',
                 attributes: [],
                 where: {
-                    active: true
-                }
-            }]
-        }];
+                    active: true,
+                    hidden: false
+                },
+                include: [{
+                    model: StudentGrade,
+                    as: 'grades',
+                    attributes: [],
+                    where: {
+                        active: true
+                    }
+                }]
+            },
+            {
+                model: StudentTopicOverride,
+                as: 'studentTopicOverride',
+                attributes: [],
+                required: false,
+            }
+        ];
 
         if (!_.isNil(courseId)) {
             include.push({
@@ -2465,18 +2731,16 @@ class CourseController {
         }
 
         let averageScoreAttribute;
+        // This is averageScoreAttribute, with points earned/available if applicable.
+        let averageScoreGroup: Array<sequelize.ProjectionAlias>;
+
         if (followQuestionRules) {
-            const pointsEarned = `SUM("questions->grades".${StudentGrade.rawAttributes.effectiveScore.field} * "questions".${CourseWWTopicQuestion.rawAttributes.weight.field})`;
-            const pointsAvailable = `SUM(CASE WHEN "questions".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE THEN "questions".${CourseWWTopicQuestion.rawAttributes.weight.field} ELSE 0 END)`;
-            averageScoreAttribute = sequelize.literal(`
-                CASE WHEN ${pointsAvailable} = 0 THEN
-                    NULL
-                ELSE
-                    ${pointsEarned} / ${pointsAvailable}
-                END
-            `);
+            averageScoreGroup = getAverageGroupsBeforeDate('all', TOPIC_SQL_NAME.ROOT_OF_QUERY, QUESTION_SQL_NAME.INCLUDED_AS_QUESTIONS, STUDENTTOPICOVERRIDE_SQL_NAME.NOT_INCLUDED);
         } else {
             averageScoreAttribute = sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
+            averageScoreGroup = [
+                [averageScoreAttribute, 'averageScore']
+            ];
         }
 
         // const completionPercentAttribute = sequelize.literal(`
@@ -2491,13 +2755,19 @@ class CourseController {
         // END`);
         const completionPercentAttribute = sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
 
+        const closedAndOpenedGroups = followQuestionRules ? [
+            ...getAverageGroupsBeforeDate('startDate', TOPIC_SQL_NAME.ROOT_OF_QUERY, QUESTION_SQL_NAME.INCLUDED_AS_QUESTIONS, STUDENTTOPICOVERRIDE_SQL_NAME.INCLUDED_AS_STUDENTTOPICOVERRIDE),
+            ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.ROOT_OF_QUERY, QUESTION_SQL_NAME.INCLUDED_AS_QUESTIONS, STUDENTTOPICOVERRIDE_SQL_NAME.INCLUDED_AS_STUDENTTOPICOVERRIDE),
+        ] : [];
+
         return CourseTopicContent.findAll({
             where,
             attributes: [
                 'id',
                 'name',
                 [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
-                [averageScoreAttribute, 'averageScore'],
+                ...averageScoreGroup,
+                ...closedAndOpenedGroups,
                 [sequelize.fn('count', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
                 [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'],
                 [sequelize.literal(`count(CASE WHEN "questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN "questions->grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
@@ -2553,6 +2823,12 @@ class CourseController {
                     where: {
                         active: true
                     }
+                },
+                {
+                    model: StudentTopicOverride,
+                    as: 'studentTopicOverride',
+                    attributes: [],
+                    required: false,
                 }]
             });
         }
@@ -2581,13 +2857,22 @@ class CourseController {
         // END`);
         const completionPercentAttribute = sequelize.fn('avg', sequelize.col(`grades.${StudentGrade.rawAttributes.overallBestScore.field}`));
 
+        const closedAndOpenedGroups = followQuestionRules ? [
+            // ...getAverageGroupsBeforeDate('all', TOPIC_SQL_NAME.INCLUDED_AS_SINGLE_TOPIC, QUESTION_SQL_NAME.ROOT_OF_QUERY, STUDENTTOPICOVERRIDE_SQL_NAME.NOT_INCLUDED),
+            ...getAverageGroupsBeforeDate('startDate', TOPIC_SQL_NAME.INCLUDED_AS_SINGLE_TOPIC, QUESTION_SQL_NAME.ROOT_OF_QUERY, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_SINGLE_INC_TOPIC),
+            ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.INCLUDED_AS_SINGLE_TOPIC, QUESTION_SQL_NAME.ROOT_OF_QUERY, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_SINGLE_INC_TOPIC),
+        ] : [];
+
         return CourseWWTopicQuestion.findAll({
             where,
             attributes: [
                 'id',
                 [sequelize.literal(`'Problem ' || "${CourseWWTopicQuestion.name}".${CourseWWTopicQuestion.rawAttributes.problemNumber.field}`), 'name'],
                 [sequelize.fn('avg', sequelize.col(`grades.${StudentGrade.rawAttributes.numAttempts.field}`)), 'averageAttemptedCount'],
+                // [pointsEarned, 'pointsEarned'],
+                // [pointsAvailable, 'pointsAvailable'],
                 [sequelize.fn('avg', scoreField), 'averageScore'],
+                ...closedAndOpenedGroups,
                 [sequelize.fn('avg', sequelize.col(`grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'],
                 [sequelize.fn('count', sequelize.col(`grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
                 [sequelize.literal(`count(CASE WHEN "grades".${StudentGrade.rawAttributes.bestScore.field} >= 1 THEN "grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
@@ -2851,7 +3136,7 @@ class CourseController {
                                 required: true,
                                 as: 'questions',
                                 attributes: [],
-                                // This where is ok here because we just don't want results to propogate past this point
+                                // This where is ok here because we just don't want results to propagate past this point
                                 where: {
                                     id: questionId
                                 },
@@ -2899,16 +3184,20 @@ class CourseController {
     async createGradesForQuestion(options: CreateGradesForQuestionOptions): Promise<number> {
         return useDatabaseTransaction(async (): Promise<number> => {
             const { questionId } = options;
-            const results = await this.getUsersThatRequireGradeForQuestion({
-                questionId
-            });
-            await results.asyncForEach(async (result) => {
+            let userIds: Array<number> | undefined = options.userIds;
+            if (_.isNil(userIds)) {
+                const results = await this.getUsersThatRequireGradeForQuestion({
+                    questionId
+                });
+                userIds = results.map(result => result.userId);    
+            }
+            await userIds.asyncForEach(async (userId: number) => {
                 await this.createNewStudentGrade({
                     courseTopicQuestionId: questionId,
-                    userId: result.userId
+                    userId: userId
                 });
             });
-            return results.length;
+            return userIds.length;
         });
     }
 
@@ -3491,7 +3780,7 @@ class CourseController {
                 } else {
                     problemScoresReturn = {total: problemScores.total};
                 }
-            }            
+            }
 
             return { problemScores: problemScoresReturn, bestVersionScore: bestVersionScoreReturn, bestOverallVersion: bestOverallVersionReturn};
         });
@@ -3806,11 +4095,15 @@ Here is the message that was sent:
 
 ${options.content}
 
-You should be able to reply to the student's email address (${options.student.email}) by replying to this message.
+You can contact your student at ${options.student.email} or by replying to this email.
 `;
 
         return emailHelper.sendEmail({
-            content: poorMansTemplate,
+            template: 'generic',
+            locals: {
+                SUBJECT_TEXT: `${options.student.firstName} - Topic ${topic.id} - Question ${options.question.id}`,
+                BODY_TEXT: poorMansTemplate,
+            },
             email: course.instructor.email,
             subject: `${options.student.firstName} - Topic ${topic.id} - Question ${options.question.id}`,
             replyTo: options.student.email,
@@ -3898,7 +4191,7 @@ You should be able to reply to the student's email address (${options.student.em
                                 {
                                     model: ProblemAttachment,
                                     as: 'problemAttachments',
-                                    attributes: ['id', 'cloudFilename', 'userLocalFilename'],
+                                    attributes: ['id', 'cloudFilename', 'userLocalFilename', 'updatedAt'],
                                     where: {
                                         active: true,
                                     }
@@ -3915,6 +4208,335 @@ You should be able to reply to the student's email address (${options.student.em
 
         const baseUrl = configurations.attachments.baseUrl;
         return {user: user, topic: data, baseUrl};
+    }
+
+    async importCourseTarball ({ filePath, fileName, courseId, user }: ImportTarballOptions): Promise<ImportCourseTarballResult> {
+        // TODO remove
+        const startTime = new Date().getTime();
+        logger.info(`Import Course Archive start ${new Date()}`);
+        const workingDirectoryName = stripTarGZExtension(nodePath.basename(fileName));
+        if (_.isNull(workingDirectoryName)) {
+            throw new IllegalArgumentException('File must be a `.tar.gz` or a `.tgz` file!');
+        }
+        const workingDirectory = `${nodePath.dirname(filePath)}/${workingDirectoryName}`;
+        await fs.promises.mkdir(workingDirectory);
+        try {
+            await tar.x({
+                file: filePath,
+                cwd: workingDirectory
+            });
+        } catch (e) {
+            if (e.code === 'TAR_BAD_ARCHIVE') {
+                throw new IllegalArgumentException('The archive you have uploaded is corrupted and could not be extracted');
+            }
+            throw new WrappedError('Could not upload tar file', e);
+        }
+
+        // TODO remove
+        logger.info(`Import Course Archive extracted, discovering files now ${new Date().getTime() - startTime} ${new Date()}`);
+        const discoveredFiles = await findFiles({ filePath: workingDirectory });
+
+        // TODO remove
+        logger.info(`Import Course Archive discovered files, fetching course ${new Date().getTime() - startTime} ${new Date()}`);
+
+        const course = await courseRepository.getCourse({
+            id: courseId
+        });
+
+        let rendererSavePGFileRequests = 0;
+        let rendererSaveAssetRequests = 0;
+        let rendererAccessibleRequests = 0;
+        const missingPGFileErrors: Array<string> = [];
+        const missingAssetFileErrors: Array<string> = [];
+        const missingFileErrorCheck = (): string => {
+            const errorLength = missingAssetFileErrors.length + missingPGFileErrors.length;
+            let errorMessage = '';
+            if (!_.isEmpty(missingPGFileErrors)) {
+                errorMessage += `Could not find the following pg files in the archive or in the OPL: ${missingPGFileErrors.join(', ')}.\n`;
+            }
+
+            if (!_.isEmpty(missingAssetFileErrors)) {
+                errorMessage += `Could not find the following image files in the archive: ${missingAssetFileErrors.join(', ')}.\n`;
+            }
+
+            if (errorLength >= configurations.importer.missingFileThreshold) {
+                if (errorLength === configurations.importer.missingFileThreshold) {
+                    logger.error(errorMessage);
+                }
+                throw new IllegalArgumentException(errorMessage, {
+                    missingAssetFileErrors,
+                    missingPGFileErrors
+                });
+            }
+            return errorMessage;
+        };
+        const saveAndResolveProblems = async (defFiles: { [key: string]: FindFilesDefFileResult }): Promise<void> => {
+            await Object.values(defFiles).asyncForEach(async (defFile: FindFilesDefFileResult) => {
+                await  Object.values(defFile.pgFiles).asyncForEach(async (pgFile: FindFilesPGFileResult) => {
+                    if (pgFile.pgFileExists) {
+                        // If the path does not start with the usual starting points
+                        // and it is not a local file
+                        // then check if it is already in the renderer
+                        if (ABSOLUTE_RENDERER_PATH_REGEX.test(pgFile.pgFilePathFromDefFile) === false && pgFile.pgFilePathFromDefFile.startsWith('local') === false) {
+                            const tryPath = `Contrib/${pgFile.pgFilePathFromDefFile}`;
+                            rendererAccessibleRequests++;
+                            const isAccessible = await rendererHelper.isPathAccessibleToRenderer({
+                                problemPath: tryPath
+                            });
+
+                            if (isAccessible) {
+                                // It's a secret to everyone #ZeldaReference
+                                // Potentially if someone had a sym link to private files with a university name
+                                // and named their file to match contrib - but the file was different
+                                // and used the script that follows sym links
+                                // That would result in the fetching of the wrong problem
+                                // TSNH
+                                pgFile.resolvedRendererPath = tryPath;
+                                return;
+                            }
+                            // /^local/ should always be true at this point (doesn't have to be but generally)
+                        }
+
+                        // At this point the file is not on the renderer
+                        const fileDir = `private/my/${user.uuid}/${course.name.replace(/\s/g, '_')}/${defFile.topicName}`;
+                        const savedPath = `${fileDir}/${pgFile.pgFileName}`;
+                        const pgFileContent = await fs.promises.readFile(pgFile.pgFilePathOnDisk);
+                        rendererSavePGFileRequests++;
+                        await rendererHelper.saveProblemSource({
+                            problemSource: pgFileContent.toString(),
+                            writeFilePath: savedPath
+                        });    
+                        pgFile.resolvedRendererPath = savedPath;
+                        await  Object.values(pgFile.assetFiles.imageFiles).asyncForEach(async (imageFile: FindFilesImageFileResult) => {
+                            if (imageFile.imageFileExists) {
+                                const savedPath = `${fileDir}/${imageFile.imageFileName}`;
+                                rendererSaveAssetRequests++;
+                                await rendererHelper.uploadAsset({
+                                    filePath: imageFile.imageFilePath,
+                                    rendererPath: savedPath
+                                });
+                                imageFile.resolvedRendererPath = savedPath;    
+                            } else {
+                                missingAssetFileErrors.push(`"${imageFile.imageFilePathFromPgFile}" from "${pgFile.pgFilePathFromDefFile}" from "${defFile.defFileRelativePath}"`);
+                                // This method throws an error, therefore it doesn't need to return
+                                missingFileErrorCheck();
+                            }
+                        });
+                    } else {
+                        const resolvedPath = ABSOLUTE_RENDERER_PATH_REGEX.test(pgFile.pgFilePathFromDefFile) ? pgFile.pgFilePathFromDefFile : `Contrib/${pgFile.pgFilePathFromDefFile}`;
+                        // It is not accessible if it was not found on disk
+                        // or it was not found by the renderer
+                        const notLocalFile = pgFile.pgFilePathFromDefFile.startsWith('local') === false;
+                        notLocalFile && rendererAccessibleRequests++;
+                        const isAccessible = notLocalFile && await rendererHelper.isPathAccessibleToRenderer({
+                            problemPath: resolvedPath
+                        });
+                        if (!isAccessible) {
+                            missingPGFileErrors.push(`"${pgFile.pgFilePathFromDefFile}" from "${defFile.defFileRelativePath}"`);
+                            // This method throws an error, therefore it doesn't need to return
+                            missingFileErrorCheck();
+                        } else {
+                            pgFile.resolvedRendererPath = resolvedPath;
+                        }
+                    }
+                });
+                await saveAndResolveProblems(defFile.bucketDefFiles);
+            });
+        };
+        // TODO remove
+        logger.info(`Import Course Archive fetched course, Sending to renderer ${new Date().getTime() - startTime} ${new Date()}`);
+        await saveAndResolveProblems(discoveredFiles.defFiles);
+        // TODO remove
+        logger.info(`Import Course Archive sent to renderer, Sending information to the database ${new Date().getTime() - startTime} ${new Date()}`);
+
+        const topics: Array<CourseTopicContent> = [];
+        const unit: CourseUnitContent = await useDatabaseTransaction(async (): Promise<CourseUnitContent> => {
+            const unitName = `${workingDirectoryName} Course Archive Import`;
+            // Fore dev it's nice to have a timestamp to avoid conflicts
+            // const unitName = `${workingDirectoryName} Course Archive Import ${new Date().getTime()}`;
+            const unit = await this.createUnit({
+                courseId: courseId,
+                name: unitName
+            });
+
+            // Can't use async for each because these can't be done in parallel
+            // get next content order needs to wait for the previous one to finish
+            for (const key in discoveredFiles.defFiles) {
+                const defFile = discoveredFiles.defFiles[key];
+                const parsedWebworkDef = new WebWorkDef((await fs.promises.readFile(defFile.defFileAbsolutePath)).toString());
+                const topic = await this.createTopic({
+                    name: defFile.topicName,
+                    startDate: course.end,
+                    endDate: course.end,
+                    deadDate: course.end,
+                    courseUnitContentId: unit.id,
+                    // TODO use enum
+                    topicTypeId: parsedWebworkDef.isExam() ? 2 : 1,
+                });
+
+                if (parsedWebworkDef.isExam()) {
+                    let possibleIntervals = 1;
+                    let timeInterval: number | undefined = undefined;
+                    if (!_.isNil(parsedWebworkDef.timeInterval)) {
+                        timeInterval = parseInt(parsedWebworkDef.timeInterval, 10);
+
+                        if (_.isNaN(timeInterval)) {
+                            throw new IllegalArgumentException(`The def file: ${defFile.defFileRelativePath} has an invalid time interval: ${parsedWebworkDef.timeInterval}.`);
+                        }
+
+                        timeInterval /= 60;
+
+                        if (timeInterval > 0) {
+                            if (_.isNil(parsedWebworkDef.openDate) || _.isNil(parsedWebworkDef.dueDate)) {
+                                throw new IllegalArgumentException(`The def file: ${defFile.defFileRelativePath} is missing the open or due date.`);
+                            }
+                            // The format from webwork has a timezone (i.e. EDT, EST)
+                            // However moment didn't have a nice way to format with the timezone
+                            // This should not be a problem unless the start and end date are in different timezones (daylight savings)
+                            const webworkDateFormat = 'MM/DD/YYYY [at] HH:mma';
+                            const examDuration = moment(parsedWebworkDef.dueDate, webworkDateFormat).diff(moment(parsedWebworkDef.openDate, webworkDateFormat));
+                            // / 60000 to convert to minutes
+                            possibleIntervals = examDuration / 60000 / timeInterval;
+                        }
+                    }
+                    const topicAssessmentInfo: Partial<TopicAssessmentInfoInterface> = _.omitBy({
+                        // id,
+                        courseTopicContentId: topic.id,
+                        duration: parsedWebworkDef.versionTimeLimit ? (parseInt(parsedWebworkDef.versionTimeLimit, 10) / 60) : undefined,
+                        hardCutoff: WebWorkDef.characterBoolean(parsedWebworkDef.capTimeLimit),
+                        hideHints: undefined,
+                        hideProblemsAfterFinish: WebWorkDef.characterBoolean(parsedWebworkDef.hideWork),
+                        maxGradedAttemptsPerVersion: parsedWebworkDef.attemptsPerVersion ? parseInt(parsedWebworkDef.attemptsPerVersion, 10) : undefined,
+                        maxVersions: parsedWebworkDef.versionsPerInterval ? (parseInt(parsedWebworkDef.versionsPerInterval, 10) * possibleIntervals) : undefined,
+                        randomizeOrder: WebWorkDef.numberBoolean(parsedWebworkDef.problemRandOrder),
+                        showItemizedResults: !WebWorkDef.characterBoolean(parsedWebworkDef.hideScoreByProblem),
+                        showTotalGradeImmediately: !WebWorkDef.characterBoolean(parsedWebworkDef.hideScore),
+                        versionDelay: timeInterval
+                    }, _.isUndefined);
+                    try {
+                        await TopicAssessmentInfo.create(topicAssessmentInfo);
+                    } catch (e) {
+                        throw new WrappedError(`Failed to create topic assessment info for ${defFile.defFileRelativePath}`, e);
+                    }
+                }
+                
+                try {
+                    const userIds = await this.getEnrolledUserIdsInCourse({
+                        courseId: courseId
+                    });
+                    await this.createQuestionsForTopicFromDefFileContent({
+                        parsedWebworkDef: parsedWebworkDef,
+                        courseTopicId: topic.id,
+                        defFileDiscoveryResult: {
+                            defFileResult: defFile,
+                            bucketDefFiles: discoveredFiles.bucketDefFiles
+                        },
+                        userIds: userIds
+                    });
+                } catch (e) {
+                    throw new WrappedError(`Failed to add questions to topic for ${defFile.defFileRelativePath}`, e);
+                }
+
+                topics.push(topic);
+            }
+
+            const errorMessage = missingFileErrorCheck();
+            // TODO remove once we track warnings in the application
+            if(!_.isEmpty(errorMessage)) {
+                logger.warn(`importCourseArchive succeeded with warnings: ${errorMessage}`);
+                emailHelper.sendEmail({
+                    template: 'generic',
+                    email: user.email,
+                    locals: {
+                        SUBJECT_TEXT: `${workingDirectoryName} archive import`,
+                        BODY_TEXT: `Hello Professor ${user.lastName},
+
+                        Your course archive upload (${nodePath.basename(fileName)}) was successfully imported into your course (${course.name}), however there were a few files missing:
+                        
+                        ${errorMessage}
+
+                        All the best,
+                        The Rederly Team
+                        `
+                    },
+                })
+                .catch(e => logger.error('importCourseTarball: Could not send professor email with archive warnings', e));
+            }
+            return unit;
+        });
+
+        logger.info(`Import Course Archive complete ${JSON.stringify({
+            rendererSavePGFileRequests,
+            rendererSaveAssetRequests,
+            rendererAccessibleRequests,
+        })} ${new Date().getTime() - startTime} ${new Date()}`);
+
+        return {
+            unit: {
+                // avoid infinite chain
+                ...unit.get({plain: true}),
+                topics: topics
+            },
+            missingFileErrors: {
+                missingPGFileErrors: missingPGFileErrors,
+                missingAssetFileErrors: missingAssetFileErrors,
+            }
+        };
+    }
+
+    async prepareOpenLabRedirect(options: PrepareOpenLabRedirectOptions): Promise<OpenLabRedirectInfo> {
+        const {user, questionId, baseURL} = options;
+        // if question belongs to an exam, they may not proceed
+        // exam questions should not be posted to OpenLab
+        const question = await courseRepository.getQuestion({id: questionId, userId: user.id});
+        const topic = await question.getTopic();
+        if (topic.topicTypeId === 2) {
+            throw new RederlyError('Exam problems cannot be submitted to the OpenLab.');
+        } 
+
+        const grade = await this.getGradeForQuestion({questionId, userId: user.id});
+        if (_.isNil(grade)) {
+            throw new WrappedError('Cannot ask for help on a question that has not been assigned.');
+        }
+        const unit = await topic.getUnit();
+        const course = await unit.getCourse();
+        // TODO: fetch all enrolled users and pull any with permission > student
+        // course.getEnrolled().forEach( email.push if role > student )
+        // support for TAs receiving notifications
+        const instructor = await course.getInstructor();
+        const instructorEmail = `Prof. ${instructor.lastName} <${instructor.email}>`;
+
+        const problem = question.problemNumber;
+        const problemSetId = topic.name;
+        const courseId = course.name;
+        const problemPath = question.webworkQuestionPath;
+        const email = [instructorEmail];
+        const studentName = `${user.firstName} ${user.lastName}`;
+        const emailURL = `${baseURL}/common/courses/${course.id}/topic/${topic.id}/grading?problemId=${question.id}&userId=${user.id}`;
+        const renderResponse = await rendererHelper.getProblem({
+            sourceFilePath: problemPath,
+            problemSeed: grade.randomSeed,
+            outputformat: OutputFormat.STATIC,
+            showHints: false,
+            showSolutions: false,
+            permissionLevel: 0,
+        }) as RendererResponse;
+        const rawHTML = renderResponse.renderedHTML;
+
+        if (_.isNil(rawHTML)) {
+            throw new RederlyError('Someone tried to ask for help on a problem with empty renderedHTML');
+        }
+
+        return {
+            problem,
+            problemSetId,
+            courseId,
+            problemPath,
+            email,
+            studentName,
+            emailURL,
+            rawHTML,
+        };
     }
 }
 

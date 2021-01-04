@@ -3,3 +3,6 @@ ts-built
 .env
 logs
 *.DS_Store
+tmp
+build
+package-outputs

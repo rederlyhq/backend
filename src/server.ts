@@ -19,6 +19,10 @@ import IllegalArgumentException from './exceptions/illegal-argument-exception';
 import ForbiddenError from './exceptions/forbidden-error';
 import * as _ from 'lodash';
 import * as nodeUrl from 'url';
+import { rederlyRequestNamespaceMiddleware } from './middleware/rederly-request-namespace';
+import { RederlyExpressRequest } from './extensions/rederly-express-request';
+import { v4 as uuidv4 } from 'uuid';
+import * as fse from 'fs-extra';
 
 interface ErrorResponse {
     statusCode: number;
@@ -35,6 +39,11 @@ const {
 } = configurations.server.limiter;
 
 const app = express();
+
+app.use((req: RederlyExpressRequest, res: unknown, next: NextFunction) => {
+    req.requestId = uuidv4();
+    next();
+});
 
 app.use(morgan((tokens, req, res) => {
     const responseTime = parseInt(tokens['response-time'](req, res) ?? '', 10);
@@ -138,14 +147,78 @@ app.use((req, res, next) => {
     next();
 });
 
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// The line: app.use(bodyParser.json()); clears the namespace for some reason :shrug:
+app.use(rederlyRequestNamespaceMiddleware);
 
 app.use(passport.initialize());
 
 app.use(basePath, router);
 
+// This is a developer option, it will be logged as a warning if it is on in production
+if (configurations.app.autoDeleteTemp) {
+    const tmpFolderPath = './tmp';
+    const deleteTmpFolder = async (): Promise<void> => {
+        logger.debug('Deleting temp file');
+        try {
+            await fse.promises.access(tmpFolderPath);
+            try {
+                await fse.remove(tmpFolderPath);
+            } catch (rmError) {
+                logger.error(`Removing temp files: could not delete  ${tmpFolderPath}`, rmError);
+            }
+        } catch (accessError) {
+            // This only happens on startup and shutdown
+            logger.debug(`Removing temp files: could not access ${tmpFolderPath} (may not have been created)`, accessError);
+        }
+    };
+    /**
+     * The on exit handler has to be sync otherwise callbacks never get executed
+     */
+    const deleteTmpFolderSync = (): void => {
+        try {
+            logger.debug('Deleting temp file sync');
+            try {
+                fse.accessSync(tmpFolderPath);
+            } catch (e) {
+                logger.debug(`Removing temp files: could not access ${tmpFolderPath} (may not have been created)`, e);
+            }
+
+            try {
+                fse.removeSync(tmpFolderPath);
+            } catch (e) {
+                logger.error(`Removing temp files: could not delete  ${tmpFolderPath}`, e);
+            }
+        } catch (e) {
+            // Everything should be try catched above, adding extra error handling because uncaught error results in the application staying open
+            logger.error('TSNH deleteTmpFolderSync failed', e);
+        }
+    };
+    deleteTmpFolder();
+    process.on('exit', deleteTmpFolderSync);
+    // request temp file cleanup
+    app.use(async (obj: unknown, req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
+        if (!_.isNil(req.requestId)) {
+            const requestTmpPath = `./tmp/${req.requestId}`;
+            try {
+                await fse.promises.access(requestTmpPath);
+                try {
+                    await fse.remove(requestTmpPath);
+                } catch (rmError) {
+                    logger.error(`Removing temp files: could not delete  ${requestTmpPath}`, rmError);
+                }
+            } catch {
+                // This is extremely common so it is a little more verbose then I want to leave in there
+                // logger.debug(`Removing temp files: could not access ${requestTmpPath} (may not have been created)`, accessError);
+            }
+        }
+        next(obj);
+    });
+}
 
 // General Exception Handler
 // next is a required parameter, without having it requests result in a response of object
@@ -155,7 +228,7 @@ app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
     if (obj instanceof AlreadyExistsError || obj instanceof NotFoundError || obj instanceof IllegalArgumentException) {
         next(Boom.badRequest(obj.message, obj.data));
     } else if (obj instanceof ForbiddenError) {
-        next(Boom.forbidden());
+        next(Boom.forbidden(obj.message, obj.data));
     } else {
         next(obj);
     }
@@ -194,10 +267,10 @@ app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
 });
 
 export const listen = (): Promise<null> => {
-    return new Promise((resolve) => {
+    return new Promise<null>((resolve) => {
         app.listen(port, () => {
             logger.info(`Server started up and listening on port: ${port}`);
-            resolve();
+            resolve(null);
         });
     });
 };

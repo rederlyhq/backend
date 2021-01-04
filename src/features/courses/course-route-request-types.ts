@@ -17,6 +17,12 @@ export namespace CreateCourseRequest {
     export type body = Joi.extractType<typeof validations.createCourseValidation.body>;
 };
 
+export namespace PostImportCourseArchiveRequest {
+    export type params = Joi.extractType<typeof validations.postImportCourseArchiveValidation.params>;
+    export type query = Joi.extractType<typeof validations.postImportCourseArchiveValidation.query>;
+    export type body = Joi.extractType<typeof validations.postImportCourseArchiveValidation.body>;
+};
+
 export namespace CreateQuestionsForTopicFromDefFileRequest {
     export type params = Joi.extractType<typeof validations.createQuestionsForTopicFromDefFileValidation.params>;
     export type query = Joi.extractType<typeof validations.createQuestionsForTopicFromDefFileValidation.query>;
@@ -117,6 +123,12 @@ export namespace GetQuestionRawRequest {
     export type params = Joi.extractType<typeof validations.getQuestionRawValidation.params>;
     export type query = Joi.extractType<typeof validations.getQuestionRawValidation.query>;
     export type body = Joi.extractType<typeof validations.getQuestionRawValidation.body>;
+};
+
+export namespace GetQuestionOpenLabRequest {
+    export type params = Joi.extractType<typeof validations.getQuestionOpenLabValidation.params>;
+    export type query = Joi.extractType<typeof validations.getQuestionOpenLabValidation.query>;
+    export type body = Joi.extractType<typeof validations.getQuestionOpenLabValidation.body>;
 };
 
 export namespace GetQuestionRequest {
@@ -273,6 +285,12 @@ export namespace SaveQuestionRequest {
     export type params = Joi.extractType<typeof validations.saveQuestionValidation.params>;
     export type query = Joi.extractType<typeof validations.saveQuestionValidation.query>;
     export type body = Joi.extractType<typeof validations.saveQuestionValidation.body>;
+};
+
+export namespace UploadAssetRequest {
+    export type params = Joi.extractType<typeof validations.uploadAssetValidation.params>;
+    export type query = Joi.extractType<typeof validations.uploadAssetValidation.query>;
+    export type body = Joi.extractType<typeof validations.uploadAssetValidation.body>;
 };
 
 export namespace CatalogRequest {

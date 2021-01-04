@@ -19,6 +19,14 @@ export const createCourseValidation = {
     }
 };
 
+export const postImportCourseArchiveValidation = {
+    params: {
+        courseId: Joi.number().required()
+    },
+    query: {},
+    body: {}
+};
+
 export const createQuestionsForTopicFromDefFileValidation = {
     params: {},
     query: {
@@ -291,6 +299,14 @@ export const getQuestionRawValidation = {
     body: {}
 };
 
+export const getQuestionOpenLabValidation = {
+    params: {
+        id: Joi.number().required(),
+    },
+    query: {},
+    body: {}
+};
+
 export const getQuestionValidation = {
     params: {
         id: Joi.number().required()
@@ -534,6 +550,14 @@ export const saveQuestionValidation = {
     query: {},
     body: {
         problemSource: Joi.string().required(),
+        relativePath: Joi.string().required(),
+    },
+};
+
+export const uploadAssetValidation = {
+    params: {},
+    query: {},
+    body: {
         relativePath: Joi.string().required(),
     },
 };

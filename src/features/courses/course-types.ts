@@ -16,6 +16,8 @@ import StudentTopicQuestionOverride from '../../database/models/student-topic-qu
 import { DeepPartial } from '../../utilities/typescript-helpers';
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 import ProblemAttachment from '../../database/models/problem-attachment';
+import { BucketDefFileResult, FindFilesDefFileResult } from '../../utilities/webwork-utilities/importer';
+import WebWorkDef from '../../utilities/web-work-def-parser';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -397,6 +399,7 @@ export interface DeleteUserEnrollmentOptions {
 
 export interface CreateGradesForQuestionOptions {
     questionId: number;
+    userIds?: Array<number>;
 }
 
 export interface CreateNewStudentGradeOptions {
@@ -423,9 +426,22 @@ export interface CreateGradeInstancesForAssessmentOptions {
     requestURL?: string;
 }
 
-export interface CreateQuestionsForTopicFromDefFileContentOptions {
-    webworkDefFileContent: string;
+// not exporting since this is meant to be abstract
+interface CreateQuestionsForTopicFromDefFileOptions {
     courseTopicId: number;
+    userIds?: Array<number>;
+    defFileDiscoveryResult?: {
+        defFileResult: FindFilesDefFileResult;
+        bucketDefFiles: { [key: string]: BucketDefFileResult };
+    };
+}
+
+export interface CreateQuestionsForTopicFromDefFileContentOptions extends CreateQuestionsForTopicFromDefFileOptions {
+    webworkDefFileContent: string;
+}
+
+export interface CreateQuestionsForTopicFromParsedDefFileOptions extends CreateQuestionsForTopicFromDefFileOptions {
+    parsedWebworkDef: WebWorkDef;
 }
 
 export interface DeleteQuestionsOptions {
@@ -587,4 +603,40 @@ export interface GetStudentTopicOverrideOptions {
 export interface GetAllContentForVersionOptions {
     topicId: number;
     userId: number;
+}
+
+export interface PrepareOpenLabRedirectOptions {
+    questionId: number;
+    user: User;
+    baseURL: string;
+}
+
+export interface OpenLabRedirectInfo {
+    problem: number;
+    problemSetId: string;
+    courseId: string;
+    problemPath: string;
+    email: string[];
+    studentName: string;
+    emailURL: string;
+    rawHTML: string;
+}
+
+export interface ImportTarballOptions {
+    filePath: string;
+    fileName: string;
+    courseId: number;
+    user: User;
+}
+
+export interface ImportCourseTarballResult {
+    unit: Partial<CourseUnitContent>;
+    missingFileErrors: {
+        missingPGFileErrors: Array<string>;
+        missingAssetFileErrors: Array<string>;
+    };
+}
+export interface AddQuestionOptions {
+    question: Partial<CourseWWTopicQuestion>;
+    userIds?: Array<number>;
 }

@@ -8,6 +8,11 @@ import { Request, Response, NextFunction } from 'express';
 import configurations from '../configurations';
 import * as _ from 'lodash';
 import RederlyError from '../exceptions/rederly-error';
+import { rederlyRequestNamespaceSet } from './rederly-request-namespace';
+import { RederlyExpressRequest } from '../extensions/rederly-express-request';
+import Role from '../features/permissions/roles';
+import ForbiddenError from '../exceptions/forbidden-error';
+import { Constants } from '../constants';
 
 const LocalStrategy = require('passport-local').Strategy;
 
@@ -76,10 +81,25 @@ export const authenticationMiddleware = async (req: Request, res: Response, next
         // TODO figure out session with request
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (req as any).session = session;
+        rederlyRequestNamespaceSet(req);
         return next();
     } catch (err) {
         res.clearCookie('sessionToken');
         return res.redirect(parseInt(err.output.statusCode), '/');
+    }
+};
+
+export const paidMiddleware = (action?: string) => async (req: RederlyExpressRequest, res: unknown, next: NextFunction): Promise<void> => {
+    if (_.isNil(req.session)) {
+        throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+    }
+    const triggeringAction = action ?? 'That action';
+    const user = req.rederlyUser ?? await req.session.getUser();
+    req.rederlyUser = user;
+    if (user.roleId === Role.STUDENT || user.paidUntil.toMoment().isAfter(moment())) {
+        next();
+    } else {
+        next(new ForbiddenError(`${triggeringAction} requires a paid account.`));
     }
 };
 

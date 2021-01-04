@@ -1,6 +1,6 @@
 
 # The instructions for the first stage
-FROM node:10-alpine as builder
+FROM node:14.15.3-alpine as builder
 
 # set to production to run build
 #ARG NODE_ENV=development
@@ -12,24 +12,21 @@ WORKDIR /app
 COPY package.json ./
 COPY package-lock.json ./
 RUN npm install --silent
-COPY . ./
-#CMD [ "npm", "start" ]
 
-#COPY . ./
-RUN npm run build
-# Needs to be before prune since it uses sequelize-cli
+# Seems like this would be a problem if you already locally had node modules
+COPY . ./
+
+# Builds and creates the package, does not create an archive
+RUN REDERLY_PACKAGER_ARCHIVE=false npm run build:package
+
 RUN npm run sequelize:built:migrations
-RUN npm prune --production
 
 # The instructions for second stage
-FROM node:10-alpine
+FROM node:14.15.3-alpine
 
 #WORKDIR /app
-COPY --from=builder /app/ts-built ./ts-built
-COPY --from=builder /app/assets ./assets
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/.env ./
-#RUN ls
-CMD node ts-built/index.js
+COPY --from=builder /app/build ./rederly
+COPY --from=builder /app/.env ./rederly/
 
+WORKDIR /rederly
+CMD npm run run:build

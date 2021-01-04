@@ -47,6 +47,7 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
     public readonly studentTopicOverride?: StudentTopicOverride[];
     public readonly topicAssessmentInfo?: TopicAssessmentInfo;
     public studentTopicAssessmentInfo?: StudentTopicAssessmentInfo[];
+    public readonly unit?: CourseUnitContent;
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -171,6 +172,7 @@ CourseTopicContent.init({
         field: 'course_topic_content_partial_extend',
         type: DataTypes.BOOLEAN,
         allowNull: false,
+        defaultValue: false
     },
 }, {
     tableName: 'course_topic_content',

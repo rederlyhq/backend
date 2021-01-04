@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [12.x]
+        node-version: [14.15.3]
     steps:
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
@@ -27,24 +27,21 @@ jobs:
         uses: actions/checkout@v1
       - name: Get the file name
         id: get_file_name
-        run: echo ::set-output name=result::rederly-$(git describe)-backend.zip
+        run: echo ::set-output name=result::rederly-$(git describe)-backend
       - name: NPM install
         uses: bahmutov/npm-install@v1
-      - name: Build project
-        run: npm run build
+      - name: Build and package
+        run: npm run build:package
         env:
-          CI: false # TODO Keeping consistent with frontend
-      - name: Prune dev dependencies
-        run: npm prune --production
-      - name: Package project
-        run: |
-          set -e;
-          mkdir build;
-          mv ts-built build;
-          mv package*.json build;
-          mv node_modules build;
-          mv assets build;
-          zip -r ${{ steps.get_file_name.outputs.result }} build;
+          REDERLY_PACKAGER_DEST_FILE: ${{ steps.get_file_name.outputs.result }}
+          # Can't preserve packages because try build will find the node module in the parent directory
+          REDERLY_PACKAGER_PRESERVE_NODE_MODULES: false
+          CI: false # TODO Linting errors cause the build to fail when CI is true (default)
+      - name: Try build
+        run: npm --prefix build run cli:built noop
+        env:
+          DB_SYNC: false
+          FAIL_ON_MISSING_CONFIGURATIONS: false
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -54,14 +51,24 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
           draft: false
-          prerelease: false
-      - name: Upload Release Asset
-        id: upload-release-asset 
+          prerelease: true
+      - name: Upload Release Asset (zip)
+        id: upload-release-asset-zip
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-          asset_path: ./${{ steps.get_file_name.outputs.result }}
-          asset_name: ${{ steps.get_file_name.outputs.result }}
+          asset_path: ./package-outputs/${{ steps.get_file_name.outputs.result }}.zip
+          asset_name: ${{ steps.get_file_name.outputs.result }}.zip
           asset_content_type: application/zip
+      - name: Upload Release Asset (tgz)
+        id: upload-release-asset-tgz
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./package-outputs/${{ steps.get_file_name.outputs.result }}.tgz
+          asset_name: ${{ steps.get_file_name.outputs.result }}.tgz
+          asset_content_type: application/gzip

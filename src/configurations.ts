@@ -106,9 +106,9 @@ const loggingLevel = getLoggingLevel('LOGGING_LEVEL', LOGGING_LEVEL.INFO);
 const loggingLevelForFile = getLoggingLevel('LOGGING_LEVEL_FOR_FILE', loggingLevel);
 const loggingLevelForConsole = getLoggingLevel('LOGGING_LEVEL_FOR_CONSOLE', loggingLevel);
 
-const isProduction = (val: string | undefined): boolean => val === 'production';
-// needs to be read ahead of of time to be used in configurations
 const nodeEnv = readStringValue('NODE_ENV', 'development');
+// needs to be read ahead of of time to be used in configurations
+const isProduction = nodeEnv === 'production';
 
 const configurations = {
     server: {
@@ -130,12 +130,17 @@ const configurations = {
         user: readStringValue('DB_USER', 'postgres'),
         password: readStringValue('DB_PASSWORD', 'password'),
         logging: readBooleanValue('DB_LOGGING', false),
+        sync: readBooleanValue('DB_SYNC', false),
     },
     email: {
         enabled: readBooleanValue('EMAIL_ENABLED', false),
         user: readStringValue('EMAIL_USER', ''),
         key: readStringValue('EMAIL_KEY', ''),
-        from: readStringValue('EMAIL_FROM', '')
+        from: readStringValue('EMAIL_FROM', ''),
+        awsAccessKeyId: readStringValue('AWS_SES_ACCESS_KEY', ''),
+        awsSecretKey: readStringValue('AWS_SES_SECRET_KEY', ''),
+        awsRegion: readStringValue('AWS_REGION', 'us-east-2'),
+        sendingRate: readIntValue('EMAIL_SENDING_RATE'),
     },
     auth: {
         // in minutes - defaults to 1 day
@@ -151,6 +156,10 @@ const configurations = {
         url: readStringValue('RENDERER_URL', 'http://localhost:3000'),
         requestTimeout: readIntValue('RENDERER_REQUEST_TIMEOUT', 75000),
     },
+    openlab: {
+        url: readStringValue('OPENLAB_URL', ''),
+        requestTimeout: readIntValue('OPENLAB_REQUEST_TIMEOUT', 75000)
+    },
     jira: {
         email: readStringValue('JIRA_EMAIL', ''),
         apiKey: readStringValue('JIRA_API_KEY', ''),
@@ -164,7 +173,10 @@ const configurations = {
     logging: {
         loggingLevel,
         loggingLevelForFile,
-        loggingLevelForConsole
+        loggingLevelForConsole,
+        urlInMeta: readBooleanValue('LOGGING_URL_IN_META', false),
+        metaInLogs: readBooleanValue('LOGGING_META_IN_LOGS', false),
+        logJson: readBooleanValue('LOGGING_LOG_JSON', isProduction),
     },
     scheduler: {
         basePath: readStringValue('SCHEDULER_BASE_PATH','http://localhost:3003'),
@@ -179,11 +191,15 @@ const configurations = {
     },
     app: {
         nodeEnv: nodeEnv,
-        get isProduction(): boolean { return isProduction(configurations.app.nodeEnv); },
+        isProduction: isProduction,
         logMissingConfigurations: readBooleanValue('LOG_MISSING_CONFIGURATIONS', true),
-        failOnMissingConfigurations: readBooleanValue('FAIL_ON_MISSING_CONFIGURATIONS', isProduction(nodeEnv)),
+        failOnMissingConfigurations: readBooleanValue('FAIL_ON_MISSING_CONFIGURATIONS', isProduction),
+        autoDeleteTemp: readBooleanValue('AUTO_DELETE_TEMP_FILES', true)
     },
-    loadPromise: new Promise((resolve, reject) => {
+    importer: {
+        missingFileThreshold: readIntValue('IMPORTER_MISSING_FILE_THRESHOLD', 10)
+    },
+    loadPromise: new Promise<void>((resolve, reject) => {
         // Avoid cyclic dependency by deferring the logging until after all the imports are done
         setTimeout(() => {
             // Can't use require statement in callback
@@ -197,8 +213,12 @@ const configurations = {
             } else if (configurations.app.logMissingConfigurations) {
                 logs.forEach((log: string) => {
                     logger.warn(log);
-                });        
+                });
             }
+
+            if (configurations.app.isProduction && !configurations.app.autoDeleteTemp) {
+                logger.warn('Application configured to run in production but not to auto delete temp files! AUTO_DELETE_TEMP_FILES should always be true unless debugging!!');
+            }            
             
             // Log count defaults to 1 so it fails on null which has already been logged
             if (configurations.app.failOnMissingConfigurations && (logs?.length ?? 1 > 0)) {

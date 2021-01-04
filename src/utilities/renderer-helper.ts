@@ -1,22 +1,47 @@
-import axios from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import configurations from '../configurations';
 import Role from '../features/permissions/roles';
 import * as _ from 'lodash';
 import * as Joi from '@hapi/joi';
 import 'joi-extract-type';
-import * as FormData from 'form-data';
 import { isAxiosError } from './axios-helper';
 import logger from './logger';
 import NotFoundError from '../exceptions/not-found-error';
 import WrappedError from '../exceptions/wrapped-error';
 import { RederlyExtendedJoi } from '../extensions/rederly-extended-joi';
 import urljoin = require('url-join');
+import * as fs from'fs';
+import formHelper, { unmergeStrategies } from './form-helper';
+
+// h/t -- https://stackoverflow.com/a/45460625
+function scheduleRequests(axiosInstance: AxiosInstance, intervalMs: number): void {
+    let lastInvocationTime: number | undefined = undefined;
+    const scheduler = (config: AxiosRequestConfig): AxiosRequestConfig | Promise<AxiosRequestConfig> => {
+        const now = Date.now();
+        if (lastInvocationTime) {
+            lastInvocationTime += intervalMs;
+            const waitPeriodForThisRequest = lastInvocationTime - now;
+            if (waitPeriodForThisRequest > 0) {
+                return new Promise((resolve) => {
+                    setTimeout(
+                        () => resolve(config),
+                        waitPeriodForThisRequest);
+                });
+            }
+        }
+        lastInvocationTime = now;
+        return config;
+    };
+    axiosInstance.interceptors.request.use(scheduler);
+}
 
 const rendererAxios = axios.create({
     baseURL: configurations.renderer.url,
     responseType: 'json',
     timeout: configurations.renderer.requestTimeout
 });
+
+scheduleRequests(rendererAxios, 3);
 
 // TODO switch over to new endpoint
 // the proxy we are using doesn't work with the new renderer endpoint (i'm guessing the hyphen is the problem)
@@ -27,6 +52,7 @@ export const NEW_RENDERER_ENDPOINT = '/render-api';
 export const RENDERER_LOAD_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'tap');
 export const RENDERER_SAVE_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'can');
 export const RENDERER_CATALOG_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'cat');
+export const RENDERER_UPLOAD_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'upload');
 
 export enum OutputFormat {
     SINGLE = 'single',
@@ -70,29 +96,14 @@ export interface CatalogOptions {
     maxDepth: number;
 }
 
+export interface IsPathAccessibleToRendererOptions {
+    problemPath: string;
+}
 
-const objectToFormData = (formData: { [key: string]: unknown }): FormData => {
-    const resultFormData = new FormData();
-    for (const key in formData) {
-        const value = formData[key] as unknown;
-        // append throws error if value is null
-        // We thought about stripping this with lodash above but decided not to
-        // This implementation let's use put a breakpoint and debug
-        // As well as the fact that it is minorly more efficient
-        if (_.isNil(value)) {
-            continue;
-        }
-
-        if (_.isArray(value)) {
-            value.forEach((data: unknown) => {
-                resultFormData?.append(key, data);
-            });
-        } else {
-            resultFormData?.append(key, value);
-        }
-    }
-    return resultFormData;
-};
+export interface UploadAssetOptions {
+    rendererPath: string;
+    filePath: string;
+}
 
 
 /* eslint-disable @typescript-eslint/camelcase */
@@ -291,7 +302,7 @@ class RendererHelper {
             ..._(params).omitBy(_.isNil).value()
         };
 
-        const resultFormData = objectToFormData(formData);
+        const resultFormData = formHelper.objectToFormData({object: formData, unmerge: unmergeStrategies.unmergeDuplicatingKey});
 
         try {
             const resp = await rendererAxios.post(RENDERER_ENDPOINT, resultFormData?.getBuffer(), {
@@ -323,8 +334,8 @@ class RendererHelper {
     readProblemSource = async ({
         sourceFilePath
     }: ReadProblemSourceOptions): Promise<unknown> => {
-        const resultFormData = objectToFormData({
-            sourceFilePath: sourceFilePath
+        const resultFormData = formHelper.objectToFormData({ 
+            object: { sourceFilePath: sourceFilePath}, 
         });
 
         try {
@@ -361,9 +372,11 @@ class RendererHelper {
         problemSource
     }: SaveProblemSourceOptions): Promise<string> => {
         const transformedProblemSource = Buffer.from(problemSource).toString('base64');
-        const resultFormData = objectToFormData({
-            writeFilePath: writeFilePath,
-            problemSource: transformedProblemSource,
+        const resultFormData = formHelper.objectToFormData({
+            object: {
+                writeFilePath: writeFilePath,
+                problemSource: transformedProblemSource,
+            },
         });
 
         try {
@@ -391,9 +404,11 @@ class RendererHelper {
         basePath,
         maxDepth,
     }: CatalogOptions): Promise<{ [key: string]: number }> => {
-        const resultFormData = objectToFormData({
-            basePath: basePath,
-            maxDepth: maxDepth,
+        const resultFormData = formHelper.objectToFormData({
+            object: {
+                basePath: basePath,
+                maxDepth: maxDepth,
+            },
         });
 
         try {
@@ -418,9 +433,7 @@ class RendererHelper {
 
     isPathAccessibleToRenderer = async ({
         problemPath
-    }: {
-        problemPath: string;
-    }): Promise<boolean> => {
+    }: IsPathAccessibleToRendererOptions): Promise<boolean> => {
         try {
             const catalogResult = await this.catalog({
                 basePath: problemPath,
@@ -434,6 +447,33 @@ class RendererHelper {
             if(isAxiosError(e) && e.response?.status === 403) {
                 logger.debug('Path forbidden');
                 return false;
+            }
+            // Some application error occurred
+            throw new WrappedError(errorMessagePrefix, e);
+        }
+    }
+
+    uploadAsset = async ({
+        rendererPath,
+        filePath
+    }: UploadAssetOptions): Promise<string> => {
+        const resultFormData = formHelper.objectToFormData({
+            object: {
+                path: rendererPath,
+                file: fs.createReadStream(filePath)    
+            }
+        });
+        
+        try {
+            const resp = await rendererAxios.post<string>(RENDERER_UPLOAD_ENDPOINT, resultFormData, {
+                headers: resultFormData?.getHeaders(),
+            });
+
+            return resp.data;
+        } catch (e) {
+            const errorMessagePrefix = `Could not upload "${rendererPath}"`;
+            if(isAxiosError(e)) {
+                throw new WrappedError(`${errorMessagePrefix}; response: ${JSON.stringify(e.response?.data ?? e.stack)}`, e);
             }
             // Some application error occurred
             throw new WrappedError(errorMessagePrefix, e);

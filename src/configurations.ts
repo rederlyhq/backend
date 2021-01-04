@@ -111,18 +111,25 @@ const nodeEnv = readStringValue('NODE_ENV', 'development');
 const isProduction = nodeEnv === 'production';
 
 const configurations = {
+    app: {
+        nodeEnv: nodeEnv,
+        isProduction: isProduction,
+        logMissingConfigurations: readBooleanValue('LOG_MISSING_CONFIGURATIONS', true),
+        failOnMissingConfigurations: readBooleanValue('FAIL_ON_MISSING_CONFIGURATIONS', isProduction),
+        autoDeleteTemp: readBooleanValue('AUTO_DELETE_TEMP_FILES', true)
+    },
     server: {
         port: readStringValue('SERVER_PORT', '3000'),
         basePath: readStringValue('SERVER_BASE_PATH', '/backend-api'),
+        logInvalidlyPrefixedRequests: readBooleanValue('SERVER_LOG_INVALIDLY_PREFIXED_REQUESTS', true),
+        blockInvalidlyPrefixedRequests: readBooleanValue('SERVER_BLOCK_INVALIDLY_PREFIXED_REQUESTS', true),
+        logAccess: readBooleanValue('SERVER_LOG_ACCESS', true),
+        logAccessSlowRequestThreshold: readIntValue('SERVER_LOG_ACCESS_SLOW_REQUEST_THRESHOLD', 30000),
+        requestTimeout: readIntValue('SERVER_REQUEST_TIMEOUT', 150000),
         limiter: {
             windowLength: readIntValue('SERVER_LIMITER_WINDOW_LENGTH', 60000),
             maxRequests: readIntValue('SERVER_LIMITER_MAX_REQUESTS', 100),
         },
-        requestTimeout: readIntValue('SERVER_REQUEST_TIMEOUT', 150000),
-        logAccess: readBooleanValue('SERVER_LOG_ACCESS', true),
-        logInvalidlyPrefixedRequests: readBooleanValue('SERVER_LOG_INVALIDLY_PREFIXED_REQUESTS', true),
-        blockInvalidlyPrefixedRequests: readBooleanValue('SERVER_BLOCK_INVALIDLY_PREFIXED_REQUESTS', true),
-        logAccessSlowRequestThreshold: readIntValue('SERVER_LOG_ACCESS_SLOW_REQUEST_THRESHOLD', 30000),
     },
     db: {
         host: readStringValue('DB_HOST', 'localhost'),
@@ -134,13 +141,11 @@ const configurations = {
     },
     email: {
         enabled: readBooleanValue('EMAIL_ENABLED', false),
-        user: readStringValue('EMAIL_USER', ''),
-        key: readStringValue('EMAIL_KEY', ''),
         from: readStringValue('EMAIL_FROM', ''),
+        sendingRate: readIntValue('EMAIL_SENDING_RATE'),
         awsAccessKeyId: readStringValue('AWS_SES_ACCESS_KEY', ''),
         awsSecretKey: readStringValue('AWS_SES_SECRET_KEY', ''),
         awsRegion: readStringValue('AWS_REGION', 'us-east-2'),
-        sendingRate: readIntValue('EMAIL_SENDING_RATE'),
     },
     auth: {
         // in minutes - defaults to 1 day
@@ -188,13 +193,6 @@ const configurations = {
         presignedUrlBasePath: readStringValue('ATTACHMENTS_PRESIGNED_URL_BASE_PATH', ''),
         baseUrl: readStringValue('ATTACHMENTS_BASE_URL', ''),
         presignedUrlTimeout: readIntValue('ATTACHMENTS_PRESIGNED_URL_TIMEOUT', 60000),
-    },
-    app: {
-        nodeEnv: nodeEnv,
-        isProduction: isProduction,
-        logMissingConfigurations: readBooleanValue('LOG_MISSING_CONFIGURATIONS', true),
-        failOnMissingConfigurations: readBooleanValue('FAIL_ON_MISSING_CONFIGURATIONS', isProduction),
-        autoDeleteTemp: readBooleanValue('AUTO_DELETE_TEMP_FILES', true)
     },
     importer: {
         missingFileThreshold: readIntValue('IMPORTER_MISSING_FILE_THRESHOLD', 10)

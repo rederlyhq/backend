@@ -9,9 +9,11 @@ import path = require('path');
 import * as aws from 'aws-sdk';
 
 interface EmailHelperOptions {
-    user: string;
-    key: string;
     from: string;
+    awsAccessKeyId: string;
+    awsSecretKey: string;
+    awsRegion: string;
+    sendingRate: number | null;
 }
 
 type TemplateOptions = GenericTemplateOptions | VerificationTemplateOptions;
@@ -65,28 +67,31 @@ const getTemplateAttachments = (template: 'generic' | 'verification'): {filename
 };
 
 class EmailHelper {
-    private user: string;
-    private key: string;
     private from: string;
 
     private client: Mail;
     private mailer: Email;
 
     constructor(options: EmailHelperOptions) {
-        this.user = options.user;
-        this.key = options.key;
-        this.from = options.from;
+        const {
+            from,
+            awsAccessKeyId,
+            awsSecretKey,
+            awsRegion,
+            sendingRate
+        } = options;
+        this.from = from;
 
         this.client = nodemailer.createTransport({
             SES: new aws.SES({
                 apiVersion: '2010-12-01',
                 credentials: {
-                    accessKeyId: configurations.email.awsAccessKeyId,
-                    secretAccessKey: configurations.email.awsSecretKey,
+                    accessKeyId: awsAccessKeyId,
+                    secretAccessKey: awsSecretKey,
                 },
-                region: configurations.email.awsRegion,
+                region: awsRegion,
             }),
-            sendingRate: configurations.email.sendingRate ?? undefined,
+            sendingRate: sendingRate ?? undefined,
         });
 
         this.mailer = new Email({
@@ -153,14 +158,18 @@ class EmailHelper {
 
 const {
     from,
-    key,
-    user
+    awsAccessKeyId,
+    awsSecretKey,
+    awsRegion,
+    sendingRate
 } = configurations.email;
 
 const emailHelper = new EmailHelper({
     from,
-    key,
-    user
+    awsAccessKeyId,
+    awsSecretKey,
+    awsRegion,
+    sendingRate
 });
 
 export default emailHelper;

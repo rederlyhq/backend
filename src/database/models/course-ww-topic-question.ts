@@ -20,6 +20,10 @@ export interface CourseWWTopicQuestionInterface {
     courseQuestionAssessmentInfo?: CourseQuestionAssessmentInfo;
 }
 
+export interface CourseTopicQuestionErrors {
+    [path: string]: string[];
+}
+
 export default class CourseWWTopicQuestion extends Model implements CourseWWTopicQuestionInterface {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
     public courseTopicContentId!: number;
@@ -31,6 +35,9 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
     public active!: boolean;
     public optional!: boolean;
     public curriculumQuestionId!: number;
+
+    // These are errors in the webworkQuestionPath, but might expand in the future to include more errors.
+    public errors!: CourseTopicQuestionErrors | null;
     
     public getTopic!: BelongsToGetAssociationMixin<CourseTopicContent>;
     public getGrades!: HasManyGetAssociationsMixin<StudentGrade>;
@@ -160,7 +167,13 @@ CourseWWTopicQuestion.init({
         field: 'curriculum_topic_question_id',
         type: DataTypes.INTEGER,
         allowNull: true,
-    }
+    },
+    errors: {
+        field: 'course_topic_question_errors',
+        type: DataTypes.JSONB,
+        allowNull: true,
+        defaultValue: null,
+    },
 }, {
     tableName: 'course_topic_question',
     sequelize: appSequelize, // this bit is important

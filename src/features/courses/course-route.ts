@@ -736,7 +736,7 @@ router.get('/question/:id/sma',
         }
 
         const user = await req.session.getUser();
-        const { id: questionId } = req.params as GetQuestionOpenLabRequest.params;
+        const { id: questionId } = req.params as GetQuestionShowMeAnotherRequest.params;
 
         const updatedGrade = await courseController.requestProblemNewVersion({questionId, userId: user.id}); 
         if (_.isNil(updatedGrade)) {

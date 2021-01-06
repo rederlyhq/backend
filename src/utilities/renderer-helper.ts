@@ -53,6 +53,7 @@ export const RENDERER_LOAD_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'tap');
 export const RENDERER_SAVE_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'can');
 export const RENDERER_CATALOG_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'cat');
 export const RENDERER_UPLOAD_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'upload');
+export const RENDERER_SMA_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'sma');
 
 export enum OutputFormat {
     SINGLE = 'single',
@@ -105,6 +106,11 @@ export interface UploadAssetOptions {
     filePath: string;
 }
 
+export interface ShowMeAnotherOptions {
+    sourceFilePath: string;
+    avoidSeeds: Array<number>;
+    maxIterations?: number;
+}
 
 /* eslint-disable @typescript-eslint/camelcase */
 export const rendererResponseValidationScheme = Joi.object({
@@ -181,10 +187,16 @@ export const rendererResponseValidationScheme = Joi.object({
         type: Joi.string().required(),
     }).required(),
     // problem_state: Joi.any(), // DOCUMENT SAYS DO NOT KEEP
+
     renderedHTML: Joi.string().required(),
 }).required();
 /* eslint-enable @typescript-eslint/camelcase */
 export type RendererResponse = Joi.extractType<typeof rendererResponseValidationScheme>;
+
+export interface ShowMeAnotherResponse {
+    problem: RendererResponse;
+    problemSeed: number;
+}
 
 
 class RendererHelper {
@@ -476,6 +488,38 @@ class RendererHelper {
                 throw new WrappedError(`${errorMessagePrefix}; response: ${JSON.stringify(e.response?.data ?? e.stack)}`, e);
             }
             // Some application error occurred
+            throw new WrappedError(errorMessagePrefix, e);
+        }
+    }
+
+    showMeAnother = async ({
+        sourceFilePath,
+        avoidSeeds,
+        maxIterations
+    }: ShowMeAnotherOptions): Promise<ShowMeAnotherResponse | null> => {
+        const requestFormData = formHelper.objectToFormData({
+            object: {
+                sourceFilePath,
+                avoidSeeds: _.join(avoidSeeds, ','),
+                maxIterations
+            }
+        });
+
+        try {
+            const response = await rendererAxios.post(RENDERER_SMA_ENDPOINT, requestFormData, {
+                headers: requestFormData.getHeaders(),
+            });
+
+            return response.data as ShowMeAnotherResponse;
+        } catch (e) {
+            const errorMessagePrefix = 'Request for SMA failed';
+            if (isAxiosError(e)) {
+                if (e.response?.status === 404) {
+                    return null;
+                } else {
+                    throw new WrappedError(`${errorMessagePrefix}; response: ${JSON.stringify(e.response?.data ?? e.stack)}`, e);
+                }
+            }
             throw new WrappedError(errorMessagePrefix, e);
         }
     }

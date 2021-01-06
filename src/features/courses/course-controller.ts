@@ -1232,7 +1232,9 @@ class CourseController {
 
             return parsedWebworkDef.problems.asyncForEach(async (problem: Problem) => {
                 const pgFilePath = options.defFileDiscoveryResult?.defFileResult.pgFiles[problem.source_file ?? '']?.resolvedRendererPath ?? problem.source_file;
+                logger.debug(`Parsed ${pgFilePath} from DEF file.`);
                 if (pgFilePath?.startsWith('group:')) {
+                    logger.debug('Dealing with a group path.');
                     if(_.isNil(options.defFileDiscoveryResult)) {
                         throw new IllegalArgumentException('Cannot import buckets without archive import');
                     } else if (!parsedWebworkDef.isExam()) {
@@ -1243,6 +1245,21 @@ class CourseController {
                         pgFilePath: pgFilePath,
                     });
                     const problemPath = result.shift();
+
+                    let errors = null;
+                    const assessmentErrors = await courseRepository.getErrorObjectForQuestionAssessmentInfo(result);
+
+                    if (problemPath !== undefined) {
+                        if (await rendererHelper.isPathAccessibleToRenderer({problemPath: problemPath}) === false) {
+                            errors = {[problemPath]: [`${problemPath} cannot be found.`]};
+                        }
+                    } else console.error('The file path for this problem was not defined.');
+
+                    // Update the topic ONCE if any part has errored.
+                    if (!_.isNil(errors) || _.isNil(assessmentErrors)) {
+                        courseRepository.incrementTopicErrorCount(options.courseTopicId);
+                    }
+
                     const question = await this.addQuestion({
                         question: {
                             // active: true,
@@ -1252,20 +1269,32 @@ class CourseController {
                             weight: parseInt(problem.value ?? '1'),
                             maxAttempts: parseInt(problem.max_attempts ?? '-1'),
                             hidden: false,
-                            optional: false
+                            optional: false,
+                            errors: errors,
                         },
                         userIds: userIds
                     });
 
+                    console.log('Creating Assessment Info with errors: ', assessmentErrors);
                     await CourseQuestionAssessmentInfo.create({
                         additionalProblemPaths: result,
                         courseWWTopicQuestionId: question.id,
-                        randomSeedSet: []
+                        randomSeedSet: [],
+                        errors: assessmentErrors,
                     });
-
 
                     return question;
                 } else {
+                    let errors = null;
+                    if (pgFilePath === undefined) {
+                        throw new NotFoundError('The file path for this problem was not defined.');
+                    }
+
+                    if (await rendererHelper.isPathAccessibleToRenderer({problemPath: pgFilePath}) === false) {
+                        errors = {[pgFilePath]: [`${pgFilePath} cannot be found.`]};
+                        courseRepository.incrementTopicErrorCount(options.courseTopicId);
+                    }
+
                     return this.addQuestion({
                         question: {
                             // active: true,
@@ -1275,7 +1304,8 @@ class CourseController {
                             weight: parseInt(problem.value ?? '1'),
                             maxAttempts: parseInt(problem.max_attempts ?? '-1'),
                             hidden: false,
-                            optional: false
+                            optional: false,
+                            errors: errors,
                         },
                         userIds: userIds
                     });

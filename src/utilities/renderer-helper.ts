@@ -53,6 +53,7 @@ export const RENDERER_LOAD_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'tap');
 export const RENDERER_SAVE_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'can');
 export const RENDERER_CATALOG_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'cat');
 export const RENDERER_UPLOAD_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'upload');
+export const VALID_PG_PATH_REGEX = /^(private|Contrib|webwork-open-problem-library|Library)\/[^\0]+$/;
 
 export enum OutputFormat {
     SINGLE = 'single',
@@ -434,14 +435,23 @@ class RendererHelper {
     isPathAccessibleToRenderer = async ({
         problemPath
     }: IsPathAccessibleToRendererOptions): Promise<boolean> => {
+        logger.debug(`Testing ${problemPath} before asking renderer.`);
+        if (!VALID_PG_PATH_REGEX.test(problemPath)) {
+            logger.debug(`${problemPath} failed the regex test and will never be accessible to the Renderer.`);
+            return false;
+        }
+
         try {
+            logger.debug('Asking renderer.');
             const catalogResult = await this.catalog({
                 basePath: problemPath,
                 maxDepth: 0
             });
+            logger.debug(`Got a path`, catalogResult);
             // right now catalog returns empty string if you catalog a pg file
             return catalogResult as unknown === '';
         } catch (err) {
+            logger.debug('Got an error.');
             const errorMessagePrefix = `Could not check path accessibility "${problemPath}"`;
             const e = err.cause;
             if(isAxiosError(e) && e.response?.status === 403) {

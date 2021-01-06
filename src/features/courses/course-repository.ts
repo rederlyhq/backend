@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import WrappedError from '../../exceptions/wrapped-error';
 import { Constants } from '../../constants';
 import { UpdateQuestionOptions, UpdateQuestionsOptions, GetQuestionRepositoryOptions, UpdateCourseUnitsOptions, GetCourseUnitRepositoryOptions, UpdateTopicOptions, UpdateCourseTopicsOptions, GetCourseTopicRepositoryOptions, UpdateCourseOptions, UpdateGradeOptions, UpdateGradeInstanceOptions, ExtendTopicForUserOptions, ExtendTopicQuestionForUserOptions, GetQuestionVersionDetailsOptions, GetStudentGradeInstanceOptions, GetCourseOptions, GetStudentGradeOptions, GetStudentTopicOverrideOptions } from './course-types';
-import CourseWWTopicQuestion from '../../database/models/course-ww-topic-question';
+import CourseWWTopicQuestion, { CourseTopicQuestionErrors } from '../../database/models/course-ww-topic-question';
 import NotFoundError from '../../exceptions/not-found-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
 import { BaseError } from 'sequelize';
@@ -29,6 +29,8 @@ import ProblemAttachment from '../../database/models/problem-attachment';
 import StudentGradeProblemAttachment from '../../database/models/student-grade-problem-attachment';
 import StudentGradeInstanceProblemAttachment from '../../database/models/student-grade-instance-problem-attachment';
 import StudentWorkbookProblemAttachment from '../../database/models/student-workbook-problem-attachment';
+import rendererHelper from '../../utilities/renderer-helper';
+import RederlyError from '../../exceptions/rederly-error';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -709,7 +711,93 @@ class CourseRepository {
         }
     }
 
+    // This is used directly on the topic without checking the question, so it should only 
+    // be used when you definitely know that the error count should go up.
+    async incrementTopicErrorCount(topicId: number): Promise<void> {
+        const topic = await CourseTopicContent.findOne({where: {id: topicId}});
+        topic?.increment('errors');
+    }
+
+    async updateTopicErrorCount(problemId: number, isValid: boolean): Promise<void> {
+        logger.info('Updating Topic Error Count.');
+        const question = await CourseWWTopicQuestion.findOne({
+            where: {
+                id: problemId
+            },
+            attributes: [
+                'course_topic_content_id', 'errors'
+            ],
+            include: [
+                {
+                    model: CourseQuestionAssessmentInfo,
+                    as: 'courseQuestionAssessmentInfo',
+                    attributes: ['errors'],
+                },
+                {
+                    model: CourseTopicContent,
+                    as: 'topic',
+                    attributes: ['id', 'errors']
+                }
+            ]
+        });
+        
+        if (_.isNil(question)) {
+            logger.error(`Could not find question ${problemId}`);
+            return;
+        };
+
+        const wasValid = _.isNil(question.errors) && _.isNil(question.courseQuestionAssessmentInfo?.errors);
+
+        if ((wasValid && isValid) || (!wasValid && !isValid)) {
+            logger.info(`No updated needed - isValid already ${wasValid.toString()}`);
+            return;
+        } else {
+            const topic = question.topic;
+            if (_.isNil(topic)) {
+                logger.error('Could not find topic');
+                return;
+            }
+
+            if (isValid) {
+                await topic.decrement('errors');
+            } else {
+                await topic.increment('errors');
+            }
+        }
+    }
+
+    async getErrorObjectForQuestionAssessmentInfo(additionalProblemPaths: (string | undefined)[]): Promise<CourseTopicQuestionErrors | null> {
+        const errors: CourseTopicQuestionErrors = {};
+
+        await additionalProblemPaths.asyncForEach(async (path)=>{
+            if (_.isNil(path)) return;
+
+            const isValid = await rendererHelper.isPathAccessibleToRenderer({problemPath: path});
+            if (!isValid) {
+                errors[path] = [`${path} cannot be found.`];
+            }
+        });
+
+        return _.isEmpty(errors) ? null : errors;
+    }
+
     async updateQuestion(options: UpdateQuestionOptions): Promise<UpdateResult<CourseWWTopicQuestion>> {
+        console.log('Updating question.');
+        if (!_.isNil(options.updates.webworkQuestionPath)) {
+            const isValid = await rendererHelper.isPathAccessibleToRenderer({problemPath: options.updates.webworkQuestionPath});
+
+            options.updates.errors = isValid ? 
+                null :
+                {[options.updates.webworkQuestionPath]: [`${options.updates.webworkQuestionPath} cannot be found.`]};
+        }
+
+        if (!_.isNil(options.updates.courseQuestionAssessmentInfo) && !_.isNil(options.updates.courseQuestionAssessmentInfo?.additionalProblemPaths)) {
+            options.updates.courseQuestionAssessmentInfo.errors = await this.getErrorObjectForQuestionAssessmentInfo(options.updates.courseQuestionAssessmentInfo.additionalProblemPaths);
+        }
+
+        console.log(options.updates.errors, options.updates.courseQuestionAssessmentInfo?.errors);
+        this.updateTopicErrorCount(options.where.id, _.isNil(options.updates.errors) && _.isNil(options.updates.courseQuestionAssessmentInfo?.errors));
+
         try {
             const updates = await CourseWWTopicQuestion.update(options.updates, {
                 where: {

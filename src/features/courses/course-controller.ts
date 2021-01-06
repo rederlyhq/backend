@@ -1542,7 +1542,8 @@ class CourseController {
         workbook,
         gradeResult,
         submitted,
-        timeOfSubmission
+        timeOfSubmission,
+        problemPath
     }: SetGradeFromSubmissionOptions): Promise<StudentWorkbook | undefined> => {
         return useDatabaseTransaction(async (): Promise<StudentWorkbook | undefined> => {
             if (gradeResult.gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
@@ -1563,6 +1564,7 @@ class CourseController {
                         studentGradeId: studentGrade.id,
                         userId: studentGrade.userId,
                         courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
+                        problemPath: problemPath,
                         randomSeed: studentGrade.randomSeed,
                         submitted: rendererHelper.cleanRendererResponseForTheDatabase(submitted as RendererResponse),
                         result: gradeResult.score,
@@ -2041,7 +2043,8 @@ class CourseController {
             studentGrade,
             submitted,
             timeOfSubmission,
-            workbook
+            workbook,
+            problemPath: question.webworkQuestionPath,
         });
     };
 
@@ -3702,6 +3705,7 @@ class CourseController {
                     courseWWTopicQuestionId: result.grade.courseWWTopicQuestionId,
                     studentGradeInstanceId: result.instance.id, // shouldn't this workbook be tied to a grade instance?
                     randomSeed: result.instance.randomSeed,
+                    problemPath: result.instance.webworkQuestionPath,
                     submitted: cleanSubmitted,
                     result: result.questionResponse.problem_result.score,
                     time: new Date(),

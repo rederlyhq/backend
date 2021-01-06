@@ -31,8 +31,8 @@ export default {
         'student_workbook',
         'student_workbook_problem_path',
         {
-            type: DataTypes.TEXT,
-            allowNull: false,
+          type: DataTypes.TEXT,
+          allowNull: false,
         }
       );
     });
@@ -40,9 +40,7 @@ export default {
   down: async (queryInterface: QueryInterface): Promise<void> => {
     // Transactions are automatically use because a namespace is injected into sequelize when fetching configurations
     await queryInterface.sequelize.transaction(async () => {
-        // TODO
         await queryInterface.removeColumn('student_workbook', 'student_workbook_problem_path');
-
     });
   }
 };

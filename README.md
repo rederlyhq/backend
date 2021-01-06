@@ -13,9 +13,9 @@
 5. If not already there run query for any required initial data
 
 ## Configurations
-* Configurations are read from an environement variables in: src\configurations.ts
-* These environment can be set by the system or by a .env file located at the root of this project (gitignored), .env expects keyvalue pairs with no space (i.e. `SERVER_PORT=8080`)
-* You can not include or leave these values blank to get default values
+* Configurations are read from an environment variables in: src\configurations.ts
+* These environment can be set by the system or by a .env file located at the root of this project (gitignored), .env expects key-value pairs with no space (i.e. `SERVER_PORT=8080`)
+* You can not include or leave these values blank to get default values (however there is a configuration which defaults to true in production that the app will crash when missing configurations)
 
 ### Available configurations
 
@@ -29,6 +29,11 @@
 | --- | --- | --- |
 | LOG_MISSING_CONFIGURATIONS | Whether or not to log missing configurations | true |
 | FAIL_ON_MISSING_CONFIGURATIONS | Whether or not to reject the loading promise on missing configurations | true in prod, false in dev |
+
+#### Temp files
+| Environment variable | Description | Default value |
+| --- | --- | --- |
+| AUTO_DELETE_TEMP_FILES | Whether or not to delete temp files once done with them, meant for debugging and will log a warning in production | true |
 
 #### Server
 | Environment variable | Description | Default value |
@@ -56,14 +61,17 @@
 | DB_USER | The user the login to the database | postgres |
 | DB_PASSWORD | The password for the user to login to the database | password |
 | DB_LOGGING | Whether or not queries should be output, used for debugging | false |
+| DB_SYNC | Whether or not to sync with the database | false |
 
 #### Email
 | Environment variable | Description | Default value |
 | --- | --- | --- |
 | EMAIL_ENABLED | Whether or not emails should be sent (for dev this should be false | false |
-| EMAIL_USER | The user used for authentication for sending emails (the sendgrid username) | sendgriduser |
-| EMAIL_KEY | The password for the user for sending emails (the sendgrid password) | sendgridpassword |
 | EMAIL_FROM | The email address that will be sending the email | verifiedsendgridemail |
+| EMAIL_SENDING_RATE | A throttle for how quickly requests should be pushed out (this avoids dropped requests based on limits) | null |
+| AWS_SES_ACCESS_KEY | AWS SES access key | |
+| AWS_SES_SECRET_KEY | AWS SES secret key | |
+| AWS_REGION | The region for AWS SES | us-east-2 |
 
 #### Auth
 | Environment variable | Description | Default value |
@@ -79,6 +87,12 @@
 | --- | --- | --- |
 | RENDERER_URL | The base url for the renderer | http://localhost:3000 |
 | RENDERER_REQUEST_TIMEOUT | The number of millis before requests to the renderer timeout | 75000 |
+
+#### Renderer Open Labs
+| Environment variable | Description | Default value |
+| --- | --- | --- |
+| OPENLAB_URL | The url for "Ask For Help" that links to open labs | |
+| OPENLAB_REQUEST_TIMEOUT | The amount of time that openlabs has to respond to requests before timing out | 75000 |
 
 #### Jira
 | Environment variable | Description | Default value |
@@ -130,3 +144,8 @@
 | ATTACHMENTS_PRESIGNED_URL_BASE_PATH | The base path to fetch the presigned url for uploads (i.e. http://example.com`/base/path`) | '' |
 | ATTACHMENTS_BASE_URL | The base path to be combined with the cloud filename for attachments | '' |
 | ATTACHMENTS_PRESIGNED_URL_TIMEOUT | The amount of time it is allowed to take to get a presigned url | 60000 |
+
+##### Importer
+| Environment variable | Description | Default value |
+| --- | --- | --- |
+| IMPORTER_MISSING_FILE_THRESHOLD | The total amount of PG and asset files allowed to be missing while declaring a course archive import successful | 10 |

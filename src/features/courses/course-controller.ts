@@ -690,6 +690,7 @@ class CourseController {
         });
     }
 
+    // TODO: Decrement topic counter if deleting a problem question.
     async softDeleteQuestions(options: DeleteQuestionsOptions): Promise<UpdateResult<CourseWWTopicQuestion>> {
         let courseTopicContentId = options.courseTopicContentId;
         return useDatabaseTransaction(async (): Promise<UpdateResult<CourseWWTopicQuestion>> => {
@@ -729,7 +730,13 @@ class CourseController {
                 }
             });
 
+            // If only one question is deleted, rather than a whole topic.
             if (!_.isNil(existingQuestion)) {
+                // If this question was previously in an error state, decrement the topic's error cache.
+                if (!_.isNil(existingQuestion.errors)) {
+                    (await existingQuestion.getTopic()).decrement('errors');
+                }
+
                 const problemNumberField = CourseWWTopicQuestion.rawAttributes.problemNumber.field;
                 await courseRepository.updateQuestions({
                     where: {

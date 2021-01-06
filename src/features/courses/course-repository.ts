@@ -715,6 +715,12 @@ class CourseRepository {
     // be used when you definitely know that the error count should go up.
     async incrementTopicErrorCount(topicId: number): Promise<void> {
         const topic = await CourseTopicContent.findOne({where: {id: topicId}});
+
+        if (_.isNil(topic)) {
+            console.error('Tried to increment for a topic ID that doesn\'t exist.');
+            return;
+        }
+
         topic?.increment('errors');
     }
 

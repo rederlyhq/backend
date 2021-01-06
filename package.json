@@ -108,7 +108,7 @@
     "sequelize:built:migrations": "sequelize -- db:migrate",
     "lint": "eslint src/ --ext .ts",
     "clean": "if [ -d ts-built ]; then rm -r ts-built; fi;",
-    "package": "node ./package.js",
+    "package": "node ./utility-scripts/package.js",
     "build:package": "npm run build && npm run package"
   },
   "nodemonConfig": {

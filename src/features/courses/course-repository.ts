@@ -30,7 +30,6 @@ import StudentGradeProblemAttachment from '../../database/models/student-grade-p
 import StudentGradeInstanceProblemAttachment from '../../database/models/student-grade-instance-problem-attachment';
 import StudentWorkbookProblemAttachment from '../../database/models/student-workbook-problem-attachment';
 import rendererHelper from '../../utilities/renderer-helper';
-import RederlyError from '../../exceptions/rederly-error';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -755,12 +754,12 @@ class CourseRepository {
         const wasValid = _.isNil(question.errors) && _.isNil(question.courseQuestionAssessmentInfo?.errors);
 
         if ((wasValid && isValid) || (!wasValid && !isValid)) {
-            logger.info(`No updated needed - isValid already ${wasValid.toString()}`);
+            logger.debug(`Not updating topic error count because isValid == wasValud (${wasValid})`);
             return;
         } else {
             const topic = question.topic;
             if (_.isNil(topic)) {
-                logger.error('Could not find topic');
+                logger.error('Could not find topic to update error count on.');
                 return;
             }
 
@@ -788,7 +787,6 @@ class CourseRepository {
     }
 
     async updateQuestion(options: UpdateQuestionOptions): Promise<UpdateResult<CourseWWTopicQuestion>> {
-        console.log('Updating question.');
         if (!_.isNil(options.updates.webworkQuestionPath)) {
             const isValid = await rendererHelper.isPathAccessibleToRenderer({problemPath: options.updates.webworkQuestionPath});
 
@@ -801,7 +799,6 @@ class CourseRepository {
             options.updates.courseQuestionAssessmentInfo.errors = await this.getErrorObjectForQuestionAssessmentInfo(options.updates.courseQuestionAssessmentInfo.additionalProblemPaths);
         }
 
-        console.log(options.updates.errors, options.updates.courseQuestionAssessmentInfo?.errors);
         this.updateTopicErrorCount(options.where.id, _.isNil(options.updates.errors) && _.isNil(options.updates.courseQuestionAssessmentInfo?.errors));
 
         try {

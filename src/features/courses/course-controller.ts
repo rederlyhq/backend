@@ -690,7 +690,6 @@ class CourseController {
         });
     }
 
-    // TODO: Decrement topic counter if deleting a problem question.
     async softDeleteQuestions(options: DeleteQuestionsOptions): Promise<UpdateResult<CourseWWTopicQuestion>> {
         let courseTopicContentId = options.courseTopicContentId;
         return useDatabaseTransaction(async (): Promise<UpdateResult<CourseWWTopicQuestion>> => {
@@ -734,7 +733,7 @@ class CourseController {
             if (!_.isNil(existingQuestion)) {
                 // If this question was previously in an error state, decrement the topic's error cache.
                 if (!_.isNil(existingQuestion.errors)) {
-                    (await existingQuestion.getTopic()).decrement('errors');
+                    existingQuestion.getTopic().then(topic => topic.decrement('errors'));
                 }
 
                 const problemNumberField = CourseWWTopicQuestion.rawAttributes.problemNumber.field;
@@ -1239,9 +1238,8 @@ class CourseController {
 
             return parsedWebworkDef.problems.asyncForEach(async (problem: Problem) => {
                 const pgFilePath = options.defFileDiscoveryResult?.defFileResult.pgFiles[problem.source_file ?? '']?.resolvedRendererPath ?? problem.source_file;
-                logger.debug(`Parsed ${pgFilePath} from DEF file.`);
+
                 if (pgFilePath?.startsWith('group:')) {
-                    logger.debug('Dealing with a group path.');
                     if(_.isNil(options.defFileDiscoveryResult)) {
                         throw new IllegalArgumentException('Cannot import buckets without archive import');
                     } else if (!parsedWebworkDef.isExam()) {
@@ -1253,19 +1251,25 @@ class CourseController {
                     });
                     const problemPath = result.shift();
 
-                    let errors = null;
                     const assessmentErrors = await courseRepository.getErrorObjectForQuestionAssessmentInfo(result);
-
-                    if (problemPath !== undefined) {
-                        if (await rendererHelper.isPathAccessibleToRenderer({problemPath: problemPath}) === false) {
-                            errors = {[problemPath]: [`${problemPath} cannot be found.`]};
-                        }
-                    } else console.error('The file path for this problem was not defined.');
+                    
+                    // This doesn't need to be called right now because group: imports are only supported by archive
+                    // and fail completely if there are any bad paths.
+                    // let errors = null;
+                    // if (problemPath !== undefined) {
+                    //     await [problemPath, ...result].asyncForEach(async (path) => {
+                    //         if (await rendererHelper.isPathAccessibleToRenderer({problemPath: path}) === false) {
+                    //             errors = {[problemPath]: [`${path} cannot be found.`]};
+                    //         }
+                    //     });
+                    // } else {
+                    //     logger.error('The file path from a group: section of a def file was not defined.');
+                    // }
 
                     // Update the topic ONCE if any part has errored.
-                    if (!_.isNil(errors) || _.isNil(assessmentErrors)) {
-                        courseRepository.incrementTopicErrorCount(options.courseTopicId);
-                    }
+                    // if (!_.isNil(errors) || _.isNil(assessmentErrors)) {
+                    //     courseRepository.incrementTopicErrorCount(options.courseTopicId);
+                    // }
 
                     const question = await this.addQuestion({
                         question: {
@@ -1277,12 +1281,10 @@ class CourseController {
                             maxAttempts: parseInt(problem.max_attempts ?? '-1'),
                             hidden: false,
                             optional: false,
-                            errors: errors,
                         },
                         userIds: userIds
                     });
 
-                    console.log('Creating Assessment Info with errors: ', assessmentErrors);
                     await CourseQuestionAssessmentInfo.create({
                         additionalProblemPaths: result,
                         courseWWTopicQuestionId: question.id,
@@ -1297,6 +1299,7 @@ class CourseController {
                         throw new NotFoundError('The file path for this problem was not defined.');
                     }
 
+                    // TODO: This call is duplicated for Tarball uploads. Skip it and get the error objects from that call.
                     if (await rendererHelper.isPathAccessibleToRenderer({problemPath: pgFilePath}) === false) {
                         errors = {[pgFilePath]: [`${pgFilePath} cannot be found.`]};
                         courseRepository.incrementTopicErrorCount(options.courseTopicId);
@@ -4283,6 +4286,7 @@ You can contact your student at ${options.student.email} or by replying to this 
         let rendererSavePGFileRequests = 0;
         let rendererSaveAssetRequests = 0;
         let rendererAccessibleRequests = 0;
+
         const missingPGFileErrors: Array<string> = [];
         const missingAssetFileErrors: Array<string> = [];
         const missingFileErrorCheck = (): string => {

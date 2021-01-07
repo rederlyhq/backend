@@ -1659,6 +1659,12 @@ class CourseController {
 
             if(workbook?.randomSeed === studentGrade.originalRandomSeed) {
                 await studentGrade.save();
+            } else {
+                if (_.isNil(workbook)) {
+                    logger.debug('Workbook not kept, did not update grade');
+                } else {
+                    logger.debug('Random seed was different, not saving due to SMA');
+                }
             }
             // If nil coming in and the attempt was tracked this will result in the new workbook
             return workbook;

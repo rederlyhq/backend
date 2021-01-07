@@ -6,7 +6,7 @@ export default {
     // Transactions are automatically use because a namespace is injected into sequelize when fetching configurations
     await queryInterface.sequelize.transaction(async () => {
       await queryInterface.addColumn('student_grade', 'student_grade_original_random_seed', {
-        type: DataTypes.TEXT,
+        type: DataTypes.INTEGER,
         // Have to add later after filling previous
         allowNull: true,
       });
@@ -19,7 +19,7 @@ export default {
         'student_grade',
         'student_grade_original_random_seed',
         {
-          type: DataTypes.TEXT,
+          type: DataTypes.INTEGER,
           allowNull: false,
         }
       );

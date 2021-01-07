@@ -641,3 +641,8 @@ export interface AddQuestionOptions {
     question: Partial<CourseWWTopicQuestion>;
     userIds?: Array<number>;
 }
+
+export interface RequestNewProblemVersionOptions {
+    userId: number;
+    questionId: number;
+}

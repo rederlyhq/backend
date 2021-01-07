@@ -7,6 +7,7 @@ export interface StudentGradeInterface {
     active: boolean;
     userId: number;
     courseWWTopicQuestionId: number;
+    originalRandomSeed: number;
     randomSeed: number;
     bestScore: number;
     numAttempts: number;
@@ -28,6 +29,7 @@ export default class StudentGrade extends Model implements StudentGradeInterface
     public active!: boolean;
     public userId!: number;
     public courseWWTopicQuestionId!: number;
+    public originalRandomSeed!: number;
     public randomSeed!: number;
     public bestScore!: number;
     public numAttempts!: number;
@@ -192,6 +194,11 @@ StudentGrade.init({
         field: 'last_influencing_attempt_workbook_id',
         type: DataTypes.INTEGER,
         allowNull: true,
+    },
+    originalRandomSeed: {
+        field: 'student_grade_original_random_seed',
+        type: DataTypes.INTEGER,
+        allowNull: false,
     },
     randomSeed: {
         field: 'student_grade_random_seed',

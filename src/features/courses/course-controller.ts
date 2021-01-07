@@ -1542,7 +1542,8 @@ class CourseController {
         workbook,
         gradeResult,
         submitted,
-        timeOfSubmission
+        timeOfSubmission,
+        problemPath
     }: SetGradeFromSubmissionOptions): Promise<StudentWorkbook | undefined> => {
         return useDatabaseTransaction(async (): Promise<StudentWorkbook | undefined> => {
             if (gradeResult.gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
@@ -1563,6 +1564,7 @@ class CourseController {
                         studentGradeId: studentGrade.id,
                         userId: studentGrade.userId,
                         courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
+                        problemPath: problemPath,
                         randomSeed: studentGrade.randomSeed,
                         submitted: rendererHelper.cleanRendererResponseForTheDatabase(submitted as RendererResponse),
                         result: gradeResult.score,
@@ -1653,7 +1655,17 @@ class CourseController {
                     logger.debug('Not keeping a workbook');
                 }
             }
-            await studentGrade.save();
+
+
+            if(workbook?.randomSeed === studentGrade.originalRandomSeed) {
+                await studentGrade.save();
+            } else {
+                if (_.isNil(workbook)) {
+                    logger.debug('Workbook not kept, did not update grade');
+                } else {
+                    logger.debug('Random seed was different, not saving due to SMA');
+                }
+            }
             // If nil coming in and the attempt was tracked this will result in the new workbook
             return workbook;
         });
@@ -1969,6 +1981,7 @@ class CourseController {
                 }
             }
 
+            // Needs to be here in case grade was updated from override
             await studentGrade.save();
         });
     }
@@ -2041,7 +2054,8 @@ class CourseController {
             studentGrade,
             submitted,
             timeOfSubmission,
-            workbook
+            workbook,
+            problemPath: question.webworkQuestionPath,
         });
     };
 
@@ -3275,10 +3289,12 @@ class CourseController {
             courseTopicQuestionId
         } = options;
         try {
+            const randomSeed = this.generateRandomSeed();
             return await StudentGrade.create({
                 userId: userId,
                 courseWWTopicQuestionId: courseTopicQuestionId,
-                randomSeed: this.generateRandomSeed(),
+                randomSeed: randomSeed,
+                originalRandomSeed: randomSeed,
                 bestScore: 0,
                 overallBestScore: 0,
                 numAttempts: 0,
@@ -3702,6 +3718,7 @@ class CourseController {
                     courseWWTopicQuestionId: result.grade.courseWWTopicQuestionId,
                     studentGradeInstanceId: result.instance.id, // shouldn't this workbook be tied to a grade instance?
                     randomSeed: result.instance.randomSeed,
+                    problemPath: result.instance.webworkQuestionPath,
                     submitted: cleanSubmitted,
                     result: result.questionResponse.problem_result.score,
                     time: new Date(),

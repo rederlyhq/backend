@@ -7,6 +7,7 @@ export interface StudentGradeInterface {
     active: boolean;
     userId: number;
     courseWWTopicQuestionId: number;
+    originalRandomSeed: number;
     randomSeed: number;
     bestScore: number;
     numAttempts: number;
@@ -28,6 +29,7 @@ export default class StudentGrade extends Model implements StudentGradeInterface
     public active!: boolean;
     public userId!: number;
     public courseWWTopicQuestionId!: number;
+    public originalRandomSeed!: number;
     public randomSeed!: number;
     public bestScore!: number;
     public numAttempts!: number;

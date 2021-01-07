@@ -1655,7 +1655,11 @@ class CourseController {
                     logger.debug('Not keeping a workbook');
                 }
             }
-            await studentGrade.save();
+
+
+            if(workbook?.randomSeed === studentGrade.originalRandomSeed) {
+                await studentGrade.save();
+            }
             // If nil coming in and the attempt was tracked this will result in the new workbook
             return workbook;
         });
@@ -1971,6 +1975,7 @@ class CourseController {
                 }
             }
 
+            // Needs to be here in case grade was updated from override
             await studentGrade.save();
         });
     }

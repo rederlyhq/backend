@@ -3278,10 +3278,12 @@ class CourseController {
             courseTopicQuestionId
         } = options;
         try {
+            const randomSeed = this.generateRandomSeed();
             return await StudentGrade.create({
                 userId: userId,
                 courseWWTopicQuestionId: courseTopicQuestionId,
-                randomSeed: this.generateRandomSeed(),
+                randomSeed: randomSeed,
+                originalRandomSeed: randomSeed,
                 bestScore: 0,
                 overallBestScore: 0,
                 numAttempts: 0,

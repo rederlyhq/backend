@@ -4,7 +4,6 @@ export default {
   up: async (queryInterface: QueryInterface): Promise<void> => {
     // Transactions are automatically use because a namespace is injected into sequelize when fetching configurations
     await queryInterface.sequelize.transaction(async () => {
-      // TODO
       await queryInterface.addColumn('student_workbook', 'student_workbook_problem_path', {
         type: DataTypes.TEXT,
         // Have to add later after filling previous

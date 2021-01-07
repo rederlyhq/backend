@@ -193,6 +193,11 @@ StudentGrade.init({
         type: DataTypes.INTEGER,
         allowNull: true,
     },
+    originalRandomSeed: {
+        field: 'student_grade_original_random_seed',
+        type: DataTypes.INTEGER,
+        allowNull: false,
+    },
     randomSeed: {
         field: 'student_grade_random_seed',
         type: DataTypes.INTEGER,

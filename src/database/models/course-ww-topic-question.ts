@@ -160,7 +160,13 @@ CourseWWTopicQuestion.init({
         field: 'curriculum_topic_question_id',
         type: DataTypes.INTEGER,
         allowNull: true,
-    }
+    },
+    smaEnabled: {
+        field: 'course_topic_question_sma_enabled',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true
+      }
 }, {
     tableName: 'course_topic_question',
     sequelize: appSequelize, // this bit is important

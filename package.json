@@ -104,7 +104,7 @@
     "run:build": "node ts-built/index.js",
     "sequelize": "npm run build && sequelize",
     "sequelize:migrations": "npm run sequelize -- db:migrate",
-    "sequelize:migrations:devundo": "npm run sequelize -- db:migrate:undo:all --to 20210105150502-workbook-seed-path.js",
+    "sequelize:migrations:devundo": "npm run sequelize -- db:migrate:undo:all --to 20210105150502-workbook-problem-path.js",
     "sequelize:built:migrations": "sequelize -- db:migrate",
     "lint": "eslint src/ --ext .ts",
     "clean": "if [ -d ts-built ]; then rm -r ts-built; fi;",

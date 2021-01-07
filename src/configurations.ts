@@ -113,11 +113,11 @@ const isProduction = nodeEnv === 'production';
 const configurations = {
     app: {
         nodeEnv: nodeEnv,
+        baseDomain: readStringValue('BASE_DOMAIN', ''),
         isProduction: isProduction,
         logMissingConfigurations: readBooleanValue('LOG_MISSING_CONFIGURATIONS', true),
         failOnMissingConfigurations: readBooleanValue('FAIL_ON_MISSING_CONFIGURATIONS', isProduction),
         autoDeleteTemp: readBooleanValue('AUTO_DELETE_TEMP_FILES', true),
-        baseDomain: readStringValue('BASE_DOMAIN', ''),
     },
     server: {
         port: readStringValue('SERVER_PORT', '3000'),

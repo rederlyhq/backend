@@ -23,6 +23,7 @@
 | Environment variable | Description | Default value |
 | --- | --- | --- |
 | NODE_ENV | This is a standard environment variable which will make libraries behave differently (i.e. express). If set to `production` our application will be less verbose about error responses |  |
+| BASE_DOMAIN | This is the base domain that should be used for all links. This is something like `rederly.com`. | |
 
 #### Configuration handling
 | Environment variable | Description | Default value |
@@ -51,7 +52,6 @@
 | --- | --- | --- |
 | SERVER_LIMITER_WINDOW_LENGTH | The window in which the max requests are allowed to be made (provided in milliseconds) | 60000 (ms, which is 1 minute) |
 | SERVER_LIMITER_MAX_REQUESTS | The amount of requests that a single client is allowed to make in the above window | 100 |
-
 
 #### Database
 | Environment variable | Description | Default value |
@@ -130,7 +130,6 @@
 | LOGGING_LOG_JSON | Whether or not logs to the console should be formatted or output as json | false in development true in production |
 
 ##### Scheduler
-
 | Environment variable | Description | Default value |
 | --- | --- | --- |
 | SCHEDULER_BASE_PATH | The url to the scheduler | http://localhost:3003 |

@@ -1,7 +1,7 @@
 import StudentGrade from '../../database/models/student-grade';
 import StudentWorkbook from '../../database/models/student-workbook';
 import User from '../../database/models/user';
-import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface } from '../../database/models/course-ww-topic-question';
+import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface, CourseTopicQuestionErrors } from '../../database/models/course-ww-topic-question';
 import Course from '../../database/models/course';
 import { WhereOptions } from 'sequelize/types';
 import CourseUnitContent from '../../database/models/course-unit-content';
@@ -442,6 +442,8 @@ export interface CreateQuestionsForTopicFromDefFileContentOptions extends Create
 
 export interface CreateQuestionsForTopicFromParsedDefFileOptions extends CreateQuestionsForTopicFromDefFileOptions {
     parsedWebworkDef: WebWorkDef;
+    // If you've already parsed the DEF file, then you should have the errors already:
+    errors: CourseTopicQuestionErrors | null;
 }
 
 export interface DeleteQuestionsOptions {

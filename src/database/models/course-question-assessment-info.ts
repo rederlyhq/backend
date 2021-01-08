@@ -17,6 +17,7 @@ export default class CourseQuestionAssessmentInfo extends Model implements Cours
     public randomSeedSet!: Array<number>;
     public additionalProblemPaths!: Array<string>;
     public active!: boolean;
+    public errors!: CourseTopicQuestionErrors | null;
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -73,9 +74,15 @@ CourseQuestionAssessmentInfo.init({
         allowNull: false,
         defaultValue: true,
     },
+    errors: {
+        field: 'course_question_assessment_info_errors',
+        type: DataTypes.JSONB,
+        allowNull: true,
+        defaultValue: null,
+    }
 }, {
     tableName: 'course_question_assessment_info',
     sequelize: appSequelize, // this bit is important
 });
 
-import CourseWWTopicQuestion from './course-ww-topic-question';
+import CourseWWTopicQuestion, { CourseTopicQuestionErrors } from './course-ww-topic-question';

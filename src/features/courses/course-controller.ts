@@ -6,7 +6,7 @@ import { BaseError } from 'sequelize';
 import NotFoundError from '../../exceptions/not-found-error';
 import CourseUnitContent from '../../database/models/course-unit-content';
 import CourseTopicContent, { CourseTopicContentInterface } from '../../database/models/course-topic-content';
-import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface } from '../../database/models/course-ww-topic-question';
+import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface, CourseTopicQuestionErrors } from '../../database/models/course-ww-topic-question';
 import rendererHelper, { GetProblemParameters, OutputFormat, RendererResponse } from '../../utilities/renderer-helper';
 import { stripTarGZExtension } from '../../utilities/file-helper';
 import StudentWorkbook from '../../database/models/student-workbook';
@@ -729,7 +729,13 @@ class CourseController {
                 }
             });
 
+            // If only one question is deleted, rather than a whole topic.
             if (!_.isNil(existingQuestion)) {
+                // If this question was previously in an error state, decrement the topic's error cache.
+                if (!_.isNil(existingQuestion.errors)) {
+                    existingQuestion.getTopic().then(topic => topic.decrement('errors'));
+                }
+
                 const problemNumberField = CourseWWTopicQuestion.rawAttributes.problemNumber.field;
                 await courseRepository.updateQuestions({
                     where: {
@@ -1223,6 +1229,14 @@ class CourseController {
 
         const parsedWebworkDef: WebWorkDef = hasParsed(options) ? options.parsedWebworkDef : new WebWorkDef(options.webworkDefFileContent);
         let lastProblemNumber = await courseRepository.getLatestProblemNumberForTopic(options.courseTopicId) || 0;
+
+
+        const topic = await CourseTopicContent.findOne({where: {id: options.courseTopicId}});
+
+        if (_.isNil(topic)) {
+            throw new NotFoundError('Tried to increment for a topic ID that doesn\'t exist.');
+        }
+
         // TODO fix typings - remove any
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return useDatabaseTransaction<any>(async (): Promise<any> => {
@@ -1232,6 +1246,7 @@ class CourseController {
 
             return parsedWebworkDef.problems.asyncForEach(async (problem: Problem) => {
                 const pgFilePath = options.defFileDiscoveryResult?.defFileResult.pgFiles[problem.source_file ?? '']?.resolvedRendererPath ?? problem.source_file;
+
                 if (pgFilePath?.startsWith('group:')) {
                     if(_.isNil(options.defFileDiscoveryResult)) {
                         throw new IllegalArgumentException('Cannot import buckets without archive import');
@@ -1243,6 +1258,10 @@ class CourseController {
                         pgFilePath: pgFilePath,
                     });
                     const problemPath = result.shift();
+                    
+                    // Currently, group imports are only supported by archive and fail completely if there are any bad paths.
+                    // Thus, at this point, no errors are available to be set for courseQuestionAssessmentInfo.
+
                     const question = await this.addQuestion({
                         question: {
                             // active: true,
@@ -1252,7 +1271,7 @@ class CourseController {
                             weight: parseInt(problem.value ?? '1'),
                             maxAttempts: parseInt(problem.max_attempts ?? '-1'),
                             hidden: false,
-                            optional: false
+                            optional: false,
                         },
                         userIds: userIds
                     });
@@ -1260,12 +1279,31 @@ class CourseController {
                     await CourseQuestionAssessmentInfo.create({
                         additionalProblemPaths: result,
                         courseWWTopicQuestionId: question.id,
-                        randomSeedSet: []
+                        randomSeedSet: [],
                     });
-
 
                     return question;
                 } else {
+                    let errors: CourseTopicQuestionErrors | null = null;
+                    if (pgFilePath === undefined) {
+                        throw new NotFoundError('The file path for this problem was not defined.');
+                    }
+
+                    const parsedErrors = (options as CreateQuestionsForTopicFromParsedDefFileOptions).errors;
+                    if (_.isNil(parsedErrors)) {
+                        if (await rendererHelper.isPathAccessibleToRenderer({problemPath: pgFilePath}) === false) {
+                            errors = {[pgFilePath]: [`${pgFilePath} cannot be found.`]};
+                        }
+                    } else {
+                        // If an error object was passed in from an archive import, pull specifically the errors associated with this path, or null.
+                        errors = _.isNil(parsedErrors[pgFilePath]) ? null : {[pgFilePath]: parsedErrors[pgFilePath]};
+                    }
+
+                    // This increments on a per-problem basis. We could improve DB performance by doing this at the archive import when we do parsing.
+                    if (!_.isNil(errors) && !_.isEmpty(errors)) {
+                        topic.increment('errors');
+                    }
+
                     return this.addQuestion({
                         question: {
                             // active: true,
@@ -1275,7 +1313,8 @@ class CourseController {
                             weight: parseInt(problem.value ?? '1'),
                             maxAttempts: parseInt(problem.max_attempts ?? '-1'),
                             hidden: false,
-                            optional: false
+                            optional: false,
+                            errors: errors ?? null,
                         },
                         userIds: userIds
                     });
@@ -4263,6 +4302,8 @@ You can contact your student at ${options.student.email} or by replying to this 
         let rendererSavePGFileRequests = 0;
         let rendererSaveAssetRequests = 0;
         let rendererAccessibleRequests = 0;
+
+        const missingPGFileErrorsObject: CourseTopicQuestionErrors = {};
         const missingPGFileErrors: Array<string> = [];
         const missingAssetFileErrors: Array<string> = [];
         const missingFileErrorCheck = (): string => {
@@ -4349,6 +4390,7 @@ You can contact your student at ${options.student.email} or by replying to this 
                             problemPath: resolvedPath
                         });
                         if (!isAccessible) {
+                            missingPGFileErrorsObject[pgFile.pgFilePathFromDefFile] = [`${pgFile.pgFilePathFromDefFile} cannot be found. It was referenced in ${defFile.defFileRelativePath} from a legacy WeBWorK course archive.`];
                             missingPGFileErrors.push(`"${pgFile.pgFilePathFromDefFile}" from "${defFile.defFileRelativePath}"`);
                             // This method throws an error, therefore it doesn't need to return
                             missingFileErrorCheck();
@@ -4448,7 +4490,8 @@ You can contact your student at ${options.student.email} or by replying to this 
                             defFileResult: defFile,
                             bucketDefFiles: discoveredFiles.bucketDefFiles
                         },
-                        userIds: userIds
+                        userIds: userIds,
+                        errors: missingPGFileErrorsObject,
                     });
                 } catch (e) {
                     throw new WrappedError(`Failed to add questions to topic for ${defFile.defFileRelativePath}`, e);

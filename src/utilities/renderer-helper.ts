@@ -54,6 +54,7 @@ export const RENDERER_SAVE_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'can');
 export const RENDERER_CATALOG_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'cat');
 export const RENDERER_UPLOAD_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'upload');
 export const RENDERER_SMA_ENDPOINT = urljoin(NEW_RENDERER_ENDPOINT, 'sma');
+export const VALID_PG_PATH_REGEX = /^(private|Contrib|webwork-open-problem-library|Library)\/[^\0]+$/;
 
 export enum OutputFormat {
     SINGLE = 'single',
@@ -446,11 +447,17 @@ class RendererHelper {
     isPathAccessibleToRenderer = async ({
         problemPath
     }: IsPathAccessibleToRendererOptions): Promise<boolean> => {
+        if (!VALID_PG_PATH_REGEX.test(problemPath)) {
+            logger.debug(`${problemPath} failed the regex test and will never be accessible to the Renderer.`);
+            return false;
+        }
+
         try {
             const catalogResult = await this.catalog({
                 basePath: problemPath,
                 maxDepth: 0
             });
+
             // right now catalog returns empty string if you catalog a pg file
             return catalogResult as unknown === '';
         } catch (err) {

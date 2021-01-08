@@ -513,6 +513,7 @@ export interface SetGradeFromSubmissionOptions {
     gradeResult: GradeResult;
     submitted: unknown;
     timeOfSubmission? : Moment;
+    problemPath: string;
 }
 
 export interface ReGradeTopicOptions {

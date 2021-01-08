@@ -1,9 +1,11 @@
+#!/usr/bin/env -S npx ts-node
+
 import fs = require('fs');
 import path = require('path');
-import './extensions/array-extension';
-import './global-error-handlers';
+import '../src/extensions/array-extension';
+import '../src/global-error-handlers';
 import * as _ from 'lodash';
-import { recursiveListFilesInDirectory, listFilters } from './utilities/file-helper';
+import { recursiveListFilesInDirectory, listFilters } from '../src/utilities/file-helper';
 
 const fsPromises = fs.promises;
 

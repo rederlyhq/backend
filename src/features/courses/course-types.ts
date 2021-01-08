@@ -515,6 +515,7 @@ export interface SetGradeFromSubmissionOptions {
     gradeResult: GradeResult;
     submitted: unknown;
     timeOfSubmission? : Moment;
+    problemPath: string;
 }
 
 export interface ReGradeTopicOptions {
@@ -641,4 +642,9 @@ export interface ImportCourseTarballResult {
 export interface AddQuestionOptions {
     question: Partial<CourseWWTopicQuestion>;
     userIds?: Array<number>;
+}
+
+export interface RequestNewProblemVersionOptions {
+    userId: number;
+    questionId: number;
 }

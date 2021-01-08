@@ -17,7 +17,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, ImportCourseTarballResult, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions, AddQuestionOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, ImportCourseTarballResult, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions, AddQuestionOptions, RequestNewProblemVersionOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -1581,7 +1581,8 @@ class CourseController {
         workbook,
         gradeResult,
         submitted,
-        timeOfSubmission
+        timeOfSubmission,
+        problemPath
     }: SetGradeFromSubmissionOptions): Promise<StudentWorkbook | undefined> => {
         return useDatabaseTransaction(async (): Promise<StudentWorkbook | undefined> => {
             if (gradeResult.gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
@@ -1602,6 +1603,7 @@ class CourseController {
                         studentGradeId: studentGrade.id,
                         userId: studentGrade.userId,
                         courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
+                        problemPath: problemPath,
                         randomSeed: studentGrade.randomSeed,
                         submitted: rendererHelper.cleanRendererResponseForTheDatabase(submitted as RendererResponse),
                         result: gradeResult.score,
@@ -1692,7 +1694,17 @@ class CourseController {
                     logger.debug('Not keeping a workbook');
                 }
             }
-            await studentGrade.save();
+
+
+            if(workbook?.randomSeed === studentGrade.originalRandomSeed) {
+                await studentGrade.save();
+            } else {
+                if (_.isNil(workbook)) {
+                    logger.debug('Workbook not kept, did not update grade');
+                } else {
+                    logger.debug('Random seed was different, not saving due to SMA');
+                }
+            }
             // If nil coming in and the attempt was tracked this will result in the new workbook
             return workbook;
         });
@@ -2008,6 +2020,7 @@ class CourseController {
                 }
             }
 
+            // Needs to be here in case grade was updated from override
             await studentGrade.save();
         });
     }
@@ -2080,7 +2093,8 @@ class CourseController {
             studentGrade,
             submitted,
             timeOfSubmission,
-            workbook
+            workbook,
+            problemPath: question.webworkQuestionPath,
         });
     };
 
@@ -3314,10 +3328,12 @@ class CourseController {
             courseTopicQuestionId
         } = options;
         try {
+            const randomSeed = this.generateRandomSeed();
             return await StudentGrade.create({
                 userId: userId,
                 courseWWTopicQuestionId: courseTopicQuestionId,
-                randomSeed: this.generateRandomSeed(),
+                randomSeed: randomSeed,
+                originalRandomSeed: randomSeed,
                 bestScore: 0,
                 overallBestScore: 0,
                 numAttempts: 0,
@@ -3741,6 +3757,7 @@ class CourseController {
                     courseWWTopicQuestionId: result.grade.courseWWTopicQuestionId,
                     studentGradeInstanceId: result.instance.id, // shouldn't this workbook be tied to a grade instance?
                     randomSeed: result.instance.randomSeed,
+                    problemPath: result.instance.webworkQuestionPath,
                     submitted: cleanSubmitted,
                     result: result.questionResponse.problem_result.score,
                     time: new Date(),
@@ -4580,6 +4597,41 @@ You can contact your student at ${options.student.email} or by replying to this 
             emailURL,
             rawHTML,
         };
+    }
+
+    async requestProblemNewVersion(options: RequestNewProblemVersionOptions): Promise<StudentGrade | null> {
+        const {userId, questionId} = options;
+        
+        const grade = await StudentGrade.findOne({
+            where: {
+                userId,
+                courseWWTopicQuestionId: questionId,
+                active: true,
+            }
+        });
+        if (_.isNil(grade)) {
+            throw new RederlyError(`User #${userId} requested SMA on a problem (${questionId}) for which they do not have an active grade.`);
+        }
+
+        const question = await grade.getQuestion();
+        if (_.isNil(question)) {
+            throw new RederlyError(`(SMA) TSNH: User #${userId} has a grade (${grade.id}) without a corresponding topic question`);
+        }
+
+        const params = {
+            sourceFilePath: question.webworkQuestionPath,
+            avoidSeeds: [grade.randomSeed],
+        };
+        const response = await rendererHelper.showMeAnother(params);
+
+        if (_.isNil(response)) {
+            return null;
+        } else {
+            grade.randomSeed = response?.problemSeed;
+            const updatedGrade = await grade.save();
+            return updatedGrade;
+        }
+
     }
 }
 

@@ -203,6 +203,7 @@ export const updateCourseTopicQuestionValidation = {
         maxAttempts: Joi.number().optional(),
         hidden: Joi.boolean().optional(),
         optional: Joi.boolean().optional(),
+        smaEnabled: Joi.boolean().optional(),
         // Deletes are one directional and soft
         // active: Joi.boolean().optional(),
         // You cannot change the curriculum question in which this was derived
@@ -300,6 +301,14 @@ export const getQuestionRawValidation = {
 };
 
 export const getQuestionOpenLabValidation = {
+    params: {
+        id: Joi.number().required(),
+    },
+    query: {},
+    body: {}
+};
+
+export const getQuestionShowMeAnotherValidation = {
     params: {
         id: Joi.number().required(),
     },

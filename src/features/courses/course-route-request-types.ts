@@ -131,6 +131,12 @@ export namespace GetQuestionOpenLabRequest {
     export type body = Joi.extractType<typeof validations.getQuestionOpenLabValidation.body>;
 };
 
+export namespace GetQuestionShowMeAnotherRequest {
+    export type params = Joi.extractType<typeof validations.getQuestionShowMeAnotherValidation.params>;
+    export type query = Joi.extractType<typeof validations.getQuestionShowMeAnotherValidation.query>;
+    export type body = Joi.extractType<typeof validations.getQuestionShowMeAnotherValidation.body>;
+};
+
 export namespace GetQuestionRequest {
     export type params = Joi.extractType<typeof validations.getQuestionValidation.params>;
     export type query = Joi.extractType<typeof validations.getQuestionValidation.query>;

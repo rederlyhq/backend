@@ -169,6 +169,12 @@ CourseWWTopicQuestion.init({
         type: DataTypes.INTEGER,
         allowNull: true,
     },
+    smaEnabled: {
+        field: 'course_topic_question_sma_enabled',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true
+    },
     errors: {
         field: 'course_topic_question_errors',
         type: DataTypes.JSONB,

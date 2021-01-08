@@ -31,6 +31,7 @@ interface GenericTemplateOptions {
     locals: {
         SUBJECT_TEXT: string;
         BODY_TEXT: string;
+        // BASE_DOMAIN: string;
     };
 }
 
@@ -38,6 +39,7 @@ interface VerificationTemplateOptions {
     template: 'verification';
     locals: {
         verifyUrl: string | URL;
+        // BASE_DOMAIN: string;
     };
 }
 
@@ -96,14 +98,14 @@ class EmailHelper {
 
         this.mailer = new Email({
             views: {
-                root: path.resolve('assets/emails')
+                root: path.resolve('assets/emails'),
             },
             message: {
                 from: this.from,
                 // Default attachments for all emails without the email client automatically blocking them.
                 // GMail and Outlook do not support base64 data-urls.
                 attachments: [
-                ]
+                ],
             },
             transport: this.client,
             send: configurations.email.enabled,
@@ -126,6 +128,11 @@ class EmailHelper {
             ...(options.replyTo ? {headers: {'Reply-To': options.replyTo }} : undefined)
         };
 
+        const locals = {
+            BASE_DOMAIN: configurations.app.baseDomain,
+            ...options.locals,
+        };
+
         if (options.template) {
             return this.mailer.send({
                 template: options.template,
@@ -135,7 +142,7 @@ class EmailHelper {
                         ...getTemplateAttachments(options.template),
                     ]
                 },
-                locals: options.locals,
+                locals: locals,
             });
         } else {
             // Nodemailer's callback uses any

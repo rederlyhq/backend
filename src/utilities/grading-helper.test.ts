@@ -32,6 +32,7 @@ const defaultStudentGradeUnusedFields = {
     firstAttempts: 0,
     latestAttempts: 0,
     randomSeed: 0,
+    originalRandomSeed: 0,
     ...defaultUnusedFields,
     numExtendedAttempts: 0,
     numLegalAttempts: 0,

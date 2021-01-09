@@ -13,6 +13,7 @@ export interface StudentWorkbookInterface {
     courseWWTopicQuestionId: number;
     studentGradeInstanceId?: number;
     randomSeed: number;
+    problemPath: string;
 
     // This is a jsonb field so it could be any (from db)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,6 +38,7 @@ export default class StudentWorkbook extends Model implements StudentWorkbookInt
     public courseWWTopicQuestionId!: number;
     public studentGradeInstanceId?: number;
     public randomSeed!: number;
+    public problemPath!: string;
     // This is a jsonb field so it could be any (from db)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public submitted!: any;
@@ -96,6 +98,11 @@ StudentWorkbook.init({
         type: DataTypes.INTEGER,
         allowNull: true,
         defaultValue: null,
+    },
+    problemPath: {
+        field: 'student_workbook_problem_path',
+        type: DataTypes.TEXT,
+        allowNull: false,
     },
     randomSeed: {
         field: 'student_workbook_random_seed',

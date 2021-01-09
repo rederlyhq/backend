@@ -32,6 +32,9 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
     public deadDate!: Date;
     public partialExtend!: boolean;
 
+    // This is the count of errors in problems associated with this topic.
+    public errors!: number;
+
     public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
     public getUnit!: BelongsToGetAssociationMixin<CourseUnitContent>;
     public getTopicType!: BelongsToGetAssociationMixin<TopicType>;
@@ -173,6 +176,12 @@ CourseTopicContent.init({
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false
+    },
+    errors: {
+        field: 'course_topic_content_errors',
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
     },
 }, {
     tableName: 'course_topic_content',

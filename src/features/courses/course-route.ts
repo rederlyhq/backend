@@ -735,10 +735,10 @@ router.get('/question/:id/sma',
             throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const user = await req.session.getUser();
+        const userId = await req.session.userId;
         const { id: questionId } = req.params as GetQuestionShowMeAnotherRequest.params;
 
-        const updatedGrade = await courseController.requestProblemNewVersion({questionId, userId: user.id}); 
+        const updatedGrade = await courseController.requestProblemNewVersion({questionId, userId}); 
         if (_.isNil(updatedGrade)) {
             next(httpResponse.Ok('No new versions of this problem could be found.'));
         } else {

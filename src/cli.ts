@@ -4,6 +4,7 @@ import './extensions';
 import logger from './utilities/logger';
 import './global-error-handlers';
 import * as _ from 'lodash';
+import { performance } from 'perf_hooks';
 
 const enabledMarker = new Array(20).join('*');
 const disabledMarker = new Array(20).join('#');
@@ -65,6 +66,7 @@ const noop = (): void => {
 
 
 const syncBadPathCounts = async (): Promise<void> => {
+    const time = performance.now();
     await useDatabaseTransaction(async () => {
         const topics = await CourseTopicContent.findAll(
             {
@@ -101,9 +103,10 @@ const syncBadPathCounts = async (): Promise<void> => {
                 // If this is definitely bad and not already in the error object, add it.
                 if (isDefinitelyBad && (_.isNil(errors) || _.isEmpty(errors) || !(webworkQuestionPath in errors))){
                     logger.debug(`Updating ${question.id} from topic ${topic.id} with a path error.`);
-                    question.errors = {
-                        [webworkQuestionPath]: [`${webworkQuestionPath} cannot be found.`]
-                    };
+                    if (_.isNil(question.errors)) {
+                        question.errors = {};
+                    }
+                    question.errors[webworkQuestionPath] = [`${webworkQuestionPath} cannot be found.`, ...(question.errors[webworkQuestionPath] ?? [])];
                     question.save();
                 }
 
@@ -123,7 +126,7 @@ const syncBadPathCounts = async (): Promise<void> => {
                                 courseQuestionAssessmentInfo.errors = {};
                             }
                             logger.debug(`Updating ${courseQuestionAssessmentInfo.id} from topic ${topic.id} with an additional path error.`);
-                            courseQuestionAssessmentInfo.errors[path] = [`${path} cannot be found`];
+                            courseQuestionAssessmentInfo.errors[path] = [`${path} cannot be found`, ...(courseQuestionAssessmentInfo.errors[path] ?? [])];
                         }
                     });
                     courseQuestionAssessmentInfo.save();
@@ -142,6 +145,7 @@ const syncBadPathCounts = async (): Promise<void> => {
             }
         });
     });
+    console.info(`Request took ${performance.now() - time}`);
 };
 
 const commandLookup: {[key: string]: () => unknown} = {

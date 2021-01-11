@@ -141,7 +141,7 @@ const syncBadPathCounts = async (): Promise<void> => {
             if (count > topic.errors) {
                 logger.debug(`Updating topic ${topic.id} error count from ${topic.errors} to ${count}`);
                 topic.errors = count;
-                topic.save();
+                topic.save().catch(e => console.error(`Failed to save error updates on topic ${topic.id}`, e));
             }
         });
     });

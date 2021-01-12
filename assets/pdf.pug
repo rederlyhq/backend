@@ -1,0 +1,14 @@
+doctype html
+head
+  include ./emails/generic/head.pug
+  script(src="./node_modules/iframe-resizer/js/iframeResizer.min.js")
+body(width="210mm" height="297mm")
+    each problem in problems
+        if problem.srcdoc
+            h3 Problem !{problem.number}
+            iframe(srcdoc=`${problem.srcdoc}` width='100%' id=`prob${problem.number}`)
+            script.
+                // checkOrigin is just for development.
+                iFrameResize({ log: true, checkOrigin: false, autoResize: true, resizeFrom: 'child' }, "#prob!{problem.number}");
+        else
+            h3 Could not render Problem !{problem.number}

@@ -21,7 +21,6 @@ if (configurations.email.enabled) {
 import { sync } from '../database';
 import User from '../database/models/user';
 import CourseTopicContent from '../database/models/course-topic-content';
-import { options } from '@hapi/joi';
 import CourseWWTopicQuestion from '../database/models/course-ww-topic-question';
 import StudentGrade from '../database/models/student-grade';
 import * as _ from 'lodash';
@@ -30,9 +29,14 @@ import StudentGradeInstance from '../database/models/student-grade-instance';
 import ProblemAttachment from '../database/models/problem-attachment';
 import rendererHelper from '../utilities/renderer-helper';
 import Role from '../features/permissions/roles';
+import * as pug from 'pug';
+import * as fs from 'fs';
+import * as html5topdf from 'html5-to-pdf';
+
+const sleep = (millis: number): Promise<void> => new Promise(resolve => setTimeout(resolve, millis));
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const getAllContentForVersion = async ({topicId, userId}: {topicId: number, userId: number}): Promise<any> => {
+    const getAllContentForVersion = async ({topicId, userId}: {topicId: number; userId: number}): Promise<any> => {
 
         // To display which user that submitted this exam version.
         const user = await User.findOne({
@@ -136,7 +140,7 @@ import Role from '../features/permissions/roles';
                         data.questions[i].grades[j].rendererData = await rendererHelper.getProblem(obj);
                         console.log('Got renderer Data');
                 } catch (e) {
-                    // console.error(e);
+                    console.error(e);
                 }
             })
         );
@@ -163,12 +167,36 @@ import Role from '../features/permissions/roles';
         // console.log(topic);
         const questions = topic.questions;
         // console.log(questions);
-        const oneGrade = questions?.[0].grades?.[0];
-        // console.log(oneGrade);
-        const workbook = oneGrade.influencingWorkbook;
-        console.log(workbook.rendererData);
+        for (let i = 0; i < questions.length; ++i) {
+            const oneGrade = questions?.[3].grades?.[0];
+            // console.log(oneGrade);
+            const workbook = oneGrade.influencingWorkbook;
+            // console.log(oneGrade.rendererData);
+            if (!oneGrade.rendererData) continue;
+            break;
+        }
 
+        const pugFriendlyArray = questions.map((prob: any) => {
+            return {
+                number: prob.problemNumber,
+                srcdoc: prob.grades?.[0]?.rendererData?.renderedHTML,
+            };
+        });
 
+        const f = pug.compileFile('assets/pdf.pug');
+        fs.writeFileSync('pdftest.html', f({
+            problems: pugFriendlyArray
+        }), 'utf8');
+
+        const pdf = new html5topdf({
+            inputPath: 'pdftest.html',
+            outputPath: 'pdftest.pdf',
+            rendererDelay: 10000
+        });
+
+        await pdf.start();
+        await pdf.build();
+        await pdf.close();
 
         logger.info('Playground done');
     } catch (e) {

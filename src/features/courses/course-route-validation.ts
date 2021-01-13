@@ -412,6 +412,41 @@ export const listCoursesValidation = {
     body: {},
 };
 
+export const browseProblemsCourseListValidation = {
+    params: {},
+    query: {
+        instructorId: Joi.alternatives(Joi.number(), Joi.string().valid('me')).optional(),
+    },
+    body: {},
+};
+
+export const browseProblemsUnitListValidation = {
+    params: {},
+    query: {
+        courseId: Joi.number().optional(),
+    },
+    body: {},
+};
+
+export const browseProblemsTopicListValidation = {
+    params: {},
+    query: {
+        unitId: Joi.number().optional(),
+    },
+    body: {},
+};
+
+export const browseProblemsSearchValidation = {
+    params: {},
+    query: {
+        instructorId: Joi.alternatives(Joi.number(), Joi.string().valid('me')).optional(),
+        courseId: Joi.number().optional(),
+        unitId: Joi.number().optional(),
+        topicId: Joi.number().optional(),
+    },
+    body: {},
+};
+
 export const getGradesValidation = {
     params: {},
     query: {

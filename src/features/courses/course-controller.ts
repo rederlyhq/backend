@@ -364,7 +364,7 @@ class CourseController {
                             await TopicAssessmentInfo.create({
                                 ..._.omit(topicAssessmentInfo.get({plain: true}), ['id']),
                                 courseTopicContentId: createdCourseTopic.id,
-                                curriculumTopicAssessmentInfoId: curriculumTopic.id,
+                                curriculumTopicAssessmentInfoId: topicAssessmentInfo.id,
                             });
                         }
 
@@ -392,7 +392,7 @@ class CourseController {
                                 const createFromCurriculum = {
                                     ..._.omit(questionAssessmentInfo.get({plain: true}), ['id']),
                                     courseWWTopicQuestionId: createdCourseQuestion.id,
-                                    curriculumQuestionAssessmentInfoId: curriculumQuestion.id,
+                                    curriculumQuestionAssessmentInfoId: questionAssessmentInfo.id,
                                 };
 
                                 await CourseQuestionAssessmentInfo.create(createFromCurriculum);

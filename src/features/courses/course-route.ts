@@ -1175,6 +1175,7 @@ router.get('/browse-problems/search',
             next(e);
         }
     }));
+
 // This returns information about a specific topic. Currently, it only
 // returns extension information if a specific user is passed.
 router.get('/topic/:id',

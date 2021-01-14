@@ -39,7 +39,7 @@ import StudentGradeOverride from '../../database/models/student-grade-override';
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 import StudentTopicAssessmentOverride from '../../database/models/student-topic-assessment-override';
 import TopicAssessmentInfo, {TopicAssessmentInfoInterface} from '../../database/models/topic-assessment-info';
-import CourseQuestionAssessmentInfo from '../../database/models/course-question-assessment-info';
+import CourseQuestionAssessmentInfo, { CourseQuestionAssessmentInfoInterface } from '../../database/models/course-question-assessment-info';
 import schedulerHelper from '../../utilities/scheduler-helper';
 import configurations from '../../configurations';
 // Had an error using standard import
@@ -398,13 +398,15 @@ class CourseController {
         }
 
         return CourseWWTopicQuestion.findAll({
+            attributes: ['id', 'webworkQuestionPath'] as Array<keyof CourseWWTopicQuestionInterface>,
             include: [{
                 model: CourseQuestionAssessmentInfo,
                 as: 'courseQuestionAssessmentInfo',
                 required: false,
                 where: {
                     active: true
-                }
+                },
+                attributes: ['id', 'additionalProblemPaths'] as Array<keyof CourseQuestionAssessmentInfoInterface>,
             }, {
                 model: CourseTopicContent,
                 as: 'topic',
@@ -431,7 +433,7 @@ class CourseController {
                         where: _.omitBy({
                             active: true,
                             id: courseId,
-                            userId: instructorId
+                            instructorId: instructorId
                         }, _.isUndefined) as sequelize.WhereOptions
                     }]
                 }]

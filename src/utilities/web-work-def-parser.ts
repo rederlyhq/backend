@@ -92,23 +92,25 @@ export default class WebWorkDef {
                 continue lineLoop;
             } else if (this.v1ListMode) {
                 const tokens = line.split(',');
-                if (tokens.length !== 3) {
-                    throw new Error(`Malformatted v1 problem, more than 2 commas ${tokens.length - 1}`);
+                if (tokens.length > 3) {
+                    logger.warn(`V1 Def file has more than 3 values: [${line}]`);
                 }
                 const problem = new Problem();
+                // Technically this field can't be nil since split on a string will at least return the string
+                // but going to add nil accessor anyway
                 // webwork field
                 // eslint-disable-next-line @typescript-eslint/camelcase
-                problem.source_file = tokens[0].trim();
-                problem.value = tokens[1].trim();
+                problem.source_file = tokens[0]?.trim();
+                problem.value = tokens[1]?.trim();
                 // webwork field
                 // eslint-disable-next-line @typescript-eslint/camelcase
-                problem.max_attempts = tokens[2].trim();
+                problem.max_attempts = tokens[2]?.trim();
 
-                if (_.isNaN(parseInt(problem.value, 10))) {
+                if (!_.isUndefined(problem.value) && _.isNaN(parseInt(problem.value, 10))) {
                     throw new Error(`Error parsing v1 problem list, value ${problem.value} is not a number`);
                 }
 
-                if (_.isNaN(parseInt(problem.max_attempts, 10))) {
+                if (!_.isUndefined(problem.max_attempts) && _.isNaN(parseInt(problem.max_attempts, 10))) {
                     throw new Error(`Error parsing v1 problem list, max_attempts ${problem.max_attempts} is not a number`);
                 }
 

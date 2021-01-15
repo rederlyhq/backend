@@ -3024,7 +3024,7 @@ class CourseController {
                     topic.topicAssessmentInfo.hideProblemsAfterFinish && (
                         moment().isAfter(moment(version.endTime)) ||
                         version.isClosed ||
-                        version.maxAttempts <= version.numAttempts
+                        (version.maxAttempts <= version.numAttempts && version.maxAttempts > 0)
                     ) &&
                     userRole === Role.STUDENT
                 ) {

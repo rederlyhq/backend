@@ -90,6 +90,8 @@ const syncBadPathCounts = async (): Promise<void> => {
 
         logger.info(`Checking ${topics.length} topics`);
 
+        const allTopicsProcessedPromises: Promise<CourseTopicContent>[] = [];
+
         await topics.asyncForEach(async (topic) => {
             // For each question in the topic, sum the existence of a path problem.
             let count = 0;
@@ -112,7 +114,7 @@ const syncBadPathCounts = async (): Promise<void> => {
 
                 if (topic.topicTypeId === 2) {
                     if (_.isNil(courseQuestionAssessmentInfo)) {
-                        logger.error(`Topic ${topic.id} is an exam but this question has no assessment info.`);
+                        logger.debug(`Topic ${topic.id} is an exam but this question has no assessment info.`);
                         if (isDefinitelyBad) count += 1;
                         return;
                     }
@@ -141,11 +143,13 @@ const syncBadPathCounts = async (): Promise<void> => {
             if (count > topic.errors) {
                 logger.debug(`Updating topic ${topic.id} error count from ${topic.errors} to ${count}`);
                 topic.errors = count;
-                topic.save().catch(e => console.error(`Failed to save error updates on topic ${topic.id}`, e));
+                allTopicsProcessedPromises.push(topic.save());
             }
         });
+        await Promise.all(allTopicsProcessedPromises);
     });
-    console.info(`Request took ${performance.now() - time}`);
+
+    logger.info(`Request took ${performance.now() - time}`);
 };
 
 const commandLookup: {[key: string]: () => unknown} = {

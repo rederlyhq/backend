@@ -364,7 +364,7 @@ class CourseController {
                             await TopicAssessmentInfo.create({
                                 ..._.omit(topicAssessmentInfo.get({plain: true}), ['id']),
                                 courseTopicContentId: createdCourseTopic.id,
-                                curriculumTopicAssessmentInfoId: curriculumTopic.id,
+                                curriculumTopicAssessmentInfoId: topicAssessmentInfo.id,
                             });
                         }
 
@@ -392,7 +392,7 @@ class CourseController {
                                 const createFromCurriculum = {
                                     ..._.omit(questionAssessmentInfo.get({plain: true}), ['id']),
                                     courseWWTopicQuestionId: createdCourseQuestion.id,
-                                    curriculumQuestionAssessmentInfoId: curriculumQuestion.id,
+                                    curriculumQuestionAssessmentInfoId: questionAssessmentInfo.id,
                                 };
 
                                 await CourseQuestionAssessmentInfo.create(createFromCurriculum);
@@ -1244,7 +1244,7 @@ class CourseController {
                 topicId: options.courseTopicId
             });
 
-            return parsedWebworkDef.problems.asyncForEach(async (problem: Problem) => {
+            return parsedWebworkDef.problems.asyncForEach(async (problem: Problem, index: number) => {
                 const pgFilePath = options.defFileDiscoveryResult?.defFileResult.pgFiles[problem.source_file ?? '']?.resolvedRendererPath ?? problem.source_file;
 
                 if (pgFilePath?.startsWith('group:')) {
@@ -1308,7 +1308,7 @@ class CourseController {
                         question: {
                             // active: true,
                             courseTopicContentId: options.courseTopicId,
-                            problemNumber: ++lastProblemNumber,
+                            problemNumber: lastProblemNumber + index + 1,
                             webworkQuestionPath: pgFilePath,
                             weight: parseInt(problem.value ?? '1'),
                             maxAttempts: parseInt(problem.max_attempts ?? '-1'),

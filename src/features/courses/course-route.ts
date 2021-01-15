@@ -945,7 +945,7 @@ router.post('/assessment/topic/:id/submit/:version',
             throw new Error('You cannot submit an assessment that does not belong to you.');
         }
 
-        if (studentTopicAssessmentInfo.numAttempts >= studentTopicAssessmentInfo.maxAttempts) {
+        if (studentTopicAssessmentInfo.maxAttempts > 0 && studentTopicAssessmentInfo.numAttempts >= studentTopicAssessmentInfo.maxAttempts) {
             throw new IllegalArgumentException('This assessment version has no attempts remaining.');
         }
 

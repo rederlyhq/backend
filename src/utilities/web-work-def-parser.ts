@@ -133,7 +133,10 @@ export default class WebWorkDef {
             } else if (line.split('=').first?.trim() === 'problemList') {
                 this.v1ListMode = true;
             } else {
-                if (currentProblem === null) {
+                if (line.startsWith('#')) {
+                    // This does not handle mid line comments
+                    logger.debug('Comment in def file');
+                } else if (currentProblem === null) {
                     for (let keyIndex = 0; keyIndex < webWorkDefKeyMaps.length; keyIndex++) {
                         const webWorkDefKeyMap = webWorkDefKeyMaps[keyIndex];
                         let match;

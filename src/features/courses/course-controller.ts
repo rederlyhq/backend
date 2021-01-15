@@ -4272,7 +4272,7 @@ You can contact your student at ${options.student.email} or by replying to this 
         logger.info(`Import Course Archive start ${new Date()}`);
         const workingDirectoryName = stripTarGZExtension(nodePath.basename(fileName));
         if (_.isNull(workingDirectoryName)) {
-            throw new IllegalArgumentException('File must be a `.tar.gz` or a `.tgz` file!');
+            throw new IllegalArgumentException('File must be a `.tar`, `.tar.gz` or a `.tgz` file!');
         }
         const workingDirectory = `${nodePath.dirname(filePath)}/${workingDirectoryName}`;
         await fs.promises.mkdir(workingDirectory);

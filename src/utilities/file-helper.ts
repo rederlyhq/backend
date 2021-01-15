@@ -49,6 +49,7 @@ export const recursiveListFilesInDirectory = async (filePath: string, result: st
 };
 
 export enum TAR_EXTENSION {
+    TAR = '.tar',
     GZ_SINGLE = '.tgz',
     GZ_DOUBLE = '.tar.gz'
 }
@@ -57,6 +58,7 @@ export const determineTarExtension = (filename: string): TAR_EXTENSION | null =>
     const lower = filename.toLowerCase();
     if (lower.endsWith(TAR_EXTENSION.GZ_SINGLE)) return TAR_EXTENSION.GZ_SINGLE;
     else if (lower.endsWith(TAR_EXTENSION.GZ_DOUBLE)) return TAR_EXTENSION.GZ_DOUBLE;
+    else if (lower.endsWith(TAR_EXTENSION.TAR)) return TAR_EXTENSION.TAR;
     else return null;
 };
 

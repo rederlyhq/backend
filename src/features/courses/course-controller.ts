@@ -3679,7 +3679,7 @@ class CourseController {
     async submitAssessmentAnswers(studentTopicAssessmentInfoId: number, wasAutoSubmitted: boolean): Promise<SubmitAssessmentAnswerResult> {
         return useDatabaseTransaction(async (): Promise<SubmitAssessmentAnswerResult> => {
             const studentTopicAssessmentInfo = await this.getStudentTopicAssessmentInfoById(studentTopicAssessmentInfoId);
-            if (studentTopicAssessmentInfo.numAttempts >= studentTopicAssessmentInfo.maxAttempts) {
+            if (studentTopicAssessmentInfo.numAttempts >= studentTopicAssessmentInfo.maxAttempts && studentTopicAssessmentInfo.maxAttempts >= 0) {
                 // This can happen with auto submit if delete job task was not successful
                 throw new AttemptsExceededException('Cannot submit assessment answers when there are no attempts remaining');
             }

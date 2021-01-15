@@ -104,9 +104,10 @@ class CourseController {
         });
     }
 
-    getTopicById({id, userId, includeQuestions}: {id: number; userId?: number; includeQuestions?: boolean}): Promise<CourseTopicContent> {
+    getTopicById({id, userId, includeQuestions, includeWorkbookCount}: {id: number; userId?: number; includeQuestions?: boolean; includeWorkbookCount?: boolean}): Promise<CourseTopicContent> {
         const include = [];
         const subInclude = [];
+        const questionSubInclude = [];
         if (!_.isNil(userId)) {
             include.push({
                 model: StudentTopicOverride,
@@ -139,7 +140,27 @@ class CourseController {
             });
         }
 
-        if (includeQuestions) {
+        if (includeQuestions || includeWorkbookCount) {
+            questionSubInclude.push({
+                model: CourseQuestionAssessmentInfo,
+                as: 'courseQuestionAssessmentInfo',
+                required: false,
+                where: {
+                    active: true,
+                }
+            });
+
+            if (includeWorkbookCount) {
+                questionSubInclude.push({
+                    model: StudentWorkbook,
+                    as: 'workbooks',
+                    required: false,
+                    where: {
+                        active: true,
+                    },
+                });
+            }
+
             include.push({
                 model: CourseWWTopicQuestion,
                 as: 'questions',
@@ -147,14 +168,7 @@ class CourseController {
                 where: {
                     active: true,
                 },
-                include: [{
-                    model: CourseQuestionAssessmentInfo,
-                    as: 'courseQuestionAssessmentInfo',
-                    required: false,
-                    where: {
-                        active: true,
-                    }
-                }]
+                include: questionSubInclude
             });
         }
 
@@ -173,7 +187,7 @@ class CourseController {
             where: {
                 id,
             },
-            include
+            include,
         });
     }
 
@@ -533,8 +547,21 @@ class CourseController {
 
     async updateTopic(options: UpdateTopicOptions): Promise<CourseTopicContent[]> {
         const existingTopic = await courseRepository.getCourseTopic({
-            id: options.where.id
+            id: options.where.id,
+            checkUsed: true,
         });
+
+        const workbookCount = existingTopic.calculateWorkbookCount();
+        const versionCount = existingTopic.calculateVersionCount();
+        const topicIsChangingTypes = (existingTopic.topicTypeId !== options.updates.topicTypeId);
+
+        if ((
+                (workbookCount && workbookCount > 0) || 
+                (versionCount && versionCount > 0)
+            ) && topicIsChangingTypes
+        ) {
+            throw new IllegalArgumentException('Topic type cannot be changed. Students have begun working on this topic.');
+        }
 
         const originalTopic = existingTopic.get({
             plain: true
@@ -2997,7 +3024,7 @@ class CourseController {
                     topic.topicAssessmentInfo.hideProblemsAfterFinish && (
                         moment().isAfter(moment(version.endTime)) ||
                         version.isClosed ||
-                        version.maxAttempts <= version.numAttempts
+                        (version.maxAttempts <= version.numAttempts && version.maxAttempts > 0)
                     ) &&
                     userRole === Role.STUDENT
                 ) {
@@ -3679,7 +3706,7 @@ class CourseController {
     async submitAssessmentAnswers(studentTopicAssessmentInfoId: number, wasAutoSubmitted: boolean): Promise<SubmitAssessmentAnswerResult> {
         return useDatabaseTransaction(async (): Promise<SubmitAssessmentAnswerResult> => {
             const studentTopicAssessmentInfo = await this.getStudentTopicAssessmentInfoById(studentTopicAssessmentInfoId);
-            if (studentTopicAssessmentInfo.numAttempts >= studentTopicAssessmentInfo.maxAttempts) {
+            if (studentTopicAssessmentInfo.numAttempts >= studentTopicAssessmentInfo.maxAttempts && studentTopicAssessmentInfo.maxAttempts >= 0) {
                 // This can happen with auto submit if delete job task was not successful
                 throw new AttemptsExceededException('Cannot submit assessment answers when there are no attempts remaining');
             }

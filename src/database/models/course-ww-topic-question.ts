@@ -112,6 +112,12 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
             sourceKey: 'id',
             as: 'studentTopicQuestionOverride'
         });
+        
+        CourseWWTopicQuestion.hasMany(StudentWorkbook, {
+            foreignKey: 'courseWWTopicQuestionId',
+            sourceKey: 'id',
+            as: 'workbooks'
+        });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }
@@ -202,3 +208,4 @@ import CurriculumWWTopicQuestion from './curriculum-ww-topic-question';
 import CourseQuestionAssessmentInfo from './course-question-assessment-info';
 import StudentTopicQuestionOverride, { StudentTopicQuestionOverrideOverridesInterface } from './student-topic-question-override';
 import StudentGradeInstance, { StudentGradeInstanceInterface } from './student-grade-instance';
+import StudentWorkbook from './student-workbook';

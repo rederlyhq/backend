@@ -51,6 +51,8 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
     public readonly topicAssessmentInfo?: TopicAssessmentInfo;
     public studentTopicAssessmentInfo?: StudentTopicAssessmentInfo[];
     public readonly unit?: CourseUnitContent;
+    public workbookCount?: number;
+    public versionCount?: number;
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -64,6 +66,16 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
 
     getWithOverrides = (overrides: StudentTopicOverrideOveridesInterface): CourseTopicContentInterface => {
         return CourseTopicContent.getWithOverrides(this.get({ plain: true }) as CourseTopicContentInterface, overrides);
+    }
+
+    calculateWorkbookCount = (): number | undefined => {
+        this.workbookCount = _.sumBy(this.questions, 'workbooks.length') ?? undefined;
+        return this.workbookCount;
+    }
+
+    calculateVersionCount = (): number | undefined => {
+        this.versionCount = _.sumBy(this.topicAssessmentInfo?.studentTopicAssessmentInfo, 'length') ?? undefined;
+        return this.versionCount;
     }
 
     static constraints = {
@@ -182,6 +194,14 @@ CourseTopicContent.init({
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0,
+    },
+    workbookCount: {
+        type: DataTypes.VIRTUAL,
+        allowNull: true,
+    },
+    versionCount: {
+        type: DataTypes.VIRTUAL,
+        allowNull: true,
     },
 }, {
     tableName: 'course_topic_content',

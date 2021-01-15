@@ -337,23 +337,19 @@ router.put('/topic/:id',
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseTopicRequest.body, UpdateCourseTopicRequest.query>, _res: Response, next: NextFunction) => {
         const params = req.params as UpdateCourseTopicRequest.params;
-        try {
-            const updatesResult = await courseController.updateTopic({
-                where: {
-                    id: params.id
-                },
-                updates: {
-                    ...req.body
-                }
-            });
-            // TODO handle not found case
-            next(httpResponse.Ok('Updated topic successfully', {
-                updatesResult,
-                updatesCount: updatesResult.length
-            }));
-        } catch (e) {
-            next(e);
-        }
+        const updatesResult = await courseController.updateTopic({
+            where: {
+                id: params.id
+            },
+            updates: {
+                ...req.body
+            }
+        });
+        // TODO handle not found case
+        next(httpResponse.Ok('Updated topic successfully', {
+            updatesResult,
+            updatesCount: updatesResult.length
+        }));
     }));
 
 router.get('/assessment/topic/grade/:id',
@@ -1091,7 +1087,17 @@ router.get('/topic/:id',
     // This is due to a typescript issue where the type mismatches extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetTopicRequest.body, GetTopicRequest.query, unknown>, _res: Response, next: NextFunction) => {
-        const result = await courseController.getTopicById({ id: req.params.id, userId: req.query.userId, includeQuestions: req.query.includeQuestions });
+        const result = await courseController.getTopicById({ 
+            id: req.params.id, 
+            userId: req.query.userId, 
+            includeQuestions: req.query.includeQuestions,
+            includeWorkbookCount: req.query.includeWorkbookCount,
+        });
+
+        if (req.query.includeWorkbookCount) {
+            result.calculateWorkbookCount();
+        }
+
         next(httpResponse.Ok('Fetched successfully', result));
     }));
 

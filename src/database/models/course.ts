@@ -1,7 +1,45 @@
 import { Model, DataTypes, HasManyGetAssociationsMixin, HasOneGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
-export default class Course extends Model {
+export interface CourseInterface {
+    id: number;
+    active: boolean;
+    curriculumId: number;
+    instructorId: number;
+    universityId: number;
+    name: string;
+    code: string;
+    start: Date;
+    end: Date;
+    sectionCode: string;
+    semesterCode: string;
+}
+export default class Course extends Model implements CourseInterface {
+    public id!: number; // Note that the `null assertion` `!` is required in strict mode.
+    public active!: boolean;
+    public curriculumId!: number;
+    public instructorId!: number;
+    public universityId!: number;
+    public name!: string;
+    public code!: string;
+    public start!: Date;
+    public end!: Date;
+    public sectionCode!: string;
+    public semesterCode!: string;
+
+    public units?: CourseUnitContent[];
+    public enrolledStudents?: StudentEnrollment[];
+
+    // timestamps!
+    public readonly createdAt!: Date;
+    public readonly updatedAt!: Date;
+
+    public readonly instructor?: User;
+
+    public getEnrolledStudents!: HasManyGetAssociationsMixin<StudentEnrollment>;
+    public getInstructor!: HasOneGetAssociationMixin<User>;
+    public getUniversity!: HasOneGetAssociationMixin<University>;
+
     static constraints = {
         uniqueCourseCode: 'course_course_code_key',
 
@@ -41,31 +79,6 @@ export default class Course extends Model {
         });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
-
-    public id!: number; // Note that the `null assertion` `!` is required in strict mode.
-    public active!: boolean;
-    public curriculumId!: number;
-    public instructorId!: number;
-    public universityId!: number;
-    public name!: string;
-    public code!: string;
-    public start!: Date;
-    public end!: Date;
-    public sectionCode!: string;
-    public semesterCode!: string;
-
-    public units?: CourseUnitContent[];
-    public enrolledStudents?: StudentEnrollment[];
-
-    // timestamps!
-    public readonly createdAt!: Date;
-    public readonly updatedAt!: Date;
-
-    public readonly instructor?: User;
-
-    public getEnrolledStudents!: HasManyGetAssociationsMixin<StudentEnrollment>;
-    public getInstructor!: HasOneGetAssociationMixin<User>;
-    public getUniversity!: HasOneGetAssociationMixin<University>;
 }
 
 Course.init({

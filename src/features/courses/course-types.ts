@@ -31,6 +31,33 @@ export interface CourseListOptions {
     };
 }
 
+export interface BrowseProblemsCourseListOptions {
+    filter: {
+        instructorId?: number;
+    };
+}
+
+export interface BrowseProblemsUnitListOptions {
+    filter: {
+        courseId?: number;
+    };
+}
+
+export interface BrowseProblemsTopicListOptions {
+    filter: {
+        unitId?: number;
+    };
+}
+
+export interface GetSearchProblemResultsOptions {
+    filter: {
+        courseId?: number;
+        unitId?: number;
+        topicId?: number;
+        instructorId?: number;
+    };
+}
+
 export interface GetQuestionRepositoryOptions {
     id: number;
     userId?: number;

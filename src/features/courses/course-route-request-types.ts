@@ -197,6 +197,30 @@ export namespace ListCoursesRequest {
     export type body = Joi.extractType<typeof validations.listCoursesValidation.body>;
 };
 
+export namespace BrowseProblemsCourseListRequest {
+    export type params = Joi.extractType<typeof validations.browseProblemsCourseListValidation.params>;
+    export type query = Joi.extractType<typeof validations.browseProblemsCourseListValidation.query>;
+    export type body = Joi.extractType<typeof validations.browseProblemsCourseListValidation.body>;
+};
+
+export namespace BrowseProblemsUnitListRequest {
+    export type params = Joi.extractType<typeof validations.browseProblemsUnitListValidation.params>;
+    export type query = Joi.extractType<typeof validations.browseProblemsUnitListValidation.query>;
+    export type body = Joi.extractType<typeof validations.browseProblemsUnitListValidation.body>;
+};
+
+export namespace BrowseProblemsTopicListRequest {
+    export type params = Joi.extractType<typeof validations.browseProblemsTopicListValidation.params>;
+    export type query = Joi.extractType<typeof validations.browseProblemsTopicListValidation.query>;
+    export type body = Joi.extractType<typeof validations.browseProblemsTopicListValidation.body>;
+};
+
+export namespace BrowseProblemsSearchRequest {
+    export type params = Joi.extractType<typeof validations.browseProblemsSearchValidation.params>;
+    export type query = Joi.extractType<typeof validations.browseProblemsSearchValidation.query>;
+    export type body = Joi.extractType<typeof validations.browseProblemsSearchValidation.body>;
+};
+
 export namespace GetGradesRequest {
     export type params = Joi.extractType<typeof validations.getGradesValidation.params>;
     export type query = Joi.extractType<typeof validations.getGradesValidation.query>;

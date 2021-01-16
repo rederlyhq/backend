@@ -1397,7 +1397,7 @@ router.post('/question/editor/save',
             writeFilePath: writeFilePath,
         });
 
-        next(httpResponse.Ok('Loaded', {
+        next(httpResponse.Ok('Saved', {
             filePath: result
         }));
     }));
@@ -1425,7 +1425,7 @@ router.post('/question/editor/upload-asset',
             rendererPath: writeFilePath
         });
 
-        next(httpResponse.Ok('Loaded', {
+        next(httpResponse.Ok('Uploaded', {
             filePath: result
         }));
     }));
@@ -1436,11 +1436,16 @@ router.post('/question/editor/read',
     // This is due to a typescript issue where the type mismatches extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<ReadQuestionRequest.params, unknown, ReadQuestionRequest.body, ReadQuestionRequest.query>, _res: Response, next: NextFunction) => {
+        const sourceFilePath = req.body.filePath;
+        // TODO if we use this regex elsewhere we should centralize
+        // This should also be in the joi validation but due to time putting it here to handle the frontend
+        if (!/^(:?private\/|Contrib\/|webwork-open-problem-library\/Contrib\/|Library\/|webwork-open-problem-library\/OpenProblemLibrary\/)\S+\.pg$/.test(sourceFilePath)) {
+            throw new IllegalArgumentException('Invalid problem path; Problem paths must begin with private, Contrib or Library and end with a pg extension.');
+        }
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const sourceFilePath = req.body.filePath;
         const result = await rendererHelper.readProblemSource({
             sourceFilePath: sourceFilePath
         });

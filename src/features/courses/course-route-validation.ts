@@ -93,7 +93,7 @@ export const updateCourseTopicValidation = {
         // The following fields are only found on exams.
         topicAssessmentInfo: Joi.object({
             duration: Joi.number().optional().min(2),
-            maxGradedAttemptsPerVersion: Joi.number().optional().min(0),
+            maxGradedAttemptsPerVersion: Joi.number().optional().min(-1),
             maxVersions: Joi.number().optional().min(0),
             versionDelay: Joi.number().optional().min(0),
             hardCutoff: Joi.boolean().optional(),
@@ -364,6 +364,7 @@ export const getTopicValidation = {
     query: {
         userId: Joi.number().optional(),
         includeQuestions: Joi.boolean().optional(),
+        includeWorkbookCount: Joi.boolean().optional(),
     },
     body: {},
 };
@@ -408,6 +409,41 @@ export const listCoursesValidation = {
     query: {
         instructorId: Joi.number().optional(),
         enrolledUserId: Joi.number().optional(),
+    },
+    body: {},
+};
+
+export const browseProblemsCourseListValidation = {
+    params: {},
+    query: {
+        instructorId: Joi.alternatives(Joi.number(), Joi.string().valid('me')).optional(),
+    },
+    body: {},
+};
+
+export const browseProblemsUnitListValidation = {
+    params: {},
+    query: {
+        courseId: Joi.number().optional(),
+    },
+    body: {},
+};
+
+export const browseProblemsTopicListValidation = {
+    params: {},
+    query: {
+        unitId: Joi.number().optional(),
+    },
+    body: {},
+};
+
+export const browseProblemsSearchValidation = {
+    params: {},
+    query: {
+        instructorId: Joi.alternatives(Joi.number(), Joi.string().valid('me')).optional(),
+        courseId: Joi.number().optional(),
+        unitId: Joi.number().optional(),
+        topicId: Joi.number().optional(),
     },
     body: {},
 };

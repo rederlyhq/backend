@@ -8,6 +8,7 @@ import '../global-error-handlers';
 // import * as rendererPlay from './playground-renderer-functions';
 // import * as schedulerPlay from './playground-scheduler-functions';
 // import * as paidUsers from './playground-paid-users';
+// import * as defFile from './playground-def-file';
 
 const enabledMarker = new Array(20).join('*');
 const disabledMarker = new Array(20).join('#');

@@ -120,7 +120,7 @@ const configurations = {
         autoDeleteTemp: readBooleanValue('AUTO_DELETE_TEMP_FILES', true),
     },
     server: {
-        port: readStringValue('SERVER_PORT', '3000'),
+        port: readStringValue('SERVER_PORT', '3001'),
         basePath: readStringValue('SERVER_BASE_PATH', '/backend-api'),
         logInvalidlyPrefixedRequests: readBooleanValue('SERVER_LOG_INVALIDLY_PREFIXED_REQUESTS', true),
         blockInvalidlyPrefixedRequests: readBooleanValue('SERVER_BLOCK_INVALIDLY_PREFIXED_REQUESTS', true),

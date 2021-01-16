@@ -1,4 +1,4 @@
-import { listFilters, recursiveListFilesInDirectory } from '../file-helper';
+import { generateDirectoryWhitespaceMap, listFilters, recursiveListFilesInDirectory } from '../file-helper';
 import * as fse from 'fs-extra';
 import * as path from 'path';
 import logger from '../logger';
@@ -22,6 +22,7 @@ export interface FindFilesImageFileResult {
 export interface FindFilesPGFileOptions {
     contentRootPath: string;
     pgFilePathFromDefFile: string;
+    whitespaceMap: { [key: string]: string[] };
 }
 
 export interface FindFilesPGFileResult {
@@ -45,6 +46,7 @@ export interface FindFilesDefFileOptions {
     contentRootPath: string;
     defFilePath: string;
     bucketDefFiles: { [key: string]: BucketDefFileResult };
+    whitespaceMap: { [key: string]: string[] };
 }
 
 export interface FindFilesDefFileResult {
@@ -95,7 +97,8 @@ const getContentRoot = async (filePath: string): Promise<string> => {
                 return path.resolve(templatesPath);
             }
         } catch (e) {
-            logger.error('Could not stat templates', e);
+            // Having a templates directory is only the case for a course archive, so this is not an error
+            logger.debug('Could not stat templates', e);
         }
     }
     return path.resolve(filePath);
@@ -119,8 +122,23 @@ export const checkImageFiles = async ({ imageFilePathFromPgFile, pgFilePath }: F
  * This method processes each pg file
  * Iterate through each pg file and find assets (static images)
  */
-export const findFilesFromPGFile = async ({ contentRootPath, pgFilePathFromDefFile }: FindFilesPGFileOptions): Promise<FindFilesPGFileResult> => {
-    const pgFilePath = path.join(contentRootPath, pgFilePathFromDefFile);
+export const findFilesFromPGFile = async ({ contentRootPath, pgFilePathFromDefFile, whitespaceMap }: FindFilesPGFileOptions): Promise<FindFilesPGFileResult> => {
+    let pgFilePath = path.join(contentRootPath, pgFilePathFromDefFile);
+
+    let fileExists = await fse.pathExists(pgFilePath);
+    for(let i = 0; !fileExists && i < (whitespaceMap[pgFilePath]?.length ?? 0); i++) {
+        const tryPath = whitespaceMap[pgFilePath][i];
+        fileExists = await fse.pathExists(tryPath);
+        if (fileExists) {
+            if (whitespaceMap[pgFilePath].length > 1) {
+                logger.warn(`The original pg file path given did not exist and there were ${whitespaceMap[pgFilePath].length} paths that matched without whitespace, used the ${i} one`);
+            }
+            logger.debug(`findFilesFromPGFile: Whitespace fix translated "${pgFilePath}" ==> "${tryPath}" `);
+            pgFilePath = tryPath;
+            break;
+        }
+    }
+
     const pgFileName = path.basename(pgFilePath);
     const pgFileResult: FindFilesPGFileResult = {
         pgFilePathFromDefFile: pgFilePathFromDefFile,
@@ -157,7 +175,7 @@ export const findFilesFromPGFile = async ({ contentRootPath, pgFilePathFromDefFi
  * Iterate through each def file and find the pg files
  * Iterate through each pg file and find assets (static images)
  */
-export const findFilesFromDefFile = async ({ contentRootPath, defFilePath, bucketDefFiles }: FindFilesDefFileOptions): Promise<FindFilesDefFileResult> => {
+export const findFilesFromDefFile = async ({ contentRootPath, defFilePath, bucketDefFiles, whitespaceMap }: FindFilesDefFileOptions): Promise<FindFilesDefFileResult> => {
     const defFileRelativePath = path.relative(contentRootPath, defFilePath);
     let topicName = path.basename(defFileRelativePath, path.extname(defFileRelativePath));
     if(topicName.substring(0, 3).toLowerCase() === 'set') {
@@ -185,7 +203,7 @@ export const findFilesFromDefFile = async ({ contentRootPath, defFilePath, bucke
                 pgFilePathFromDefFile: pgFilePathFromDefFile,
             };
         } else {
-            const pgFileResult = await findFilesFromPGFile({ contentRootPath, pgFilePathFromDefFile });
+            const pgFileResult = await findFilesFromPGFile({ contentRootPath, pgFilePathFromDefFile, whitespaceMap });
             defFileResult.pgFiles[pgFilePathFromDefFile] = pgFileResult;    
         }
     });
@@ -200,6 +218,7 @@ export const findFilesFromDefFile = async ({ contentRootPath, defFilePath, bucke
  */
 export const findFiles = async ({ filePath }: FindFilesOptions): Promise<FindFilesResult> => {
     const contentRootPath = await getContentRoot(filePath);
+    const whitespaceMap = await generateDirectoryWhitespaceMap(filePath);
 
     const defFiles = await findDefFiles(contentRootPath);
     const result: FindFilesResult = {
@@ -208,7 +227,7 @@ export const findFiles = async ({ filePath }: FindFilesOptions): Promise<FindFil
     };
     
     await defFiles.asyncForEach(async (defFilePath) => {
-        const defFileResult = await findFilesFromDefFile({ contentRootPath, defFilePath, bucketDefFiles: result.bucketDefFiles });
+        const defFileResult = await findFilesFromDefFile({ contentRootPath, defFilePath, bucketDefFiles: result.bucketDefFiles, whitespaceMap });
         result.defFiles[defFileResult.defFileRelativePath] = defFileResult;
     });
 

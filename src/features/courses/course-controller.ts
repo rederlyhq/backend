@@ -1,10 +1,10 @@
 import * as _ from 'lodash';
 import Bluebird = require('bluebird');
-import Course from '../../database/models/course';
+import Course, {CourseInterface} from '../../database/models/course';
 import StudentEnrollment from '../../database/models/student-enrollment';
 import { BaseError } from 'sequelize';
 import NotFoundError from '../../exceptions/not-found-error';
-import CourseUnitContent from '../../database/models/course-unit-content';
+import CourseUnitContent, {CourseUnitContentInterface} from '../../database/models/course-unit-content';
 import CourseTopicContent, { CourseTopicContentInterface } from '../../database/models/course-topic-content';
 import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface, CourseTopicQuestionErrors } from '../../database/models/course-ww-topic-question';
 import rendererHelper, { GetProblemParameters, OutputFormat, RendererResponse } from '../../utilities/renderer-helper';
@@ -17,7 +17,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, ImportCourseTarballResult, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions, AddQuestionOptions, RequestNewProblemVersionOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, ImportCourseTarballResult, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions, AddQuestionOptions, RequestNewProblemVersionOptions, BrowseProblemsCourseListOptions, GetSearchProblemResultsOptions, BrowseProblemsTopicListOptions, BrowseProblemsUnitListOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -39,7 +39,7 @@ import StudentGradeOverride from '../../database/models/student-grade-override';
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 import StudentTopicAssessmentOverride from '../../database/models/student-topic-assessment-override';
 import TopicAssessmentInfo, {TopicAssessmentInfoInterface} from '../../database/models/topic-assessment-info';
-import CourseQuestionAssessmentInfo from '../../database/models/course-question-assessment-info';
+import CourseQuestionAssessmentInfo, { CourseQuestionAssessmentInfoInterface } from '../../database/models/course-question-assessment-info';
 import schedulerHelper from '../../utilities/scheduler-helper';
 import configurations from '../../configurations';
 // Had an error using standard import
@@ -104,9 +104,10 @@ class CourseController {
         });
     }
 
-    getTopicById({id, userId, includeQuestions}: {id: number; userId?: number; includeQuestions?: boolean}): Promise<CourseTopicContent> {
+    getTopicById({id, userId, includeQuestions, includeWorkbookCount}: {id: number; userId?: number; includeQuestions?: boolean; includeWorkbookCount?: boolean}): Promise<CourseTopicContent> {
         const include = [];
         const subInclude = [];
+        const questionSubInclude = [];
         if (!_.isNil(userId)) {
             include.push({
                 model: StudentTopicOverride,
@@ -139,7 +140,27 @@ class CourseController {
             });
         }
 
-        if (includeQuestions) {
+        if (includeQuestions || includeWorkbookCount) {
+            questionSubInclude.push({
+                model: CourseQuestionAssessmentInfo,
+                as: 'courseQuestionAssessmentInfo',
+                required: false,
+                where: {
+                    active: true,
+                }
+            });
+
+            if (includeWorkbookCount) {
+                questionSubInclude.push({
+                    model: StudentWorkbook,
+                    as: 'workbooks',
+                    required: false,
+                    where: {
+                        active: true,
+                    },
+                });
+            }
+
             include.push({
                 model: CourseWWTopicQuestion,
                 as: 'questions',
@@ -147,14 +168,7 @@ class CourseController {
                 where: {
                     active: true,
                 },
-                include: [{
-                    model: CourseQuestionAssessmentInfo,
-                    as: 'courseQuestionAssessmentInfo',
-                    required: false,
-                    where: {
-                        active: true,
-                    }
-                }]
+                include: questionSubInclude
             });
         }
 
@@ -173,7 +187,7 @@ class CourseController {
             where: {
                 id,
             },
-            include
+            include,
         });
     }
 
@@ -314,6 +328,133 @@ class CourseController {
         });
     }
 
+    // TODO combine with the above call when there is time to vet the changes
+    browseProblemsCourseList({
+        filter: {
+            instructorId
+        }
+    }: BrowseProblemsCourseListOptions): Bluebird<Course[]> {
+        const where: sequelize.WhereOptions = {};
+        const attributes: Array<keyof CourseInterface> = ['name', 'id'];
+
+        if (!_.isNil(instructorId)) {
+            where.instructorId = instructorId;
+        }
+
+        if (!_.has(where, 'active')) {
+            where.active = true;
+        }
+
+        return Course.findAll({
+            where,
+            attributes: attributes
+        });
+    }
+
+    // TODO make reusable
+    browseProblemsUnitList({
+        filter: {
+            courseId
+        }
+    }: BrowseProblemsUnitListOptions): Bluebird<CourseUnitContent[]> {
+        const where: sequelize.WhereOptions = {};
+        const attributes: Array<keyof CourseUnitContentInterface> = ['name', 'id'];
+
+        if (!_.isNil(courseId)) {
+            where.courseId = courseId;
+        }
+
+        if (!_.has(where, 'active')) {
+            where.active = true;
+        }
+
+        return CourseUnitContent.findAll({
+            where,
+            attributes: attributes
+        });
+    }
+
+    // TODO make reusable
+    browseProblemsTopicList({
+        filter: {
+            unitId
+        }
+    }: BrowseProblemsTopicListOptions): Bluebird<CourseTopicContent[]> {
+        const where: sequelize.WhereOptions = {};
+        const attributes: Array<keyof CourseTopicContentInterface> = ['name', 'id'];
+
+        if (!_.isNil(unitId)) {
+            where.courseUnitContentId = unitId;
+        }
+
+        if (!_.has(where, 'active')) {
+            where.active = true;
+        }
+
+        return CourseTopicContent.findAll({
+            where,
+            attributes: attributes
+        });
+    }
+
+    // TODO make reusable
+    browseProblemsSearch({
+        filter: {
+            courseId,
+            unitId,
+            topicId,
+            instructorId,
+        }
+    }: GetSearchProblemResultsOptions): Bluebird<CourseWWTopicQuestion[]> {
+        const where: sequelize.WhereOptions = {};
+        if (!_.has(where, 'active')) {
+            where.active = true;
+        }
+
+        return CourseWWTopicQuestion.findAll({
+            attributes: ['id', 'webworkQuestionPath'] as Array<keyof CourseWWTopicQuestionInterface>,
+            include: [{
+                model: CourseQuestionAssessmentInfo,
+                as: 'courseQuestionAssessmentInfo',
+                required: false,
+                where: {
+                    active: true
+                },
+                attributes: ['id', 'additionalProblemPaths'] as Array<keyof CourseQuestionAssessmentInfoInterface>,
+            }, {
+                model: CourseTopicContent,
+                as: 'topic',
+                required: true,
+                attributes: ['name', 'id'] as Array<keyof CourseTopicContentInterface>,
+                where: _.omitBy({
+                    active: true,
+                    id: topicId
+                }, _.isUndefined) as sequelize.WhereOptions,
+                include: [{
+                    model: CourseUnitContent,
+                    as: 'unit',
+                    required: true,
+                    attributes: ['name', 'id'] as Array<keyof CourseUnitContentInterface>,
+                    where: _.omitBy({
+                        active: true,
+                        id: unitId,
+                    }, _.isUndefined) as sequelize.WhereOptions,
+                    include: [{
+                        model: Course,
+                        as: 'course',
+                        required: true,
+                        attributes: ['name', 'id'] as Array<keyof CourseInterface>,
+                        where: _.omitBy({
+                            active: true,
+                            id: courseId,
+                            instructorId: instructorId
+                        }, _.isUndefined) as sequelize.WhereOptions
+                    }]
+                }]
+            }]
+        });
+    };
+    
     async createCourse(options: CreateCourseOptions): Promise<Course> {
         if (options.options.useCurriculum) {
             return useDatabaseTransaction(async () => {
@@ -364,7 +505,7 @@ class CourseController {
                             await TopicAssessmentInfo.create({
                                 ..._.omit(topicAssessmentInfo.get({plain: true}), ['id']),
                                 courseTopicContentId: createdCourseTopic.id,
-                                curriculumTopicAssessmentInfoId: curriculumTopic.id,
+                                curriculumTopicAssessmentInfoId: topicAssessmentInfo.id,
                             });
                         }
 
@@ -392,7 +533,7 @@ class CourseController {
                                 const createFromCurriculum = {
                                     ..._.omit(questionAssessmentInfo.get({plain: true}), ['id']),
                                     courseWWTopicQuestionId: createdCourseQuestion.id,
-                                    curriculumQuestionAssessmentInfoId: curriculumQuestion.id,
+                                    curriculumQuestionAssessmentInfoId: questionAssessmentInfo.id,
                                 };
 
                                 await CourseQuestionAssessmentInfo.create(createFromCurriculum);
@@ -533,8 +674,21 @@ class CourseController {
 
     async updateTopic(options: UpdateTopicOptions): Promise<CourseTopicContent[]> {
         const existingTopic = await courseRepository.getCourseTopic({
-            id: options.where.id
+            id: options.where.id,
+            checkUsed: true,
         });
+
+        const workbookCount = existingTopic.calculateWorkbookCount();
+        const versionCount = existingTopic.calculateVersionCount();
+        const topicIsChangingTypes = (existingTopic.topicTypeId !== options.updates.topicTypeId);
+
+        if ((
+                (workbookCount && workbookCount > 0) || 
+                (versionCount && versionCount > 0)
+            ) && topicIsChangingTypes
+        ) {
+            throw new IllegalArgumentException('Topic type cannot be changed. Students have begun working on this topic.');
+        }
 
         const originalTopic = existingTopic.get({
             plain: true
@@ -1244,7 +1398,7 @@ class CourseController {
                 topicId: options.courseTopicId
             });
 
-            return parsedWebworkDef.problems.asyncForEach(async (problem: Problem) => {
+            return parsedWebworkDef.problems.asyncForEach(async (problem: Problem, index: number) => {
                 const pgFilePath = options.defFileDiscoveryResult?.defFileResult.pgFiles[problem.source_file ?? '']?.resolvedRendererPath ?? problem.source_file;
 
                 if (pgFilePath?.startsWith('group:')) {
@@ -1308,7 +1462,7 @@ class CourseController {
                         question: {
                             // active: true,
                             courseTopicContentId: options.courseTopicId,
-                            problemNumber: ++lastProblemNumber,
+                            problemNumber: lastProblemNumber + index + 1,
                             webworkQuestionPath: pgFilePath,
                             weight: parseInt(problem.value ?? '1'),
                             maxAttempts: parseInt(problem.max_attempts ?? '-1'),
@@ -2997,7 +3151,7 @@ class CourseController {
                     topic.topicAssessmentInfo.hideProblemsAfterFinish && (
                         moment().isAfter(moment(version.endTime)) ||
                         version.isClosed ||
-                        version.maxAttempts <= version.numAttempts
+                        (version.maxAttempts <= version.numAttempts && version.maxAttempts > 0)
                     ) &&
                     userRole === Role.STUDENT
                 ) {
@@ -3679,7 +3833,7 @@ class CourseController {
     async submitAssessmentAnswers(studentTopicAssessmentInfoId: number, wasAutoSubmitted: boolean): Promise<SubmitAssessmentAnswerResult> {
         return useDatabaseTransaction(async (): Promise<SubmitAssessmentAnswerResult> => {
             const studentTopicAssessmentInfo = await this.getStudentTopicAssessmentInfoById(studentTopicAssessmentInfoId);
-            if (studentTopicAssessmentInfo.numAttempts >= studentTopicAssessmentInfo.maxAttempts) {
+            if (studentTopicAssessmentInfo.numAttempts >= studentTopicAssessmentInfo.maxAttempts && studentTopicAssessmentInfo.maxAttempts >= 0) {
                 // This can happen with auto submit if delete job task was not successful
                 throw new AttemptsExceededException('Cannot submit assessment answers when there are no attempts remaining');
             }
@@ -4272,7 +4426,7 @@ You can contact your student at ${options.student.email} or by replying to this 
         logger.info(`Import Course Archive start ${new Date()}`);
         const workingDirectoryName = stripTarGZExtension(nodePath.basename(fileName));
         if (_.isNull(workingDirectoryName)) {
-            throw new IllegalArgumentException('File must be a `.tar.gz` or a `.tgz` file!');
+            throw new IllegalArgumentException('File must be a `.tar`, `.tar.gz` or a `.tgz` file!');
         }
         const workingDirectory = `${nodePath.dirname(filePath)}/${workingDirectoryName}`;
         await fs.promises.mkdir(workingDirectory);

@@ -1,0 +1,7 @@
+node_modules
+ts-built
+logs
+*.DS_Store
+tmp
+build
+package-outputs

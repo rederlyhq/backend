@@ -84,7 +84,7 @@ const assetInPgFileExtensions = '(?:' + // Non capture group to or all the exten
 .join('|') // or extensions together
  + ')'; // close non extension capture group
 
-const pearlQuotes: Array<[string, string]> = [
+const perlQuotes: Array<[string, string]> = [
     ['"', '"'], // Double quotes
     ["'", "'"], // single quotes
     ['`', '`'], // Backticks
@@ -96,9 +96,9 @@ const pearlQuotes: Array<[string, string]> = [
 const imageInPGFileRegex = new RegExp(
     [
         '(?<!#.*)(?:', // Comment, using non capture group to spread amongst or
-        `(?:image\\s*\\(\\s*(${pearlQuotes.map(pearlQuote => `${pearlQuote[0]}.+?${pearlQuote[1]}`).join('|')})\\s*(?:,(?:\\s|.)*?)?\\))`, // image call
+        `(?:image\\s*\\(\\s*(${perlQuotes.map(perlQuote => `${perlQuote[0]}.+?${perlQuote[1]}`).join('|')})\\s*(?:,(?:\\s|.)*?)?\\))`, // image call
         '|(', // pipe for regex or with capture non image, asset looking strings
-        pearlQuotes.map(pearlQuote => `(?:${pearlQuote[0]}.*?\.${assetInPgFileExtensions}${pearlQuote[1]})`).join('|'), // String check regex
+        perlQuotes.map(perlQuote => `(?:${perlQuote[0]}.*?\.${assetInPgFileExtensions}${perlQuote[1]})`).join('|'), // String check regex
         ')', // close asset looking strings
         ')', // end non capture group for negative look behind
     ].join(''), 'g'
@@ -182,7 +182,7 @@ export const findFilesFromPGFile = async ({ contentRootPath, pgFilePathFromDefFi
             await imageInPGFileMatches.asyncForEach(async (imageInPGFileMatch) => {
                 let imagePath: string = imageInPGFileMatch[1] ?? imageInPGFileMatch[2];
 
-                pearlQuotes.some(quote => {
+                perlQuotes.some(quote => {
                     const insideRegex = new RegExp(`${quote[0]}(.*)${quote[1]}`, 'g');
                     const matches = getAllMatches(insideRegex, imagePath);
                     if (matches.length > 1) {

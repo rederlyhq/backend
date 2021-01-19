@@ -458,6 +458,7 @@ export interface CreateGradeInstancesForAssessmentOptions {
 // not exporting since this is meant to be abstract
 interface CreateQuestionsForTopicFromDefFileOptions {
     courseTopicId: number;
+    topic?: CourseTopicContent;
     userIds?: Array<number>;
     defFileDiscoveryResult?: {
         defFileResult: FindFilesDefFileResult;

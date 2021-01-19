@@ -15,21 +15,17 @@ jobs:
   build:
     name: Upload Release Asset
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [14.15.3]
+    container:
+      image: 'node:14.15.3-alpine'
     steps:
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-version }}
-      - name: Checkout code
-        uses: actions/checkout@v1
+      - name: Install git
+        run: apk add git
+      - uses: actions/checkout@v1
+      - name: npm install
+        run: npm install
       - name: Get the file name
         id: get_file_name
         run: echo ::set-output name=result::rederly-$(git describe)-backend
-      - name: NPM install
-        uses: bahmutov/npm-install@v1
       - name: Build and package
         run: npm run build:package
         env:

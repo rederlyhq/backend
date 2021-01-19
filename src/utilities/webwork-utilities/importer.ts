@@ -1,6 +1,7 @@
 import { generateDirectoryWhitespaceMap, listFilters, recursiveListFilesInDirectory } from '../file-helper';
 import * as fse from 'fs-extra';
 import * as path from 'path';
+import * as _ from 'lodash';
 import logger from '../logger';
 import RederlyError from '../../exceptions/rederly-error';
 import { getAllMatches } from '../string-helper';
@@ -70,17 +71,38 @@ export const findDefFiles = (filePath: string): Promise<Array<string>> => {
     return recursiveListFilesInDirectory(filePath, [], listFilters.endsWith('.def', false));
 };
 
-/**
- * Regex maintains state so in order to safely use the regular expression (especially async) we should create a new one for each request
- * example:
- * const r = /^\s*source_file\s*=\s*(.*?\.pg\s*$)/igm;
- * r.test('source_file=a.pg') // true
- * r.test('source_file=ab.pg') // false
- * r.test('source_file=ab.pg') // true
- */
-// const pgFileInDefFileRegex = /^\s*source_file\s*=\s*(.*?\.pg\s*$)/igm;
 const pgFileInDefFileRegex = /^\s*source_file\s*=\s*(?:(group:\S*?|\S*?\.pg)\s*$)/igm;
-const imageInPGFileRegex = /(?<!#.*)image\s*\(\s*('.+?'|".+?")\s*(?:,(?:\s|.)*?)?\)/g;
+
+const assetInPgFileExtensions = '(?:' + // Non capture group to or all the extensions together
+[
+    '[gG][iI][fF]', // gif
+    '[aA]?[pP][nN][gG]', // or apng, png
+    '[jJ][pP][eE]?[gG]', // or jpg, jpeg
+    '[sS][vV][gG]', // or svg
+    '[wW][eE][bB][pP]', // or webp
+]
+.join('|') // or extensions together
+ + ')'; // close non extension capture group
+
+const pearlQuotes: Array<[string, string]> = [
+    ['"', '"'], // Double quotes
+    ["'", "'"], // single quotes
+    ['`', '`'], // Backticks
+    ['qw\\s*\\(', '\\)'], // qw
+    ['qq\\s*\\(', '\\)'], // qq
+    ['q\\s*\\(', '\\)'], // q
+];
+
+const imageInPGFileRegex = new RegExp(
+    [
+        '(?<!#.*)(?:', // Comment, using non capture group to spread amongst or
+        `(?:image\\s*\\(\\s*(${pearlQuotes.map(pearlQuote => `${pearlQuote[0]}.+?${pearlQuote[1]}`).join('|')})\\s*(?:,(?:\\s|.)*?)?\\))`, // image call
+        '|(', // pipe for regex or with capture non image, asset looking strings
+        pearlQuotes.map(pearlQuote => `(?:${pearlQuote[0]}.*?\.${assetInPgFileExtensions}${pearlQuote[1]})`).join('|'), // String check regex
+        ')', // close asset looking strings
+        ')', // end non capture group for negative look behind
+    ].join(''), 'g'
+);
 
 /**
  * This method determines the root directory of an upload
@@ -158,9 +180,27 @@ export const findFilesFromPGFile = async ({ contentRootPath, pgFilePathFromDefFi
             const pgFileContent = (await fsPromises.readFile(pgFilePath)).toString();
             const imageInPGFileMatches = getAllMatches(imageInPGFileRegex, pgFileContent);
             await imageInPGFileMatches.asyncForEach(async (imageInPGFileMatch) => {
-                let imagePath = imageInPGFileMatch[1];
-                // The capture group has the quotes in them, this strips those quotes off
-                imagePath = imagePath.substring(1, imagePath.length - 1);
+                let imagePath: string = imageInPGFileMatch[1] ?? imageInPGFileMatch[2];
+
+                pearlQuotes.some(quote => {
+                    const insideRegex = new RegExp(`${quote[0]}(.*)${quote[1]}`, 'g');
+                    const matches = getAllMatches(insideRegex, imagePath);
+                    if (matches.length > 1) {
+                        logger.warn(`findFilesFromPGFile: insideRegex expected 1 match but got ${matches.length}`);
+                    }
+                    // Will not be nil if different quotes
+                    if (!_.isNil(matches.first)) {
+                        // index 1 should be first capture group, should not be nil
+                        if (_.isNil(matches.first[1])) {
+                            logger.error(`findFilesFromPGFile: No capture group for quote ${quote[0]}`);
+                        } else {
+                            imagePath = matches.first[1];
+                        }
+                        // bow out
+                        return true;
+                    }
+                    return false;
+                });
                 pgFileResult.assetFiles.imageFiles[imagePath] = await checkImageFiles({ imageFilePathFromPgFile: imagePath, pgFilePath });
             });    
         }

@@ -4782,6 +4782,7 @@ You can contact your student at ${options.student.email} or by replying to this 
             return null;
         } else {
             grade.randomSeed = response?.problemSeed;
+            grade.currentProblemState = null;
             const updatedGrade = await grade.save();
             return updatedGrade;
         }

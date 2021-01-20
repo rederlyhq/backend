@@ -56,10 +56,11 @@ class UserController {
         });
     }
 
-    getUserByVerifyToken(verifyToken: string): Promise<User> {
+    getUserByVerifyToken(verifyToken: string, confirmEmail: string): Promise<User> {
         return User.findOne({
             where: {
-                verifyToken
+                verifyToken,
+                email: confirmEmail,
             }
         });
     }
@@ -437,7 +438,7 @@ class UserController {
     }
 
     async verifyUser(verifyToken: string, confirmEmail: string): Promise<boolean> {
-        const user = await this.getUserByVerifyToken(verifyToken);
+        const user = await this.getUserByVerifyToken(verifyToken, confirmEmail);
         if (_.isNil(user?.verifyToken)) {
             throw new IllegalArgumentException('Invalid verification token');
         } else if (user.verifyToken !== verifyToken) {
@@ -447,8 +448,6 @@ class UserController {
         } else if (user.verified) {
             logger.warn('Verification token should be set to null on verify, thus this should not be possible');
             throw new IllegalArgumentException('Already verified');
-        } else if (confirmEmail !== user.email) {
-            throw new IllegalArgumentException('Email address does not match verification.');
         } else {
             user.verified = true;
             user.actuallyVerified = true;

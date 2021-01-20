@@ -1384,9 +1384,12 @@ class CourseController {
         const parsedWebworkDef: WebWorkDef = hasParsed(options) ? options.parsedWebworkDef : new WebWorkDef(options.webworkDefFileContent);
         let lastProblemNumber = await courseRepository.getLatestProblemNumberForTopic(options.courseTopicId) || 0;
 
-
         const topic = options.topic ?? await CourseTopicContent.findOne({where: {id: options.courseTopicId}});
 
+        if (topic?.id !== options.courseTopicId) {
+            logger.warn('A topic ID was passed specifically, but a topic object with a different ID was also passed and took precedence.');
+        }
+        
         if (_.isNil(topic)) {
             throw new NotFoundError('Tried to increment for a topic ID that doesn\'t exist.');
         }

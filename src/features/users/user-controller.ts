@@ -56,10 +56,11 @@ class UserController {
         });
     }
 
-    getUserByVerifyToken(verifyToken: string): Promise<User> {
+    getUserByVerifyToken(verifyToken: string, confirmEmail: string): Promise<User> {
         return User.findOne({
             where: {
-                verifyToken
+                verifyToken,
+                email: confirmEmail,
             }
         });
     }
@@ -436,15 +437,15 @@ class UserController {
         };
     }
 
-    async verifyUser(verifyToken: string): Promise<boolean> {
-        const user = await this.getUserByVerifyToken(verifyToken);
+    async verifyUser(verifyToken: string, confirmEmail: string): Promise<boolean> {
+        const user = await this.getUserByVerifyToken(verifyToken, confirmEmail);
         if (_.isNil(user?.verifyToken)) {
             throw new IllegalArgumentException('Invalid verification token');
-        } else if(user.verifyToken !== verifyToken) {
+        } else if (user.verifyToken !== verifyToken) {
             throw new IllegalArgumentException('Invalid verification token');
-        } else if(moment().isAfter(user.verifyTokenExpiresAt)) {
+        } else if (moment().isAfter(user.verifyTokenExpiresAt)) {
             throw new IllegalArgumentException('Verification token has expired');
-        } else if(user.verified) {
+        } else if (user.verified) {
             logger.warn('Verification token should be set to null on verify, thus this should not be possible');
             throw new IllegalArgumentException('Already verified');
         } else {

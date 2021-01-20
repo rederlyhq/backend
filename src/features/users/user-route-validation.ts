@@ -51,7 +51,8 @@ export const loginValidation = {
 export const verifyValidation = {
     params: {},
     query: {
-        verifyToken: Joi.string().required()
+        verifyToken: Joi.string().required(),
+        confirmEmail: Joi.string().required(),
     },
     body: {}
 };

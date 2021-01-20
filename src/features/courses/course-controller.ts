@@ -1384,9 +1384,12 @@ class CourseController {
         const parsedWebworkDef: WebWorkDef = hasParsed(options) ? options.parsedWebworkDef : new WebWorkDef(options.webworkDefFileContent);
         let lastProblemNumber = await courseRepository.getLatestProblemNumberForTopic(options.courseTopicId) || 0;
 
+        const topic = options.topic ?? await CourseTopicContent.findOne({where: {id: options.courseTopicId}});
 
-        const topic = await CourseTopicContent.findOne({where: {id: options.courseTopicId}});
-
+        if (topic?.id !== options.courseTopicId) {
+            logger.warn('A topic ID was passed specifically, but a topic object with a different ID was also passed and took precedence.');
+        }
+        
         if (_.isNil(topic)) {
             throw new NotFoundError('Tried to increment for a topic ID that doesn\'t exist.');
         }
@@ -1455,7 +1458,7 @@ class CourseController {
 
                     // This increments on a per-problem basis. We could improve DB performance by doing this at the archive import when we do parsing.
                     if (!_.isNil(errors) && !_.isEmpty(errors)) {
-                        topic.increment('errors');
+                        await topic.increment('errors');
                     }
 
                     return this.addQuestion({
@@ -4640,6 +4643,7 @@ You can contact your student at ${options.student.email} or by replying to this 
                     await this.createQuestionsForTopicFromDefFileContent({
                         parsedWebworkDef: parsedWebworkDef,
                         courseTopicId: topic.id,
+                        topic: topic,
                         defFileDiscoveryResult: {
                             defFileResult: defFile,
                             bucketDefFiles: discoveredFiles.bucketDefFiles

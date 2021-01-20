@@ -147,7 +147,7 @@ router.post('/def',
             webworkDefFileContent: req.file.buffer.toString(),
             courseTopicId: query.courseTopicId
         });
-        next(httpResponse.Created('Course successfully', {
+        next(httpResponse.Created('Course Topic from DEF file created successfully', {
             newQuestions: results
         }));
     }));
@@ -180,7 +180,7 @@ router.post('/',
                     useCurriculum: query.useCurriculum
                 }
             });
-            next(httpResponse.Created('Course successfully', newCourse));
+            next(httpResponse.Created('Course created successfully', newCourse));
         } catch (e) {
             next(e);
         }

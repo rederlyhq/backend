@@ -1,5 +1,6 @@
 import { Response, NextFunction } from 'express';
 const router = require('express').Router();
+import configurations from '../../configurations';
 import validate from '../../middleware/joi-validator';
 import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
@@ -11,6 +12,7 @@ import logger from '../../utilities/logger';
 import { clientLogValidation } from './utility-route-validation';
 import { ClientLogRequest } from './utility-route-request-types';
 import { Logger } from 'winston';
+import { authenticationMiddleware } from '../../middleware/auth';
 
 const packageJSONPath = '../../../package.json';
 
@@ -48,6 +50,13 @@ asyncHandler(async (_req: RederlyExpressRequest, _res: Response, next: NextFunct
         packageJson: version
     }));
 }));
+
+router.use('/secret-to-everyone',
+// No validation
+authenticationMiddleware,
+(_req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
+    next(httpResponse.Ok(null, configurations.hash));
+});
 
 interface ClientLogMessage {
     level?: keyof Logger;

@@ -30,6 +30,7 @@
 | --- | --- | --- |
 | LOG_MISSING_CONFIGURATIONS | Whether or not to log missing configurations | true |
 | FAIL_ON_MISSING_CONFIGURATIONS | Whether or not to reject the loading promise on missing configurations | true in prod, false in dev |
+| CONFIG_SALT | A random seed to better mask the configuration hash |  |
 
 #### Temp files
 | Environment variable | Description | Default value |

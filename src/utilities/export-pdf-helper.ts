@@ -1,3 +1,14 @@
+import User from "../database/models/user";
+import CourseTopicContent from "../database/models/course-topic-content";
+import CourseWWTopicQuestion from "../database/models/course-ww-topic-question";
+import StudentGrade from "../database/models/student-grade";
+import logger from "./logger";
+import StudentWorkbook from "../database/models/student-workbook";
+import StudentGradeInstance from "../database/models/student-grade-instance";
+import ProblemAttachment from "../database/models/problem-attachment";
+import rendererHelper from "./renderer-helper";
+import Role from "../features/permissions/roles";
+import configurations from "../configurations";
 
 
 type EXPORT_ONE_TOPIC_ONE_STUDENT = {
@@ -9,21 +20,9 @@ type EXPORT_ONE_TOPIC_ONE_STUDENT = {
 type EXPECTED_FORMAT = EXPORT_ONE_TOPIC_ONE_STUDENT;
 
 class ExportPDFHelper {
-    async ({topicId, userId}: {topicId: number; userId: number}): Promise<any> => {
+    start = async ({topicId, userId}: {topicId: number; userId: number}): Promise<any> => {
 
-        // To display which user that submitted this exam version.
-        const user = await User.findOne({
-            attributes: ['id', 'firstName', 'lastName'],
-            where: {
-                id: userId,
-            },
-        });
-
-        /**
-         * Start with a GradeInstanceId. This represents a version.
-         * Find all questions associated with the Topic associated with this GradeInstanceId.
-         *      These are all the questions for that version. Should be the same for GradeInstanceIds with the same parent GradeId.
-         */
+        // Fine the specified topic
         const mainData = await CourseTopicContent.findOne({
             attributes: ['id', 'name'],
             where: {
@@ -32,6 +31,7 @@ class ExportPDFHelper {
             },
             include: [
                 {
+                    // Include all questions in the topic
                     model: CourseWWTopicQuestion,
                     as: 'questions',
                     attributes: ['id', 'problemNumber'],
@@ -41,12 +41,13 @@ class ExportPDFHelper {
                     },
                     include: [
                         {
+                            // Include all StudentGrades that are linked to each problem.
+                            // Should be one Student Grade per Student for each Problem
                             model: StudentGrade,
                             as: 'grades',
                             attributes: ['id', 'lastInfluencingCreditedAttemptId', 'lastInfluencingAttemptId'],
                             required: true,
                             where: {
-                                userId: userId,
                                 active: true,
                             },
                         }
@@ -110,16 +111,16 @@ class ExportPDFHelper {
                             showSolutions: true,
                         };
 
-                        // data.questions[i].grades[j].rendererData = await rendererHelper.getProblem(obj);
+                        data.questions[i].grades[j].rendererData = await rendererHelper.getProblem(obj);
                         console.log('Got renderer Data');
                 } catch (e) {
-                    // console.error(e);
+                    console.error(e);
                 }
             })
         );
 
 
         const baseUrl = configurations.attachments.baseUrl;
-        return {user: user, topic: data, baseUrl};
+        return {topic: data, baseUrl};
     };
 }

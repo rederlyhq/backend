@@ -94,7 +94,7 @@ export const updateCourseTopicValidation = {
         topicAssessmentInfo: Joi.object({
             duration: Joi.number().optional().min(2),
             maxGradedAttemptsPerVersion: Joi.number().optional().min(-1),
-            maxVersions: Joi.number().optional().min(0),
+            maxVersions: Joi.number().optional().min(-1),
             versionDelay: Joi.number().optional().min(0),
             hardCutoff: Joi.boolean().optional(),
             hideHints: Joi.boolean().optional(),

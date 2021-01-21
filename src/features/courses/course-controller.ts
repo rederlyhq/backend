@@ -3779,7 +3779,7 @@ class CourseController {
                 message = `The topic "${topic.name}" has not started yet.`;
                 data.status = 'NOT_STARTED';
                 userCanStartNewVersion = false;
-            } else if (versions.length >= topicInfo.maxVersions) {
+            } else if (topicInfo.maxVersions > 0 && versions.length >= topicInfo.maxVersions) {
             // check number of versions already used
                 if (versions[0].isClosed !== true) {
                     versions[0].isClosed = true;

@@ -60,7 +60,7 @@ class UserController {
         return User.findOne({
             where: {
                 verifyToken,
-                email: confirmEmail,
+                email: confirmEmail.toLowerCase(),
             }
         });
     }
@@ -472,7 +472,7 @@ class UserController {
             }
         });
 
-        if(result.updatedRecords.length < 1) {
+        if (result.updatedRecords.length < 1) {
             throw new NotFoundError('There are no accounts registered with this email.');
         } else if (result.updatedRecords.length > 1) {
             logger.warn('Multiple users were updated for forgot password');

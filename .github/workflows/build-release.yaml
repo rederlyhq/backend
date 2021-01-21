@@ -46,7 +46,7 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
-          draft: false
+          draft: true
           prerelease: true
       - name: Upload Release Asset (zip)
         id: upload-release-asset-zip
@@ -68,3 +68,9 @@ jobs:
           asset_path: ./package-outputs/${{ steps.get_file_name.outputs.result }}.tgz
           asset_name: ${{ steps.get_file_name.outputs.result }}.tgz
           asset_content_type: application/gzip
+      - name: Publish release
+        uses: StuYarrow/publish-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          id: ${{ steps.create_release.outputs.id }}

@@ -4427,8 +4427,8 @@ You can contact your student at ${options.student.email} or by replying to this 
         // TODO remove
         const startTime = new Date().getTime();
         logger.info(`Import Course Archive start ${new Date()}`);
-        const workingDirectoryName = stripTarGZExtension(nodePath.basename(fileName));
-        if (_.isNull(workingDirectoryName)) {
+        const workingDirectoryName = stripTarGZExtension(nodePath.basename(fileName))?.replace(/\s/g, '_');
+        if (_.isNil(workingDirectoryName)) {
             throw new IllegalArgumentException('File must be a `.tar`, `.tar.gz` or a `.tgz` file!');
         }
         const workingDirectory = `${nodePath.dirname(filePath)}/${workingDirectoryName}`;
@@ -4522,7 +4522,6 @@ You can contact your student at ${options.student.email} or by replying to this 
                             writeFilePath: targetSavedPath
                         });    
                         fileDir = nodePath.dirname(pgFile.resolvedRendererPath);
-                        // pgFile.resolvedRendererPath = savedPath;
                         await  Object.values(pgFile.assetFiles.imageFiles).asyncForEach(async (imageFile: FindFilesImageFileResult) => {
                             if (imageFile.imageFileExists) {
                                 const savedPath = `${fileDir}/${imageFile.imageFileName}`;

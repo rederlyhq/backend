@@ -4427,8 +4427,8 @@ You can contact your student at ${options.student.email} or by replying to this 
         // TODO remove
         const startTime = new Date().getTime();
         logger.info(`Import Course Archive start ${new Date()}`);
-        const workingDirectoryName = stripTarGZExtension(nodePath.basename(fileName));
-        if (_.isNull(workingDirectoryName)) {
+        const workingDirectoryName = stripTarGZExtension(nodePath.basename(fileName))?.replace(/\s/g, '_');
+        if (_.isNil(workingDirectoryName)) {
             throw new IllegalArgumentException('File must be a `.tar`, `.tar.gz` or a `.tgz` file!');
         }
         const workingDirectory = `${nodePath.dirname(filePath)}/${workingDirectoryName}`;
@@ -4513,15 +4513,15 @@ You can contact your student at ${options.student.email} or by replying to this 
                         }
 
                         // At this point the file is not on the renderer
-                        const fileDir = `private/my/${user.uuid}/${course.name.replace(/\s/g, '_')}/${defFile.topicName}`;
-                        const savedPath = `${fileDir}/${pgFile.pgFileName}`;
+                        let fileDir = `private/my/${user.uuid}/${course.name.replace(/\s/g, '_')}/${defFile.topicName.replace(/\s/g, '_')}`;
+                        const targetSavedPath = `${fileDir}/${pgFile.pgFileName}`;
                         const pgFileContent = await fs.promises.readFile(pgFile.pgFilePathOnDisk);
                         rendererSavePGFileRequests++;
-                        await rendererHelper.saveProblemSource({
+                        pgFile.resolvedRendererPath = await rendererHelper.saveProblemSource({
                             problemSource: pgFileContent.toString(),
-                            writeFilePath: savedPath
+                            writeFilePath: targetSavedPath
                         });    
-                        pgFile.resolvedRendererPath = savedPath;
+                        fileDir = nodePath.dirname(pgFile.resolvedRendererPath);
                         await  Object.values(pgFile.assetFiles.imageFiles).asyncForEach(async (imageFile: FindFilesImageFileResult) => {
                             if (imageFile.imageFileExists) {
                                 const savedPath = `${fileDir}/${imageFile.imageFileName}`;

@@ -4513,7 +4513,7 @@ You can contact your student at ${options.student.email} or by replying to this 
                         }
 
                         // At this point the file is not on the renderer
-                        let fileDir = `private/my/${user.uuid}/${course.name.replace(/\s/g, '_')}/${defFile.topicName}`;
+                        let fileDir = `private/my/${user.uuid}/${course.name.replace(/\s/g, '_')}/${defFile.topicName.replace(/\s/g, '_')}`;
                         const targetSavedPath = `${fileDir}/${pgFile.pgFileName}`;
                         const pgFileContent = await fs.promises.readFile(pgFile.pgFilePathOnDisk);
                         rendererSavePGFileRequests++;

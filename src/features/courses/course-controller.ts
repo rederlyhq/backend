@@ -3836,7 +3836,7 @@ class CourseController {
     async submitAssessmentAnswers(studentTopicAssessmentInfoId: number, wasAutoSubmitted: boolean): Promise<SubmitAssessmentAnswerResult> {
         return useDatabaseTransaction(async (): Promise<SubmitAssessmentAnswerResult> => {
             const studentTopicAssessmentInfo = await this.getStudentTopicAssessmentInfoById(studentTopicAssessmentInfoId);
-            if (studentTopicAssessmentInfo.numAttempts >= studentTopicAssessmentInfo.maxAttempts && studentTopicAssessmentInfo.maxAttempts >= 0) {
+            if (studentTopicAssessmentInfo.numAttempts >= studentTopicAssessmentInfo.maxAttempts && studentTopicAssessmentInfo.maxAttempts > 0) {
                 // This can happen with auto submit if delete job task was not successful
                 throw new AttemptsExceededException('Cannot submit assessment answers when there are no attempts remaining');
             }
@@ -4614,16 +4614,17 @@ You can contact your student at ${options.student.email} or by replying to this 
                             // / 60000 to convert to minutes
                             possibleIntervals = examDuration / 60000 / timeInterval;
                         }
+                        timeInterval = Math.round(timeInterval);
                     }
                     const topicAssessmentInfo: Partial<TopicAssessmentInfoInterface> = _.omitBy({
                         // id,
                         courseTopicContentId: topic.id,
-                        duration: parsedWebworkDef.versionTimeLimit ? (parseInt(parsedWebworkDef.versionTimeLimit, 10) / 60) : undefined,
+                        duration: parsedWebworkDef.versionTimeLimit ? Math.round(parseInt(parsedWebworkDef.versionTimeLimit, 10) / 60) : undefined,
                         hardCutoff: WebWorkDef.characterBoolean(parsedWebworkDef.capTimeLimit),
                         hideHints: undefined,
                         hideProblemsAfterFinish: WebWorkDef.characterBoolean(parsedWebworkDef.hideWork),
                         maxGradedAttemptsPerVersion: parsedWebworkDef.attemptsPerVersion ? parseInt(parsedWebworkDef.attemptsPerVersion, 10) : undefined,
-                        maxVersions: parsedWebworkDef.versionsPerInterval ? (parseInt(parsedWebworkDef.versionsPerInterval, 10) * possibleIntervals) : undefined,
+                        maxVersions: parsedWebworkDef.versionsPerInterval ? Math.round(parseInt(parsedWebworkDef.versionsPerInterval, 10) * possibleIntervals) : undefined,
                         randomizeOrder: WebWorkDef.numberBoolean(parsedWebworkDef.problemRandOrder),
                         showItemizedResults: !WebWorkDef.characterBoolean(parsedWebworkDef.hideScoreByProblem),
                         showTotalGradeImmediately: !WebWorkDef.characterBoolean(parsedWebworkDef.hideScore),

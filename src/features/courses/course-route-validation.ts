@@ -585,3 +585,11 @@ export const getVersionValidation = {
     query: {},
     body: {},
 };
+
+export const bulkExportValidation = {
+    params: {
+        topicId: Joi.number().required(),
+    },
+    query: {},
+    body: {},
+};

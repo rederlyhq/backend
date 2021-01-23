@@ -1,14 +1,15 @@
-import User from "../database/models/user";
-import CourseTopicContent from "../database/models/course-topic-content";
-import CourseWWTopicQuestion from "../database/models/course-ww-topic-question";
-import StudentGrade from "../database/models/student-grade";
-import logger from "./logger";
-import StudentWorkbook from "../database/models/student-workbook";
-import StudentGradeInstance from "../database/models/student-grade-instance";
-import ProblemAttachment from "../database/models/problem-attachment";
-import rendererHelper from "./renderer-helper";
-import Role from "../features/permissions/roles";
-import configurations from "../configurations";
+import User from '../database/models/user';
+import CourseTopicContent from '../database/models/course-topic-content';
+import CourseWWTopicQuestion from '../database/models/course-ww-topic-question';
+import StudentGrade from '../database/models/student-grade';
+import logger from './logger';
+import StudentWorkbook from '../database/models/student-workbook';
+import StudentGradeInstance from '../database/models/student-grade-instance';
+import ProblemAttachment from '../database/models/problem-attachment';
+import rendererHelper from './renderer-helper';
+import Role from '../features/permissions/roles';
+import configurations from '../configurations';
+import _ = require('lodash');
 
 
 type EXPORT_ONE_TOPIC_ONE_STUDENT = {
@@ -19,8 +20,8 @@ type EXPORT_ONE_TOPIC_ONE_STUDENT = {
 
 type EXPECTED_FORMAT = EXPORT_ONE_TOPIC_ONE_STUDENT;
 
-class ExportPDFHelper {
-    start = async ({topicId, userId}: {topicId: number; userId: number}): Promise<any> => {
+export default class ExportPDFHelper {
+    start = async ({topicId}: {topicId: number}): Promise<any> => {
 
         // Fine the specified topic
         const mainData = await CourseTopicContent.findOne({
@@ -34,7 +35,7 @@ class ExportPDFHelper {
                     // Include all questions in the topic
                     model: CourseWWTopicQuestion,
                     as: 'questions',
-                    attributes: ['id', 'problemNumber'],
+                    attributes: ['id', 'problemNumber', 'webworkQuestionPath'],
                     required: true,
                     where: {
                         active: true,
@@ -50,6 +51,16 @@ class ExportPDFHelper {
                             where: {
                                 active: true,
                             },
+                            include: [
+                                {
+                                    model: User,
+                                    as: 'user',
+                                    required: true,
+                                    where: {
+                                        active: true
+                                    }
+                                }
+                            ]
                         }
                     ]
                 }
@@ -101,8 +112,8 @@ class ExportPDFHelper {
                 data.questions[i].grades[j].influencingWorkbook = gradeInstanceAttachments;
                 try {
                         const obj = {
-                            sourceFilePath: data.questions[i].grades[j].webworkQuestionPath,
-                            problemSeed: gradeInstanceAttachments?.randomSeed ?? gradeInstanceAttachments?.studentGradeInstance?.randomSeed,
+                            sourceFilePath: data.questions[i].grades[j].webworkQuestionPath ?? data.questions[i].webworkQuestionPath,
+                            problemSeed: gradeInstanceAttachments?.randomSeed ?? gradeInstanceAttachments?.studentGradeInstance?.randomSeed ?? data.questions[i].grades[j].randomSeed,
                             formData: gradeInstanceAttachments?.submitted.form_data,
                             showCorrectAnswers: true,
                             answersSubmitted: 1,
@@ -114,7 +125,17 @@ class ExportPDFHelper {
                         data.questions[i].grades[j].rendererData = await rendererHelper.getProblem(obj);
                         console.log('Got renderer Data');
                 } catch (e) {
-                    console.error(e);
+                    // console.error(e);
+                    console.log({
+                        sourceFilePath: data.questions[i].grades[j].webworkQuestionPath ?? data.questions[i].webworkQuestionPath,
+                        problemSeed: gradeInstanceAttachments?.randomSeed ?? gradeInstanceAttachments?.studentGradeInstance?.randomSeed ?? data.questions[i].grades[j].randomSeed,
+                        formData: gradeInstanceAttachments?.submitted.form_data,
+                        showCorrectAnswers: true,
+                        answersSubmitted: 1,
+                        outputformat: rendererHelper.getOutputFormatForRole(Role.PROFESSOR),
+                        permissionLevel: rendererHelper.getPermissionForRole(Role.PROFESSOR),
+                        showSolutions: true,
+                    });
                 }
             })
         );

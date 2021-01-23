@@ -18,6 +18,26 @@ type EXPORT_ONE_TOPIC_ONE_STUDENT = {
     topicTitle: string;
 }
 
+type FROM_DB = {
+    topic: {
+        id: number;
+        name: string;
+        questions: {
+            id: number;
+            problemNumber: number;
+            webworkQuestionPath: string;
+            grades: {
+                id: number;
+                lastInfluencingCreditedAttemptId: number;
+                lastInfluencingAttemptId: number;
+                user: User;
+                influencingWorkbook: any;
+                rendererData: any;
+            }[];
+        }[];
+    };
+}
+
 type EXPECTED_FORMAT = EXPORT_ONE_TOPIC_ONE_STUDENT;
 
 export default class ExportPDFHelper {
@@ -144,4 +164,8 @@ export default class ExportPDFHelper {
         const baseUrl = configurations.attachments.baseUrl;
         return {topic: data, baseUrl};
     };
+
+    massageData = async (fromDB) => {
+
+    }
 }

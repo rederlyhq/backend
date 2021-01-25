@@ -118,6 +118,7 @@ export default class ExportPDFHelper {
                             model: StudentGradeInstance,
                             as: 'studentGradeInstance',
                             attributes: ['id', 'webworkQuestionPath', 'randomSeed'],
+                            required: false,
                             where: {
                                 active: true,
                             },
@@ -140,7 +141,7 @@ export default class ExportPDFHelper {
                 data.questions[i].grades[j].influencingWorkbook = gradeInstanceAttachments;
                 try {
                         const obj = {
-                            sourceFilePath: data.questions[i].grades[j].webworkQuestionPath ?? data.questions[i].webworkQuestionPath,
+                            sourceFilePath: data.questions[i].grades[j].webworkQuestionPath ?? question.webworkQuestionPath,
                             problemSeed: gradeInstanceAttachments?.randomSeed ?? gradeInstanceAttachments?.studentGradeInstance?.randomSeed ?? data.questions[i].grades[j].randomSeed,
                             formData: gradeInstanceAttachments?.submitted.form_data,
                             showCorrectAnswers: true,

@@ -313,9 +313,15 @@ router.post('/topic/:topicId/startExport',
     // This is due to a typescript issue where the type mismatches extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetVersionRequest.body, GetVersionRequest.query>, _res: Response, next: NextFunction) => {
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+        
         const params: GetVersionRequest.params = req.params;
+        const professor = await req.session.getUser();
+
         const helper = new ExportPDFHelper();
-        const result = await helper.start({topicId: 803});
+        const result = await helper.start({topicId: 803, professorUUID: professor.uuid});
         next(httpResponse.Ok('Fetched successfully', result));
     })
 );

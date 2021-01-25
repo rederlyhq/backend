@@ -198,8 +198,8 @@ const configurations = {
     importer: {
         missingFileThreshold: readIntValue('IMPORTER_MISSING_FILE_THRESHOLD', 10),
     },
-    exportPDF: {
-        basePath: readStringValue('EXPORT_PDF_BASE_PATH', 'http://localhost:3005'),
+    bulkPdfExport: {
+        baseUrl: readStringValue('BULK_PDF_EXPORT_URL', 'http://localhost:3005'),
     },
     loadPromise: new Promise<void>((resolve, reject) => {
         // Avoid cyclic dependency by deferring the logging until after all the imports are done

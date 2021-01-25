@@ -10,38 +10,50 @@ import rendererHelper from './renderer-helper';
 import Role from '../features/permissions/roles';
 import configurations from '../configurations';
 import _ = require('lodash');
+import axios from 'axios';
 
-
-type EXPORT_ONE_TOPIC_ONE_STUDENT = {
+interface BulkPdfExport {
     firstName: string;
     lastName: string;
-    topicTitle: string;
-}
-
-type FROM_DB = {
     topic: {
-        id: number;
         name: string;
-        questions: {
-            id: number;
-            problemNumber: number;
-            webworkQuestionPath: string;
-            grades: {
-                id: number;
-                lastInfluencingCreditedAttemptId: number;
-                lastInfluencingAttemptId: number;
-                user: User;
-                influencingWorkbook: any;
-                rendererData: any;
-            }[];
-        }[];
-    };
+        id: number;
+    }
+    professorUUID: string;
+    problems: {
+        number: number;
+        srcdoc: string;
+    }[];
 }
 
-type EXPECTED_FORMAT = EXPORT_ONE_TOPIC_ONE_STUDENT;
+// topic from db
+type FROM_DB = {
+    id: number;
+    name: string;
+    questions: {
+        id: number;
+        problemNumber: number;
+        webworkQuestionPath: string;
+        grades: {
+            id: number;
+            lastInfluencingCreditedAttemptId: number;
+            lastInfluencingAttemptId: number;
+            user: User;
+            influencingWorkbook: any;
+            rendererData: any;
+            webworkQuestionPath?: string;
+            problemAttachments: any;
+            randomSeed: number;
+        }[];
+    }[];
+}
 
 export default class ExportPDFHelper {
-    start = async ({topicId}: {topicId: number}): Promise<any> => {
+    bulkExportAxios = axios.create({
+        baseURL: configurations.bulkPdfExport.baseUrl,
+    });
+    
+    start = async ({topicId, professorUUID}: {topicId: number; professorUUID: string}): Promise<FROM_DB> => {
 
         // Fine the specified topic
         const mainData = await CourseTopicContent.findOne({
@@ -66,21 +78,11 @@ export default class ExportPDFHelper {
                             // Should be one Student Grade per Student for each Problem
                             model: StudentGrade,
                             as: 'grades',
-                            attributes: ['id', 'lastInfluencingCreditedAttemptId', 'lastInfluencingAttemptId'],
+                            attributes: ['id', 'userId', 'lastInfluencingCreditedAttemptId', 'lastInfluencingAttemptId'],
                             required: true,
                             where: {
                                 active: true,
                             },
-                            include: [
-                                {
-                                    model: User,
-                                    as: 'user',
-                                    required: true,
-                                    where: {
-                                        active: true
-                                    }
-                                }
-                            ]
                         }
                     ]
                 }
@@ -89,7 +91,13 @@ export default class ExportPDFHelper {
 
         // TODO: Clean up typing when unpacking the ProblemAttachments
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const data: any = mainData?.get({plain: true});
+        const data: FROM_DB = mainData?.get({plain: true}) as FROM_DB;
+        const studentGradeLookup: {
+            [userId: number]: {
+                number: number;
+                srcdoc: string;
+            }[];
+        } = {};
 
         await mainData?.questions?.asyncForEach(async (question, i) =>
             await question.grades?.asyncForEach(async (grade, j) => {
@@ -143,6 +151,17 @@ export default class ExportPDFHelper {
                         };
 
                         data.questions[i].grades[j].rendererData = await rendererHelper.getProblem(obj);
+
+                        if (_.isNil(studentGradeLookup[grade.userId])) {
+                            studentGradeLookup[grade.userId] = [];
+                        }
+
+                        studentGradeLookup[grade.userId].push({
+                            number: question.problemNumber,
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            srcdoc: (await rendererHelper.getProblem(obj) as any)?.renderedHTML ?? 'Could not render this problem.'
+                        });
+
                         console.log('Got renderer Data');
                 } catch (e) {
                     // console.error(e);
@@ -160,12 +179,42 @@ export default class ExportPDFHelper {
             })
         );
 
+        _.forOwn(studentGradeLookup, async (studentGrades, userId) => {
+            const user = await User.findOne({
+                attributes: ['id', 'firstName', 'lastName'],
+                where: {
+                    id: userId,
+                    active: true,
+                }
+            });
+            
+            if (_.isNil(user)) {
+                logger.warn(`Could not find User ${userId}, probably deleted.`);
+                return;
+            }
+
+            const postObject: BulkPdfExport = {
+                topic: {
+                    id: data.id,
+                    name: data.name,
+                },
+                firstName: user.firstName,
+                lastName: user.lastName,
+                problems: studentGrades,
+                professorUUID: professorUUID
+            };
+            this.bulkExportAxios.post(`${configurations.bulkPdfExport.baseUrl}/export/`, postObject);
+        });
+        
 
         const baseUrl = configurations.attachments.baseUrl;
-        return {topic: data, baseUrl};
+        return data;
     };
 
-    massageData = async (fromDB) => {
-
+    sendData = (topic: CourseTopicContent, user: User, problemNumber: number, srcdoc: string, professorUUID: string) => {
+        this.bulkExportAxios.post('/export', {
+            firstName: user.firstName,
+            lastName: user.lastName,
+        });
     }
 }

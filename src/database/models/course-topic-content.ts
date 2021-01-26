@@ -32,6 +32,9 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
     public deadDate!: Date;
     public partialExtend!: boolean;
 
+    public lastExported!: Date | null;
+    public exportUrl!: string | null;
+
     // This is the count of errors in problems associated with this topic.
     public errors!: number;
 
@@ -182,6 +185,18 @@ CourseTopicContent.init({
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0,
+    },
+    lastExported: {
+        field: 'course_topic_content_last_exported',
+        type: DataTypes.DATE,
+        allowNull: true,
+        defaultValue: null,
+    },
+    exportUrl: {
+        field: 'course_topic_content_export_url',
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null,
     },
 }, {
     tableName: 'course_topic_content',

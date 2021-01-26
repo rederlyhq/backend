@@ -310,3 +310,9 @@ export namespace GetVersionRequest {
     export type query = Joi.extractType<typeof validations.getVersionValidation.query>;
     export type body = Joi.extractType<typeof validations.getVersionValidation.body>;
 };
+
+export namespace BulkExportRequest {
+    export type params = Joi.extractType<typeof validations.bulkExportValidation.params>;
+    export type query = Joi.extractType<typeof validations.bulkExportValidation.query>;
+    export type body = Joi.extractType<typeof validations.bulkExportValidation.body>;
+};

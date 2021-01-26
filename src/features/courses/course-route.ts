@@ -14,7 +14,7 @@ import * as _ from 'lodash';
 import configurations from '../../configurations';
 import WrappedError from '../../exceptions/wrapped-error';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
-import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest, ExtendCourseTopicQuestionRequest, CreateAssessmentVersionRequest, SubmitAssessmentVersionRequest, UpdateGradeInstanceRequest, EndAssessmentVersionRequest, PreviewQuestionRequest, GradeAssessmentRequest, GetAttachmentPresignedURLRequest, PostAttachmentRequest, ListAttachmentsRequest, DeleteAttachmentRequest, EmailProfRequest, ReadQuestionRequest, SaveQuestionRequest, CatalogRequest, GetVersionRequest, GetQuestionRawRequest, GetQuestionGradeRequest, PostImportCourseArchiveRequest, GetQuestionOpenLabRequest, UploadAssetRequest, GetQuestionShowMeAnotherRequest } from './course-route-request-types';
+import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest, ExtendCourseTopicQuestionRequest, CreateAssessmentVersionRequest, SubmitAssessmentVersionRequest, UpdateGradeInstanceRequest, EndAssessmentVersionRequest, PreviewQuestionRequest, GradeAssessmentRequest, GetAttachmentPresignedURLRequest, PostAttachmentRequest, ListAttachmentsRequest, DeleteAttachmentRequest, EmailProfRequest, ReadQuestionRequest, SaveQuestionRequest, CatalogRequest, GetVersionRequest, GetQuestionRawRequest, GetQuestionGradeRequest, PostImportCourseArchiveRequest, GetQuestionOpenLabRequest, UploadAssetRequest, GetQuestionShowMeAnotherRequest, BulkExportRequest } from './course-route-request-types';
 import Boom = require('boom');
 import { Constants } from '../../constants';
 import Role from '../permissions/roles';
@@ -33,6 +33,8 @@ import openLabHelper from '../../utilities/openlab-helper';
 import { getAveragesFromStatistics } from './statistics-helper';
 import { rederlyTempFileWrapper } from '../../middleware/rederly-temp-file-wrapper';
 import ExportPDFHelper from '../../utilities/export-pdf-helper';
+import CourseTopicContent from '../../database/models/course-topic-content';
+import { useDatabaseTransaction } from '../../utilities/database-helper';
 
 const fileUpload = multer();
 
@@ -312,17 +314,43 @@ router.post('/topic/:topicId/startExport',
     validate(bulkExportValidation),
     // This is due to a typescript issue where the type mismatches extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetVersionRequest.body, GetVersionRequest.query>, _res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, BulkExportRequest.body, BulkExportRequest.query>, _res: Response, next: NextFunction) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
         
-        const params: GetVersionRequest.params = req.params;
+        const params: BulkExportRequest.params = req.params;
+        const query: BulkExportRequest.query = req.query;
         const professor = await req.session.getUser();
 
+        const topic = await CourseTopicContent.findOne({
+            where: {
+                id: params.topicId,
+                active: true,
+            },
+        });
+
+        if (_.isNil(topic)) {
+            throw new NotFoundError('No such topic was found.');
+        }
+
+        // Since this is a job, we'll always have this by here.
+        const exportDetails = {lastExported: topic.lastExported, exportUrl: topic.exportUrl};
+
         const helper = new ExportPDFHelper();
-        const result = await helper.start({topicId: 803, professorUUID: professor.uuid});
-        next(httpResponse.Ok('Fetched successfully', result));
+
+        // If we're just checking, return what's already here.
+        if (query.force === false) {
+            next(httpResponse.Ok('Details', exportDetails));
+            // If we should start a new export
+        } else if (helper.shouldStartNewExport(topic)) {
+            useDatabaseTransaction(async () =>  {
+                helper.start({topic, professorUUID: professor.uuid}).then(() => logger.info('Finished uploading.'));
+            });
+            next(httpResponse.Ok('Loading', exportDetails));
+        } else {
+            next(httpResponse.Ok('Already exported', exportDetails));
+        }
     })
 );
 

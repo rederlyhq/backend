@@ -590,6 +590,8 @@ export const bulkExportValidation = {
     params: {
         topicId: Joi.number().required(),
     },
-    query: {},
+    query: {
+        force: Joi.boolean().optional(),
+    },
     body: {},
 };

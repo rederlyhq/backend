@@ -10,7 +10,9 @@ import rendererHelper from './renderer-helper';
 import Role from '../features/permissions/roles';
 import configurations from '../configurations';
 import _ = require('lodash');
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
+import NotFoundError from '../exceptions/not-found-error';
+import moment = require('moment');
 
 interface BulkPdfExport {
     firstName: string;
@@ -51,15 +53,28 @@ type FROM_DB = {
 export default class ExportPDFHelper {
     bulkExportAxios = axios.create({
         baseURL: configurations.bulkPdfExport.baseUrl,
+        timeout: 120000
     });
+
+    shouldStartNewExport = (topic: CourseTopicContent): boolean => {
+        // If the time is within 5 minutes, do not allow a new export
+        if (!_.isNil(topic.lastExported) && moment().isBefore(moment(topic.lastExported).add(5, 'minutes'))) {
+            return false;
+        }
+
+        return true;
+    }
     
-    start = async ({topicId, professorUUID}: {topicId: number; professorUUID: string}): Promise<FROM_DB> => {
+    start = async ({topic, professorUUID}: {topic: CourseTopicContent; professorUUID: string}): Promise<void> => {
+        topic.lastExported = new Date();
+        topic.exportUrl = null;
+        await topic.save();
 
         // Fine the specified topic
         const mainData = await CourseTopicContent.findOne({
             attributes: ['id', 'name'],
             where: {
-                id: topicId,
+                id: topic.id,
                 active: true,
             },
             include: [
@@ -96,6 +111,7 @@ export default class ExportPDFHelper {
             [userId: number]: {
                 number: number;
                 srcdoc: string;
+                attachments: string[] | undefined;
             }[];
         } = {};
 
@@ -141,7 +157,7 @@ export default class ExportPDFHelper {
                 data.questions[i].grades[j].influencingWorkbook = gradeInstanceAttachments;
                 try {
                         const obj = {
-                            sourceFilePath: data.questions[i].grades[j].webworkQuestionPath ?? question.webworkQuestionPath,
+                            sourceFilePath: gradeInstanceAttachments?.studentGradeInstance?.webworkQuestionPath ?? question.webworkQuestionPath,
                             problemSeed: gradeInstanceAttachments?.randomSeed ?? gradeInstanceAttachments?.studentGradeInstance?.randomSeed ?? data.questions[i].grades[j].randomSeed,
                             formData: gradeInstanceAttachments?.submitted.form_data,
                             showCorrectAnswers: true,
@@ -151,14 +167,13 @@ export default class ExportPDFHelper {
                             showSolutions: true,
                         };
 
-                        data.questions[i].grades[j].rendererData = await rendererHelper.getProblem(obj);
-
                         if (_.isNil(studentGradeLookup[grade.userId])) {
                             studentGradeLookup[grade.userId] = [];
                         }
 
                         studentGradeLookup[grade.userId].push({
                             number: question.problemNumber,
+                            attachments: gradeInstanceAttachments?.studentGradeInstance?.problemAttachments?.map(x => `https://staging.rederly.com/${x.cloudFilename}`),
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             srcdoc: (await rendererHelper.getProblem(obj) as any)?.renderedHTML ?? 'Could not render this problem.'
                         });
@@ -166,20 +181,15 @@ export default class ExportPDFHelper {
                         console.log('Got renderer Data');
                 } catch (e) {
                     // console.error(e);
-                    console.log({
-                        sourceFilePath: data.questions[i].grades[j].webworkQuestionPath ?? data.questions[i].webworkQuestionPath,
-                        problemSeed: gradeInstanceAttachments?.randomSeed ?? gradeInstanceAttachments?.studentGradeInstance?.randomSeed ?? data.questions[i].grades[j].randomSeed,
-                        formData: gradeInstanceAttachments?.submitted.form_data,
-                        showCorrectAnswers: true,
-                        answersSubmitted: 1,
-                        outputformat: rendererHelper.getOutputFormatForRole(Role.PROFESSOR),
-                        permissionLevel: rendererHelper.getPermissionForRole(Role.PROFESSOR),
-                        showSolutions: true,
-                    });
+                    // console.log({
+                    //     sourceFilePath: data.questions[i].grades[j].webworkQuestionPath ?? data.questions[i].webworkQuestionPath,
+                    //     problemSeed: gradeInstanceAttachments?.randomSeed ?? gradeInstanceAttachments?.studentGradeInstance?.randomSeed ?? data.questions[i].grades[j].randomSeed,
+                    // });
                 }
             })
         );
 
+        const uploadPromises: Promise<AxiosResponse<unknown>>[] = [];
         _.forOwn(studentGradeLookup, async (studentGrades, userId) => {
             const user = await User.findOne({
                 attributes: ['id', 'firstName', 'lastName'],
@@ -204,18 +214,25 @@ export default class ExportPDFHelper {
                 problems: studentGrades,
                 professorUUID: professorUUID
             };
-            this.bulkExportAxios.post(`${configurations.bulkPdfExport.baseUrl}/export/`, postObject);
+            uploadPromises.push(this.bulkExportAxios.post('export/', postObject));
         });
         
+        try {
+            // @ts-ignore
+            await Promise.allSettled(uploadPromises);
+            const zippedURL = await this.zip(professorUUID, topic.id);
 
-        const baseUrl = configurations.attachments.baseUrl;
-        return data;
+            topic.exportUrl = zippedURL;
+            await topic.save();
+        } catch (e) {
+            console.error(e);
+        }
+        // return zippedURL;
+        return;
     };
 
-    sendData = (topic: CourseTopicContent, user: User, problemNumber: number, srcdoc: string, professorUUID: string) => {
-        this.bulkExportAxios.post('/export', {
-            firstName: user.firstName,
-            lastName: user.lastName,
-        });
+    zip = async (professorUUID: string, topicId: number): Promise<string> => {
+        const progress = await this.bulkExportAxios.get(`export/?profUUID=${professorUUID}&topicId=${topicId}`);
+        return progress.data.data.zippedURL;
     }
 }

@@ -99,7 +99,7 @@ export const testRegex = (): void => {
     const results = getAllMatches(imageInPGFileRegex, test);
     logger.info(`results.length: ${results.length}`);
     if (results.length !== testExpectedResults.length) {
-        logger.error(`Length mismatch: Expected ${testExpectedResults.length} but got ${results.length}`)
+        logger.error(`Length mismatch: Expected ${testExpectedResults.length} but got ${results.length}`);
     }
     for(let i = 0; i < results.length; i++) {
         const expectedResult = testExpectedResults[i];

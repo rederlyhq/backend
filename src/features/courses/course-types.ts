@@ -462,7 +462,7 @@ interface CreateQuestionsForTopicFromDefFileOptions {
     userIds?: Array<number>;
     defFileDiscoveryResult?: {
         defFileResult: FindFilesDefFileResult;
-        bucketDefFiles: { [key: string]: BucketDefFileResult };
+        bucketDefFiles: { [key: string]: [BucketDefFileResult] };
     };
 }
 

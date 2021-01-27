@@ -1280,13 +1280,21 @@ class CourseController {
     }: {
         defFileDiscoveryResult: {
             defFileResult: FindFilesDefFileResult;
-            bucketDefFiles: { [key: string]: BucketDefFileResult };
+            bucketDefFiles: { [key: string]: [BucketDefFileResult] };
         };
         pgFilePath: string;
         result?: Array<string>;
     }): Array<string> => {
-        const bucketDefFileMap = bucketDefFiles[pgFilePath];
+        const bucketDefFileMap: BucketDefFileResult | undefined = bucketDefFiles[pgFilePath].find((value: BucketDefFileResult) => {
+            return value.pgFilePathFromDefFile === pgFilePath;
+        });
+        if (_.isNil(bucketDefFileMap)) {
+            throw new RederlyError('Could not find bucket');
+        }
         const subDefFileResult = defFileResult.bucketDefFiles[bucketDefFileMap.bucketDefFile];
+        if (_.isNil(subDefFileResult)) {
+            throw new RederlyError(`Bucket def file not found ${bucketDefFileMap.bucketDefFile}`);
+        }
         Object.values(subDefFileResult.pgFiles).forEach(pgFileResult => {
             // Buckets of buckets
             if(pgFileResult.pgFilePathFromDefFile.startsWith('group:')) {

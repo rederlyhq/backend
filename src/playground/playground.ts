@@ -9,6 +9,7 @@ import '../global-error-handlers';
 // import * as schedulerPlay from './playground-scheduler-functions';
 // import * as paidUsers from './playground-paid-users';
 // import * as defFile from './playground-def-file';
+// import * as importRegexPlay from './playground-import-regex';
 
 const enabledMarker = new Array(20).join('*');
 const disabledMarker = new Array(20).join('#');

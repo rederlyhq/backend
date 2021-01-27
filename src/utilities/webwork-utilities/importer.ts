@@ -60,6 +60,7 @@ export interface FindFilesDefFileResult {
 
 export interface FindFilesOptions {
     filePath: string;
+    keepBucketsAsTopics: boolean;
 }
 
 export interface FindFilesResult {
@@ -266,7 +267,7 @@ export const findFilesFromDefFile = async ({ contentRootPath, defFilePath, bucke
  * Iterate through each def file and find the pg files
  * Iterate through each pg file and find assets (static images)
  */
-export const findFiles = async ({ filePath }: FindFilesOptions): Promise<FindFilesResult> => {
+export const findFiles = async ({ filePath, keepBucketsAsTopics }: FindFilesOptions): Promise<FindFilesResult> => {
     const contentRootPath = await getContentRoot(filePath);
     const whitespaceMap = await generateDirectoryWhitespaceMap(filePath);
 
@@ -288,14 +289,16 @@ export const findFiles = async ({ filePath }: FindFilesOptions): Promise<FindFil
         });
     });
 
-    // Avoid processing buckets as topics
-    // can not delete in the iteration above in case there are buckets of buckets
-    // or shared buckets
-    Object.values(result.bucketDefFiles).forEach(bucketResults => {
-        bucketResults.forEach(bucketResult => {
-            delete result.defFiles[bucketResult.bucketDefFile];
+    if (!keepBucketsAsTopics) {
+        // Avoid processing buckets as topics
+        // can not delete in the iteration above in case there are buckets of buckets
+        // or shared buckets
+        Object.values(result.bucketDefFiles).forEach(bucketResults => {
+            bucketResults.forEach(bucketResult => {
+                delete result.defFiles[bucketResult.bucketDefFile];
+            });
         });
-    });
+    }
 
     return result;
 };

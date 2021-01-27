@@ -4431,7 +4431,7 @@ You can contact your student at ${options.student.email} or by replying to this 
         return {user: user, topic: data, baseUrl};
     }
 
-    async importCourseTarball ({ filePath, fileName, courseId, user }: ImportTarballOptions): Promise<ImportCourseTarballResult> {
+    async importCourseTarball ({ filePath, fileName, courseId, user, keepBucketsAsTopics }: ImportTarballOptions): Promise<ImportCourseTarballResult> {
         // TODO remove
         const startTime = new Date().getTime();
         logger.info(`Import Course Archive start ${new Date()}`);
@@ -4455,7 +4455,7 @@ You can contact your student at ${options.student.email} or by replying to this 
 
         // TODO remove
         logger.info(`Import Course Archive extracted, discovering files now ${new Date().getTime() - startTime} ${new Date()}`);
-        const discoveredFiles = await findFiles({ filePath: workingDirectory });
+        const discoveredFiles = await findFiles({ filePath: workingDirectory, keepBucketsAsTopics: keepBucketsAsTopics });
 
         // TODO remove
         logger.info(`Import Course Archive discovered files, fetching course ${new Date().getTime() - startTime} ${new Date()}`);

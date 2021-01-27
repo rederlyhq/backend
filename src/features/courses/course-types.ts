@@ -660,6 +660,7 @@ export interface ImportTarballOptions {
     fileName: string;
     courseId: number;
     user: User;
+    keepBucketsAsTopics: boolean;
 }
 
 export interface ImportCourseTarballResult {

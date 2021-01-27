@@ -61,6 +61,7 @@ router.post('/:courseId/import-archive',
             fileName: req.file.originalname,
             courseId: params.courseId,
             user: user,
+            keepBucketsAsTopics: req.query.keepBucketsAsTopics ?? true
         });
         next(httpResponse.Ok(null, result));
     }));

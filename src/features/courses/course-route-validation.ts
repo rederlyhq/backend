@@ -23,7 +23,9 @@ export const postImportCourseArchiveValidation = {
     params: {
         courseId: Joi.number().required()
     },
-    query: {},
+    query: {
+        keepBucketsAsTopics: Joi.boolean().optional().default(true)
+    },
     body: {}
 };
 

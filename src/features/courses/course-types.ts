@@ -462,7 +462,7 @@ interface CreateQuestionsForTopicFromDefFileOptions {
     userIds?: Array<number>;
     defFileDiscoveryResult?: {
         defFileResult: FindFilesDefFileResult;
-        bucketDefFiles: { [key: string]: BucketDefFileResult };
+        bucketDefFiles: { [key: string]: [BucketDefFileResult] };
     };
 }
 
@@ -660,6 +660,7 @@ export interface ImportTarballOptions {
     fileName: string;
     courseId: number;
     user: User;
+    keepBucketsAsTopics: boolean;
 }
 
 export interface ImportCourseTarballResult {

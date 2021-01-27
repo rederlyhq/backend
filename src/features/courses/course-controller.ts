@@ -1280,13 +1280,21 @@ class CourseController {
     }: {
         defFileDiscoveryResult: {
             defFileResult: FindFilesDefFileResult;
-            bucketDefFiles: { [key: string]: BucketDefFileResult };
+            bucketDefFiles: { [key: string]: [BucketDefFileResult] };
         };
         pgFilePath: string;
         result?: Array<string>;
     }): Array<string> => {
-        const bucketDefFileMap = bucketDefFiles[pgFilePath];
+        const bucketDefFileMap: BucketDefFileResult | undefined = bucketDefFiles[pgFilePath].find((value: BucketDefFileResult) => {
+            return value.pgFilePathFromDefFile === pgFilePath;
+        });
+        if (_.isNil(bucketDefFileMap)) {
+            throw new RederlyError('Could not find bucket');
+        }
         const subDefFileResult = defFileResult.bucketDefFiles[bucketDefFileMap.bucketDefFile];
+        if (_.isNil(subDefFileResult)) {
+            throw new RederlyError(`Bucket def file not found ${bucketDefFileMap.bucketDefFile}`);
+        }
         Object.values(subDefFileResult.pgFiles).forEach(pgFileResult => {
             // Buckets of buckets
             if(pgFileResult.pgFilePathFromDefFile.startsWith('group:')) {
@@ -4423,7 +4431,7 @@ You can contact your student at ${options.student.email} or by replying to this 
         return {user: user, topic: data, baseUrl};
     }
 
-    async importCourseTarball ({ filePath, fileName, courseId, user }: ImportTarballOptions): Promise<ImportCourseTarballResult> {
+    async importCourseTarball ({ filePath, fileName, courseId, user, keepBucketsAsTopics }: ImportTarballOptions): Promise<ImportCourseTarballResult> {
         // TODO remove
         const startTime = new Date().getTime();
         logger.info(`Import Course Archive start ${new Date()}`);
@@ -4447,7 +4455,7 @@ You can contact your student at ${options.student.email} or by replying to this 
 
         // TODO remove
         logger.info(`Import Course Archive extracted, discovering files now ${new Date().getTime() - startTime} ${new Date()}`);
-        const discoveredFiles = await findFiles({ filePath: workingDirectory });
+        const discoveredFiles = await findFiles({ filePath: workingDirectory, keepBucketsAsTopics: keepBucketsAsTopics });
 
         // TODO remove
         logger.info(`Import Course Archive discovered files, fetching course ${new Date().getTime() - startTime} ${new Date()}`);
@@ -4710,12 +4718,14 @@ You can contact your student at ${options.student.email} or by replying to this 
         const question = await courseRepository.getQuestion({id: questionId, userId: user.id});
         const topic = await question.getTopic();
         if (topic.topicTypeId === 2) {
-            throw new RederlyError('Exam problems cannot be submitted to the OpenLab.');
-        } 
+            const message = 'Exam problems cannot be submitted to the OpenLab.';
+            logger.error(`TSNH, it should be blocked by frontend ${message}`);
+            throw new IllegalArgumentException(message);
+        }
 
         const grade = await this.getGradeForQuestion({questionId, userId: user.id});
         if (_.isNil(grade)) {
-            throw new WrappedError('Cannot ask for help on a question that has not been assigned.');
+            throw new IllegalArgumentException('Cannot ask for help on a question that has not been assigned.');
         }
         const unit = await topic.getUnit();
         const course = await unit.getCourse();

@@ -32,8 +32,8 @@ export const registerValidation = {
     params: {},
     query: {},
     body: {
-        firstName: Joi.string().required(),
-        lastName: Joi.string().required(),
+        firstName: Joi.string().trim().required(),
+        lastName: Joi.string().trim().required(),
         email: Joi.string().email().required(),
         password: Joi.string().required(),
     },

@@ -96,9 +96,9 @@ const perlQuotes: Array<[string, string]> = [
 const imageInPGFileRegex = new RegExp(
     [
         '(?<!#.*)(?:', // Comment, using non capture group to spread amongst or
-        `(?:image\\s*\\(\\s*(${perlQuotes.map(perlQuote => `${perlQuote[0]}.+?${perlQuote[1]}`).join('|')})\\s*(?:,(?:\\s|.)*?)?\\))`, // image call
+        `(?:image\\s*\\(\\s*(${perlQuotes.map(perlQuote => `${perlQuote[0]}(?!\\s*https?:).+?${perlQuote[1]}`).join('|')})\\s*(?:,(?:\\s|.)*?)?\\))`, // image call
         '|(', // pipe for regex or with capture non image, asset looking strings
-        perlQuotes.map(perlQuote => `(?:${perlQuote[0]}.*?\.${assetInPgFileExtensions}${perlQuote[1]})`).join('|'), // String check regex
+        perlQuotes.map(perlQuote => `(?:${perlQuote[0]}(?!\\s*https?:).*?\.${assetInPgFileExtensions}${perlQuote[1]})`).join('|'), // String check regex
         ')', // close asset looking strings
         ')', // end non capture group for negative look behind
     ].join(''), 'g'

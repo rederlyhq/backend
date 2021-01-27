@@ -20,7 +20,7 @@ export default class User extends Model {
   public preferredEmailInstitutionVerificationTokenExpiresAt!: Date;
   public preferredEmailVerificationToken?: string;
   public preferredEmailVerificationTokenExpiresAt!: Date;
-  public forgotPasswordToken?: string;
+  public forgotPasswordToken!: string | null;
   public forgotPasswordTokenExpiresAt!: Date
   public uuid!: string;
   public paidUntil!: Date;

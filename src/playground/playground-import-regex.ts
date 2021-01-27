@@ -32,6 +32,10 @@ qq(2-96187.gif),
 );
 12. ".png"
 13. "TOMTOMhttps://tomtom.png"
+14. "\(r = -0.74\)", "Ch04Scatter3.gif"
+15. '\(r = -0.74\)', 'Ch04Scatter3.gif'
+16. "\(r = -0.74\)", "Ch04Sc'atter3.gif"
+17. '\(r = -0.74\)', 'Ch04Sc"atter3.gif'
 
 
 Ignore success cases
@@ -49,6 +53,8 @@ Failed case
 1. image("abc\", asdf");
 # With the generic string matching is this a failed case?
 2. print('image("hello.png")')
+3. "\(r = -0.74\)", "Ch04Sc\\"atter3.gif"
+4. '\(r = -0.74\)', 'Ch04Sc\\'atter3.gif' # Should be 'Ch04Sc\\'atter3.gif' but is 'Ch04Sc\\'atter3.gif'
 `;
 
 const testExpectedResults = [
@@ -75,9 +81,17 @@ const testExpectedResults = [
     '`q.png`', // Match success cases.11.10
     '".png"', // Match success cases.12
     '"TOMTOMhttps://tomtom.png"', // Match success cases.13
+    '"Ch04Scatter3.gif"', // Match success cases.14
+    '\'Ch04Scatter3.gif\'', // Match success cases.15
+    '"Ch04Sc\'atter3.gif"', // Match success cases.16
+    '\'Ch04Sc"atter3.gif\'', // Match success cases.17
+
     '\'hi.png\'', // Ignore success cases.1
+    
     '"abc"', // Failed cases.1
     '"hello.png"', // Failed cases.1
+    '"atter3.gif"', // Failed cases.3
+    '\'atter3.gif\'', // Failed cases.4
 ];
 
 export const printRegex = (): unknown => logger.info(imageInPGFileRegex);
@@ -88,11 +102,12 @@ export const testRegex = (): void => {
         logger.error(`Length mismatch: Expected ${testExpectedResults.length} but got ${results.length}`)
     }
     for(let i = 0; i < results.length; i++) {
+        const expectedResult = testExpectedResults[i];
         const result = results[i];
         const match = result[1] ?? result[2];
         // logger.info(match);
-        if (match !== testExpectedResults[i]) {
-            logger.error(`Expected result ${i} failed: ${match} !== ${testExpectedResults}`);
+        if (match !== expectedResult) {
+            logger.error(`Expected result ${i} failed: Result [${match}] !== Expected Result [${expectedResult}]`);
         }
     }
 };

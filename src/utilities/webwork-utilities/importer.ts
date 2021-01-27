@@ -72,7 +72,7 @@ export const findDefFiles = (filePath: string): Promise<Array<string>> => {
 };
 
 const pgFileInDefFileRegex = /^\s*source_file\s*=\s*(?:(group:\S*?|\S*?\.pg)\s*$)/igm;
-
+const httpNegativeLookAhead = '(?!\\s*https?:)';
 const assetInPgFileExtensions = '(?:' + // Non capture group to or all the extensions together
 [
     '[gG][iI][fF]', // gif
@@ -93,12 +93,21 @@ const perlQuotes: Array<[string, string]> = [
     ['q\\s*\\(', '\\)'], // q
 ];
 
-const imageInPGFileRegex = new RegExp(
+const insideQuoteChacterRegex = (quote: string): string => {
+    // if is normal quote
+    if (quote === '"' || quote === "'") {
+        return `[^${quote}]`;
+    } else {
+        return '.';
+    }
+};
+
+export const imageInPGFileRegex = new RegExp(
     [
         '(?<!#.*)(?:', // Comment, using non capture group to spread amongst or
-        `(?:image\\s*\\(\\s*(${perlQuotes.map(perlQuote => `${perlQuote[0]}(?!\\s*https?:).+?${perlQuote[1]}`).join('|')})\\s*(?:,(?:\\s|.)*?)?\\))`, // image call
+        `(?:image\\s*\\(\\s*(${perlQuotes.map(perlQuote => `${perlQuote[0]}${httpNegativeLookAhead}.+?${perlQuote[1]}`).join('|')})\\s*(?:,(?:\\s|.)*?)?\\))`, // image call
         '|(', // pipe for regex or with capture non image, asset looking strings
-        perlQuotes.map(perlQuote => `(?:${perlQuote[0]}(?!\\s*https?:).*?\.${assetInPgFileExtensions}${perlQuote[1]})`).join('|'), // String check regex
+        perlQuotes.map(perlQuote => `(?:${perlQuote[0]}${httpNegativeLookAhead}${insideQuoteChacterRegex(perlQuote[0])}*?\.${assetInPgFileExtensions}${perlQuote[1]})`).join('|'), // String check regex
         ')', // close asset looking strings
         ')', // end non capture group for negative look behind
     ].join(''), 'g'

@@ -542,7 +542,10 @@ class UserController {
         email,
         forgotPasswordToken,
     }: UpdateForgottonPasswordOptions): Promise<void> {
-
+        // before we were using the email twice and didn't lower case the second time
+        // logic has changed downstream but lowercasing here to make sure
+        // getUserByEmail also lower cases
+        email = email.toLowerCase();
         const user = await this.getUserByEmail(email);
         let validated = false;
         if(_.isNil(user?.forgotPasswordToken) || user.forgotPasswordToken !== forgotPasswordToken) {
@@ -558,24 +561,10 @@ class UserController {
             throw new IllegalArgumentException('You could not be verified!');
         }
 
-        const where = _({
-            email
-        }).omitBy(_.isUndefined).value() as WhereOptions;
-
-        if(Object.keys(where).length !== 1) {
-            logger.error('Impossible! Somehow with all the checks I had the xor of id and email got through');
-            throw new Error('An application error occurred');
-        }
-
-        const hashedPassword = await hashPassword(newPassword);
-        await userRepository.updateUser({
-            updates: {
-                forgotPasswordToken: null,
-                forgotPasswordTokenExpiresAt: new Date(),
-                password: hashedPassword
-            },
-            where
-        });
+        user.password = await hashPassword(newPassword);
+        user.forgotPasswordToken = null;
+        user.forgotPasswordTokenExpiresAt = new Date();
+        await user.save();
     }
 }
 const userController = new UserController();

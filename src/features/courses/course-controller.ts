@@ -4710,12 +4710,14 @@ You can contact your student at ${options.student.email} or by replying to this 
         const question = await courseRepository.getQuestion({id: questionId, userId: user.id});
         const topic = await question.getTopic();
         if (topic.topicTypeId === 2) {
-            throw new RederlyError('Exam problems cannot be submitted to the OpenLab.');
-        } 
+            const message = 'Exam problems cannot be submitted to the OpenLab.';
+            logger.error(`TSNH, it should be blocked by frontend ${message}`);
+            throw new IllegalArgumentException(message);
+        }
 
         const grade = await this.getGradeForQuestion({questionId, userId: user.id});
         if (_.isNil(grade)) {
-            throw new WrappedError('Cannot ask for help on a question that has not been assigned.');
+            throw new IllegalArgumentException('Cannot ask for help on a question that has not been assigned.');
         }
         const unit = await topic.getUnit();
         const course = await unit.getCourse();

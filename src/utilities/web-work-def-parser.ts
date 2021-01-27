@@ -166,7 +166,7 @@ export default class WebWorkDef {
     }
 
     isExam(): boolean {
-        return this.assignmentType?.toLowerCase() === 'gateway';
+        return ['gateway', 'proctored_gateway'].indexOf(this.assignmentType?.toLowerCase() ?? '') >= 0;
     }
 
     static characterBoolean = (value: string | undefined): boolean => {

@@ -46,7 +46,7 @@ export interface BucketDefFileResult {
 export interface FindFilesDefFileOptions {
     contentRootPath: string;
     defFilePath: string;
-    bucketDefFiles: { [key: string]: BucketDefFileResult };
+    bucketDefFiles: { [key: string]: [BucketDefFileResult] };
     whitespaceMap: { [key: string]: string[] };
 }
 
@@ -60,11 +60,12 @@ export interface FindFilesDefFileResult {
 
 export interface FindFilesOptions {
     filePath: string;
+    keepBucketsAsTopics: boolean;
 }
 
 export interface FindFilesResult {
     defFiles: { [key: string]: FindFilesDefFileResult };
-    bucketDefFiles: { [key: string]: BucketDefFileResult };
+    bucketDefFiles: { [key: string]: [BucketDefFileResult] };
 }
 
 export const findDefFiles = (filePath: string): Promise<Array<string>> => {
@@ -246,11 +247,12 @@ export const findFilesFromDefFile = async ({ contentRootPath, defFilePath, bucke
         const pgFilePathFromDefFile = pgFileInDefFileMatch[1];
         if (pgFilePathFromDefFile.startsWith('group:')) {
             // DO EXAM THINGS
-            bucketDefFiles[pgFilePathFromDefFile] = {
+            bucketDefFiles[pgFilePathFromDefFile] = bucketDefFiles[pgFilePathFromDefFile] ?? [];
+            bucketDefFiles[pgFilePathFromDefFile].push({
                 bucketDefFile: `set${pgFilePathFromDefFile.substring('group:'.length)}.def`,
                 parentDefFile: defFileRelativePath,
                 pgFilePathFromDefFile: pgFilePathFromDefFile,
-            };
+            });
         } else {
             const pgFileResult = await findFilesFromPGFile({ contentRootPath, pgFilePathFromDefFile, whitespaceMap });
             defFileResult.pgFiles[pgFilePathFromDefFile] = pgFileResult;    
@@ -265,7 +267,7 @@ export const findFilesFromDefFile = async ({ contentRootPath, defFilePath, bucke
  * Iterate through each def file and find the pg files
  * Iterate through each pg file and find assets (static images)
  */
-export const findFiles = async ({ filePath }: FindFilesOptions): Promise<FindFilesResult> => {
+export const findFiles = async ({ filePath, keepBucketsAsTopics }: FindFilesOptions): Promise<FindFilesResult> => {
     const contentRootPath = await getContentRoot(filePath);
     const whitespaceMap = await generateDirectoryWhitespaceMap(filePath);
 
@@ -281,16 +283,22 @@ export const findFiles = async ({ filePath }: FindFilesOptions): Promise<FindFil
     });
 
     // associate buckets with parent def files
-    Object.values(result.bucketDefFiles).forEach(bucketResult => {
-        result.defFiles[bucketResult.parentDefFile].bucketDefFiles[bucketResult.bucketDefFile] = result.defFiles[bucketResult.bucketDefFile];
+    Object.values(result.bucketDefFiles).forEach((bucketResults: BucketDefFileResult[]) => {
+        bucketResults.forEach(bucketResult => {
+            result.defFiles[bucketResult.parentDefFile].bucketDefFiles[bucketResult.bucketDefFile] = result.defFiles[bucketResult.bucketDefFile];
+        });
     });
 
-    // Avoid processing buckets as topics
-    // can not delete in the iteration above in case there are buckets of buckets
-    // or shared buckets
-    Object.values(result.bucketDefFiles).forEach(bucketResult => {
-        delete result.defFiles[bucketResult.bucketDefFile];
-    });
+    if (!keepBucketsAsTopics) {
+        // Avoid processing buckets as topics
+        // can not delete in the iteration above in case there are buckets of buckets
+        // or shared buckets
+        Object.values(result.bucketDefFiles).forEach(bucketResults => {
+            bucketResults.forEach(bucketResult => {
+                delete result.defFiles[bucketResult.bucketDefFile];
+            });
+        });
+    }
 
     return result;
 };

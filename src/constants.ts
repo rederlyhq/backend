@@ -2,6 +2,8 @@
 export namespace Constants {
     export namespace Application {
         export const REDERLY_CLS_NAMESPACE_NAME = 'rederly-backend-api';
+        export const MIN_PASSWORD_LENGTH = 4;
+        export const MAX_PASSWORD_LENGTH = 26;
     }
     export namespace ErrorMessage {
         export const NIL_SESSION_MESSAGE = 'After the authentication middleware we should not be able to get a null session';

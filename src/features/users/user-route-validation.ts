@@ -1,5 +1,6 @@
 import * as Joi from '@hapi/joi';
 import IncludeGradeOptions from './include-grade-options';
+import { Constants } from '../../constants';
 
 export const forgotPasswordValidation = {
     params: {},
@@ -13,7 +14,7 @@ export const updatePasswordValidation = {
     params: {},
     query: {},
     body: {
-        newPassword: Joi.string().required(),
+        newPassword: Joi.string().min(Constants.Application.MIN_PASSWORD_LENGTH).max(Constants.Application.MAX_PASSWORD_LENGTH).required(),
         oldPassword: Joi.string().required(),
     },
 };
@@ -22,7 +23,7 @@ export const updateForgottonPasswordValidation = {
     params: {},
     query: {},
     body: {
-        newPassword: Joi.string().required(),
+        newPassword: Joi.string().min(Constants.Application.MIN_PASSWORD_LENGTH).max(Constants.Application.MAX_PASSWORD_LENGTH).required(),
         forgotPasswordToken: Joi.string().required(),
         email: Joi.string().email().required(),
     },
@@ -32,10 +33,10 @@ export const registerValidation = {
     params: {},
     query: {},
     body: {
-        firstName: Joi.string().required(),
-        lastName: Joi.string().required(),
+        firstName: Joi.string().trim().required(),
+        lastName: Joi.string().trim().required(),
         email: Joi.string().email().required(),
-        password: Joi.string().required(),
+        password: Joi.string().min(Constants.Application.MIN_PASSWORD_LENGTH).max(Constants.Application.MAX_PASSWORD_LENGTH).required(),
     },
 };
 

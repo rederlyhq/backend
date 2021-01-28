@@ -892,7 +892,7 @@ router.post('/preview',
         },
         // Can't use unknown due to restrictions on the type from express
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        userResDecorator: async (_proxyRes, proxyResData, userReq: RederlyExpressRequest<any, unknown, unknown, unknown, PostQuestionMeta>) => {
+        userResDecorator: async (proxyRes: Response, proxyResData, userReq: RederlyExpressRequest<any, unknown, unknown, unknown, PostQuestionMeta>) => {
             if (_.isNil(userReq.session)) {
                 throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
             }
@@ -901,10 +901,14 @@ router.post('/preview',
                 throw new Error('Previously fetched metadata is nil');
             }
 
+            const data = proxyResData.toString('utf8');
+            if (proxyRes.statusCode >= 400) {
+                throw new RederlyError(`Renderer preview responded with error ${proxyRes.statusCode}: ${data}`);
+            }
 
             let rendererResponse: RendererResponse | null = null;
             try {
-                rendererResponse = await rendererHelper.parseRendererResponse(proxyResData.toString('utf8'), {
+                rendererResponse = await rendererHelper.parseRendererResponse(data, {
                     questionPath: userReq.meta.courseQuestion.webworkQuestionPath,
                     questionRandomSeed: userReq.meta.studentGrade?.randomSeed
                 });
@@ -1016,7 +1020,7 @@ router.post('/question/:id',
         },
         // Can't use unknown due to restrictions on the type from express
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        userResDecorator: async (_proxyRes, proxyResData, userReq: RederlyExpressRequest<any, unknown, unknown, unknown, PostQuestionMeta>) => {
+        userResDecorator: async (proxyRes: Response, proxyResData, userReq: RederlyExpressRequest<any, unknown, unknown, unknown, PostQuestionMeta>) => {
             if (_.isNil(userReq.session)) {
                 throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
             }
@@ -1027,8 +1031,12 @@ router.post('/question/:id',
 
 
             let rendererResponse: RendererResponse | null = null;
+            const data = proxyResData.toString('utf8');
+            if (proxyRes.statusCode >= 400) {
+                throw new RederlyError(`Renderer submit question responded with error ${proxyRes.statusCode}: ${data}`);
+            }
             try {
-                rendererResponse = await rendererHelper.parseRendererResponse(proxyResData.toString('utf8'), {
+                rendererResponse = await rendererHelper.parseRendererResponse(data, {
                     questionPath: userReq.meta.courseQuestion.webworkQuestionPath,
                     questionRandomSeed: userReq.meta.studentGrade?.randomSeed
                 });

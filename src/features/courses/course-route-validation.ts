@@ -595,3 +595,13 @@ export const bulkExportValidation = {
     },
     body: {},
 };
+
+export const endBulkExportValidation = {
+    params: {
+        topicId: Joi.number().required(),
+    },
+    query: {},
+    body: {
+        exportUrl: Joi.string().required(),
+    },
+};

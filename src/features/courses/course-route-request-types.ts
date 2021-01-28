@@ -316,3 +316,9 @@ export namespace BulkExportRequest {
     export type query = Joi.extractType<typeof validations.bulkExportValidation.query>;
     export type body = Joi.extractType<typeof validations.bulkExportValidation.body>;
 };
+
+export namespace EndBulkExportRequest {
+    export type params = Joi.extractType<typeof validations.endBulkExportValidation.params>;
+    export type query = Joi.extractType<typeof validations.endBulkExportValidation.query>;
+    export type body = Joi.extractType<typeof validations.endBulkExportValidation.body>;
+};

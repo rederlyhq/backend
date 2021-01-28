@@ -13,6 +13,7 @@ import _ = require('lodash');
 import axios, { AxiosResponse } from 'axios';
 import NotFoundError from '../exceptions/not-found-error';
 import moment = require('moment');
+import { asyncForOwn } from '../extensions/object-extension';
 
 interface BulkPdfExport {
     firstName: string;
@@ -111,15 +112,27 @@ export default class ExportPDFHelper {
             [userId: number]: {
                 number: number;
                 srcdoc: string;
-                attachments: string[] | undefined;
+                attachments: {url: string; name: string}[] | undefined;
             }[];
         } = {};
 
         await mainData?.questions?.asyncForEach(async (question, i) =>
             await question.grades?.asyncForEach(async (grade, j) => {
                 const influencingWorkbook = grade.lastInfluencingCreditedAttemptId ?? grade.lastInfluencingAttemptId;
+
                 if (_.isNil(influencingWorkbook)) {
-                    logger.error(`Cannot find the best version for Grade ${grade.id} with lastInfluencingCreditedAttemptId or lastInfluencingAttemptId.`);
+                    // If we can't find a workbook, we can't display anything for the student attempt.
+                    // Should we display the empty problem? Should we check for autosaved work?
+                    if (_.isNil(studentGradeLookup[grade.userId])) {
+                        studentGradeLookup[grade.userId] = [];
+                    }
+
+                    studentGradeLookup[grade.userId].push({
+                        number: question.problemNumber,
+                        attachments: [],
+                        srcdoc: 'There is no record of this student attempting this problem.'
+                    });
+
                     return;
                 }
 
@@ -152,9 +165,6 @@ export default class ExportPDFHelper {
                     ]
                 });
 
-                data.questions[i].grades[j].webworkQuestionPath = gradeInstanceAttachments?.studentGradeInstance?.webworkQuestionPath;
-                data.questions[i].grades[j].problemAttachments = gradeInstanceAttachments?.studentGradeInstance?.problemAttachments;
-                data.questions[i].grades[j].influencingWorkbook = gradeInstanceAttachments;
                 try {
                         const obj = {
                             sourceFilePath: gradeInstanceAttachments?.studentGradeInstance?.webworkQuestionPath ?? question.webworkQuestionPath,
@@ -171,16 +181,26 @@ export default class ExportPDFHelper {
                             studentGradeLookup[grade.userId] = [];
                         }
 
+                        let src: any = null;
+                        try {
+                            src = await rendererHelper.getProblem(obj);
+                        } catch (e) {
+                            logger.error(`Failed to load problem ${question.problemNumber} for ${grade.userId} with obj:`);
+                            console.log(obj);
+                            console.error(e.message);
+                        }
+
                         studentGradeLookup[grade.userId].push({
                             number: question.problemNumber,
-                            attachments: gradeInstanceAttachments?.studentGradeInstance?.problemAttachments?.map(x => `https://staging.rederly.com/${x.cloudFilename}`),
+                            attachments: gradeInstanceAttachments?.studentGradeInstance?.problemAttachments?.map(x => ({
+                                url: `https://app.rederly.com/work/${x.cloudFilename}`,
+                                name: x.userLocalFilename,
+                            })),
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            srcdoc: (await rendererHelper.getProblem(obj) as any)?.renderedHTML ?? 'Could not render this problem.'
+                            srcdoc: src?.renderedHTML ?? 'Could not render this problem.'
                         });
-
-                        console.log('Got renderer Data');
                 } catch (e) {
-                    // console.error(e);
+                    console.error(`Got an error message for problem ${question.problemNumber} for ${grade.userId}`, e.message);
                     // console.log({
                     //     sourceFilePath: data.questions[i].grades[j].webworkQuestionPath ?? data.questions[i].webworkQuestionPath,
                     //     problemSeed: gradeInstanceAttachments?.randomSeed ?? gradeInstanceAttachments?.studentGradeInstance?.randomSeed ?? data.questions[i].grades[j].randomSeed,
@@ -189,8 +209,7 @@ export default class ExportPDFHelper {
             })
         );
 
-        const uploadPromises: Promise<AxiosResponse<unknown>>[] = [];
-        _.forOwn(studentGradeLookup, async (studentGrades, userId) => {
+        await asyncForOwn(studentGradeLookup, async (studentGrades, userId) => {
             const user = await User.findOne({
                 attributes: ['id', 'firstName', 'lastName'],
                 where: {
@@ -204,6 +223,8 @@ export default class ExportPDFHelper {
                 return;
             }
 
+            console.log(userId, studentGrades.map(x => x.number));
+
             const postObject: BulkPdfExport = {
                 topic: {
                     id: data.id,
@@ -214,25 +235,21 @@ export default class ExportPDFHelper {
                 problems: studentGrades,
                 professorUUID: professorUUID
             };
-            uploadPromises.push(this.bulkExportAxios.post('export/', postObject));
+            const result = await this.bulkExportAxios.post('export/', postObject);
+            console.log('Got result from post', result.data);
+            return result;
         });
         
+        // Request zip
         try {
-            // @ts-ignore
-            await Promise.allSettled(uploadPromises);
-            const zippedURL = await this.zip(professorUUID, topic.id);
-
-            topic.exportUrl = zippedURL;
-            await topic.save();
+            const res = await this.bulkExportAxios.get(`export/?profUUID=${professorUUID}&topicId=${topic.id}`);
+            console.log('Got res', res.data);
         } catch (e) {
             console.error(e);
+            topic.lastExported = null;
+            await topic.save();
         }
         // return zippedURL;
         return;
     };
-
-    zip = async (professorUUID: string, topicId: number): Promise<string> => {
-        const progress = await this.bulkExportAxios.get(`export/?profUUID=${professorUUID}&topicId=${topicId}`);
-        return progress.data.data.zippedURL;
-    }
 }

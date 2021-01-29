@@ -326,7 +326,12 @@ router.put('/topic/:topicId/endExport',
             throw new NotFoundError('A endExport PUT was received for a non-existant topic. Was it deleted?');
         }
 
-        topic.exportUrl = req.body.exportUrl;
+        if (_.isNil(req.body.exportUrl)) {
+            topic.exportUrl = null;
+            topic.lastExported = null;
+        } else {
+            topic.exportUrl = req.body.exportUrl;
+        }
         await topic.save();
 
         next(httpResponse.Ok('Got it!'));

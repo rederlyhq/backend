@@ -94,7 +94,7 @@ export default class ExportPDFHelper {
                             // Should be one Student Grade per Student for each Problem
                             model: StudentGrade,
                             as: 'grades',
-                            attributes: ['id', 'userId', 'lastInfluencingCreditedAttemptId', 'lastInfluencingAttemptId'],
+                            attributes: ['id', 'userId', 'lastInfluencingCreditedAttemptId', 'lastInfluencingAttemptId', 'effectiveScore', 'legalScore'],
                             required: true,
                             where: {
                                 active: true,
@@ -113,6 +113,8 @@ export default class ExportPDFHelper {
                 number: number;
                 srcdoc: string;
                 attachments: {url: string; name: string}[] | undefined;
+                effectiveScore: number;
+                legalScore: number;
             }[];
         } = {};
 
@@ -130,7 +132,9 @@ export default class ExportPDFHelper {
                     studentGradeLookup[grade.userId].push({
                         number: question.problemNumber,
                         attachments: [],
-                        srcdoc: 'There is no record of this student attempting this problem.'
+                        srcdoc: 'There is no record of this student attempting this problem.',
+                        effectiveScore: grade.effectiveScore,
+                        legalScore: grade.legalScore,
                     });
 
                     return;
@@ -195,8 +199,10 @@ export default class ExportPDFHelper {
                             attachments: gradeInstanceAttachments?.studentGradeInstance?.problemAttachments?.map(x => ({
                                 url: `https://app.rederly.com/work/${x.cloudFilename}`,
                                 name: x.userLocalFilename,
+                                time: x.updatedAt,
                             })),
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            effectiveScore: grade.effectiveScore,
+                            legalScore: grade.legalScore,
                             srcdoc: src?.renderedHTML ?? 'Could not render this problem.'
                         });
                 } catch (e) {

@@ -20,13 +20,12 @@ const {
     sessionLife
 } = configurations.auth;
 
-export const validateSession = async (token: string, res: Response): Promise<Session> => {
+export const validateSession = async (token: string, req: RederlyExpressRequest, res: Response): Promise<Session> => {
     try {
-        const splitToken = token.split('_');
-        if(_.isNil(splitToken.first)) {
+        const [ uuid, , impersonatingRole ] = token.split('_');
+        if(_.isNil(uuid)) {
             throw new RederlyError('TSNH: parsing token failed. string.split returned an empty array');
         }
-        const uuid = splitToken.first;
         const session = await userController.getSession(uuid);
         if (!session) {
             const response = 'Invalid session';
@@ -57,6 +56,23 @@ export const validateSession = async (token: string, res: Response): Promise<Ses
                 } else {
                     logger.debug('validateSession: session token did not need refresh');
                 }
+
+                const user = await session.getUser();
+                req.rederlyUser = user;
+                req.rederlyUserRole = user.roleId;
+                if (!_.isNil(impersonatingRole)) {
+                    if (impersonatingRole in Role) {
+                        const castedRole = impersonatingRole as keyof typeof Role;
+                        const role = Role[castedRole];
+                        if (role !== Role.STUDENT) {
+                            throw new Error('Only student impersonation is supported');
+                        }
+                        req.rederlyUserRole = role;
+                    } else {
+                        logger.error(`Impersonating role [${impersonatingRole}] is not a valid user role`);
+                    }    
+                }
+
                 return session;
             }
         }

@@ -3131,7 +3131,7 @@ class CourseController {
                 topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
             }
 
-            const userRole = user.roleId;
+            const userRole = options.role;
             if (moment().isBefore(topic.startDate)) {
                 if (userRole === Role.STUDENT) {
                     message = `The topic "${topic.name}" has not started yet.`;
@@ -3684,7 +3684,7 @@ class CourseController {
     async canUserViewQuestionId(options: CanUserViewQuestionIdOptions): Promise<CanUserViewQuestionIdResult> {
         const { user, questionId, studentTopicAssessmentInfoId } = options;
         let message = '';
-        if (user.roleId === Role.PROFESSOR || user.roleId === Role.ADMIN) return {userCanViewQuestion: true, message};
+        if (options.role === Role.PROFESSOR || options.role === Role.ADMIN) return {userCanViewQuestion: true, message};
         const question = await courseRepository.getQuestion({ id: questionId });
         const dbTopic = await question.getTopic();
         const topicOverride = await courseRepository.getStudentTopicOverride({userId: user.id, topicId: dbTopic.id});
@@ -3781,7 +3781,7 @@ class CourseController {
         });
 
         // restrictions on start time, maximum versions, and version delay only apply to students
-        if (user.roleId === Role.STUDENT) {
+        if (options.role === Role.STUDENT) {
             // if the assessment has not yet started, students cannot generate a version
             if ( moment().isBefore(topic.startDate.toMoment()) ) {
                 message = `The topic "${topic.name}" has not started yet.`;

@@ -341,6 +341,7 @@ export interface CanUserViewQuestionIdOptions {
     user: User;
     questionId: number;
     studentTopicAssessmentInfoId?: number;
+    role: Role;
 }
 
 export interface CanUserViewQuestionIdResult {
@@ -351,6 +352,7 @@ export interface CanUserViewQuestionIdResult {
 export interface UserCanStartNewVersionOptions {
     user: User;
     topicId: number;
+    role: Role;
 }
 
 export interface UserCanStartNewVersionResultData {
@@ -396,6 +398,7 @@ export interface GetQuestionsOptions {
 
 export interface CanUserGetQuestionsOptions { 
     userId: number; 
+    role: Role;
     courseTopicContentId?: number; 
     studentTopicAssessmentInfoId?: number; 
 }

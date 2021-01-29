@@ -92,7 +92,7 @@ export const authenticationMiddleware = async (req: Request, res: Response, next
     }
     //authenticate cookie
     try {
-        const session = await validateSession(req.cookies.sessionToken, res);
+        const session = await validateSession(req.cookies.sessionToken, req, res);
         //Successful, add the user id to the session
         // TODO figure out session with request
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -112,7 +112,8 @@ export const paidMiddleware = (action?: string) => async (req: RederlyExpressReq
     const triggeringAction = action ?? 'That action';
     const user = req.rederlyUser ?? await req.session.getUser();
     req.rederlyUser = user;
-    if (user.roleId === Role.STUDENT || user.paidUntil.toMoment().isAfter(moment())) {
+    const rederlyUserRole = req.rederlyUserRole ?? user.roleId;
+    if (rederlyUserRole === Role.STUDENT || user.paidUntil.toMoment().isAfter(moment())) {
         next();
     } else {
         next(new ForbiddenError(`${triggeringAction} requires a paid account.`));

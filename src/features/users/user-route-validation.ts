@@ -2,6 +2,14 @@ import * as Joi from '@hapi/joi';
 import IncludeGradeOptions from './include-grade-options';
 import { Constants } from '../../constants';
 
+export const impersonateValidation = {
+    params: {},
+    query: {},
+    body: {
+        role: Joi.string().allow(null).optional(),
+    },
+};
+
 export const forgotPasswordValidation = {
     params: {},
     query: {},

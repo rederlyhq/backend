@@ -118,8 +118,8 @@ export default class ExportPDFHelper {
             }[];
         } = {};
 
-        await mainData?.questions?.asyncForEach(async (question, i) =>
-            await question.grades?.asyncForEach(async (grade, j) => {
+        await mainData?.questions?.sequentialAsyncForEach(async (question, i) =>
+            await question.grades?.sequentialAsyncForEach(async (grade, j) => {
                 const influencingWorkbook = grade.lastInfluencingCreditedAttemptId ?? grade.lastInfluencingAttemptId;
 
                 if (_.isNil(influencingWorkbook)) {

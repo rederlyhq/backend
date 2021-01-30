@@ -10,7 +10,7 @@ import rendererHelper from './renderer-helper';
 import Role from '../features/permissions/roles';
 import configurations from '../configurations';
 import _ = require('lodash');
-import axios, { AxiosResponse } from 'axios';
+import axios from 'axios';
 import NotFoundError from '../exceptions/not-found-error';
 import moment = require('moment');
 import { asyncForOwn } from '../extensions/object-extension';
@@ -43,9 +43,10 @@ type FROM_DB = {
             lastInfluencingCreditedAttemptId: number;
             lastInfluencingAttemptId: number;
             user: User;
-            influencingWorkbook: any;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             rendererData: any;
             webworkQuestionPath?: string;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             problemAttachments: any;
             randomSeed: number;
         }[];

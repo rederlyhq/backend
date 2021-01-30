@@ -34,7 +34,6 @@ import { getAveragesFromStatistics } from './statistics-helper';
 import { rederlyTempFileWrapper } from '../../middleware/rederly-temp-file-wrapper';
 import ExportPDFHelper from '../../utilities/export-pdf-helper';
 import CourseTopicContent from '../../database/models/course-topic-content';
-import { useDatabaseTransaction } from '../../utilities/database-helper';
 
 const fileUpload = multer();
 

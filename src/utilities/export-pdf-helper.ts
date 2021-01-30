@@ -14,6 +14,7 @@ import axios, { AxiosResponse } from 'axios';
 import NotFoundError from '../exceptions/not-found-error';
 import moment = require('moment');
 import { asyncForOwn } from '../extensions/object-extension';
+import urljoin = require('url-join');
 
 interface BulkPdfExport {
     firstName: string;
@@ -21,7 +22,7 @@ interface BulkPdfExport {
     topic: {
         name: string;
         id: number;
-    }
+    };
     professorUUID: string;
     problems: {
         number: number;
@@ -54,7 +55,6 @@ type FROM_DB = {
 export default class ExportPDFHelper {
     bulkExportAxios = axios.create({
         baseURL: configurations.bulkPdfExport.baseUrl,
-        timeout: 120000
     });
 
     shouldStartNewExport = (topic: CourseTopicContent): boolean => {
@@ -71,7 +71,7 @@ export default class ExportPDFHelper {
         topic.exportUrl = null;
         await topic.save();
 
-        // Fine the specified topic
+        // Find the specified topic
         const mainData = await CourseTopicContent.findOne({
             attributes: ['id', 'name'],
             where: {
@@ -105,9 +105,10 @@ export default class ExportPDFHelper {
             ],
         });
 
-        // TODO: Clean up typing when unpacking the ProblemAttachments
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const data: FROM_DB = mainData?.get({plain: true}) as FROM_DB;
+        if (_.isNil(mainData)) {
+            throw new NotFoundError(`Could not find topic ${topic.id} to export.`);
+        }
+
         const studentGradeLookup: {
             [userId: number]: {
                 number: number;
@@ -118,17 +119,16 @@ export default class ExportPDFHelper {
             }[];
         } = {};
 
-        await mainData?.questions?.sequentialAsyncForEach(async (question, i) =>
-            await question.grades?.sequentialAsyncForEach(async (grade, j) => {
+        await mainData.questions?.sequentialAsyncForEach(async (question) =>
+            await question.grades?.sequentialAsyncForEach(async (grade) => {
+                if (_.isNil(studentGradeLookup[grade.userId])) {
+                    studentGradeLookup[grade.userId] = [];
+                }
+
                 const influencingWorkbook = grade.lastInfluencingCreditedAttemptId ?? grade.lastInfluencingAttemptId;
 
                 if (_.isNil(influencingWorkbook)) {
                     // If we can't find a workbook, we can't display anything for the student attempt.
-                    // Should we display the empty problem? Should we check for autosaved work?
-                    if (_.isNil(studentGradeLookup[grade.userId])) {
-                        studentGradeLookup[grade.userId] = [];
-                    }
-
                     studentGradeLookup[grade.userId].push({
                         number: question.problemNumber,
                         attachments: [],
@@ -169,49 +169,36 @@ export default class ExportPDFHelper {
                     ]
                 });
 
+                const obj = {
+                    sourceFilePath: gradeInstanceAttachments?.studentGradeInstance?.webworkQuestionPath ?? question.webworkQuestionPath,
+                    problemSeed: gradeInstanceAttachments?.randomSeed ?? gradeInstanceAttachments?.studentGradeInstance?.randomSeed ?? grade.randomSeed,
+                    formData: gradeInstanceAttachments?.submitted.form_data,
+                    showCorrectAnswers: true,
+                    answersSubmitted: 1,
+                    outputformat: rendererHelper.getOutputFormatForRole(Role.PROFESSOR),
+                    permissionLevel: rendererHelper.getPermissionForRole(Role.PROFESSOR),
+                    showSolutions: true,
+                };
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                let src: any = null;
                 try {
-                        const obj = {
-                            sourceFilePath: gradeInstanceAttachments?.studentGradeInstance?.webworkQuestionPath ?? question.webworkQuestionPath,
-                            problemSeed: gradeInstanceAttachments?.randomSeed ?? gradeInstanceAttachments?.studentGradeInstance?.randomSeed ?? data.questions[i].grades[j].randomSeed,
-                            formData: gradeInstanceAttachments?.submitted.form_data,
-                            showCorrectAnswers: true,
-                            answersSubmitted: 1,
-                            outputformat: rendererHelper.getOutputFormatForRole(Role.PROFESSOR),
-                            permissionLevel: rendererHelper.getPermissionForRole(Role.PROFESSOR),
-                            showSolutions: true,
-                        };
-
-                        if (_.isNil(studentGradeLookup[grade.userId])) {
-                            studentGradeLookup[grade.userId] = [];
-                        }
-
-                        let src: any = null;
-                        try {
-                            src = await rendererHelper.getProblem(obj);
-                        } catch (e) {
-                            logger.error(`Failed to load problem ${question.problemNumber} for ${grade.userId} with obj:`);
-                            console.log(obj);
-                            console.error(e.message);
-                        }
-
-                        studentGradeLookup[grade.userId].push({
-                            number: question.problemNumber,
-                            attachments: gradeInstanceAttachments?.studentGradeInstance?.problemAttachments?.map(x => ({
-                                url: `https://app.rederly.com/work/${x.cloudFilename}`,
-                                name: x.userLocalFilename,
-                                time: x.updatedAt,
-                            })),
-                            effectiveScore: grade.effectiveScore,
-                            legalScore: grade.legalScore,
-                            srcdoc: src?.renderedHTML ?? 'Could not render this problem.'
-                        });
+                    src = await rendererHelper.getProblem(obj);
                 } catch (e) {
-                    console.error(`Got an error message for problem ${question.problemNumber} for ${grade.userId}`, e.message);
-                    // console.log({
-                    //     sourceFilePath: data.questions[i].grades[j].webworkQuestionPath ?? data.questions[i].webworkQuestionPath,
-                    //     problemSeed: gradeInstanceAttachments?.randomSeed ?? gradeInstanceAttachments?.studentGradeInstance?.randomSeed ?? data.questions[i].grades[j].randomSeed,
-                    // });
+                    logger.error(`Failed to load problem ${question.problemNumber} for ${grade.userId}.`);
                 }
+
+                studentGradeLookup[grade.userId].push({
+                    number: question.problemNumber,
+                    attachments: gradeInstanceAttachments?.studentGradeInstance?.problemAttachments?.map(attachment => ({
+                        url: urljoin(configurations.attachments.baseUrl, attachment.cloudFilename),
+                        name: attachment.userLocalFilename,
+                        time: attachment.updatedAt,
+                    })),
+                    effectiveScore: grade.effectiveScore * 100,
+                    legalScore: grade.legalScore * 100,
+                    srcdoc: src?.renderedHTML ?? 'Could not render this problem.'
+                });
             })
         );
 
@@ -229,33 +216,26 @@ export default class ExportPDFHelper {
                 return;
             }
 
-            console.log(userId, studentGrades.map(x => x.number));
-
             const postObject: BulkPdfExport = {
                 topic: {
-                    id: data.id,
-                    name: data.name,
+                    id: mainData.id,
+                    name: mainData.name,
                 },
                 firstName: user.firstName,
                 lastName: user.lastName,
                 problems: studentGrades,
                 professorUUID: professorUUID
             };
-            const result = await this.bulkExportAxios.post('export/', postObject);
-            console.log('Got result from post', result.data);
-            return result;
+            return await this.bulkExportAxios.post('export/', postObject);
         });
         
         // Request zip
         try {
-            const res = await this.bulkExportAxios.get(`export/?profUUID=${professorUUID}&topicId=${topic.id}`);
-            console.log('Got res', res.data);
+            return await this.bulkExportAxios.get(`export/?profUUID=${professorUUID}&topicId=${topic.id}`);
         } catch (e) {
             console.error(e);
             topic.lastExported = null;
             await topic.save();
         }
-        // return zippedURL;
-        return;
     };
 }

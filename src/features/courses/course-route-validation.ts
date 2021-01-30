@@ -640,6 +640,6 @@ export const endBulkExportValidation = {
     },
     query: {},
     body: {
-        exportUrl: Joi.string().required(),
+        exportUrl: Joi.string().optional(),
     },
 };

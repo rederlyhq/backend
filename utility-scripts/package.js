@@ -60,7 +60,7 @@ console.log(`Starting to package project into ${destFile}`);
         'assets',
         builtDirectory,
         'package.json',
-        'package-lock.json'
+        'package-lock.json',
     ];
     
     const copyFilePromises = filesToCopy.map(async fileToCopy => {
@@ -85,6 +85,13 @@ console.log(`Starting to package project into ${destFile}`);
         copyFilePromises.push(nodeModulesPromise);
         console.log(`Finished moving ${fileToMove} ==> "${dest}"`);
     }
+
+    const dockerFileSource = 'built.dockerfile';
+    const dockerFileDest = `${buildDir}/Dockerfile`;
+    console.log(`Copying ${dockerFileSource} ==> "${dockerFileDest}"`);
+    await fs.copy(dockerFileSource, dockerFileDest);
+    console.log(`Finished copying ${dockerFileSource} ==> "${dockerFileDest}"`);
+
     await Promise.all(copyFilePromises);
 
     console.log('Pruning dependencies');

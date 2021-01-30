@@ -2,6 +2,7 @@ import fse = require('fs-extra');
 import path = require('path');
 import logger from './logger';
 import * as _ from 'lodash';
+import { Dictionary } from 'lodash';
 
 const fsPromises = fse.promises;
 
@@ -48,7 +49,32 @@ export const recursiveListFilesInDirectory = async (filePath: string, result: st
     return result;
 };
 
+export const generateDirectoryWhitespaceMap = async (filePath: string, result: Dictionary<Array<string>> = {}): Promise<Dictionary<Array<string>>> => {
+    const fileStats = await fsPromises.lstat(filePath);
+    if (fileStats.isDirectory()) {
+        const files = await fsPromises.readdir(filePath);
+        await files.asyncForEach(async (listFilePath: string) => {
+            const resultPath = path.resolve(path.join(filePath, listFilePath));
+            await generateDirectoryWhitespaceMap(resultPath, result);
+        });
+    } else if (fileStats.isSymbolicLink()) {
+        logger.debug(`recursiveListFilesInDirectory: skipping symbolic link: ${filePath}`);
+    } else if (fileStats.isFile()) {
+        const strippedFilePath = filePath.replace(/\s/g, '');
+        if (_.isNil(result[strippedFilePath])) {
+            result[strippedFilePath] = [];
+        }
+        result[strippedFilePath].push(filePath);
+    } else if (fileStats.isSymbolicLink()) {
+        logger.debug(`recursiveListFilesInDirectory: skipping symbolic link: ${filePath}`);
+    } else {
+        logger.error(`recursiveListFilesInDirectory: not a file, symbolic link, or directory: ${filePath}`);
+    }
+    return result;
+};
+
 export enum TAR_EXTENSION {
+    TAR = '.tar',
     GZ_SINGLE = '.tgz',
     GZ_DOUBLE = '.tar.gz'
 }
@@ -57,6 +83,7 @@ export const determineTarExtension = (filename: string): TAR_EXTENSION | null =>
     const lower = filename.toLowerCase();
     if (lower.endsWith(TAR_EXTENSION.GZ_SINGLE)) return TAR_EXTENSION.GZ_SINGLE;
     else if (lower.endsWith(TAR_EXTENSION.GZ_DOUBLE)) return TAR_EXTENSION.GZ_DOUBLE;
+    else if (lower.endsWith(TAR_EXTENSION.TAR)) return TAR_EXTENSION.TAR;
     else return null;
 };
 

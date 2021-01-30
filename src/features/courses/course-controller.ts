@@ -1,10 +1,10 @@
 import * as _ from 'lodash';
 import Bluebird = require('bluebird');
-import Course from '../../database/models/course';
+import Course, {CourseInterface} from '../../database/models/course';
 import StudentEnrollment from '../../database/models/student-enrollment';
 import { BaseError } from 'sequelize';
 import NotFoundError from '../../exceptions/not-found-error';
-import CourseUnitContent from '../../database/models/course-unit-content';
+import CourseUnitContent, {CourseUnitContentInterface} from '../../database/models/course-unit-content';
 import CourseTopicContent, { CourseTopicContentInterface } from '../../database/models/course-topic-content';
 import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface, CourseTopicQuestionErrors } from '../../database/models/course-ww-topic-question';
 import rendererHelper, { GetProblemParameters, OutputFormat, RendererResponse } from '../../utilities/renderer-helper';
@@ -17,7 +17,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, ImportCourseTarballResult, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions, AddQuestionOptions, RequestNewProblemVersionOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, ImportCourseTarballResult, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions, AddQuestionOptions, RequestNewProblemVersionOptions, BrowseProblemsCourseListOptions, GetSearchProblemResultsOptions, BrowseProblemsTopicListOptions, BrowseProblemsUnitListOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -39,7 +39,7 @@ import StudentGradeOverride from '../../database/models/student-grade-override';
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 import StudentTopicAssessmentOverride from '../../database/models/student-topic-assessment-override';
 import TopicAssessmentInfo, {TopicAssessmentInfoInterface} from '../../database/models/topic-assessment-info';
-import CourseQuestionAssessmentInfo from '../../database/models/course-question-assessment-info';
+import CourseQuestionAssessmentInfo, { CourseQuestionAssessmentInfoInterface } from '../../database/models/course-question-assessment-info';
 import schedulerHelper from '../../utilities/scheduler-helper';
 import configurations from '../../configurations';
 // Had an error using standard import
@@ -104,9 +104,10 @@ class CourseController {
         });
     }
 
-    getTopicById({id, userId, includeQuestions}: {id: number; userId?: number; includeQuestions?: boolean}): Promise<CourseTopicContent> {
+    getTopicById({id, userId, includeQuestions, includeWorkbookCount}: {id: number; userId?: number; includeQuestions?: boolean; includeWorkbookCount?: boolean}): Promise<CourseTopicContent> {
         const include = [];
         const subInclude = [];
+        const questionSubInclude = [];
         if (!_.isNil(userId)) {
             include.push({
                 model: StudentTopicOverride,
@@ -139,7 +140,27 @@ class CourseController {
             });
         }
 
-        if (includeQuestions) {
+        if (includeQuestions || includeWorkbookCount) {
+            questionSubInclude.push({
+                model: CourseQuestionAssessmentInfo,
+                as: 'courseQuestionAssessmentInfo',
+                required: false,
+                where: {
+                    active: true,
+                }
+            });
+
+            if (includeWorkbookCount) {
+                questionSubInclude.push({
+                    model: StudentWorkbook,
+                    as: 'workbooks',
+                    required: false,
+                    where: {
+                        active: true,
+                    },
+                });
+            }
+
             include.push({
                 model: CourseWWTopicQuestion,
                 as: 'questions',
@@ -147,14 +168,7 @@ class CourseController {
                 where: {
                     active: true,
                 },
-                include: [{
-                    model: CourseQuestionAssessmentInfo,
-                    as: 'courseQuestionAssessmentInfo',
-                    required: false,
-                    where: {
-                        active: true,
-                    }
-                }]
+                include: questionSubInclude
             });
         }
 
@@ -173,7 +187,7 @@ class CourseController {
             where: {
                 id,
             },
-            include
+            include,
         });
     }
 
@@ -314,6 +328,133 @@ class CourseController {
         });
     }
 
+    // TODO combine with the above call when there is time to vet the changes
+    browseProblemsCourseList({
+        filter: {
+            instructorId
+        }
+    }: BrowseProblemsCourseListOptions): Bluebird<Course[]> {
+        const where: sequelize.WhereOptions = {};
+        const attributes: Array<keyof CourseInterface> = ['name', 'id'];
+
+        if (!_.isNil(instructorId)) {
+            where.instructorId = instructorId;
+        }
+
+        if (!_.has(where, 'active')) {
+            where.active = true;
+        }
+
+        return Course.findAll({
+            where,
+            attributes: attributes
+        });
+    }
+
+    // TODO make reusable
+    browseProblemsUnitList({
+        filter: {
+            courseId
+        }
+    }: BrowseProblemsUnitListOptions): Bluebird<CourseUnitContent[]> {
+        const where: sequelize.WhereOptions = {};
+        const attributes: Array<keyof CourseUnitContentInterface> = ['name', 'id'];
+
+        if (!_.isNil(courseId)) {
+            where.courseId = courseId;
+        }
+
+        if (!_.has(where, 'active')) {
+            where.active = true;
+        }
+
+        return CourseUnitContent.findAll({
+            where,
+            attributes: attributes
+        });
+    }
+
+    // TODO make reusable
+    browseProblemsTopicList({
+        filter: {
+            unitId
+        }
+    }: BrowseProblemsTopicListOptions): Bluebird<CourseTopicContent[]> {
+        const where: sequelize.WhereOptions = {};
+        const attributes: Array<keyof CourseTopicContentInterface> = ['name', 'id'];
+
+        if (!_.isNil(unitId)) {
+            where.courseUnitContentId = unitId;
+        }
+
+        if (!_.has(where, 'active')) {
+            where.active = true;
+        }
+
+        return CourseTopicContent.findAll({
+            where,
+            attributes: attributes
+        });
+    }
+
+    // TODO make reusable
+    browseProblemsSearch({
+        filter: {
+            courseId,
+            unitId,
+            topicId,
+            instructorId,
+        }
+    }: GetSearchProblemResultsOptions): Bluebird<CourseWWTopicQuestion[]> {
+        const where: sequelize.WhereOptions = {};
+        if (!_.has(where, 'active')) {
+            where.active = true;
+        }
+
+        return CourseWWTopicQuestion.findAll({
+            attributes: ['id', 'webworkQuestionPath'] as Array<keyof CourseWWTopicQuestionInterface>,
+            include: [{
+                model: CourseQuestionAssessmentInfo,
+                as: 'courseQuestionAssessmentInfo',
+                required: false,
+                where: {
+                    active: true
+                },
+                attributes: ['id', 'additionalProblemPaths'] as Array<keyof CourseQuestionAssessmentInfoInterface>,
+            }, {
+                model: CourseTopicContent,
+                as: 'topic',
+                required: true,
+                attributes: ['name', 'id'] as Array<keyof CourseTopicContentInterface>,
+                where: _.omitBy({
+                    active: true,
+                    id: topicId
+                }, _.isUndefined) as sequelize.WhereOptions,
+                include: [{
+                    model: CourseUnitContent,
+                    as: 'unit',
+                    required: true,
+                    attributes: ['name', 'id'] as Array<keyof CourseUnitContentInterface>,
+                    where: _.omitBy({
+                        active: true,
+                        id: unitId,
+                    }, _.isUndefined) as sequelize.WhereOptions,
+                    include: [{
+                        model: Course,
+                        as: 'course',
+                        required: true,
+                        attributes: ['name', 'id'] as Array<keyof CourseInterface>,
+                        where: _.omitBy({
+                            active: true,
+                            id: courseId,
+                            instructorId: instructorId
+                        }, _.isUndefined) as sequelize.WhereOptions
+                    }]
+                }]
+            }]
+        });
+    };
+    
     async createCourse(options: CreateCourseOptions): Promise<Course> {
         if (options.options.useCurriculum) {
             return useDatabaseTransaction(async () => {
@@ -364,7 +505,7 @@ class CourseController {
                             await TopicAssessmentInfo.create({
                                 ..._.omit(topicAssessmentInfo.get({plain: true}), ['id']),
                                 courseTopicContentId: createdCourseTopic.id,
-                                curriculumTopicAssessmentInfoId: curriculumTopic.id,
+                                curriculumTopicAssessmentInfoId: topicAssessmentInfo.id,
                             });
                         }
 
@@ -392,7 +533,7 @@ class CourseController {
                                 const createFromCurriculum = {
                                     ..._.omit(questionAssessmentInfo.get({plain: true}), ['id']),
                                     courseWWTopicQuestionId: createdCourseQuestion.id,
-                                    curriculumQuestionAssessmentInfoId: curriculumQuestion.id,
+                                    curriculumQuestionAssessmentInfoId: questionAssessmentInfo.id,
                                 };
 
                                 await CourseQuestionAssessmentInfo.create(createFromCurriculum);
@@ -533,8 +674,21 @@ class CourseController {
 
     async updateTopic(options: UpdateTopicOptions): Promise<CourseTopicContent[]> {
         const existingTopic = await courseRepository.getCourseTopic({
-            id: options.where.id
+            id: options.where.id,
+            checkUsed: true,
         });
+
+        const workbookCount = existingTopic.calculateWorkbookCount();
+        const versionCount = existingTopic.calculateVersionCount();
+        const topicIsChangingTypes = (existingTopic.topicTypeId !== options.updates.topicTypeId);
+
+        if ((
+                (workbookCount && workbookCount > 0) || 
+                (versionCount && versionCount > 0)
+            ) && topicIsChangingTypes
+        ) {
+            throw new IllegalArgumentException('Topic type cannot be changed. Students have begun working on this topic.');
+        }
 
         const originalTopic = existingTopic.get({
             plain: true
@@ -1126,13 +1280,21 @@ class CourseController {
     }: {
         defFileDiscoveryResult: {
             defFileResult: FindFilesDefFileResult;
-            bucketDefFiles: { [key: string]: BucketDefFileResult };
+            bucketDefFiles: { [key: string]: [BucketDefFileResult] };
         };
         pgFilePath: string;
         result?: Array<string>;
     }): Array<string> => {
-        const bucketDefFileMap = bucketDefFiles[pgFilePath];
+        const bucketDefFileMap: BucketDefFileResult | undefined = bucketDefFiles[pgFilePath].find((value: BucketDefFileResult) => {
+            return value.pgFilePathFromDefFile === pgFilePath;
+        });
+        if (_.isNil(bucketDefFileMap)) {
+            throw new RederlyError('Could not find bucket');
+        }
         const subDefFileResult = defFileResult.bucketDefFiles[bucketDefFileMap.bucketDefFile];
+        if (_.isNil(subDefFileResult)) {
+            throw new RederlyError(`Bucket def file not found ${bucketDefFileMap.bucketDefFile}`);
+        }
         Object.values(subDefFileResult.pgFiles).forEach(pgFileResult => {
             // Buckets of buckets
             if(pgFileResult.pgFilePathFromDefFile.startsWith('group:')) {
@@ -1230,9 +1392,12 @@ class CourseController {
         const parsedWebworkDef: WebWorkDef = hasParsed(options) ? options.parsedWebworkDef : new WebWorkDef(options.webworkDefFileContent);
         let lastProblemNumber = await courseRepository.getLatestProblemNumberForTopic(options.courseTopicId) || 0;
 
+        const topic = options.topic ?? await CourseTopicContent.findOne({where: {id: options.courseTopicId}});
 
-        const topic = await CourseTopicContent.findOne({where: {id: options.courseTopicId}});
-
+        if (topic?.id !== options.courseTopicId) {
+            logger.warn('A topic ID was passed specifically, but a topic object with a different ID was also passed and took precedence.');
+        }
+        
         if (_.isNil(topic)) {
             throw new NotFoundError('Tried to increment for a topic ID that doesn\'t exist.');
         }
@@ -1244,7 +1409,7 @@ class CourseController {
                 topicId: options.courseTopicId
             });
 
-            return parsedWebworkDef.problems.asyncForEach(async (problem: Problem) => {
+            return parsedWebworkDef.problems.asyncForEach(async (problem: Problem, index: number) => {
                 const pgFilePath = options.defFileDiscoveryResult?.defFileResult.pgFiles[problem.source_file ?? '']?.resolvedRendererPath ?? problem.source_file;
 
                 if (pgFilePath?.startsWith('group:')) {
@@ -1301,14 +1466,14 @@ class CourseController {
 
                     // This increments on a per-problem basis. We could improve DB performance by doing this at the archive import when we do parsing.
                     if (!_.isNil(errors) && !_.isEmpty(errors)) {
-                        topic.increment('errors');
+                        await topic.increment('errors');
                     }
 
                     return this.addQuestion({
                         question: {
                             // active: true,
                             courseTopicContentId: options.courseTopicId,
-                            problemNumber: ++lastProblemNumber,
+                            problemNumber: lastProblemNumber + index + 1,
                             webworkQuestionPath: pgFilePath,
                             weight: parseInt(problem.value ?? '1'),
                             maxAttempts: parseInt(problem.max_attempts ?? '-1'),
@@ -2997,7 +3162,7 @@ class CourseController {
                     topic.topicAssessmentInfo.hideProblemsAfterFinish && (
                         moment().isAfter(moment(version.endTime)) ||
                         version.isClosed ||
-                        version.maxAttempts <= version.numAttempts
+                        (version.maxAttempts <= version.numAttempts && version.maxAttempts > 0)
                     ) &&
                     userRole === Role.STUDENT
                 ) {
@@ -3622,7 +3787,7 @@ class CourseController {
                 message = `The topic "${topic.name}" has not started yet.`;
                 data.status = 'NOT_STARTED';
                 userCanStartNewVersion = false;
-            } else if (versions.length >= topicInfo.maxVersions) {
+            } else if (topicInfo.maxVersions > 0 && versions.length >= topicInfo.maxVersions) {
             // check number of versions already used
                 if (versions[0].isClosed !== true) {
                     versions[0].isClosed = true;
@@ -3679,7 +3844,7 @@ class CourseController {
     async submitAssessmentAnswers(studentTopicAssessmentInfoId: number, wasAutoSubmitted: boolean): Promise<SubmitAssessmentAnswerResult> {
         return useDatabaseTransaction(async (): Promise<SubmitAssessmentAnswerResult> => {
             const studentTopicAssessmentInfo = await this.getStudentTopicAssessmentInfoById(studentTopicAssessmentInfoId);
-            if (studentTopicAssessmentInfo.numAttempts >= studentTopicAssessmentInfo.maxAttempts) {
+            if (studentTopicAssessmentInfo.numAttempts >= studentTopicAssessmentInfo.maxAttempts && studentTopicAssessmentInfo.maxAttempts > 0) {
                 // This can happen with auto submit if delete job task was not successful
                 throw new AttemptsExceededException('Cannot submit assessment answers when there are no attempts remaining');
             }
@@ -4266,13 +4431,13 @@ You can contact your student at ${options.student.email} or by replying to this 
         return {user: user, topic: data, baseUrl};
     }
 
-    async importCourseTarball ({ filePath, fileName, courseId, user }: ImportTarballOptions): Promise<ImportCourseTarballResult> {
+    async importCourseTarball ({ filePath, fileName, courseId, user, keepBucketsAsTopics }: ImportTarballOptions): Promise<ImportCourseTarballResult> {
         // TODO remove
         const startTime = new Date().getTime();
         logger.info(`Import Course Archive start ${new Date()}`);
-        const workingDirectoryName = stripTarGZExtension(nodePath.basename(fileName));
-        if (_.isNull(workingDirectoryName)) {
-            throw new IllegalArgumentException('File must be a `.tar.gz` or a `.tgz` file!');
+        const workingDirectoryName = stripTarGZExtension(nodePath.basename(fileName))?.replace(/\s/g, '_');
+        if (_.isNil(workingDirectoryName)) {
+            throw new IllegalArgumentException('File must be a `.tar`, `.tar.gz` or a `.tgz` file!');
         }
         const workingDirectory = `${nodePath.dirname(filePath)}/${workingDirectoryName}`;
         await fs.promises.mkdir(workingDirectory);
@@ -4290,7 +4455,7 @@ You can contact your student at ${options.student.email} or by replying to this 
 
         // TODO remove
         logger.info(`Import Course Archive extracted, discovering files now ${new Date().getTime() - startTime} ${new Date()}`);
-        const discoveredFiles = await findFiles({ filePath: workingDirectory });
+        const discoveredFiles = await findFiles({ filePath: workingDirectory, keepBucketsAsTopics: keepBucketsAsTopics });
 
         // TODO remove
         logger.info(`Import Course Archive discovered files, fetching course ${new Date().getTime() - startTime} ${new Date()}`);
@@ -4356,15 +4521,15 @@ You can contact your student at ${options.student.email} or by replying to this 
                         }
 
                         // At this point the file is not on the renderer
-                        const fileDir = `private/my/${user.uuid}/${course.name.replace(/\s/g, '_')}/${defFile.topicName}`;
-                        const savedPath = `${fileDir}/${pgFile.pgFileName}`;
+                        let fileDir = `private/my/${user.uuid}/${course.name.replace(/\s/g, '_')}/${defFile.topicName.replace(/\s/g, '_')}`;
+                        const targetSavedPath = `${fileDir}/${pgFile.pgFileName}`;
                         const pgFileContent = await fs.promises.readFile(pgFile.pgFilePathOnDisk);
                         rendererSavePGFileRequests++;
-                        await rendererHelper.saveProblemSource({
+                        pgFile.resolvedRendererPath = await rendererHelper.saveProblemSource({
                             problemSource: pgFileContent.toString(),
-                            writeFilePath: savedPath
+                            writeFilePath: targetSavedPath
                         });    
-                        pgFile.resolvedRendererPath = savedPath;
+                        fileDir = nodePath.dirname(pgFile.resolvedRendererPath);
                         await  Object.values(pgFile.assetFiles.imageFiles).asyncForEach(async (imageFile: FindFilesImageFileResult) => {
                             if (imageFile.imageFileExists) {
                                 const savedPath = `${fileDir}/${imageFile.imageFileName}`;
@@ -4457,16 +4622,17 @@ You can contact your student at ${options.student.email} or by replying to this 
                             // / 60000 to convert to minutes
                             possibleIntervals = examDuration / 60000 / timeInterval;
                         }
+                        timeInterval = Math.round(timeInterval);
                     }
                     const topicAssessmentInfo: Partial<TopicAssessmentInfoInterface> = _.omitBy({
                         // id,
                         courseTopicContentId: topic.id,
-                        duration: parsedWebworkDef.versionTimeLimit ? (parseInt(parsedWebworkDef.versionTimeLimit, 10) / 60) : undefined,
+                        duration: parsedWebworkDef.versionTimeLimit ? Math.round(parseInt(parsedWebworkDef.versionTimeLimit, 10) / 60) : undefined,
                         hardCutoff: WebWorkDef.characterBoolean(parsedWebworkDef.capTimeLimit),
                         hideHints: undefined,
                         hideProblemsAfterFinish: WebWorkDef.characterBoolean(parsedWebworkDef.hideWork),
                         maxGradedAttemptsPerVersion: parsedWebworkDef.attemptsPerVersion ? parseInt(parsedWebworkDef.attemptsPerVersion, 10) : undefined,
-                        maxVersions: parsedWebworkDef.versionsPerInterval ? (parseInt(parsedWebworkDef.versionsPerInterval, 10) * possibleIntervals) : undefined,
+                        maxVersions: parsedWebworkDef.versionsPerInterval ? Math.round(parseInt(parsedWebworkDef.versionsPerInterval, 10) * possibleIntervals) : undefined,
                         randomizeOrder: WebWorkDef.numberBoolean(parsedWebworkDef.problemRandOrder),
                         showItemizedResults: !WebWorkDef.characterBoolean(parsedWebworkDef.hideScoreByProblem),
                         showTotalGradeImmediately: !WebWorkDef.characterBoolean(parsedWebworkDef.hideScore),
@@ -4486,6 +4652,7 @@ You can contact your student at ${options.student.email} or by replying to this 
                     await this.createQuestionsForTopicFromDefFileContent({
                         parsedWebworkDef: parsedWebworkDef,
                         courseTopicId: topic.id,
+                        topic: topic,
                         defFileDiscoveryResult: {
                             defFileResult: defFile,
                             bucketDefFiles: discoveredFiles.bucketDefFiles
@@ -4551,12 +4718,14 @@ You can contact your student at ${options.student.email} or by replying to this 
         const question = await courseRepository.getQuestion({id: questionId, userId: user.id});
         const topic = await question.getTopic();
         if (topic.topicTypeId === 2) {
-            throw new RederlyError('Exam problems cannot be submitted to the OpenLab.');
-        } 
+            const message = 'Exam problems cannot be submitted to the OpenLab.';
+            logger.error(`TSNH, it should be blocked by frontend ${message}`);
+            throw new IllegalArgumentException(message);
+        }
 
         const grade = await this.getGradeForQuestion({questionId, userId: user.id});
         if (_.isNil(grade)) {
-            throw new WrappedError('Cannot ask for help on a question that has not been assigned.');
+            throw new IllegalArgumentException('Cannot ask for help on a question that has not been assigned.');
         }
         const unit = await topic.getUnit();
         const course = await unit.getCourse();
@@ -4628,6 +4797,7 @@ You can contact your student at ${options.student.email} or by replying to this 
             return null;
         } else {
             grade.randomSeed = response?.problemSeed;
+            grade.currentProblemState = null;
             const updatedGrade = await grade.save();
             return updatedGrade;
         }

@@ -1,3 +1,6 @@
+import _ = require('lodash');
+import logger from './logger';
+
 class WebWorkDefKeyValueMap {
     public webWorkKey: string;
     public resultKey: string;
@@ -78,15 +81,40 @@ export default class WebWorkDef {
     public hideScoreByProblem?: string;
     public hideWork?: string;
     public capTimeLimit?: string;
+    private v1ListMode = false;
 
     constructor(content: string) {
         const lines = content.split('\n');
         let currentProblem: Problem | null = null;
         lineLoop: for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
             const line = lines[lineNumber].trim();
-
             if (line.length === 0) {
                 continue lineLoop;
+            } else if (this.v1ListMode) {
+                const tokens = line.split(',');
+                if (tokens.length > 3) {
+                    logger.warn(`V1 Def file has more than 3 values: [${line}]`);
+                }
+                const problem = new Problem();
+                // Technically this field can't be nil since split on a string will at least return the string
+                // but going to add nil accessor anyway
+                // webwork field
+                // eslint-disable-next-line @typescript-eslint/camelcase
+                problem.source_file = tokens[0]?.trim();
+                problem.value = tokens[1]?.trim();
+                // webwork field
+                // eslint-disable-next-line @typescript-eslint/camelcase
+                problem.max_attempts = tokens[2]?.trim();
+
+                if (!_.isUndefined(problem.value) && _.isNaN(parseInt(problem.value, 10))) {
+                    throw new Error(`Error parsing v1 problem list, value ${problem.value} is not a number`);
+                }
+
+                if (!_.isUndefined(problem.max_attempts) && _.isNaN(parseInt(problem.max_attempts, 10))) {
+                    throw new Error(`Error parsing v1 problem list, max_attempts ${problem.max_attempts} is not a number`);
+                }
+
+                this.problems.push(problem);
             } else if (line === 'problem_start') {
                 if (currentProblem !== null) {
                     throw new Error('Problem started in the middle of a problem');
@@ -102,8 +130,13 @@ export default class WebWorkDef {
                 }
             } else if (line === 'problemListV2') {
                 // Nothing to do
+            } else if (line.split('=').first?.trim() === 'problemList') {
+                this.v1ListMode = true;
             } else {
-                if (currentProblem === null) {
+                if (line.startsWith('#')) {
+                    // This does not handle mid line comments
+                    logger.debug('Comment in def file');
+                } else if (currentProblem === null) {
                     for (let keyIndex = 0; keyIndex < webWorkDefKeyMaps.length; keyIndex++) {
                         const webWorkDefKeyMap = webWorkDefKeyMaps[keyIndex];
                         let match;
@@ -114,7 +147,7 @@ export default class WebWorkDef {
                             continue lineLoop;
                         }
                     }
-                    console.error(`Global field not found for line: ${line}`);
+                    logger.warn(`Global field not found for line: ${line}`);
                 } else {
                     for (let keyIndex = 0; keyIndex < webWorkDefProblemKeyMaps.length; keyIndex++) {
                         const webWorkDefKeyMap = webWorkDefProblemKeyMaps[keyIndex];
@@ -126,14 +159,14 @@ export default class WebWorkDef {
                             continue lineLoop;
                         }
                     }
-                    console.error(`Problem field not found for line: ${line}`);
+                    logger.error(`Problem field not found for line: ${line}`);
                 }
             }
         }
     }
 
     isExam(): boolean {
-        return this.assignmentType?.toLowerCase() === 'gateway';
+        return ['gateway', 'proctored_gateway'].indexOf(this.assignmentType?.toLowerCase() ?? '') >= 0;
     }
 
     static characterBoolean = (value: string | undefined): boolean => {

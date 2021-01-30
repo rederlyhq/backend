@@ -2,6 +2,8 @@ require('dotenv').config();
 import * as _ from 'lodash';
 import RederlyError from './exceptions/rederly-error';
 import { LoggingLevelType, LOGGING_LEVEL } from './utilities/logger-logging-levels';
+import * as crypto from 'crypto';
+
 let logs: Array<string> | null = [];
 
 const fromBooleanField = (value: string | undefined | null): boolean | null => {
@@ -117,10 +119,11 @@ const configurations = {
         isProduction: isProduction,
         logMissingConfigurations: readBooleanValue('LOG_MISSING_CONFIGURATIONS', true),
         failOnMissingConfigurations: readBooleanValue('FAIL_ON_MISSING_CONFIGURATIONS', isProduction),
+        configSalt: readStringValue('CONFIG_SALT', ''),
         autoDeleteTemp: readBooleanValue('AUTO_DELETE_TEMP_FILES', true),
     },
     server: {
-        port: readStringValue('SERVER_PORT', '3000'),
+        port: readStringValue('SERVER_PORT', '3001'),
         basePath: readStringValue('SERVER_BASE_PATH', '/backend-api'),
         logInvalidlyPrefixedRequests: readBooleanValue('SERVER_LOG_INVALIDLY_PREFIXED_REQUESTS', true),
         blockInvalidlyPrefixedRequests: readBooleanValue('SERVER_BLOCK_INVALIDLY_PREFIXED_REQUESTS', true),
@@ -231,7 +234,14 @@ const configurations = {
             // After we log the warnings we can drop the logs, figured it would cause cleanup
             logs = null;
         });
-    })
+    }),
+    hash: ''
 };
+
+configurations.loadPromise
+.then(() => {
+    configurations.hash = crypto.createHash('sha256').update(JSON.stringify(configurations)).digest('hex');
+})
+.catch(() => null);
 
 export default configurations;

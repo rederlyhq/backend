@@ -31,6 +31,33 @@ export interface CourseListOptions {
     };
 }
 
+export interface BrowseProblemsCourseListOptions {
+    filter: {
+        instructorId?: number;
+    };
+}
+
+export interface BrowseProblemsUnitListOptions {
+    filter: {
+        courseId?: number;
+    };
+}
+
+export interface BrowseProblemsTopicListOptions {
+    filter: {
+        unitId?: number;
+    };
+}
+
+export interface GetSearchProblemResultsOptions {
+    filter: {
+        courseId?: number;
+        unitId?: number;
+        topicId?: number;
+        instructorId?: number;
+    };
+}
+
 export interface GetQuestionRepositoryOptions {
     id: number;
     userId?: number;
@@ -40,6 +67,8 @@ export interface GetCourseTopicRepositoryOptions {
     id: number;
     // For overrides
     userId?: number;
+    // to check if the topic has been 'used'
+    checkUsed?: boolean;
 }
 
 export interface GetTopicAssessmentInfoByTopicIdOptions {
@@ -429,10 +458,11 @@ export interface CreateGradeInstancesForAssessmentOptions {
 // not exporting since this is meant to be abstract
 interface CreateQuestionsForTopicFromDefFileOptions {
     courseTopicId: number;
+    topic?: CourseTopicContent;
     userIds?: Array<number>;
     defFileDiscoveryResult?: {
         defFileResult: FindFilesDefFileResult;
-        bucketDefFiles: { [key: string]: BucketDefFileResult };
+        bucketDefFiles: { [key: string]: [BucketDefFileResult] };
     };
 }
 
@@ -630,6 +660,7 @@ export interface ImportTarballOptions {
     fileName: string;
     courseId: number;
     user: User;
+    keepBucketsAsTopics: boolean;
 }
 
 export interface ImportCourseTarballResult {

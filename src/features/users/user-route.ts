@@ -117,7 +117,7 @@ router.get('/verify',
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, VerifyRequest.body, any>, _res: Response, next: NextFunction) => {
         const query = req.query as VerifyRequest.query;
-        const verified = await userController.verifyUser(query.verifyToken);
+        const verified = await userController.verifyUser(query.verifyToken, query.confirmEmail);
         if (verified) {
             next(httpResponse.Ok('Verified'));
         } else {

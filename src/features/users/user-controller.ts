@@ -56,10 +56,11 @@ class UserController {
         });
     }
 
-    getUserByVerifyToken(verifyToken: string): Promise<User> {
+    getUserByVerifyToken(verifyToken: string, confirmEmail: string): Promise<User> {
         return User.findOne({
             where: {
-                verifyToken
+                verifyToken,
+                email: confirmEmail.toLowerCase(),
             }
         });
     }
@@ -436,15 +437,15 @@ class UserController {
         };
     }
 
-    async verifyUser(verifyToken: string): Promise<boolean> {
-        const user = await this.getUserByVerifyToken(verifyToken);
+    async verifyUser(verifyToken: string, confirmEmail: string): Promise<boolean> {
+        const user = await this.getUserByVerifyToken(verifyToken, confirmEmail);
         if (_.isNil(user?.verifyToken)) {
             throw new IllegalArgumentException('Invalid verification token');
-        } else if(user.verifyToken !== verifyToken) {
+        } else if (user.verifyToken !== verifyToken) {
             throw new IllegalArgumentException('Invalid verification token');
-        } else if(moment().isAfter(user.verifyTokenExpiresAt)) {
+        } else if (moment().isAfter(user.verifyTokenExpiresAt)) {
             throw new IllegalArgumentException('Verification token has expired');
-        } else if(user.verified) {
+        } else if (user.verified) {
             logger.warn('Verification token should be set to null on verify, thus this should not be possible');
             throw new IllegalArgumentException('Already verified');
         } else {
@@ -471,7 +472,7 @@ class UserController {
             }
         });
 
-        if(result.updatedRecords.length < 1) {
+        if (result.updatedRecords.length < 1) {
             throw new NotFoundError('There are no accounts registered with this email.');
         } else if (result.updatedRecords.length > 1) {
             logger.warn('Multiple users were updated for forgot password');
@@ -541,7 +542,10 @@ class UserController {
         email,
         forgotPasswordToken,
     }: UpdateForgottonPasswordOptions): Promise<void> {
-
+        // before we were using the email twice and didn't lower case the second time
+        // logic has changed downstream but lowercasing here to make sure
+        // getUserByEmail also lower cases
+        email = email.toLowerCase();
         const user = await this.getUserByEmail(email);
         let validated = false;
         if(_.isNil(user?.forgotPasswordToken) || user.forgotPasswordToken !== forgotPasswordToken) {
@@ -557,24 +561,10 @@ class UserController {
             throw new IllegalArgumentException('You could not be verified!');
         }
 
-        const where = _({
-            email
-        }).omitBy(_.isUndefined).value() as WhereOptions;
-
-        if(Object.keys(where).length !== 1) {
-            logger.error('Impossible! Somehow with all the checks I had the xor of id and email got through');
-            throw new Error('An application error occurred');
-        }
-
-        const hashedPassword = await hashPassword(newPassword);
-        await userRepository.updateUser({
-            updates: {
-                forgotPasswordToken: null,
-                forgotPasswordTokenExpiresAt: new Date(),
-                password: hashedPassword
-            },
-            where
-        });
+        user.password = await hashPassword(newPassword);
+        user.forgotPasswordToken = null;
+        user.forgotPasswordTokenExpiresAt = new Date();
+        await user.save();
     }
 }
 const userController = new UserController();

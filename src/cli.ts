@@ -4,6 +4,7 @@ import './extensions';
 import logger from './utilities/logger';
 import './global-error-handlers';
 import * as _ from 'lodash';
+import { performance } from 'perf_hooks';
 
 const enabledMarker = new Array(20).join('*');
 const disabledMarker = new Array(20).join('#');
@@ -16,8 +17,11 @@ if (configurations.email.enabled) {
 import { sync } from './database';
 import courseController from './features/courses/course-controller';
 import StudentWorkbook from './database/models/student-workbook';
-import rendererHelper from './utilities/renderer-helper';
+import rendererHelper, {VALID_PG_PATH_REGEX} from './utilities/renderer-helper';
 import { useDatabaseTransaction } from './utilities/database-helper';
+import CourseTopicContent from './database/models/course-topic-content';
+import CourseWWTopicQuestion from './database/models/course-ww-topic-question';
+import CourseQuestionAssessmentInfo from './database/models/course-question-assessment-info';
 
 const syncMissingGrades = async (): Promise<void> => {
     logger.info('Performing missing grade sync');
@@ -59,10 +63,100 @@ const noop = (): void => {
     logger.info('noop performed');
 };
 
+
+
+const syncBadPathCounts = async (): Promise<void> => {
+    const time = performance.now();
+    await useDatabaseTransaction(async () => {
+        const topics = await CourseTopicContent.findAll(
+            {
+                where: {
+                    active: true,
+                },
+                include: [
+                    {
+                        model: CourseWWTopicQuestion,
+                        as: 'questions',
+                        include: [
+                            {
+                                model: CourseQuestionAssessmentInfo,
+                                as: 'courseQuestionAssessmentInfo'
+                            }
+                        ]
+                    }
+                ]
+            }
+        );
+
+        logger.info(`Checking ${topics.length} topics`);
+
+        const allTopicsProcessedPromises: Promise<CourseTopicContent>[] = [];
+
+        await topics.asyncForEach(async (topic) => {
+            // For each question in the topic, sum the existence of a path problem.
+            let count = 0;
+            await topic.questions?.asyncForEach(async (question)=>{
+                const {webworkQuestionPath, errors, courseQuestionAssessmentInfo} = question;
+                const additionalProblemPaths = courseQuestionAssessmentInfo?.additionalProblemPaths;
+                const additionalErrors = courseQuestionAssessmentInfo?.errors;
+
+                const isDefinitelyBad = VALID_PG_PATH_REGEX.test(webworkQuestionPath) === false;
+
+                // If this is definitely bad and not already in the error object, add it.
+                if (isDefinitelyBad && (_.isNil(errors) || _.isEmpty(errors) || !(webworkQuestionPath in errors))){
+                    logger.debug(`Updating ${question.id} from topic ${topic.id} with a path error.`);
+                    if (_.isNil(question.errors)) {
+                        question.errors = {};
+                    }
+                    question.errors[webworkQuestionPath] = [`${webworkQuestionPath} cannot be found.`, ...(question.errors[webworkQuestionPath] ?? [])];
+                    question.save();
+                }
+
+                if (topic.topicTypeId === 2) {
+                    if (_.isNil(courseQuestionAssessmentInfo)) {
+                        logger.debug(`Topic ${topic.id} is an exam but this question has no assessment info.`);
+                        if (isDefinitelyBad) count += 1;
+                        return;
+                    }
+                    let atLeastOneIsBad = false;
+                    await additionalProblemPaths?.asyncForEach(async (path) => {
+                        const isDefinitelyBad = VALID_PG_PATH_REGEX.test(path) === false;
+                        if (isDefinitelyBad) atLeastOneIsBad = true;
+                        
+                        if (isDefinitelyBad && (_.isNil(additionalErrors) || _.isEmpty(additionalErrors) || !(path in additionalErrors))) {
+                            if (_.isNil(courseQuestionAssessmentInfo.errors)) {
+                                courseQuestionAssessmentInfo.errors = {};
+                            }
+                            logger.debug(`Updating ${courseQuestionAssessmentInfo.id} from topic ${topic.id} with an additional path error.`);
+                            courseQuestionAssessmentInfo.errors[path] = [`${path} cannot be found`, ...(courseQuestionAssessmentInfo.errors[path] ?? [])];
+                        }
+                    });
+                    courseQuestionAssessmentInfo.save();
+                    if (isDefinitelyBad || atLeastOneIsBad) count += 1;
+                } else {
+                    if (isDefinitelyBad) count += 1;
+                }
+            });
+
+            // Count can be equal to or less than because it doesn't include full renderer checks.
+            // Questions will still be annotated correctly with updated error paths.
+            if (count > topic.errors) {
+                logger.debug(`Updating topic ${topic.id} error count from ${topic.errors} to ${count}`);
+                topic.errors = count;
+                allTopicsProcessedPromises.push(topic.save());
+            }
+        });
+        await Promise.all(allTopicsProcessedPromises);
+    });
+
+    logger.info(`Request took ${performance.now() - time}`);
+};
+
 const commandLookup: {[key: string]: () => unknown} = {
     ['sync-missing-grades']: syncMissingGrades,
     ['cleanup-workbooks']: cleanupWorkbooks,
     ['noop']: noop,
+    ['sync-bad-path-counts']: syncBadPathCounts,
 };
 
 (async (): Promise<void> => {

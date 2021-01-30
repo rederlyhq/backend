@@ -30,6 +30,7 @@ import StudentGradeProblemAttachment from '../../database/models/student-grade-p
 import StudentGradeInstanceProblemAttachment from '../../database/models/student-grade-instance-problem-attachment';
 import StudentWorkbookProblemAttachment from '../../database/models/student-workbook-problem-attachment';
 import rendererHelper from '../../utilities/renderer-helper';
+import sequelize = require('sequelize');
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -227,21 +228,51 @@ class CourseRepository {
     /* ********************* Topics  ********************* */
     /* ************************* ************************* */
     async getCourseTopic(options: GetCourseTopicRepositoryOptions): Promise<CourseTopicContent> {
+        const include: sequelize.IncludeOptions[] = [];
+        const assessmentInclude: sequelize.IncludeOptions[] = [];
+
+        if (options.checkUsed) {
+            include.push({
+                model: CourseWWTopicQuestion,
+                as: 'questions',
+                required: false,
+                where: {
+                    active: true,
+                },
+                include: [{
+                    model: StudentWorkbook,
+                    as: 'workbooks',
+                    required: false,
+                    where: {
+                        active: true,
+                    }
+                }]
+            });
+            assessmentInclude.push({
+                model: StudentTopicAssessmentInfo,
+                as: 'studentTopicAssessmentInfo',
+                required: false,
+                where: {
+                    active: true,
+                },
+            });
+        }
+        include.push({
+            model: TopicAssessmentInfo,
+            as: 'topicAssessmentInfo',
+            where: {
+                active: true
+            },
+            required: false,
+            include: assessmentInclude,
+        });
+
         const result = await CourseTopicContent.findOne({
             where: {
                 id: options.id,
                 active: true
             },
-            include: [
-                {
-                    model: TopicAssessmentInfo,
-                    as: 'topicAssessmentInfo',
-                    where: {
-                        active: true
-                    },
-                    required: false
-                }
-            ]
+            include: include,
         });
         if (_.isNil(result)) {
             throw new NotFoundError('The requested topic does not exist');

@@ -2533,8 +2533,8 @@ class CourseController {
             unitId,
         ]);
 
-        if (setFilterCount !== 1) {
-            throw new IllegalArgumentException(`One filter must be set but found ${setFilterCount}`);
+        if (setFilterCount < 1) {
+            throw new IllegalArgumentException(`At least one filter must be included but got ${setFilterCount}`);
         }
 
         // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
@@ -2724,12 +2724,10 @@ class CourseController {
             as: 'courseEnrollments',
             required: true,
             attributes: [],
-            where: {
-                courseId: {
-                    [Sequelize.Op.eq]: sequelize.literal(`"user->courseEnrollments".${Course.rawAttributes.id.field}`)
-                },
+            where: _.omitBy({
+                courseId: courseId,
                 dropDate: null
-            }
+            }, _.isUndefined) as sequelize.WhereOptions
         }];
 
         return StudentGrade.findAll({

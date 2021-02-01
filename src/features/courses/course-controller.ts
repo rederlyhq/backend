@@ -2578,8 +2578,7 @@ class CourseController {
                     active: true
                 },
                 include: unitInclude || [],
-            },
-            {
+            }, {
                 model: StudentTopicOverride,
                 as: 'studentTopicOverride',
                 attributes: [],
@@ -2802,6 +2801,7 @@ class CourseController {
         const {
             courseId,
             userId,
+            userRole,
         } = options.where;
 
         const { followQuestionRules } = options;
@@ -2840,6 +2840,44 @@ class CourseController {
             ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.INCLUDED_AS_TOPICS, QUESTION_SQL_NAME.CHILDREN_OF_INCLUDED_TOPICS, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_INCLUDED_TOPICS),
         ] : [];
 
+        const topicWhere: sequelize.WhereOptions = { active: true };
+
+        const topicInclude = [{
+            model: CourseWWTopicQuestion,
+            as: 'questions',
+            attributes: [],
+            where: {
+                active: true,
+                hidden: false
+            },
+            include: [{
+                model: StudentGrade,
+                as: 'grades',
+                attributes: [],
+                where: {
+                    active: true,
+                }
+            }]
+        },
+        {
+            model: StudentTopicOverride,
+            as: 'studentTopicOverride',
+            attributes: [],
+            required: false,
+        }] as sequelize.IncludeOptions[];
+
+        if (userRole === Role.STUDENT) {
+            topicWhere[`$topics.topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`] = {
+                [sequelize.Op.or]: [true, null]
+            };
+            topicInclude.push({
+                model: TopicAssessmentInfo,
+                as: 'topicAssessmentInfo',
+                attributes: [],
+                required: false,
+            });
+        }
+
         return CourseUnitContent.findAll({
             where,
             attributes: [
@@ -2857,9 +2895,8 @@ class CourseController {
                 model: CourseTopicContent,
                 as: 'topics',
                 attributes: [],
-                where: {
-                    active: true
-                },
+                required: false,
+                where: topicWhere,
                 include: [{
                     model: CourseWWTopicQuestion,
                     as: 'questions',
@@ -2882,6 +2919,12 @@ class CourseController {
                     as: 'studentTopicOverride',
                     attributes: [],
                     required: false,
+                },
+                {
+                    model: TopicAssessmentInfo,
+                    as: 'topicAssessmentInfo',
+                    attributes: [],
+                    required: false,
                 }
             ]
             }],
@@ -2897,6 +2940,7 @@ class CourseController {
             courseUnitContentId,
             courseId,
             userId,
+            userRole,
         } = options.where;
 
         const { followQuestionRules } = options;
@@ -2907,6 +2951,9 @@ class CourseController {
             courseUnitContentId,
             [`$unit.${CourseUnitContent.rawAttributes.courseId.field}$`]: courseId,
             [`$questions.grades.${StudentGrade.rawAttributes.userId.field}$`]: userId,
+            [`$topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`]: {
+                [sequelize.Op.or]: [true, null]
+            }
         }).omitBy(_.isNil).value() as sequelize.WhereOptions;
 
         const include: sequelize.IncludeOptions[] = [
@@ -2943,6 +2990,15 @@ class CourseController {
                 where: {
                     active: true
                 }
+            });
+        }
+
+        if (userRole === Role.STUDENT) {
+            include.push({
+                model: TopicAssessmentInfo,
+                as: 'topicAssessmentInfo',
+                attributes: [],
+                required: false,
             });
         }
 
@@ -3002,6 +3058,7 @@ class CourseController {
             courseTopicContentId,
             courseId,
             userId,
+            userRole,
         } = options.where;
 
         const { followQuestionRules } = options;
@@ -3012,6 +3069,12 @@ class CourseController {
             courseTopicContentId,
             [`$topic.unit.${CourseUnitContent.rawAttributes.courseId.field}$`]: courseId,
             [`$grades.${StudentGrade.rawAttributes.userId.field}$`]: userId,
+            [`$topic.topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`]: {
+                [sequelize.Op.or]: [true, null]
+            },
+            [`$topic.topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showItemizedResults.field}$`]: {
+                [sequelize.Op.or]: [true, null]
+            },
         }).omitBy(_.isNil).value() as sequelize.WhereOptions;
 
         const include: sequelize.IncludeOptions[] = [{
@@ -3024,7 +3087,34 @@ class CourseController {
             }
         }];
 
+        const topicInclude: sequelize.IncludeOptions[] = [{
+            model: StudentTopicOverride,
+            as: 'studentTopicOverride',
+            attributes: [],
+            required: false,
+        }];
+
         if (!_.isNil(courseId)) {
+            topicInclude.push({
+                model: CourseUnitContent,
+                as: 'unit',
+                attributes: [],
+                where: {
+                    active: true
+                }
+            });
+        }
+
+        if (userRole === Role.STUDENT) {
+            topicInclude.push({
+                model: TopicAssessmentInfo,
+                as: 'topicAssessmentInfo',
+                attributes: [],
+                required: false,
+            });
+        }
+
+        if (!_.isNil(courseId) || userRole === Role.STUDENT) {
             include.push({
                 model: CourseTopicContent,
                 as: 'topic',
@@ -3032,20 +3122,7 @@ class CourseController {
                 where: {
                     active: true
                 },
-                include: [{
-                    model: CourseUnitContent,
-                    as: 'unit',
-                    attributes: [],
-                    where: {
-                        active: true
-                    }
-                },
-                {
-                    model: StudentTopicOverride,
-                    as: 'studentTopicOverride',
-                    attributes: [],
-                    required: false,
-                }]
+                include: topicInclude
             });
         }
 

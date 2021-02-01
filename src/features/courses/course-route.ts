@@ -1245,11 +1245,16 @@ router.post('/:id/email',
 
         const user = req.rederlyUser ?? await req.session.getUser();
 
+        const baseURL = req.headers['rederly-origin'] as string | undefined; // need this because it incorrectly thinks it can be an array
+        if (_.isNil(baseURL)) {
+            throw new IllegalArgumentException('rederly-origin is required in the request');
+        }
         const result = await courseController.emailProfessor({
             courseId: params.id,
             content: req.body.content,
             question: req.body.question,
             student: user,
+            baseURL: baseURL,
         });
         next(httpResponse.Ok('Your message was sent to your professor.', result));
     })

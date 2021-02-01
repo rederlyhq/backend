@@ -59,6 +59,7 @@ import * as nodePath from 'path';
 import * as tar from 'tar';
 import * as fs from 'fs';
 import { getAverageGroupsBeforeDate, QUESTION_SQL_NAME, STUDENTTOPICOVERRIDE_SQL_NAME, TOPIC_SQL_NAME } from './statistics-helper';
+import qs = require('qs');
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -4279,12 +4280,20 @@ class CourseController {
             include: [{
                 model: CourseWWTopicQuestion,
                 as: 'questions',
-                attributes: ['problemNumber'],
+                attributes: ['problemNumber', 'id'],
                 required: true,
                 where: {
                     id: options.question.id,
                     active: true,
-                }
+                },
+            }, {
+                model: CourseUnitContent,
+                as: 'unit',
+                attributes: ['name'],
+                required: true,
+                where: {
+                    active: true
+                },    
             }]
         });
 
@@ -4298,17 +4307,40 @@ class CourseController {
             throw new RederlyError('Could not find a topic associated with the problem this student is trying to ask about.');
         }
 
+        const unit = await topic.unit;
+
         const question = topic.questions?.[0];
 
         if (_.isNil(question)) {
             throw new RederlyError('Could not find the question associated with the problem/topic this student is trying to ask about.');
         }
+        if (_.isNil(unit)) {
+            throw new RederlyError('Could not find a unit associated with the problem this student is trying to ask about.');
+        }
 
+        const gradingURL = urljoin(
+            options.baseURL,
+            '/common/courses',
+            String(course.id),
+            '/topic',
+            String(topic.id),
+            'grading',
+            `?${qs.stringify({
+                problemId: question.id,
+                userId: options.student.id
+            })}`
+        );
         const poorMansTemplate = `
 Hello Professor ${course.instructor.lastName},
 
-Your student ${options.student.firstName} ${options.student.lastName} is asking for help with
-Problem ${question.problemNumber} in the Topic ${topic.name}.
+Your student ${options.student.firstName} ${options.student.lastName} is emailing you about:
+Course: ${course.name}
+Unit: ${unit.name}
+Topic: ${topic.name}
+Problem Number: ${question.problemNumber} (ID#${question.id})
+
+To view the problem for this student use the following link:
+${gradingURL}
 
 Here is the message that was sent:
 

@@ -629,6 +629,7 @@ export interface EmailProfOptions {
     question: {
         id: number;
     };
+    baseURL: string;
 }
 
 export interface GetStudentTopicOverrideOptions {

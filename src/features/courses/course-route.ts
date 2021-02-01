@@ -50,7 +50,7 @@ router.post('/:courseId/import-archive',
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
-        const user = await req.session.getUser({
+        const user = req.rederlyUser ?? await req.session.getUser({
             where: {
                 active: true
             }
@@ -261,6 +261,9 @@ router.get('/questions',
             throw new WrappedError('It is impossible for userId to still be undefined here.');
         }
 
+        // This should not happen anyway, need to do a more in depth change in the future
+        const rederlyUserRole = req.rederlyUserRole ?? Role.STUDENT;
+
         const {
             message,
             userCanGetQuestions,
@@ -270,6 +273,7 @@ router.get('/questions',
             userId,
             courseTopicContentId: req.query.courseTopicContentId,
             studentTopicAssessmentInfoId: req.query.studentTopicAssessmentInfoId,
+            role: rederlyUserRole
         });
 
         // TODO fix frontend error handling around assessments when canGetQuestions is false
@@ -364,7 +368,7 @@ router.get('/assessment/topic/grade/:id',
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const user = await req.session.getUser();
+        const user = req.rederlyUser ?? await req.session.getUser();
         if (await courseController.canUserGradeAssessment({user, topicId: params.id}) === false) {
             throw new ForbiddenError('You are not allowed to grade this assessment.');
         }
@@ -383,7 +387,7 @@ router.get('/assessment/topic/end/:id',
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
-        const user = await req.session.getUser();
+        const user = req.rederlyUser ?? await req.session.getUser();
         const version = await courseController.getStudentTopicAssessmentInfoById(params.id);
 
         if (version.userId !== user.id) {
@@ -409,10 +413,11 @@ router.get('/assessment/topic/:id/start',
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
-        const user = await req.session.getUser();
+        const user = req.rederlyUser ?? await req.session.getUser();
+        const rederlyUserRole = req.rederlyUserRole ?? user.roleId;
 
         // function returns boolean and IF the user is not allowed to start a new version, a reason is included
-        const { userCanStartNewVersion, message, data } = await courseController.canUserStartNewVersion({ user, topicId: params.id });
+        const { userCanStartNewVersion, message, data } = await courseController.canUserStartNewVersion({ user, topicId: params.id, role: rederlyUserRole });
 
         // will never have true + message
         if (userCanStartNewVersion === false && !_.isNil(message)) {
@@ -709,7 +714,7 @@ router.get('/question/:id/openlab',
             throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const user = await req.session.getUser();
+        const user = req.rederlyUser ?? await req.session.getUser();
         const { id: questionId } = req.params as GetQuestionOpenLabRequest.params;
         const baseURL = req.headers['rederly-origin'] as string | undefined; // need this because it incorrectly thinks it can be an array
         if (_.isNil(baseURL)) {
@@ -753,7 +758,8 @@ router.get('/question/:id',
             throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const requestingUser = await req.session.getUser();
+        const requestingUser = req.rederlyUser ?? await req.session.getUser();
+        const rederlyUserRole = req.rederlyUserRole ?? requestingUser.roleId;
 
         const { id: questionId } = req.params as GetQuestionRequest.params;
         const { readonly, workbookId, userId: requestedUserId, studentTopicAssessmentInfoId } = req.query;
@@ -765,7 +771,8 @@ router.get('/question/:id',
             } = await courseController.canUserViewQuestionId({
                 user: requestingUser,
                 questionId,
-                studentTopicAssessmentInfoId
+                studentTopicAssessmentInfoId,
+                role: rederlyUserRole
             });
 
             if (userCanViewQuestion === false) throw new IllegalArgumentException(message);
@@ -774,7 +781,7 @@ router.get('/question/:id',
                 questionId,
                 userId: requestedUserId ?? requestingUser.id,
                 formURL: req.originalUrl,
-                role: requestingUser.roleId,
+                role: rederlyUserRole,
                 readonly,
                 workbookId,
                 studentTopicAssessmentInfoId
@@ -830,8 +837,9 @@ router.post('/preview',
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const user = await req.session.getUser();
-        if (user.roleId === Role.STUDENT) throw new ForbiddenError('Preview is not available.');
+        const user = req.rederlyUser ?? await req.session.getUser();
+        const rederlyUserRole = req.rederlyUserRole ?? user.roleId;
+        if (rederlyUserRole === Role.STUDENT) throw new ForbiddenError('Preview is not available.');
 
         const query = req.query as PreviewQuestionRequest.query;
         if (!_.isNil(req.body) && !_.isEmpty(req.body)) {
@@ -860,7 +868,7 @@ router.post('/preview',
                 problemSeed: query.problemSeed,
                 formURL: req.originalUrl,
                 formData: {},
-                role: user.roleId,
+                role: rederlyUserRole,
             });
             next(httpResponse.Ok('Fetched question successfully', question));
 
@@ -941,7 +949,7 @@ router.post('/assessment/topic/:id/submit/:version',
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const user = await req.session.getUser();
+        const user = req.rederlyUser ?? await req.session.getUser();
 
         const params = req.params as SubmitAssessmentVersionRequest.params;
 
@@ -972,7 +980,8 @@ router.post('/question/:id',
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const user = await req.session.getUser();
+        const user = req.rederlyUser ?? await req.session.getUser();
+        const rederlyUserRole = req.rederlyUserRole ?? user.roleId;
 
         const params = req.params as unknown as {
             id: number;
@@ -982,7 +991,7 @@ router.post('/question/:id',
 
         const rendererParams = await courseController.getCalculatedRendererParams({
             courseQuestion: question,
-            role: user.roleId,
+            role: rederlyUserRole,
             userId: user.id
         });
 
@@ -1210,8 +1219,9 @@ router.get('/topics',
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
-        const user = await req.session.getUser();
-        const userId = (user.roleId === Role.STUDENT) ? user.id : undefined;
+        const user = req.rederlyUser ?? await req.session.getUser();
+        const rederlyUserRole = req.rederlyUserRole ?? user.roleId;
+        const userId = (rederlyUserRole === Role.STUDENT) ? user.id : undefined;
 
         const result = await courseController.getTopics({
             courseId: req.query.courseId,
@@ -1233,7 +1243,7 @@ router.post('/:id/email',
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const user = await req.session.getUser();
+        const user = req.rederlyUser ?? await req.session.getUser();
 
         const result = await courseController.emailProfessor({
             courseId: params.id,
@@ -1394,7 +1404,7 @@ router.post('/question/editor/save',
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const user = await req.session.getUser({
+        const user = req.rederlyUser ?? await req.session.getUser({
             where: {
                 active: true
             }
@@ -1474,7 +1484,7 @@ router.post('/question/editor/catalog',
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const user = await req.session.getUser({
+        const user = req.rederlyUser ?? await req.session.getUser({
             where: {
                 active: true
             }

@@ -30,29 +30,6 @@ interface BulkPdfExport {
     }[];
 }
 
-// topic from db
-type FROM_DB = {
-    id: number;
-    name: string;
-    questions: {
-        id: number;
-        problemNumber: number;
-        webworkQuestionPath: string;
-        grades: {
-            id: number;
-            lastInfluencingCreditedAttemptId: number;
-            lastInfluencingAttemptId: number;
-            user: User;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            rendererData: any;
-            webworkQuestionPath?: string;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            problemAttachments: any;
-            randomSeed: number;
-        }[];
-    }[];
-}
-
 export default class ExportPDFHelper {
     bulkExportAxios = axios.create({
         baseURL: configurations.bulkPdfExport.baseUrl,
@@ -223,7 +200,13 @@ export default class ExportPDFHelper {
         
         // Request zip
         try {
-            return await this.bulkExportAxios.get(`export/?profUUID=${professorUUID}&topicId=${topic.id}`);
+            return await this.bulkExportAxios.get('export/', {
+                params: {
+                    profUUID: professorUUID, 
+                    topicId: topic.id,
+                    showSolutions
+                }
+            });
         } catch (e) {
             console.error(e);
             topic.lastExported = null;

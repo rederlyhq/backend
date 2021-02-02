@@ -1,4 +1,4 @@
-import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin } from 'sequelize';
+import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin, BelongsToManyGetAssociationsMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 import * as _ from 'lodash';
 
@@ -62,6 +62,7 @@ export default class StudentGrade extends Model implements StudentGradeInterface
     public getWorkbooks!: HasManyGetAssociationsMixin<StudentWorkbook>;
     public getGradeInstances!: HasManyGetAssociationsMixin<StudentGradeInstance>;
     public getOverrides!: HasManyGetAssociationsMixin<StudentGradeOverride>;
+    public getProblemAttachments!: BelongsToManyGetAssociationsMixin<ProblemAttachment>;
 
     public readonly user!: User;
     public readonly courseWWTopicQuestion!: CourseWWTopicQuestion;
@@ -152,6 +153,12 @@ export default class StudentGrade extends Model implements StudentGradeInterface
             as: 'studentGradeProblemAttachments',
             constraints: false,
         });
+
+        StudentGrade.belongsToMany(ProblemAttachment, {
+            through: StudentGradeProblemAttachment,
+            as: 'problemAttachments',
+        });
+
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 
@@ -296,3 +303,4 @@ import StudentWorkbook from './student-workbook';
 import StudentGradeInstance, { StudentGradeInstanceGradeOverridesInterface } from './student-grade-instance';
 import StudentGradeOverride from './student-grade-override';
 import StudentGradeProblemAttachment from './student-grade-problem-attachment';
+import ProblemAttachment from './problem-attachment';

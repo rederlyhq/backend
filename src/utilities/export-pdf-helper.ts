@@ -12,7 +12,6 @@ import configurations from '../configurations';
 import _ = require('lodash');
 import axios from 'axios';
 import NotFoundError from '../exceptions/not-found-error';
-import moment = require('moment');
 import { asyncForOwn } from '../extensions/object-extension';
 import urljoin = require('url-join');
 
@@ -42,7 +41,7 @@ export default class ExportPDFHelper {
 
         // Find the specified topic
         const mainData = await CourseTopicContent.findOne({
-            attributes: ['id', 'name'],
+            attributes: ['id', 'name', 'topicTypeId'],
             where: {
                 id: topic.id,
                 active: true,
@@ -138,6 +137,12 @@ export default class ExportPDFHelper {
                     ]
                 });
 
+                let attachments = gradeInstanceAttachments?.studentGradeInstance?.problemAttachments;                
+                if (topic.topicTypeId === 1) {
+                    attachments = await grade.getProblemAttachments();
+                }
+
+
                 const obj: GetProblemParameters = {
                     sourceFilePath: gradeInstanceAttachments?.studentGradeInstance?.webworkQuestionPath ?? question.webworkQuestionPath,
                     problemSeed: gradeInstanceAttachments?.randomSeed ?? gradeInstanceAttachments?.studentGradeInstance?.randomSeed ?? grade.randomSeed,
@@ -159,7 +164,7 @@ export default class ExportPDFHelper {
 
                 studentGradeLookup[grade.userId].push({
                     number: question.problemNumber,
-                    attachments: gradeInstanceAttachments?.studentGradeInstance?.problemAttachments?.map(attachment => ({
+                    attachments: attachments?.map(attachment => ({
                         url: urljoin(configurations.attachments.baseUrl, attachment.cloudFilename),
                         name: attachment.userLocalFilename,
                         time: attachment.updatedAt,

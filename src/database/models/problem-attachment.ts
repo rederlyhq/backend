@@ -48,6 +48,11 @@ export default class ProblemAttachment extends Model implements ProblemAttachmen
         ProblemAttachment.belongsToMany(StudentGradeInstance, {
             through: StudentGradeInstanceProblemAttachment,
         });
+        
+        ProblemAttachment.belongsToMany(StudentGrade, {
+            through: StudentGradeProblemAttachment,
+            as: 'problemAttachments'
+        });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }
@@ -82,4 +87,5 @@ ProblemAttachment.init({
 
 import StudentGradeInstanceProblemAttachment from './student-grade-instance-problem-attachment';
 import StudentGradeProblemAttachment from './student-grade-problem-attachment';
-import StudentWorkbookProblemAttachment from './student-workbook-problem-attachment';
+import StudentWorkbookProblemAttachment from './student-workbook-problem-attachment';import StudentGrade from './student-grade';
+

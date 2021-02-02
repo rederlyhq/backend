@@ -34,7 +34,7 @@ export default class ExportPDFHelper {
         baseURL: configurations.bulkPdfExport.baseUrl,
     });
     
-    start = async ({topic, professorUUID, showSolutions}: {topic: CourseTopicContent; professorUUID: string, showSolutions: boolean}): Promise<void> => {
+    start = async ({topic, professorUUID, showSolutions}: {topic: CourseTopicContent; professorUUID: string; showSolutions: boolean}): Promise<void> => {
         topic.lastExported = new Date();
         topic.exportUrl = null;
         await topic.save();

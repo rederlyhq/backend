@@ -87,5 +87,5 @@ ProblemAttachment.init({
 
 import StudentGradeInstanceProblemAttachment from './student-grade-instance-problem-attachment';
 import StudentGradeProblemAttachment from './student-grade-problem-attachment';
-import StudentWorkbookProblemAttachment from './student-workbook-problem-attachment';import StudentGrade from './student-grade';
-
+import StudentWorkbookProblemAttachment from './student-workbook-problem-attachment';
+import StudentGrade from './student-grade';

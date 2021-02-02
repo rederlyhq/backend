@@ -629,6 +629,7 @@ export const bulkExportValidation = {
         topicId: Joi.number().required(),
     },
     query: {
+        showSolutions: Joi.boolean().optional().default(false),
         force: Joi.boolean().optional(),
     },
     body: {},

@@ -6,13 +6,12 @@ import logger from './logger';
 import StudentWorkbook from '../database/models/student-workbook';
 import StudentGradeInstance from '../database/models/student-grade-instance';
 import ProblemAttachment from '../database/models/problem-attachment';
-import rendererHelper from './renderer-helper';
+import rendererHelper, { GetProblemParameters, OutputFormat } from './renderer-helper';
 import Role from '../features/permissions/roles';
 import configurations from '../configurations';
 import _ = require('lodash');
 import axios from 'axios';
 import NotFoundError from '../exceptions/not-found-error';
-import moment = require('moment');
 import { asyncForOwn } from '../extensions/object-extension';
 import urljoin = require('url-join');
 
@@ -30,51 +29,19 @@ interface BulkPdfExport {
     }[];
 }
 
-// topic from db
-type FROM_DB = {
-    id: number;
-    name: string;
-    questions: {
-        id: number;
-        problemNumber: number;
-        webworkQuestionPath: string;
-        grades: {
-            id: number;
-            lastInfluencingCreditedAttemptId: number;
-            lastInfluencingAttemptId: number;
-            user: User;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            rendererData: any;
-            webworkQuestionPath?: string;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            problemAttachments: any;
-            randomSeed: number;
-        }[];
-    }[];
-}
-
 export default class ExportPDFHelper {
     bulkExportAxios = axios.create({
         baseURL: configurations.bulkPdfExport.baseUrl,
     });
-
-    shouldStartNewExport = (topic: CourseTopicContent): boolean => {
-        // If the time is within 5 minutes, do not allow a new export
-        if (!_.isNil(topic.lastExported) && moment().isBefore(moment(topic.lastExported).add(5, 'minutes'))) {
-            return false;
-        }
-
-        return true;
-    }
     
-    start = async ({topic, professorUUID}: {topic: CourseTopicContent; professorUUID: string}): Promise<void> => {
+    start = async ({topic, professorUUID, showSolutions}: {topic: CourseTopicContent; professorUUID: string; showSolutions: boolean}): Promise<void> => {
         topic.lastExported = new Date();
         topic.exportUrl = null;
         await topic.save();
 
         // Find the specified topic
         const mainData = await CourseTopicContent.findOne({
-            attributes: ['id', 'name'],
+            attributes: ['id', 'name', 'topicTypeId'],
             where: {
                 id: topic.id,
                 active: true,
@@ -146,7 +113,7 @@ export default class ExportPDFHelper {
                         id: influencingWorkbook,
                         active: true,
                     },
-                    attributes: ['id', 'submitted', 'randomSeed'],
+                    attributes: ['id', 'submitted', 'randomSeed', 'problemPath'],
                     include: [
                         {
                             model: StudentGradeInstance,
@@ -170,17 +137,24 @@ export default class ExportPDFHelper {
                     ]
                 });
 
-                const obj = {
-                    sourceFilePath: gradeInstanceAttachments?.studentGradeInstance?.webworkQuestionPath ?? question.webworkQuestionPath,
+                let attachments = gradeInstanceAttachments?.studentGradeInstance?.problemAttachments;                
+                if (topic.topicTypeId === 1) {
+                    attachments = await grade.getProblemAttachments();
+                }
+
+
+                const obj: GetProblemParameters = {
+                    sourceFilePath: gradeInstanceAttachments?.problemPath ?? gradeInstanceAttachments?.studentGradeInstance?.webworkQuestionPath ?? question.webworkQuestionPath,
                     problemSeed: gradeInstanceAttachments?.randomSeed ?? gradeInstanceAttachments?.studentGradeInstance?.randomSeed ?? grade.randomSeed,
                     formData: gradeInstanceAttachments?.submitted.form_data,
-                    showCorrectAnswers: true,
+                    showCorrectAnswers: showSolutions,
+                    showSolutions: showSolutions,
                     answersSubmitted: 1,
-                    outputformat: rendererHelper.getOutputFormatForRole(Role.PROFESSOR),
+                    outputformat: OutputFormat.STATIC,
                     permissionLevel: rendererHelper.getPermissionForRole(Role.PROFESSOR),
-                    showSolutions: true,
                 };
 
+                // This should be the renderer response.
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 let src: any = null;
                 try {
@@ -191,13 +165,13 @@ export default class ExportPDFHelper {
 
                 studentGradeLookup[grade.userId].push({
                     number: question.problemNumber,
-                    attachments: gradeInstanceAttachments?.studentGradeInstance?.problemAttachments?.map(attachment => ({
+                    attachments: attachments?.map(attachment => ({
                         url: urljoin(configurations.attachments.baseUrl, attachment.cloudFilename),
                         name: attachment.userLocalFilename,
                         time: attachment.updatedAt,
                     })),
-                    effectiveScore: grade.effectiveScore * 100,
-                    legalScore: grade.legalScore * 100,
+                    effectiveScore: grade.effectiveScore,
+                    legalScore: grade.legalScore,
                     srcdoc: src?.renderedHTML ?? 'Could not render this problem.'
                 });
             })
@@ -232,9 +206,15 @@ export default class ExportPDFHelper {
         
         // Request zip
         try {
-            return await this.bulkExportAxios.get(`export/?profUUID=${professorUUID}&topicId=${topic.id}`);
+            return await this.bulkExportAxios.get('export/', {
+                params: {
+                    profUUID: professorUUID, 
+                    topicId: topic.id,
+                    showSolutions
+                }
+            });
         } catch (e) {
-            console.error(e);
+            logger.error(e);
             topic.lastExported = null;
             await topic.save();
         }

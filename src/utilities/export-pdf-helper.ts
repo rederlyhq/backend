@@ -113,7 +113,7 @@ export default class ExportPDFHelper {
                         id: influencingWorkbook,
                         active: true,
                     },
-                    attributes: ['id', 'submitted', 'randomSeed'],
+                    attributes: ['id', 'submitted', 'randomSeed', 'problemPath'],
                     include: [
                         {
                             model: StudentGradeInstance,
@@ -144,7 +144,7 @@ export default class ExportPDFHelper {
 
 
                 const obj: GetProblemParameters = {
-                    sourceFilePath: gradeInstanceAttachments?.studentGradeInstance?.webworkQuestionPath ?? question.webworkQuestionPath,
+                    sourceFilePath: gradeInstanceAttachments?.problemPath ?? gradeInstanceAttachments?.studentGradeInstance?.webworkQuestionPath ?? question.webworkQuestionPath,
                     problemSeed: gradeInstanceAttachments?.randomSeed ?? gradeInstanceAttachments?.studentGradeInstance?.randomSeed ?? grade.randomSeed,
                     formData: gradeInstanceAttachments?.submitted.form_data,
                     showCorrectAnswers: showSolutions,
@@ -154,6 +154,7 @@ export default class ExportPDFHelper {
                     permissionLevel: rendererHelper.getPermissionForRole(Role.PROFESSOR),
                 };
 
+                // This should be the renderer response.
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 let src: any = null;
                 try {
@@ -213,7 +214,7 @@ export default class ExportPDFHelper {
                 }
             });
         } catch (e) {
-            console.error(e);
+            logger.error(e);
             topic.lastExported = null;
             await topic.save();
         }

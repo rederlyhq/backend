@@ -150,7 +150,7 @@ export default class ExportPDFHelper {
                     showCorrectAnswers: showSolutions,
                     showSolutions: showSolutions,
                     answersSubmitted: 1,
-                    outputformat: OutputFormat.ASSESS,
+                    outputformat: OutputFormat.STATIC,
                     permissionLevel: rendererHelper.getPermissionForRole(Role.PROFESSOR),
                 };
 

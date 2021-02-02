@@ -372,18 +372,18 @@ router.post('/topic/:topicId/startExport',
         if (query.force === false) {
             next(httpResponse.Ok('Details', exportDetails));
         } else {
-            try {
-                helper.start({
-                    topic, 
-                    professorUUID: professor.uuid,
-                    showSolutions: query.showSolutions ?? false,
-                }).then(() => logger.info(`Finished uploading ${topic.id}.`));
-                next(httpResponse.Ok('Loading', exportDetails));
-            } catch (e) {
+            helper.start({
+                topic, 
+                professorUUID: professor.uuid,
+                showSolutions: query.showSolutions ?? false,
+            })
+            .then(() => logger.info(`Finished uploading ${topic.id}.`))
+            .catch(() => {
                 topic.lastExported = null;
                 topic.save();
-                throw e;
-            }
+            });
+            
+            next(httpResponse.Ok('Loading', exportDetails));
         }
     })
 );

@@ -6,7 +6,7 @@ import logger from './logger';
 import StudentWorkbook from '../database/models/student-workbook';
 import StudentGradeInstance from '../database/models/student-grade-instance';
 import ProblemAttachment from '../database/models/problem-attachment';
-import rendererHelper from './renderer-helper';
+import rendererHelper, { GetProblemParameters, OutputFormat } from './renderer-helper';
 import Role from '../features/permissions/roles';
 import configurations from '../configurations';
 import _ = require('lodash');
@@ -57,17 +57,8 @@ export default class ExportPDFHelper {
     bulkExportAxios = axios.create({
         baseURL: configurations.bulkPdfExport.baseUrl,
     });
-
-    shouldStartNewExport = (topic: CourseTopicContent): boolean => {
-        // If the time is within 5 minutes, do not allow a new export
-        if (!_.isNil(topic.lastExported) && moment().isBefore(moment(topic.lastExported).add(5, 'minutes'))) {
-            return false;
-        }
-
-        return true;
-    }
     
-    start = async ({topic, professorUUID}: {topic: CourseTopicContent; professorUUID: string}): Promise<void> => {
+    start = async ({topic, professorUUID, showSolutions}: {topic: CourseTopicContent; professorUUID: string, showSolutions: boolean}): Promise<void> => {
         topic.lastExported = new Date();
         topic.exportUrl = null;
         await topic.save();
@@ -170,15 +161,15 @@ export default class ExportPDFHelper {
                     ]
                 });
 
-                const obj = {
+                const obj: GetProblemParameters = {
                     sourceFilePath: gradeInstanceAttachments?.studentGradeInstance?.webworkQuestionPath ?? question.webworkQuestionPath,
                     problemSeed: gradeInstanceAttachments?.randomSeed ?? gradeInstanceAttachments?.studentGradeInstance?.randomSeed ?? grade.randomSeed,
                     formData: gradeInstanceAttachments?.submitted.form_data,
-                    showCorrectAnswers: true,
+                    showCorrectAnswers: showSolutions,
+                    showSolutions: showSolutions,
                     answersSubmitted: 1,
-                    outputformat: rendererHelper.getOutputFormatForRole(Role.PROFESSOR),
+                    outputformat: OutputFormat.ASSESS,
                     permissionLevel: rendererHelper.getPermissionForRole(Role.PROFESSOR),
-                    showSolutions: true,
                 };
 
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -196,8 +187,8 @@ export default class ExportPDFHelper {
                         name: attachment.userLocalFilename,
                         time: attachment.updatedAt,
                     })),
-                    effectiveScore: grade.effectiveScore * 100,
-                    legalScore: grade.legalScore * 100,
+                    effectiveScore: grade.effectiveScore,
+                    legalScore: grade.legalScore,
                     srcdoc: src?.renderedHTML ?? 'Could not render this problem.'
                 });
             })

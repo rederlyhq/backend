@@ -371,12 +371,13 @@ router.post('/topic/:topicId/startExport',
         // If we're just checking, return what's already here.
         if (query.force === false) {
             next(httpResponse.Ok('Details', exportDetails));
-            // If we should start a new export
-        } else if (helper.shouldStartNewExport(topic)) {
-            helper.start({topic, professorUUID: professor.uuid}).then(() => logger.info('Finished uploading.'));
-            next(httpResponse.Ok('Loading', exportDetails));
         } else {
-            next(httpResponse.Ok('Already exported', exportDetails));
+            helper.start({
+                topic, 
+                professorUUID: professor.uuid,
+                showSolutions: query.showSolutions ?? false,
+            }).then(() => logger.info(`Finished uploading ${topic.id}.`));
+            next(httpResponse.Ok('Loading', exportDetails));
         }
     })
 );

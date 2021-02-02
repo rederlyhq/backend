@@ -2387,26 +2387,34 @@ class CourseController {
         }
     }
 
-    async enroll(enrollment: CreateGradesForUserEnrollmentOptions): Promise<StudentEnrollment> {
-        // TODO future, what should this do if the student has already dropped?
+    async enroll(options: CreateGradesForUserEnrollmentOptions): Promise<StudentEnrollment> {
         const fetchedEnrollment = await StudentEnrollment.findOne({
             where: {
-                courseId: enrollment.courseId,
-                userId: enrollment.userId,
+                courseId: options.courseId,
+                userId: options.userId,
             }
         });
         if (!_.isNil(fetchedEnrollment)) {
+            if (!_.isNil(fetchedEnrollment.dropDate)) {
+                if (options.reEnrollIfDropped ?? false) {
+                    fetchedEnrollment.dropDate = null;
+                    await fetchedEnrollment.save();
+                } else {
+                    throw new IllegalArgumentException('Cannot enroll with enrollment link if you have dropped the course');
+                }
+            }
             return fetchedEnrollment;
         }
 
         return await useDatabaseTransaction(async () => {
             const result = await this.createStudentEnrollment({
-                ...enrollment,
+                userId: options.userId,
+                courseId: options.courseId,
                 enrollDate: new Date()
             });
             await this.createGradesForUserEnrollment({
-                courseId: enrollment.courseId,
-                userId: enrollment.userId,
+                courseId: options.courseId,
+                userId: options.userId,
             });
             return result;
         });

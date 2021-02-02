@@ -422,6 +422,7 @@ export interface GetUsersThatRequireGradeForQuestionOptions {
 export interface CreateGradesForUserEnrollmentOptions {
     courseId: number;
     userId: number;
+    reEnrollIfDropped?: boolean;
 }
 
 export interface DeleteUserEnrollmentOptions {

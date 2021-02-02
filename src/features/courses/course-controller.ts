@@ -17,7 +17,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, ImportCourseTarballResult, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions, AddQuestionOptions, RequestNewProblemVersionOptions, BrowseProblemsCourseListOptions, GetSearchProblemResultsOptions, BrowseProblemsTopicListOptions, BrowseProblemsUnitListOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, ImportCourseTarballResult, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions, AddQuestionOptions, RequestNewProblemVersionOptions, BrowseProblemsCourseListOptions, GetSearchProblemResultsOptions, BrowseProblemsTopicListOptions, BrowseProblemsUnitListOptions, EnrollManuallyOptions, ManualEnrollmentResult } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -2429,6 +2429,35 @@ class CourseController {
             courseId: course.id,
             userId: enrollment.userId,
         });
+    }
+
+    async enrollManually(options: EnrollManuallyOptions): Promise<ManualEnrollmentResult> {
+        let userId: number | null = null;
+        let user: User | null = null;
+        if ('userId' in options) {
+            userId = options.userId;
+        } else if ('studentEmail' in options) {
+            const user = await userController.getUserByEmail(options.studentEmail);
+            if (_.isNil(user)) {
+                throw new IllegalArgumentException(`The user with the email ${options.studentEmail} is not registered with rederly.`);
+            }
+            userId = user.id;
+        }
+
+        if (_.isNil(userId)) {
+            throw new RederlyError('enrollManually: Could not determine userId');
+        }
+
+        user = user ?? await userController.getUserById(userId);
+        const enrollment = await this.enroll({
+            courseId: options.courseId,
+            userId: userId,
+            reEnrollIfDropped: true,
+        });
+        return {
+            enrollment: enrollment,
+            user: user
+        };
     }
 
     // TODO fix return type, transactions were returning any so type checking was suspended

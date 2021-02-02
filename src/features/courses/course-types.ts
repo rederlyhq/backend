@@ -24,6 +24,19 @@ export interface EnrollByCodeOptions {
     userId: number;
 }
 
+export type EnrollManuallyOptions = {
+    courseId: number;
+} & ({
+    userId: number;
+} | {
+    studentEmail: string;
+})
+
+export interface ManualEnrollmentResult {
+    enrollment: StudentEnrollment;
+    user: User;
+}
+
 export interface CourseListOptions {
     filter: {
         instructorId?: number;

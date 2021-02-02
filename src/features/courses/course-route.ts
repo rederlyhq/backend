@@ -1284,10 +1284,23 @@ router.post('/enroll',
     validate(enrollInCourseValidation),
     asyncHandler(async (req: RederlyExpressRequest<EnrollInCourseRequest.params, unknown, EnrollInCourseRequest.body, EnrollInCourseRequest.query>, _res: Response, next: NextFunction) => {
         try {
-            const enrollment = await courseController.enroll({
-                ...req.body,
-            });
-            next(httpResponse.Ok('Enrolled', enrollment));
+            if (_.isNil(req.body.userId) === _.isNil(req.body.studentEmail)) {
+                throw new IllegalArgumentException('Enrollment requires either userId or studentEmail, not both, not neither');
+            } else if (!_.isNil(req.body.userId)) {
+                const enrollment = await courseController.enrollManually({
+                    userId: req.body.userId,
+                    courseId: req.body.courseId
+                });
+                next(httpResponse.Ok('Enrolled', enrollment));
+            } else if (!_.isNil(req.body.studentEmail)) {
+                const enrollment = await courseController.enrollManually({
+                    studentEmail: req.body.studentEmail,
+                    courseId: req.body.courseId
+                });
+                next(httpResponse.Ok('Enrolled', enrollment));
+            } else {
+                throw new RederlyError('Enroll: Strict type checking error handling lead to impossible situation');
+            }
         } catch (e) {
             if (e instanceof NotFoundError) {
                 next(Boom.notFound(e.message));

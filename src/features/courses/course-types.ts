@@ -18,6 +18,7 @@ import StudentTopicAssessmentInfo from '../../database/models/student-topic-asse
 import ProblemAttachment from '../../database/models/problem-attachment';
 import { BucketDefFileResult, FindFilesDefFileResult } from '../../utilities/webwork-utilities/importer';
 import WebWorkDef from '../../utilities/web-work-def-parser';
+import StudentEnrollment from '../../database/models/student-enrollment';
 
 export interface EnrollByCodeOptions {
     code: string;

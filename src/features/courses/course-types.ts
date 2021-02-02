@@ -18,10 +18,24 @@ import StudentTopicAssessmentInfo from '../../database/models/student-topic-asse
 import ProblemAttachment from '../../database/models/problem-attachment';
 import { BucketDefFileResult, FindFilesDefFileResult } from '../../utilities/webwork-utilities/importer';
 import WebWorkDef from '../../utilities/web-work-def-parser';
+import StudentEnrollment from '../../database/models/student-enrollment';
 
 export interface EnrollByCodeOptions {
     code: string;
     userId: number;
+}
+
+export type EnrollManuallyOptions = {
+    courseId: number;
+} & ({
+    userId: number;
+} | {
+    studentEmail: string;
+})
+
+export interface ManualEnrollmentResult {
+    enrollment: StudentEnrollment;
+    user: User;
 }
 
 export interface CourseListOptions {
@@ -422,6 +436,7 @@ export interface GetUsersThatRequireGradeForQuestionOptions {
 export interface CreateGradesForUserEnrollmentOptions {
     courseId: number;
     userId: number;
+    reEnrollIfDropped?: boolean;
 }
 
 export interface DeleteUserEnrollmentOptions {

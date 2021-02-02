@@ -7,7 +7,7 @@ export default class StudentEnrollment extends Model {
     public courseId!: number;
     public userId!: number;
     public enrollDate!: Date;
-    public dropDate!: Date;
+    public dropDate!: Date | null;
 
     public getCourse!: BelongsToGetAssociationMixin<Course>;
     public getUser!: BelongsToGetAssociationMixin<User>;

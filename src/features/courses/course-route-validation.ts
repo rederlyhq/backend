@@ -385,7 +385,9 @@ export const enrollInCourseValidation = {
     query: {},
     body: {
         courseId: Joi.number().required(),
-        userId: Joi.number().required()
+        // TODO figure out alternatives
+        userId: Joi.number().optional(),
+        studentEmail: Joi.string().email().optional(),
     }
 };
 

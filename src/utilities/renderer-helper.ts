@@ -61,6 +61,8 @@ export enum OutputFormat {
     SIMPLE = 'simple',
     STATIC = 'static',
     ASSESS = 'nosubmit',
+    CLASSIC = 'classic',
+    PRACTICE = 'practice',
 }
 
 export interface GetProblemParameters {

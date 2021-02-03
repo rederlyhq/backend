@@ -1535,7 +1535,10 @@ class CourseController {
                     topicObj = topic.getWithOverrides(overrides.first);
                 }
             }
-            showSolutions = moment(topicObj.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days').isBefore(moment());
+            if (moment(topicObj.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days').isBefore(moment())) {
+                showSolutions = true;
+                outputFormat = OutputFormat.PRACTICE;
+            }
         }
         if (!_.isNil(gradeInstance)) {
             const version = await gradeInstance.getStudentAssessmentInfo();

@@ -34,6 +34,7 @@ import { getAveragesFromStatistics } from './statistics-helper';
 import { rederlyTempFileWrapper } from '../../middleware/rederly-temp-file-wrapper';
 import ExportPDFHelper from '../../utilities/export-pdf-helper';
 import CourseTopicContent from '../../database/models/course-topic-content';
+import { canUserViewCourse } from '../../middleware/permissions/course-permissions';
 
 const fileUpload = multer();
 
@@ -1349,21 +1350,29 @@ router.get('/:id',
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetCourseRequest.body, GetCourseRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const params = req.params as GetCourseRequest.params;
-            const course = await courseController.getCourseById(params.id);
-            const university = await course.getUniversity({
-                where: {
-                    active: true,
-                }
-            });
-            const canAskForHelp = university?.universityName === 'CityTech' ?? false;
-            next(httpResponse.Ok('Fetched successfully', {
-                ...course.get({plain: true}),
-                canAskForHelp,
-            }));
+            req.course = await courseController.getCourseById(params.id);
+            next();
         } catch (e) {
             next(e);
         }
-    }));
+    }),
+    canUserViewCourse,
+    asyncHandler(async (req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
+        if(_.isNil(req.course)) {
+            throw new RederlyError('TSNH, course should have already been fetched');
+        }
+        const university = await req.course.getUniversity({
+            where: {
+                active: true,
+            }
+        });
+        const canAskForHelp = university?.universityName === 'CityTech' ?? false;
+        next(httpResponse.Ok('Fetched successfully', {
+            ...req.course.get({plain: true}),
+            canAskForHelp,
+        }));
+    })
+);
 
 router.post('/enroll',
     authenticationMiddleware,

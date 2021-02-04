@@ -60,6 +60,7 @@ import * as tar from 'tar';
 import * as fs from 'fs';
 import { getAverageGroupsBeforeDate, QUESTION_SQL_NAME, STUDENTTOPICOVERRIDE_SQL_NAME, TOPIC_SQL_NAME } from './statistics-helper';
 import qs = require('qs');
+import ForbiddenError from '../../exceptions/forbidden-error';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -4875,7 +4876,51 @@ You can contact your student at ${options.student.email} or by replying to this 
             const updatedGrade = await grade.save();
             return updatedGrade;
         }
+    }
 
+    async isUserEnrolledInCourse ({
+        userId,
+        courseId
+    }: {
+        userId: number;
+        courseId: number;
+    }): Promise<boolean> {
+        const enrollment = await StudentEnrollment.findOne({
+            where: {
+                userId: userId,
+                courseId: courseId,
+                dropDate: null,
+                active: true
+            }
+        });
+        return !_.isNil(enrollment);
+    }
+
+    async canUserViewCourse ({
+        user,
+        course,
+        rederlyUserRole: rederlyUserRoleParam,
+    }: {
+        user: User;
+        course: Course;
+        rederlyUserRole?: Role;
+    }): Promise<void> {
+        const rederlyUserRole = rederlyUserRoleParam ?? user.roleId as Role;
+        // TODO make enum to return that specifies what kind of user was allowed in
+        if (rederlyUserRole === Role.PROFESSOR && course.instructorId === user.id) {
+            logger.debug('Is course cowner');
+        // } else if (user.roleId === Role.PROFESSOR) {
+        //     // TODO this is temporary, when we have TA access setup this will become more comprehensive
+        //     // In the future not all profs will be a be able to access
+        //     logger.debug('Is faculty');
+        } else if (await this.isUserEnrolledInCourse({
+            userId: user.id,
+            courseId: course.id
+        })) {
+            logger.debug('Is enrolled student (or professor');
+        } else {
+            throw new ForbiddenError('You do not have access to this course');
+        }
     }
 }
 

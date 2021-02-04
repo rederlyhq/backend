@@ -152,10 +152,15 @@ const syncBadPathCounts = async (): Promise<void> => {
     logger.info(`Request took ${performance.now() - time}`);
 };
 
+const outputConfigHash = (): void => {
+    logger.info(configurations.hash);
+};
+
 const commandLookup: {[key: string]: () => unknown} = {
     ['sync-missing-grades']: syncMissingGrades,
     ['cleanup-workbooks']: cleanupWorkbooks,
     ['noop']: noop,
+    ['output-config-hash']: outputConfigHash,
     ['sync-bad-path-counts']: syncBadPathCounts,
 };
 

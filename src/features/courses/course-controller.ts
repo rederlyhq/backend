@@ -3922,6 +3922,8 @@ class CourseController {
             const isBestForThisVersion = problemScores.total >= bestVersionScore;
             const isBestOverallVersion = problemScores.total >= bestOverallVersion;
 
+            const time = new Date();
+
             await questionResponses.asyncForEach(async (result: SubmittedAssessmentResultContext) => {
 
                 if (_.isNil(result.instance.id)) {
@@ -3944,6 +3946,7 @@ class CourseController {
 
                 const cleanSubmitted = rendererHelper.cleanRendererResponseForTheDatabase(result.questionResponse);
 
+                let createNewWorkbook = true;
                 if (!_.isNil(previousWorkbook)){
                     // do not compare the "previous_*" fields
                     const newSubmitted = _.omitBy(cleanSubmitted, rendererHelper.isPrevious);
@@ -3955,11 +3958,11 @@ class CourseController {
                     const previousAttachmentIds = _.map(previousAttachments, 'id');
 
                     if ( _.isEqual(newSubmitted, oldSubmitted) &&  _.isEqual(currentAttachmentIds, previousAttachmentIds)) {
-                        return; // skip out on creating a workbook et al
+                        createNewWorkbook = false; // skip out on creating a workbook
                     }
                 }
 
-                const workbook = await StudentWorkbook.create({
+                const workbook = (createNewWorkbook || _.isNil(previousWorkbook)) ? await StudentWorkbook.create({
                     studentGradeId: result.grade.id,
                     userId: result.grade.userId,
                     courseWWTopicQuestionId: result.grade.courseWWTopicQuestionId,
@@ -3968,13 +3971,13 @@ class CourseController {
                     problemPath: result.instance.webworkQuestionPath,
                     submitted: cleanSubmitted,
                     result: result.questionResponse.problem_result.score,
-                    time: new Date(),
+                    time,
                     wasLate: false,
                     wasExpired: false,
                     wasAfterAttemptLimit: false,
                     wasLocked: false,
                     wasAutoSubmitted: wasAutoSubmitted,
-                });
+                }) : previousWorkbook;
 
                 await currentAttachments.asyncForEach(async (attachment: ProblemAttachment) => {
                     await courseRepository.createStudentWorkbookProblemAttachment({

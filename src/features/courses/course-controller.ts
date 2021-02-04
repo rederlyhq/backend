@@ -310,13 +310,17 @@ class CourseController {
             where.instructorId = options.filter.instructorId;
         }
 
-        if (options.filter.enrolledUserId !== null && options.filter.enrolledUserId !== undefined) {
+        if (!_.isNil(options.filter.enrolledUserId)) {
             include.push({
                 model: StudentEnrollment,
                 attributes: [],
                 as: 'enrolledStudents',
+                where: {
+                    userId: options.filter.enrolledUserId,
+                    dropDate: null,
+                    active: true,
+                }
             });
-            where[`$enrolledStudents.${StudentEnrollment.rawAttributes.userId.field}$`] = options.filter.enrolledUserId;
         }
 
         if (!_.has(where, 'active')) {

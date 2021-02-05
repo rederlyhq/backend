@@ -686,7 +686,7 @@ class CourseController {
 
         const workbookCount = existingTopic.calculateWorkbookCount();
         const versionCount = existingTopic.calculateVersionCount();
-        const topicIsChangingTypes = (existingTopic.topicTypeId !== options.updates.topicTypeId);
+        const topicIsChangingTypes = !_.isNil(options.updates.topicTypeId) && (existingTopic.topicTypeId !== options.updates.topicTypeId);
 
         if ((
                 (workbookCount && workbookCount > 0) || 

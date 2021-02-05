@@ -1165,17 +1165,13 @@ router.get('/',
     authenticationMiddleware,
     validate(listCoursesValidation),
     asyncHandler(async (req: RederlyExpressRequest<ListCoursesRequest.params, unknown, ListCoursesRequest.body, ListCoursesRequest.query>, _res: Response, next: NextFunction) => {
-        try {
-            const courses = await courseController.getCourses({
-                filter: {
-                    instructorId: req.query.instructorId,
-                    enrolledUserId: req.query.enrolledUserId,
-                }
-            });
-            next(httpResponse.Ok('Fetched successfully', courses));
-        } catch (e) {
-            next(e);
-        }
+        const courses = await courseController.getCourses({
+            filter: {
+                instructorId: req.query.instructorId,
+                enrolledUserId: req.query.enrolledUserId,
+            }
+        });
+        next(httpResponse.Ok('Fetched successfully', courses));
     }));
 
 router.get('/browse-problems/course-list',
@@ -1347,22 +1343,19 @@ router.get('/:id',
     // This is a work around because typescript has errors with "extractMap"
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetCourseRequest.body, GetCourseRequest.query>, _res: Response, next: NextFunction) => {
-        try {
-            const params = req.params as GetCourseRequest.params;
-            const course = await courseController.getCourseById(params.id);
-            const university = await course.getUniversity({
-                where: {
-                    active: true,
-                }
-            });
-            const canAskForHelp = university?.universityName === 'CityTech' ?? false;
-            next(httpResponse.Ok('Fetched successfully', {
-                ...course.get({plain: true}),
-                canAskForHelp,
-            }));
-        } catch (e) {
-            next(e);
-        }
+        const params = req.params as GetCourseRequest.params;
+        const userIdForExtensions = req.rederlyUserRole === Role.STUDENT ? req.session?.userId : undefined;
+        const course = await courseController.getCourseById(params.id, userIdForExtensions);
+        const university = await course.getUniversity({
+            where: {
+                active: true,
+            }
+        });
+        const canAskForHelp = university?.universityName === 'CityTech' ?? false;
+        next(httpResponse.Ok('Fetched successfully', {
+            ...course.get({plain: true}),
+            canAskForHelp,
+        }));
     }));
 
 router.post('/enroll',

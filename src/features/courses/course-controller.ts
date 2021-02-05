@@ -68,7 +68,7 @@ const Sequelize = require('sequelize');
 const ABSOLUTE_RENDERER_PATH_REGEX = /^(:?private\/|Contrib\/|webwork-open-problem-library\/|Library\/)/;
 
 class CourseController {
-    getCourseById(id: number): Promise<Course> {
+    getCourseById(id: number, userId?: number): Promise<Course> {
         return Course.findOne({
             where: {
                 id,
@@ -79,14 +79,27 @@ class CourseController {
                 include: [{
                     model: CourseTopicContent,
                     as: 'topics',
-                    include: [{
-                        model: CourseWWTopicQuestion,
-                        as: 'questions',
-                        required: false,
-                        where: {
-                            active: true
+                    include: 
+                    [
+                        {
+                            model: CourseWWTopicQuestion,
+                            as: 'questions',
+                            required: false,
+                            where: {
+                                active: true
+                            }
+                        },
+                        {
+                            model: StudentTopicOverride,
+                            as: 'studentTopicOverride',
+                            // attributes: [],
+                            where: {
+                                active: true,
+                                ...(userId && {userId: userId}),
+                            },
+                            required: false,
                         }
-                    }],
+                    ],
                     required: false,
                     where: {
                         active: true

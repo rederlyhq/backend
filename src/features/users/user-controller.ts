@@ -394,7 +394,11 @@ class UserController {
             userObject
         } = options;
 
-        const emailDomain = userObject.email.split('@')[1];
+        const emailDomain = userObject.email.split('@')[1]?.toLowerCase();
+
+        if (_.isNil(emailDomain) || _.isEmpty(emailDomain)) {
+            throw new NoAssociatedUniversityError('Could not parse the email domain.');
+        }
 
         const universities = await universityController.getUniversitiesAssociatedWithEmail({
             emailDomain

@@ -457,7 +457,13 @@ class CourseController {
                         }, _.isUndefined) as sequelize.WhereOptions
                     }]
                 }]
-            }]
+            }],
+            order: [
+                ['topic', 'unit', 'course', 'id', 'ASC'],
+                ['topic', 'unit', 'contentOrder', 'ASC'],
+                ['topic', 'contentOrder', 'ASC'],
+                ['problemNumber', 'ASC'],
+            ],
         });
     };
     

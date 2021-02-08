@@ -139,7 +139,11 @@ export default class ExportPDFHelper {
 
                 let attachments = gradeInstanceAttachments?.studentGradeInstance?.problemAttachments;                
                 if (topic.topicTypeId === 1) {
-                    attachments = await grade.getProblemAttachments();
+                    attachments = await grade.getProblemAttachments({
+                        where: {
+                            active: true,
+                        }
+                    });
                 }
 
 

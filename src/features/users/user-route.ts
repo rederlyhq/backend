@@ -3,8 +3,8 @@ import { Response, NextFunction } from 'express';
 import userController from './user-controller';
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator';
-import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation, updatePasswordValidation, updateForgottonPasswordValidation, resendVerificationValidation, userStatusValidation } from './user-route-validation';
-import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest, ForgotPasswordRequest, UpdatePasswordRequest, UpdateForgottonPasswordRequest, ResendVerificationRequest, UserStatusRequest } from './user-route-request-types';
+import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation, updatePasswordValidation, updateForgottonPasswordValidation, resendVerificationValidation, userStatusValidation, impersonateValidation } from './user-route-validation';
+import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest, ForgotPasswordRequest, UpdatePasswordRequest, UpdateForgottonPasswordRequest, ResendVerificationRequest, UserStatusRequest, ImpersonateRequest } from './user-route-request-types';
 import Boom = require('boom');
 import passport = require('passport');
 import { authenticationMiddleware } from '../../middleware/auth';
@@ -22,12 +22,31 @@ router.all('/check-in',
         next(httpResponse.Ok());
     });
 
+router.post('/impersonate',
+    validate(impersonateValidation),
+    authenticationMiddleware,
+    (req: RederlyExpressRequest<ImpersonateRequest.params, never, ImpersonateRequest.body, ImpersonateRequest.query>, res: Response, next: NextFunction) => {
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+        
+        let token = `${req.session.uuid}_${req.session.expiresAt.getTime()}`;
+        if (req.body.role) {
+            token += '_' + req.body.role;
+        }
+        const cookieOptions = {
+            expires: req.session.expiresAt
+        };
+        res.cookie('sessionToken', token, cookieOptions);
+        next(httpResponse.Ok());
+    });
+
 router.post('/login',
     validate(loginValidation),
     passport.authenticate('local'),
     asyncHandler(async (req: RederlyExpressRequest<LoginRequest.params, unknown, LoginRequest.body, LoginRequest.query>, res: Response, next: NextFunction) => {
         if (_.isNil(req.session)) {
-            throw new Error('Session is nil even after authentication middleware');
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
         const newSession = req.session.passport.user;
         const user = await newSession.getUser();

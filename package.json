@@ -1,6 +1,6 @@
 {
   "name": "backend",
-  "version": "1.8.0",
+  "version": "1.8.3",
   "description": "",
   "main": "index.js",
   "dependencies": {
@@ -104,7 +104,7 @@
     "run:build": "node ts-built/index.js",
     "sequelize": "npm run build && sequelize",
     "sequelize:migrations": "npm run sequelize -- db:migrate",
-    "sequelize:migrations:devundo": "npm run sequelize -- db:migrate:undo:all --to 20210104113400-course-audit.js",
+    "sequelize:migrations:devundo": "npm run sequelize -- db:migrate:undo:all --to 20210125141500-bulk-export.js",
     "sequelize:built:migrations": "sequelize -- db:migrate",
     "lint": "eslint src/ --ext .ts",
     "clean": "if [ -d ts-built ]; then rm -r ts-built; fi;",

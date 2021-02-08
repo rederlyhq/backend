@@ -20,13 +20,12 @@ const {
     sessionLife
 } = configurations.auth;
 
-export const validateSession = async (token: string, res: Response): Promise<Session> => {
+export const validateSession = async (token: string, req: RederlyExpressRequest, res: Response): Promise<Session> => {
     try {
-        const splitToken = token.split('_');
-        if(_.isNil(splitToken.first)) {
+        const [ uuid, , impersonatingRole ] = token.split('_');
+        if(_.isNil(uuid)) {
             throw new RederlyError('TSNH: parsing token failed. string.split returned an empty array');
         }
-        const uuid = splitToken.first;
         const session = await userController.getSession(uuid);
         if (!session) {
             const response = 'Invalid session';
@@ -57,6 +56,23 @@ export const validateSession = async (token: string, res: Response): Promise<Ses
                 } else {
                     logger.debug('validateSession: session token did not need refresh');
                 }
+
+                const user = await session.getUser();
+                req.rederlyUser = user;
+                req.rederlyUserRole = user.roleId;
+                if (!_.isNil(impersonatingRole)) {
+                    if (impersonatingRole in Role) {
+                        const castedRole = impersonatingRole as keyof typeof Role;
+                        const role = Role[castedRole];
+                        if (role !== Role.STUDENT) {
+                            throw new Error('Only student impersonation is supported');
+                        }
+                        req.rederlyUserRole = role;
+                    } else {
+                        logger.error(`Impersonating role [${impersonatingRole}] is not a valid user role`);
+                    }    
+                }
+
                 return session;
             }
         }
@@ -76,7 +92,7 @@ export const authenticationMiddleware = async (req: Request, res: Response, next
     }
     //authenticate cookie
     try {
-        const session = await validateSession(req.cookies.sessionToken, res);
+        const session = await validateSession(req.cookies.sessionToken, req, res);
         //Successful, add the user id to the session
         // TODO figure out session with request
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -96,7 +112,8 @@ export const paidMiddleware = (action?: string) => async (req: RederlyExpressReq
     const triggeringAction = action ?? 'That action';
     const user = req.rederlyUser ?? await req.session.getUser();
     req.rederlyUser = user;
-    if (user.roleId === Role.STUDENT || user.paidUntil.toMoment().isAfter(moment())) {
+    const rederlyUserRole = req.rederlyUserRole ?? user.roleId;
+    if (rederlyUserRole === Role.STUDENT || user.paidUntil.toMoment().isAfter(moment())) {
         next();
     } else {
         next(new ForbiddenError(`${triggeringAction} requires a paid account.`));

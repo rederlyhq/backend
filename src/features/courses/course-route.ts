@@ -5,7 +5,7 @@ import validate from '../../middleware/joi-validator';
 import { authenticationMiddleware, paidMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
-import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation, deleteEnrollmentValidation, createAssessmentVersionValidation, extendCourseTopicForUserValidation, extendCourseTopicQuestionValidation, getTopicValidation, submitAssessmentVersionValidation, endAssessmentVersionValidation, previewQuestionValidation, gradeAssessmentValidation, getAttachmentPresignedURLValidation, postAttachmentValidation, listAttachmentsValidation, deleteAttachmentValidation, emailProfValidation, readQuestionValidation, saveQuestionValidation, catalogValidation, getVersionValidation, getQuestionRawValidation, getQuestionGradeValidation, getQuestionOpenLabValidation, postImportCourseArchiveValidation, uploadAssetValidation, getQuestionShowMeAnotherValidation, browseProblemsCourseListValidation, browseProblemsSearchValidation, browseProblemsTopicListValidation, browseProblemsUnitListValidation } from './course-route-validation';
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation, deleteEnrollmentValidation, createAssessmentVersionValidation, extendCourseTopicForUserValidation, extendCourseTopicQuestionValidation, getTopicValidation, submitAssessmentVersionValidation, endAssessmentVersionValidation, previewQuestionValidation, gradeAssessmentValidation, getAttachmentPresignedURLValidation, postAttachmentValidation, listAttachmentsValidation, deleteAttachmentValidation, emailProfValidation, readQuestionValidation, saveQuestionValidation, catalogValidation, getVersionValidation, getQuestionRawValidation, getQuestionGradeValidation, getQuestionOpenLabValidation, postImportCourseArchiveValidation, uploadAssetValidation, getQuestionShowMeAnotherValidation, browseProblemsCourseListValidation, browseProblemsSearchValidation, browseProblemsTopicListValidation, browseProblemsUnitListValidation, bulkExportValidation, endBulkExportValidation } from './course-route-validation';
 import NotFoundError from '../../exceptions/not-found-error';
 import multer = require('multer');
 import * as proxy from 'express-http-proxy';
@@ -14,7 +14,7 @@ import * as _ from 'lodash';
 import configurations from '../../configurations';
 import WrappedError from '../../exceptions/wrapped-error';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
-import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest, ExtendCourseTopicQuestionRequest, CreateAssessmentVersionRequest, SubmitAssessmentVersionRequest, UpdateGradeInstanceRequest, EndAssessmentVersionRequest, PreviewQuestionRequest, GradeAssessmentRequest, GetAttachmentPresignedURLRequest, PostAttachmentRequest, ListAttachmentsRequest, DeleteAttachmentRequest, EmailProfRequest, ReadQuestionRequest, SaveQuestionRequest, CatalogRequest, GetVersionRequest, GetQuestionRawRequest, GetQuestionGradeRequest, PostImportCourseArchiveRequest, GetQuestionOpenLabRequest, UploadAssetRequest, GetQuestionShowMeAnotherRequest, BrowseProblemsCourseListRequest, BrowseProblemsSearchRequest, BrowseProblemsTopicListRequest, BrowseProblemsUnitListRequest } from './course-route-request-types';
+import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest, ExtendCourseTopicQuestionRequest, CreateAssessmentVersionRequest, SubmitAssessmentVersionRequest, UpdateGradeInstanceRequest, EndAssessmentVersionRequest, PreviewQuestionRequest, GradeAssessmentRequest, GetAttachmentPresignedURLRequest, PostAttachmentRequest, ListAttachmentsRequest, DeleteAttachmentRequest, EmailProfRequest, ReadQuestionRequest, SaveQuestionRequest, CatalogRequest, GetVersionRequest, GetQuestionRawRequest, GetQuestionGradeRequest, PostImportCourseArchiveRequest, GetQuestionOpenLabRequest, UploadAssetRequest, GetQuestionShowMeAnotherRequest, BrowseProblemsCourseListRequest, BrowseProblemsSearchRequest, BrowseProblemsTopicListRequest, BrowseProblemsUnitListRequest, BulkExportRequest, EndBulkExportRequest } from './course-route-request-types';
 import Boom = require('boom');
 import { Constants } from '../../constants';
 import Role from '../permissions/roles';
@@ -32,6 +32,9 @@ import RederlyError from '../../exceptions/rederly-error';
 import openLabHelper from '../../utilities/openlab-helper';
 import { getAveragesFromStatistics } from './statistics-helper';
 import { rederlyTempFileWrapper } from '../../middleware/rederly-temp-file-wrapper';
+import ExportPDFHelper from '../../utilities/export-pdf-helper';
+import CourseTopicContent from '../../database/models/course-topic-content';
+import { canUserViewCourse } from '../../middleware/permissions/course-permissions';
 
 const fileUpload = multer();
 
@@ -50,7 +53,7 @@ router.post('/:courseId/import-archive',
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
-        const user = await req.session.getUser({
+        const user = req.rederlyUser ?? await req.session.getUser({
             where: {
                 active: true
             }
@@ -261,6 +264,9 @@ router.get('/questions',
             throw new WrappedError('It is impossible for userId to still be undefined here.');
         }
 
+        // This should not happen anyway, need to do a more in depth change in the future
+        const rederlyUserRole = req.rederlyUserRole ?? Role.STUDENT;
+
         const {
             message,
             userCanGetQuestions,
@@ -270,6 +276,7 @@ router.get('/questions',
             userId,
             courseTopicContentId: req.query.courseTopicContentId,
             studentTopicAssessmentInfoId: req.query.studentTopicAssessmentInfoId,
+            role: rederlyUserRole
         });
 
         // TODO fix frontend error handling around assessments when canGetQuestions is false
@@ -304,6 +311,85 @@ router.get('/topic/:topicId/version/:userId',
         const params: GetVersionRequest.params = req.params;
         const result = await courseController.getAllContentForVersion({topicId: params.topicId, userId: params.userId});
         next(httpResponse.Ok('Fetched successfully', result));
+    })
+);
+
+router.put('/topic/:topicId/endExport', 
+    // this call is expected from a microservice, so doesn't go through authentication
+    validate(endBulkExportValidation),
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, EndBulkExportRequest.body, EndBulkExportRequest.query>, _res: Response, next: NextFunction) => {
+        const topic = await CourseTopicContent.findOne({
+            where: {
+                id: req.params.topicId,
+                active: true,
+            },
+        });
+
+        if (_.isNil(topic)) {
+            throw new NotFoundError('A endExport PUT was received for a non-existant topic. Was it deleted?');
+        }
+
+        if (_.isNil(req.body.exportUrl)) {
+            topic.exportUrl = null;
+            topic.lastExported = null;
+        } else {
+            topic.exportUrl = req.body.exportUrl;
+        }
+        await topic.save();
+
+        next(httpResponse.Ok('Got it!'));
+    })
+);
+
+router.post('/topic/:topicId/startExport',
+    authenticationMiddleware,
+    validate(bulkExportValidation),
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, BulkExportRequest.body, BulkExportRequest.query>, _res: Response, next: NextFunction) => {
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+        
+        const params: BulkExportRequest.params = req.params;
+        const query: BulkExportRequest.query = req.query;
+        const professor = await req.session.getUser();
+
+        const topic = await CourseTopicContent.findOne({
+            where: {
+                id: params.topicId,
+                active: true,
+            },
+        });
+
+        if (_.isNil(topic)) {
+            throw new NotFoundError('No such topic was found.');
+        }
+
+        // Since this is a job, we'll always have this by here.
+        const exportDetails = {lastExported: topic.lastExported, exportUrl: topic.exportUrl};
+
+        const helper = new ExportPDFHelper();
+
+        // If we're just checking, return what's already here.
+        if (query.force === false) {
+            next(httpResponse.Ok('Details', exportDetails));
+        } else {
+            helper.start({
+                topic, 
+                professorUUID: professor.uuid,
+                showSolutions: query.showSolutions ?? false,
+            })
+            .then(() => logger.info(`Finished uploading ${topic.id}.`))
+            .catch(() => {
+                topic.lastExported = null;
+                topic.save();
+            });
+            
+            next(httpResponse.Ok('Loading', exportDetails));
+        }
     })
 );
 
@@ -364,7 +450,7 @@ router.get('/assessment/topic/grade/:id',
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const user = await req.session.getUser();
+        const user = req.rederlyUser ?? await req.session.getUser();
         if (await courseController.canUserGradeAssessment({user, topicId: params.id}) === false) {
             throw new ForbiddenError('You are not allowed to grade this assessment.');
         }
@@ -383,7 +469,7 @@ router.get('/assessment/topic/end/:id',
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
-        const user = await req.session.getUser();
+        const user = req.rederlyUser ?? await req.session.getUser();
         const version = await courseController.getStudentTopicAssessmentInfoById(params.id);
 
         if (version.userId !== user.id) {
@@ -409,10 +495,11 @@ router.get('/assessment/topic/:id/start',
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
-        const user = await req.session.getUser();
+        const user = req.rederlyUser ?? await req.session.getUser();
+        const rederlyUserRole = req.rederlyUserRole ?? user.roleId;
 
         // function returns boolean and IF the user is not allowed to start a new version, a reason is included
-        const { userCanStartNewVersion, message, data } = await courseController.canUserStartNewVersion({ user, topicId: params.id });
+        const { userCanStartNewVersion, message, data } = await courseController.canUserStartNewVersion({ user, topicId: params.id, role: rederlyUserRole });
 
         // will never have true + message
         if (userCanStartNewVersion === false && !_.isNil(message)) {
@@ -709,7 +796,7 @@ router.get('/question/:id/openlab',
             throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const user = await req.session.getUser();
+        const user = req.rederlyUser ?? await req.session.getUser();
         const { id: questionId } = req.params as GetQuestionOpenLabRequest.params;
         const baseURL = req.headers['rederly-origin'] as string | undefined; // need this because it incorrectly thinks it can be an array
         if (_.isNil(baseURL)) {
@@ -753,7 +840,8 @@ router.get('/question/:id',
             throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const requestingUser = await req.session.getUser();
+        const requestingUser = req.rederlyUser ?? await req.session.getUser();
+        const rederlyUserRole = req.rederlyUserRole ?? requestingUser.roleId;
 
         const { id: questionId } = req.params as GetQuestionRequest.params;
         const { readonly, workbookId, userId: requestedUserId, studentTopicAssessmentInfoId } = req.query;
@@ -765,7 +853,8 @@ router.get('/question/:id',
             } = await courseController.canUserViewQuestionId({
                 user: requestingUser,
                 questionId,
-                studentTopicAssessmentInfoId
+                studentTopicAssessmentInfoId,
+                role: rederlyUserRole
             });
 
             if (userCanViewQuestion === false) throw new IllegalArgumentException(message);
@@ -774,7 +863,7 @@ router.get('/question/:id',
                 questionId,
                 userId: requestedUserId ?? requestingUser.id,
                 formURL: req.originalUrl,
-                role: requestingUser.roleId,
+                role: rederlyUserRole,
                 readonly,
                 workbookId,
                 studentTopicAssessmentInfoId
@@ -830,8 +919,9 @@ router.post('/preview',
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const user = await req.session.getUser();
-        if (user.roleId === Role.STUDENT) throw new ForbiddenError('Preview is not available.');
+        const user = req.rederlyUser ?? await req.session.getUser();
+        const rederlyUserRole = req.rederlyUserRole ?? user.roleId;
+        if (rederlyUserRole === Role.STUDENT) throw new ForbiddenError('Preview is not available.');
 
         const query = req.query as PreviewQuestionRequest.query;
         if (!_.isNil(req.body) && !_.isEmpty(req.body)) {
@@ -860,7 +950,7 @@ router.post('/preview',
                 problemSeed: query.problemSeed,
                 formURL: req.originalUrl,
                 formData: {},
-                role: user.roleId,
+                role: rederlyUserRole,
             });
             next(httpResponse.Ok('Fetched question successfully', question));
 
@@ -892,7 +982,7 @@ router.post('/preview',
         },
         // Can't use unknown due to restrictions on the type from express
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        userResDecorator: async (_proxyRes, proxyResData, userReq: RederlyExpressRequest<any, unknown, unknown, unknown, PostQuestionMeta>) => {
+        userResDecorator: async (proxyRes: Response, proxyResData, userReq: RederlyExpressRequest<any, unknown, unknown, unknown, PostQuestionMeta>) => {
             if (_.isNil(userReq.session)) {
                 throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
             }
@@ -901,10 +991,14 @@ router.post('/preview',
                 throw new Error('Previously fetched metadata is nil');
             }
 
+            const data = proxyResData.toString('utf8');
+            if (proxyRes.statusCode >= 400) {
+                throw new RederlyError(`Renderer preview responded with error ${proxyRes.statusCode}: ${data}`);
+            }
 
             let rendererResponse: RendererResponse | null = null;
             try {
-                rendererResponse = await rendererHelper.parseRendererResponse(proxyResData.toString('utf8'), {
+                rendererResponse = await rendererHelper.parseRendererResponse(data, {
                     questionPath: userReq.meta.courseQuestion.webworkQuestionPath,
                     questionRandomSeed: userReq.meta.studentGrade?.randomSeed
                 });
@@ -937,7 +1031,7 @@ router.post('/assessment/topic/:id/submit/:version',
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const user = await req.session.getUser();
+        const user = req.rederlyUser ?? await req.session.getUser();
 
         const params = req.params as SubmitAssessmentVersionRequest.params;
 
@@ -968,7 +1062,8 @@ router.post('/question/:id',
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const user = await req.session.getUser();
+        const user = req.rederlyUser ?? await req.session.getUser();
+        const rederlyUserRole = req.rederlyUserRole ?? user.roleId;
 
         const params = req.params as unknown as {
             id: number;
@@ -978,7 +1073,7 @@ router.post('/question/:id',
 
         const rendererParams = await courseController.getCalculatedRendererParams({
             courseQuestion: question,
-            role: user.roleId,
+            role: rederlyUserRole,
             userId: user.id
         });
 
@@ -1016,7 +1111,7 @@ router.post('/question/:id',
         },
         // Can't use unknown due to restrictions on the type from express
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        userResDecorator: async (_proxyRes, proxyResData, userReq: RederlyExpressRequest<any, unknown, unknown, unknown, PostQuestionMeta>) => {
+        userResDecorator: async (proxyRes: Response, proxyResData, userReq: RederlyExpressRequest<any, unknown, unknown, unknown, PostQuestionMeta>) => {
             if (_.isNil(userReq.session)) {
                 throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
             }
@@ -1027,8 +1122,12 @@ router.post('/question/:id',
 
 
             let rendererResponse: RendererResponse | null = null;
+            const data = proxyResData.toString('utf8');
+            if (proxyRes.statusCode >= 400) {
+                throw new RederlyError(`Renderer submit question responded with error ${proxyRes.statusCode}: ${data}`);
+            }
             try {
-                rendererResponse = await rendererHelper.parseRendererResponse(proxyResData.toString('utf8'), {
+                rendererResponse = await rendererHelper.parseRendererResponse(data, {
                     questionPath: userReq.meta.courseQuestion.webworkQuestionPath,
                     questionRandomSeed: userReq.meta.studentGrade?.randomSeed
                 });
@@ -1202,8 +1301,9 @@ router.get('/topics',
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
-        const user = await req.session.getUser();
-        const userId = (user.roleId === Role.STUDENT) ? user.id : undefined;
+        const user = req.rederlyUser ?? await req.session.getUser();
+        const rederlyUserRole = req.rederlyUserRole ?? user.roleId;
+        const userId = (rederlyUserRole === Role.STUDENT) ? user.id : undefined;
 
         const result = await courseController.getTopics({
             courseId: req.query.courseId,
@@ -1225,13 +1325,18 @@ router.post('/:id/email',
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const user = await req.session.getUser();
+        const user = req.rederlyUser ?? await req.session.getUser();
 
+        const baseURL = req.headers['rederly-origin'] as string | undefined; // need this because it incorrectly thinks it can be an array
+        if (_.isNil(baseURL)) {
+            throw new IllegalArgumentException('rederly-origin is required in the request');
+        }
         const result = await courseController.emailProfessor({
             courseId: params.id,
             content: req.body.content,
             question: req.body.question,
             student: user,
+            baseURL: baseURL,
         });
         next(httpResponse.Ok('Your message was sent to your professor.', result));
     })
@@ -1245,31 +1350,52 @@ router.get('/:id',
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetCourseRequest.body, GetCourseRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const params = req.params as GetCourseRequest.params;
-            const course = await courseController.getCourseById(params.id);
-            const university = await course.getUniversity({
-                where: {
-                    active: true,
-                }
-            });
-            const canAskForHelp = university?.universityName === 'CityTech' ?? false;
-            next(httpResponse.Ok('Fetched successfully', {
-                ...course.get({plain: true}),
-                canAskForHelp,
-            }));
+            req.course = await courseController.getCourseById(params.id);
+            next();
         } catch (e) {
             next(e);
         }
-    }));
+    }),
+    canUserViewCourse,
+    asyncHandler(async (req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
+        if(_.isNil(req.course)) {
+            throw new RederlyError('TSNH, course should have already been fetched');
+        }
+        const university = await req.course.getUniversity({
+            where: {
+                active: true,
+            }
+        });
+        const canAskForHelp = university?.universityName === 'CityTech' ?? false;
+        next(httpResponse.Ok('Fetched successfully', {
+            ...req.course.get({plain: true}),
+            canAskForHelp,
+        }));
+    })
+);
 
 router.post('/enroll',
     authenticationMiddleware,
     validate(enrollInCourseValidation),
     asyncHandler(async (req: RederlyExpressRequest<EnrollInCourseRequest.params, unknown, EnrollInCourseRequest.body, EnrollInCourseRequest.query>, _res: Response, next: NextFunction) => {
         try {
-            const enrollment = await courseController.enroll({
-                ...req.body,
-            });
-            next(httpResponse.Ok('Enrolled', enrollment));
+            if (_.isNil(req.body.userId) === _.isNil(req.body.studentEmail)) {
+                throw new IllegalArgumentException('Enrollment requires either userId or studentEmail, not both, not neither');
+            } else if (!_.isNil(req.body.userId)) {
+                const enrollment = await courseController.enrollManually({
+                    userId: req.body.userId,
+                    courseId: req.body.courseId
+                });
+                next(httpResponse.Ok('Enrolled', enrollment));
+            } else if (!_.isNil(req.body.studentEmail)) {
+                const enrollment = await courseController.enrollManually({
+                    studentEmail: req.body.studentEmail,
+                    courseId: req.body.courseId
+                });
+                next(httpResponse.Ok('Enrolled', enrollment));
+            } else {
+                throw new RederlyError('Enroll: Strict type checking error handling lead to impossible situation');
+            }
         } catch (e) {
             if (e instanceof NotFoundError) {
                 next(Boom.notFound(e.message));
@@ -1386,7 +1512,7 @@ router.post('/question/editor/save',
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const user = await req.session.getUser({
+        const user = req.rederlyUser ?? await req.session.getUser({
             where: {
                 active: true
             }
@@ -1466,7 +1592,7 @@ router.post('/question/editor/catalog',
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const user = await req.session.getUser({
+        const user = req.rederlyUser ?? await req.session.getUser({
             where: {
                 active: true
             }

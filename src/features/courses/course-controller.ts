@@ -17,7 +17,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, ImportCourseTarballResult, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions, AddQuestionOptions, RequestNewProblemVersionOptions, BrowseProblemsCourseListOptions, GetSearchProblemResultsOptions, BrowseProblemsTopicListOptions, BrowseProblemsUnitListOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, ImportCourseTarballResult, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions, AddQuestionOptions, RequestNewProblemVersionOptions, BrowseProblemsCourseListOptions, GetSearchProblemResultsOptions, BrowseProblemsTopicListOptions, BrowseProblemsUnitListOptions, EnrollManuallyOptions, ManualEnrollmentResult } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -59,6 +59,8 @@ import * as nodePath from 'path';
 import * as tar from 'tar';
 import * as fs from 'fs';
 import { getAverageGroupsBeforeDate, QUESTION_SQL_NAME, STUDENTTOPICOVERRIDE_SQL_NAME, TOPIC_SQL_NAME } from './statistics-helper';
+import qs = require('qs');
+import ForbiddenError from '../../exceptions/forbidden-error';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -309,13 +311,17 @@ class CourseController {
             where.instructorId = options.filter.instructorId;
         }
 
-        if (options.filter.enrolledUserId !== null && options.filter.enrolledUserId !== undefined) {
+        if (!_.isNil(options.filter.enrolledUserId)) {
             include.push({
                 model: StudentEnrollment,
                 attributes: [],
                 as: 'enrolledStudents',
+                where: {
+                    userId: options.filter.enrolledUserId,
+                    dropDate: null,
+                    active: true,
+                }
             });
-            where[`$enrolledStudents.${StudentEnrollment.rawAttributes.userId.field}$`] = options.filter.enrolledUserId;
         }
 
         if (!_.has(where, 'active')) {
@@ -451,7 +457,13 @@ class CourseController {
                         }, _.isUndefined) as sequelize.WhereOptions
                     }]
                 }]
-            }]
+            }],
+            order: [
+                ['topic', 'unit', 'course', 'id', 'ASC'],
+                ['topic', 'unit', 'contentOrder', 'ASC'],
+                ['topic', 'contentOrder', 'ASC'],
+                ['problemNumber', 'ASC'],
+            ],
         });
     };
     
@@ -680,7 +692,7 @@ class CourseController {
 
         const workbookCount = existingTopic.calculateWorkbookCount();
         const versionCount = existingTopic.calculateVersionCount();
-        const topicIsChangingTypes = (existingTopic.topicTypeId !== options.updates.topicTypeId);
+        const topicIsChangingTypes = !_.isNil(options.updates.topicTypeId) && (existingTopic.topicTypeId !== options.updates.topicTypeId);
 
         if ((
                 (workbookCount && workbookCount > 0) || 
@@ -1534,7 +1546,10 @@ class CourseController {
                     topicObj = topic.getWithOverrides(overrides.first);
                 }
             }
-            showSolutions = moment(topicObj.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days').isBefore(moment());
+            if (moment(topicObj.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days').isBefore(moment())) {
+                showSolutions = true;
+                outputFormat = OutputFormat.PRACTICE;
+            }
         }
         if (!_.isNil(gradeInstance)) {
             const version = await gradeInstance.getStudentAssessmentInfo();
@@ -2387,26 +2402,34 @@ class CourseController {
         }
     }
 
-    async enroll(enrollment: CreateGradesForUserEnrollmentOptions): Promise<StudentEnrollment> {
-        // TODO future, what should this do if the student has already dropped?
+    async enroll(options: CreateGradesForUserEnrollmentOptions): Promise<StudentEnrollment> {
         const fetchedEnrollment = await StudentEnrollment.findOne({
             where: {
-                courseId: enrollment.courseId,
-                userId: enrollment.userId,
+                courseId: options.courseId,
+                userId: options.userId,
             }
         });
         if (!_.isNil(fetchedEnrollment)) {
+            if (!_.isNil(fetchedEnrollment.dropDate)) {
+                if (options.reEnrollIfDropped ?? false) {
+                    fetchedEnrollment.dropDate = null;
+                    await fetchedEnrollment.save();
+                } else {
+                    throw new IllegalArgumentException('Cannot enroll with enrollment link if you have dropped the course');
+                }
+            }
             return fetchedEnrollment;
         }
 
         return await useDatabaseTransaction(async () => {
             const result = await this.createStudentEnrollment({
-                ...enrollment,
+                userId: options.userId,
+                courseId: options.courseId,
                 enrollDate: new Date()
             });
             await this.createGradesForUserEnrollment({
-                courseId: enrollment.courseId,
-                userId: enrollment.userId,
+                courseId: options.courseId,
+                userId: options.userId,
             });
             return result;
         });
@@ -2421,6 +2444,35 @@ class CourseController {
             courseId: course.id,
             userId: enrollment.userId,
         });
+    }
+
+    async enrollManually(options: EnrollManuallyOptions): Promise<ManualEnrollmentResult> {
+        let userId: number | null = null;
+        let user: User | null = null;
+        if ('userId' in options) {
+            userId = options.userId;
+        } else if ('studentEmail' in options) {
+            const user = await userController.getUserByEmail(options.studentEmail);
+            if (_.isNil(user)) {
+                throw new IllegalArgumentException(`The user with the email ${options.studentEmail} is not registered with rederly.`);
+            }
+            userId = user.id;
+        }
+
+        if (_.isNil(userId)) {
+            throw new RederlyError('enrollManually: Could not determine userId');
+        }
+
+        user = user ?? await userController.getUserById(userId);
+        const enrollment = await this.enroll({
+            courseId: options.courseId,
+            userId: userId,
+            reEnrollIfDropped: true,
+        });
+        return {
+            enrollment: enrollment,
+            user: user
+        };
     }
 
     // TODO fix return type, transactions were returning any so type checking was suspended
@@ -2533,8 +2585,8 @@ class CourseController {
             unitId,
         ]);
 
-        if (setFilterCount !== 1) {
-            throw new IllegalArgumentException(`One filter must be set but found ${setFilterCount}`);
+        if (setFilterCount < 1) {
+            throw new IllegalArgumentException(`At least one filter must be included but got ${setFilterCount}`);
         }
 
         // Using strict with typescript results in WhereOptions failing when set to a partial object, casting it as WhereOptions since it works
@@ -2724,12 +2776,10 @@ class CourseController {
             as: 'courseEnrollments',
             required: true,
             attributes: [],
-            where: {
-                courseId: {
-                    [Sequelize.Op.eq]: sequelize.literal(`"user->courseEnrollments".${Course.rawAttributes.id.field}`)
-                },
+            where: _.omitBy({
+                courseId: courseId,
                 dropDate: null
-            }
+            }, _.isUndefined) as sequelize.WhereOptions
         }];
 
         return StudentGrade.findAll({
@@ -3131,7 +3181,7 @@ class CourseController {
                 topic = topic.getWithOverrides(topic.studentTopicOverride[0]) as CourseTopicContent;
             }
 
-            const userRole = user.roleId;
+            const userRole = options.role;
             if (moment().isBefore(topic.startDate)) {
                 if (userRole === Role.STUDENT) {
                     message = `The topic "${topic.name}" has not started yet.`;
@@ -3684,7 +3734,7 @@ class CourseController {
     async canUserViewQuestionId(options: CanUserViewQuestionIdOptions): Promise<CanUserViewQuestionIdResult> {
         const { user, questionId, studentTopicAssessmentInfoId } = options;
         let message = '';
-        if (user.roleId === Role.PROFESSOR || user.roleId === Role.ADMIN) return {userCanViewQuestion: true, message};
+        if (options.role === Role.PROFESSOR || options.role === Role.ADMIN) return {userCanViewQuestion: true, message};
         const question = await courseRepository.getQuestion({ id: questionId });
         const dbTopic = await question.getTopic();
         const topicOverride = await courseRepository.getStudentTopicOverride({userId: user.id, topicId: dbTopic.id});
@@ -3781,7 +3831,7 @@ class CourseController {
         });
 
         // restrictions on start time, maximum versions, and version delay only apply to students
-        if (user.roleId === Role.STUDENT) {
+        if (options.role === Role.STUDENT) {
             // if the assessment has not yet started, students cannot generate a version
             if ( moment().isBefore(topic.startDate.toMoment()) ) {
                 message = `The topic "${topic.name}" has not started yet.`;
@@ -3879,6 +3929,8 @@ class CourseController {
             const isBestForThisVersion = problemScores.total >= bestVersionScore;
             const isBestOverallVersion = problemScores.total >= bestOverallVersion;
 
+            const time = new Date();
+
             await questionResponses.asyncForEach(async (result: SubmittedAssessmentResultContext) => {
 
                 if (_.isNil(result.instance.id)) {
@@ -3901,6 +3953,7 @@ class CourseController {
 
                 const cleanSubmitted = rendererHelper.cleanRendererResponseForTheDatabase(result.questionResponse);
 
+                let createNewWorkbook = true;
                 if (!_.isNil(previousWorkbook)){
                     // do not compare the "previous_*" fields
                     const newSubmitted = _.omitBy(cleanSubmitted, rendererHelper.isPrevious);
@@ -3912,11 +3965,11 @@ class CourseController {
                     const previousAttachmentIds = _.map(previousAttachments, 'id');
 
                     if ( _.isEqual(newSubmitted, oldSubmitted) &&  _.isEqual(currentAttachmentIds, previousAttachmentIds)) {
-                        return; // skip out on creating a workbook et al
+                        createNewWorkbook = false; // skip out on creating a workbook
                     }
                 }
 
-                const workbook = await StudentWorkbook.create({
+                const workbook = (createNewWorkbook || _.isNil(previousWorkbook)) ? await StudentWorkbook.create({
                     studentGradeId: result.grade.id,
                     userId: result.grade.userId,
                     courseWWTopicQuestionId: result.grade.courseWWTopicQuestionId,
@@ -3925,13 +3978,13 @@ class CourseController {
                     problemPath: result.instance.webworkQuestionPath,
                     submitted: cleanSubmitted,
                     result: result.questionResponse.problem_result.score,
-                    time: new Date(),
+                    time,
                     wasLate: false,
                     wasExpired: false,
                     wasAfterAttemptLimit: false,
                     wasLocked: false,
                     wasAutoSubmitted: wasAutoSubmitted,
-                });
+                }) : previousWorkbook;
 
                 await currentAttachments.asyncForEach(async (attachment: ProblemAttachment) => {
                     await courseRepository.createStudentWorkbookProblemAttachment({
@@ -4281,12 +4334,20 @@ class CourseController {
             include: [{
                 model: CourseWWTopicQuestion,
                 as: 'questions',
-                attributes: ['problemNumber'],
+                attributes: ['problemNumber', 'id'],
                 required: true,
                 where: {
                     id: options.question.id,
                     active: true,
-                }
+                },
+            }, {
+                model: CourseUnitContent,
+                as: 'unit',
+                attributes: ['name'],
+                required: true,
+                where: {
+                    active: true
+                },    
             }]
         });
 
@@ -4300,17 +4361,40 @@ class CourseController {
             throw new RederlyError('Could not find a topic associated with the problem this student is trying to ask about.');
         }
 
+        const unit = await topic.unit;
+
         const question = topic.questions?.[0];
 
         if (_.isNil(question)) {
             throw new RederlyError('Could not find the question associated with the problem/topic this student is trying to ask about.');
         }
+        if (_.isNil(unit)) {
+            throw new RederlyError('Could not find a unit associated with the problem this student is trying to ask about.');
+        }
 
+        const gradingURL = urljoin(
+            options.baseURL,
+            '/common/courses',
+            String(course.id),
+            '/topic',
+            String(topic.id),
+            'grading',
+            `?${qs.stringify({
+                problemId: question.id,
+                userId: options.student.id
+            })}`
+        );
         const poorMansTemplate = `
 Hello Professor ${course.instructor.lastName},
 
-Your student ${options.student.firstName} ${options.student.lastName} is asking for help with
-Problem ${question.problemNumber} in the Topic ${topic.name}.
+Your student ${options.student.firstName} ${options.student.lastName} is emailing you about:
+Course: ${course.name}
+Unit: ${unit.name}
+Topic: ${topic.name}
+Problem Number: ${question.problemNumber} (ID#${question.id})
+
+To view the problem for this student use the following link:
+${gradingURL}
 
 Here is the message that was sent:
 
@@ -4801,7 +4885,51 @@ You can contact your student at ${options.student.email} or by replying to this 
             const updatedGrade = await grade.save();
             return updatedGrade;
         }
+    }
 
+    async isUserEnrolledInCourse ({
+        userId,
+        courseId
+    }: {
+        userId: number;
+        courseId: number;
+    }): Promise<boolean> {
+        const enrollment = await StudentEnrollment.findOne({
+            where: {
+                userId: userId,
+                courseId: courseId,
+                dropDate: null,
+                active: true
+            }
+        });
+        return !_.isNil(enrollment);
+    }
+
+    async canUserViewCourse ({
+        user,
+        course,
+        rederlyUserRole: rederlyUserRoleParam,
+    }: {
+        user: User;
+        course: Course;
+        rederlyUserRole?: Role;
+    }): Promise<void> {
+        const rederlyUserRole = rederlyUserRoleParam ?? user.roleId as Role;
+        // TODO make enum to return that specifies what kind of user was allowed in
+        if (rederlyUserRole === Role.PROFESSOR && course.instructorId === user.id) {
+            logger.debug('Is course cowner');
+        // } else if (user.roleId === Role.PROFESSOR) {
+        //     // TODO this is temporary, when we have TA access setup this will become more comprehensive
+        //     // In the future not all profs will be a be able to access
+        //     logger.debug('Is faculty');
+        } else if (await this.isUserEnrolledInCourse({
+            userId: user.id,
+            courseId: course.id
+        })) {
+            logger.debug('Is enrolled student (or professor');
+        } else {
+            throw new ForbiddenError('You do not have access to this course');
+        }
     }
 }
 

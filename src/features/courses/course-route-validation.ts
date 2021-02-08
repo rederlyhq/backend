@@ -385,7 +385,9 @@ export const enrollInCourseValidation = {
     query: {},
     body: {
         courseId: Joi.number().required(),
-        userId: Joi.number().required()
+        // TODO figure out alternatives
+        userId: Joi.number().optional(),
+        studentEmail: Joi.string().email().optional(),
     }
 };
 
@@ -622,4 +624,25 @@ export const getVersionValidation = {
     },
     query: {},
     body: {},
+};
+
+export const bulkExportValidation = {
+    params: {
+        topicId: Joi.number().required(),
+    },
+    query: {
+        showSolutions: Joi.boolean().optional().default(false),
+        force: Joi.boolean().optional(),
+    },
+    body: {},
+};
+
+export const endBulkExportValidation = {
+    params: {
+        topicId: Joi.number().required(),
+    },
+    query: {},
+    body: {
+        exportUrl: Joi.string().optional(),
+    },
 };

@@ -11,6 +11,12 @@ import * as Joi from '@hapi/joi';
 import 'joi-extract-type';
 import * as validations from './user-route-validation';
 
+export namespace ImpersonateRequest {
+    export type params = Joi.extractType<typeof validations.impersonateValidation.params>;
+    export type query = Joi.extractType<typeof validations.impersonateValidation.query>;
+    export type body = Joi.extractType<typeof validations.impersonateValidation.body>;
+};
+
 export namespace ForgotPasswordRequest {
     export type params = Joi.extractType<typeof validations.forgotPasswordValidation.params>;
     export type query = Joi.extractType<typeof validations.forgotPasswordValidation.query>;

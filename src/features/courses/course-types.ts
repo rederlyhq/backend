@@ -18,10 +18,24 @@ import StudentTopicAssessmentInfo from '../../database/models/student-topic-asse
 import ProblemAttachment from '../../database/models/problem-attachment';
 import { BucketDefFileResult, FindFilesDefFileResult } from '../../utilities/webwork-utilities/importer';
 import WebWorkDef from '../../utilities/web-work-def-parser';
+import StudentEnrollment from '../../database/models/student-enrollment';
 
 export interface EnrollByCodeOptions {
     code: string;
     userId: number;
+}
+
+export type EnrollManuallyOptions = {
+    courseId: number;
+} & ({
+    userId: number;
+} | {
+    studentEmail: string;
+})
+
+export interface ManualEnrollmentResult {
+    enrollment: StudentEnrollment;
+    user: User;
 }
 
 export interface CourseListOptions {
@@ -341,6 +355,7 @@ export interface CanUserViewQuestionIdOptions {
     user: User;
     questionId: number;
     studentTopicAssessmentInfoId?: number;
+    role: Role;
 }
 
 export interface CanUserViewQuestionIdResult {
@@ -351,6 +366,7 @@ export interface CanUserViewQuestionIdResult {
 export interface UserCanStartNewVersionOptions {
     user: User;
     topicId: number;
+    role: Role;
 }
 
 export interface UserCanStartNewVersionResultData {
@@ -396,6 +412,7 @@ export interface GetQuestionsOptions {
 
 export interface CanUserGetQuestionsOptions { 
     userId: number; 
+    role: Role;
     courseTopicContentId?: number; 
     studentTopicAssessmentInfoId?: number; 
 }
@@ -419,6 +436,7 @@ export interface GetUsersThatRequireGradeForQuestionOptions {
 export interface CreateGradesForUserEnrollmentOptions {
     courseId: number;
     userId: number;
+    reEnrollIfDropped?: boolean;
 }
 
 export interface DeleteUserEnrollmentOptions {
@@ -626,6 +644,7 @@ export interface EmailProfOptions {
     question: {
         id: number;
     };
+    baseURL: string;
 }
 
 export interface GetStudentTopicOverrideOptions {

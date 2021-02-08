@@ -199,7 +199,10 @@ const configurations = {
         presignedUrlTimeout: readIntValue('ATTACHMENTS_PRESIGNED_URL_TIMEOUT', 60000),
     },
     importer: {
-        missingFileThreshold: readIntValue('IMPORTER_MISSING_FILE_THRESHOLD', 10)
+        missingFileThreshold: readIntValue('IMPORTER_MISSING_FILE_THRESHOLD', 10),
+    },
+    bulkPdfExport: {
+        baseUrl: readStringValue('BULK_PDF_EXPORT_URL', 'http://localhost:3005'),
     },
     loadPromise: new Promise<void>((resolve, reject) => {
         // Avoid cyclic dependency by deferring the logging until after all the imports are done

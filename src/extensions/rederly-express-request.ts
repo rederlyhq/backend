@@ -1,5 +1,6 @@
 import { Request } from 'express';
 import * as core from 'express-serve-static-core';
+import Course from '../database/models/course';
 import Session from '../database/models/session';
 import User from '../database/models/user';
 import Role from '../features/permissions/roles';
@@ -18,4 +19,5 @@ export interface RederlyExpressRequest<P extends core.Params = core.ParamsDictio
     // Any information already defined in the request
     meta?: MetaType;
     requestId?: string;
+    course?: Course;
 }

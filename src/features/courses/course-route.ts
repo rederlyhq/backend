@@ -34,6 +34,7 @@ import { getAveragesFromStatistics } from './statistics-helper';
 import { rederlyTempFileWrapper } from '../../middleware/rederly-temp-file-wrapper';
 import ExportPDFHelper from '../../utilities/export-pdf-helper';
 import CourseTopicContent from '../../database/models/course-topic-content';
+import { canUserViewCourse } from '../../middleware/permissions/course-permissions';
 
 const fileUpload = multer();
 
@@ -1343,20 +1344,33 @@ router.get('/:id',
     // This is a work around because typescript has errors with "extractMap"
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetCourseRequest.body, GetCourseRequest.query>, _res: Response, next: NextFunction) => {
-        const params = req.params as GetCourseRequest.params;
-        const userIdForExtensions = req.rederlyUserRole === Role.STUDENT ? req.session?.userId : undefined;
-        const course = await courseController.getCourseById(params.id, userIdForExtensions);
-        const university = await course.getUniversity({
+        try {
+            const params = req.params as GetCourseRequest.params;
+            const userIdForExtensions = req.rederlyUserRole === Role.STUDENT ? req.session?.userId : undefined;
+            req.course = await courseController.getCourseById(params.id, userIdForExtensions);
+            next();
+        } catch (e) {
+            next(e);
+        }
+    }),
+    canUserViewCourse,
+    asyncHandler(async (req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
+        if(_.isNil(req.course)) {
+            throw new RederlyError('TSNH, course should have already been fetched');
+        }
+
+        const university = await req.course.getUniversity({
             where: {
                 active: true,
             }
         });
         const canAskForHelp = university?.universityName === 'CityTech' ?? false;
         next(httpResponse.Ok('Fetched successfully', {
-            ...course.get({plain: true}),
+            ...req.course.get({plain: true}),
             canAskForHelp,
         }));
-    }));
+    })
+);
 
 router.post('/enroll',
     authenticationMiddleware,

@@ -329,7 +329,6 @@ class RendererHelper {
             const errorMessagePrefix = 'Get problem from renderer error';
             if(isAxiosError(e)) {
                 if (e.response?.status === 404) {
-                    logger.warn(`Question path ${sourceFilePath} not found by the renderer`);
                     logger.debug(`Question path ${sourceFilePath} not found by the renderer "${e.response?.data}"`);
                     throw new NotFoundError('Problem path not found');
                 }
@@ -363,7 +362,6 @@ class RendererHelper {
             const errorMessagePrefix = 'Read problem source from renderer';
             if(isAxiosError(e)) {
                 if (e.response?.status === 404) {
-                    logger.warn(`Question path ${sourceFilePath} not found by the renderer`);
                     logger.debug(`Question path ${sourceFilePath} not found by the renderer "${e.response?.data}"`);
                     throw new NotFoundError('Problem path not found');
                 }

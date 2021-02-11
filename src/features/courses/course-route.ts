@@ -1166,17 +1166,13 @@ router.get('/',
     authenticationMiddleware,
     validate(listCoursesValidation),
     asyncHandler(async (req: RederlyExpressRequest<ListCoursesRequest.params, unknown, ListCoursesRequest.body, ListCoursesRequest.query>, _res: Response, next: NextFunction) => {
-        try {
-            const courses = await courseController.getCourses({
-                filter: {
-                    instructorId: req.query.instructorId,
-                    enrolledUserId: req.query.enrolledUserId,
-                }
-            });
-            next(httpResponse.Ok('Fetched successfully', courses));
-        } catch (e) {
-            next(e);
-        }
+        const courses = await courseController.getCourses({
+            filter: {
+                instructorId: req.query.instructorId,
+                enrolledUserId: req.query.enrolledUserId,
+            }
+        });
+        next(httpResponse.Ok('Fetched successfully', courses));
     }));
 
 router.get('/browse-problems/course-list',
@@ -1350,7 +1346,8 @@ router.get('/:id',
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetCourseRequest.body, GetCourseRequest.query>, _res: Response, next: NextFunction) => {
         try {
             const params = req.params as GetCourseRequest.params;
-            req.course = await courseController.getCourseById(params.id);
+            const userIdForExtensions = req.rederlyUserRole === Role.STUDENT ? req.session?.userId : undefined;
+            req.course = await courseController.getCourseById(params.id, userIdForExtensions);
             next();
         } catch (e) {
             next(e);
@@ -1361,6 +1358,7 @@ router.get('/:id',
         if(_.isNil(req.course)) {
             throw new RederlyError('TSNH, course should have already been fetched');
         }
+
         const university = await req.course.getUniversity({
             where: {
                 active: true,

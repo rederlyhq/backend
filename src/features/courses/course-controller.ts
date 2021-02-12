@@ -4036,11 +4036,12 @@ class CourseController {
                 }
 
                 // const versionAverage = (incoming.instance.averageScore * incoming.instance.numAttempts + incoming.questionResponse.problem_result.score)/(incoming.instance.numAttempts + 1);
-
-                // keep these in line with workbook count -- all attempts are legal, extensions not allowed
-                result.grade.numAttempts++;
-                result.grade.numLegalAttempts++;
-                result.grade.numExtendedAttempts++;
+                if (createNewWorkbook) {
+                    // keep these in line with workbook count -- all attempts are legal, extensions not allowed
+                    result.grade.numAttempts++;
+                    result.grade.numLegalAttempts++;
+                    result.grade.numExtendedAttempts++;
+                }
 
                 // save updates
                 await result.grade.save();

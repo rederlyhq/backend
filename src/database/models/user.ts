@@ -1,4 +1,4 @@
-import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
+import { Model, DataTypes, BelongsToGetAssociationMixin, Sequelize } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
 export default class User extends Model {
@@ -160,19 +160,19 @@ User.init({
       field: 'user_verify_token_expires_at',
       type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: appSequelize.literal('NOW()')
+      defaultValue: Sequelize.literal('NOW()')
   },
   preferredEmailInstitutionVerificationTokenExpiresAt: {
       field: 'user_preferred_email_institution_verification_token_expires_at',
       type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: appSequelize.literal('NOW()')
+      defaultValue: Sequelize.literal('NOW()')
   },
   preferredEmailVerificationTokenExpiresAt: {
       field: 'user_preferred_email_verification_token_expires_at',
       type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: appSequelize.literal('NOW()')
+      defaultValue: Sequelize.literal('NOW()')
   },
   forgotPasswordToken: {
     field: 'user_forgot_password_token',
@@ -183,7 +183,7 @@ User.init({
       field: 'user_forgot_password_token_expires_at',
       type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: appSequelize.literal('NOW()')
+      defaultValue: Sequelize.literal('NOW()')
   },
   uuid: {
       field: 'user_uuid',
@@ -196,7 +196,7 @@ User.init({
       field: 'user_paid_until',
 	    type: DataTypes.DATE,
 	    allowNull: false,
-      defaultValue: appSequelize.literal('NOW()'),
+      defaultValue: Sequelize.literal('NOW()'),
   },
 }, {
   tableName: 'users',

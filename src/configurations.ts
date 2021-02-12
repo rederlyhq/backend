@@ -170,6 +170,7 @@ const configurations = {
         requestTimeout: readIntValue('OPENLAB_REQUEST_TIMEOUT', 75000)
     },
     jira: {
+        enabled: readBooleanValue('JIRA_ENABLED', true),
         email: readStringValue('JIRA_EMAIL', ''),
         apiKey: readStringValue('JIRA_API_KEY', ''),
         host: readStringValue('JIRA_HOST', 'rederly.atlassian.net'),

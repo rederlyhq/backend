@@ -2,6 +2,7 @@ import JiraApi = require('jira-client');
 import { RederlyJiraTicketOptions, IssueType } from './support-types';
 
 import configurations from '../../configurations';
+import logger from '../../utilities/logger';
 class SupportController {
     // Initialize
     jira: JiraApi = new JiraApi({
@@ -27,7 +28,11 @@ class SupportController {
                     name: issueType
                 }
             }
-        });
+        };
+        if (!configurations.jira.enabled) {
+            logger.info(JSON.stringify(newIssueOptions, null, 2));
+            return null;
+        }
     }
 }
 const supportController = new SupportController();

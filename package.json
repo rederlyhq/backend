@@ -107,7 +107,7 @@
     "sequelize:migrations:devundo": "npm run sequelize -- db:migrate:undo:all --to 20210125141500-bulk-export.js",
     "sequelize:built:migrations": "sequelize -- db:migrate",
     "lint": "eslint src/ --ext .ts",
-    "clean": "if [ -d ts-built ]; then rm -r ts-built; fi;",
+    "clean": "node ./utility-scripts/clean.js",
     "package": "node ./utility-scripts/package.js",
     "build:package": "npm run build && npm run package"
   },

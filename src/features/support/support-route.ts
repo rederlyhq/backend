@@ -10,6 +10,7 @@ import { feedbackValidation } from './support-route-validation';
 import { FeedbackRequest } from './support-route-request-types';
 import supportController from './support-controller';
 import { Constants } from '../../constants';
+import Role from '../permissions/roles';
 
 router.post('/',
     authenticationMiddleware,
@@ -27,8 +28,10 @@ router.post('/',
             User id: ${user.id}
             User email: ${user.email}
             User role: ${role.roleName}
+            User acting role: ${_.isNil(req.rederlyUserRole) ? 'NA' : Role[req.rederlyUserRole]}
             Frontend version: ${req.body.version}
             Originating URL: ${req.body.url}
+            User Agent: ${req.body.userAgent}
             
             Description:
             ${req.body.description}

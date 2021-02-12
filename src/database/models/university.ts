@@ -1,4 +1,4 @@
-import { Model, DataTypes } from 'sequelize';
+import { Model, DataTypes, Sequelize } from 'sequelize';
 import appSequelize from '../app-sequelize';
 import User from './user';
 
@@ -77,7 +77,7 @@ University.init({
     field: 'university_paid_until',
     type: DataTypes.DATE,
     allowNull: false,
-    defaultValue: appSequelize.literal('NOW()'),
+    defaultValue: Sequelize.literal('NOW()'),
   },
 }, {
   tableName: 'university',

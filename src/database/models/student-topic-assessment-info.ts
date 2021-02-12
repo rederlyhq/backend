@@ -1,4 +1,4 @@
-import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin } from 'sequelize';
+import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin, Sequelize } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
 interface StudentTopicAssessmentInfoInterface {
@@ -86,19 +86,19 @@ StudentTopicAssessmentInfo.init({
         field: 'student_topic_assessment_info_start_time',
         type: DataTypes.DATE,
         allowNull: false,
-        defaultValue: appSequelize.literal('NOW()')
+        defaultValue: Sequelize.literal('NOW()')
     },
     endTime: {
         field: 'student_topic_assessment_info_end_time',
         type: DataTypes.DATE,
         allowNull: false,
-        defaultValue: appSequelize.literal('NOW()')
+        defaultValue: Sequelize.literal('NOW()')
     },
     nextVersionAvailableTime: {
         field: 'student_topic_assessment_info_next_version_time',
         type: DataTypes.DATE,
         allowNull: false,
-        defaultValue: appSequelize.literal('NOW()')
+        defaultValue: Sequelize.literal('NOW()')
     },
     numAttempts: {
         field: 'student_topic_assessment_info_num_attempts',

@@ -383,7 +383,8 @@ router.post('/topic/:topicId/startExport',
                 showSolutions: query.showSolutions ?? false,
             })
             .then(() => logger.info(`Finished uploading ${topic.id}.`))
-            .catch(() => {
+            .catch((e) => {
+                logger.error('Failed to export', e);
                 topic.lastExported = null;
                 topic.save();
             });

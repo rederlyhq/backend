@@ -241,6 +241,8 @@ router.get('/grades',
 router.get('/:courseId/topic-grades',
     authenticationMiddleware,
     validate(getGradesForTopicsByCourseValidation),
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetGradesForTopicsByCourseRequest.body, GetGradesForTopicsByCourseRequest.query>, res: Response, next: NextFunction) => {
         const params = req.params as GetGradesForTopicsByCourseRequest.params;
         const topics = await courseController.getGradesForTopics({

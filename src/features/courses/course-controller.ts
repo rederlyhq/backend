@@ -4954,28 +4954,29 @@ You can contact your student at ${options.student.email} or by replying to this 
     }): Promise<unknown> {
         const result = await  appSequelize.query(`
         SELECT
-    topics.course_topic_content_name as name,
-    topics.course_topic_content_total_problem_weight as "totalProblemWeight",
-    topics.course_topic_content_required_problem_weight as "requiredProblemWeight",
-    json_agg(students) as students
-    FROM
-    (
-        SELECT
-        course_topic_content.course_topic_content_id,
-        student_grade.user_id,
-        users.user_first_name || ' ' || users.user_last_name as "userName",
-        SUM(student_grade.student_grade_effective_score * course_topic_question.course_topic_question_weight) AS "pointsEarned"
-        FROM student_grade
-        INNER JOIN users ON users.user_id = student_grade.user_id and users.course_topic_question_active
-        INNER JOIN course_topic_question ON course_topic_question.course_topic_question_id = student_grade.course_topic_question_id and course_topic_question.course_topic_question_active
-        INNER JOIN course_topic_content ON course_topic_content.course_topic_content_id = course_topic_question.course_topic_content_id and course_topic_content.course_topic_content_active
-        INNER JOIN course_unit_content ON course_unit_content.course_unit_content_id = course_topic_content.course_unit_content_id and course_unit_content.course_unit_content_active
-        WHERE course_unit_content.course_id = :courseId AND student_grade.student_grade_active
-        GROUP BY course_topic_content.course_topic_content_id, student_grade.user_id, users.user_first_name, users.user_last_name
-        ORDER BY student_grade.user_id
-    ) students
-    INNER JOIN
-    (
+        topics.course_topic_content_name as name,
+        topics.course_topic_content_total_problem_weight as "totalProblemWeight",
+        topics.course_topic_content_required_problem_weight as "requiredProblemWeight",
+        json_agg(students) as students
+        FROM
+        (
+            SELECT
+            course_topic_content.course_topic_content_id,
+            student_grade.user_id,
+            users.user_first_name || ' ' || users.user_last_name as "userName",
+            SUM(student_grade.student_grade_effective_score * course_topic_question.course_topic_question_weight) AS "pointsEarned"
+            FROM student_grade
+            INNER JOIN users ON users.user_id = student_grade.user_id and users.course_topic_question_active AND student_grade.student_grade_active
+            INNER JOIN course_topic_question ON course_topic_question.course_topic_question_id = student_grade.course_topic_question_id and course_topic_question.course_topic_question_active
+            INNER JOIN course_topic_content ON course_topic_content.course_topic_content_id = course_topic_question.course_topic_content_id and course_topic_content.course_topic_content_active
+            INNER JOIN course_unit_content ON course_unit_content.course_unit_content_id = course_topic_content.course_unit_content_id and course_unit_content.course_unit_content_active
+            INNER JOIN course ON course.course_active AND course.course_id = :courseId AND course.course_id = course_unit_content.course_id
+            INNER JOIN student_enrollment ON student_enrollment.student_enrollment_active and student_enrollment.student_enrollment_drop_date is null and student_enrollment.course_id = course.course_id and student_enrollment.user_id = student_grade.user_id 
+            GROUP BY course_topic_content.course_topic_content_id, student_grade.user_id, users.user_first_name, users.user_last_name
+            ORDER BY student_grade.user_id
+        ) students
+        INNER JOIN
+        (
             SELECT
             course_topic_content.course_topic_content_id,
             course_topic_content.course_topic_content_name,
@@ -4988,15 +4989,15 @@ You can contact your student at ${options.student.email} or by replying to this 
             GROUP BY
             course_topic_content.course_topic_content_id, course_topic_content.course_topic_content_name
             ORDER BY course_topic_content.course_topic_content_id
-    ) topics
-    ON students.course_topic_content_id = topics.course_topic_content_id
-    GROUP BY
-    topics.course_topic_content_id,
-    topics.course_topic_content_name,
-    topics.course_topic_content_total_problem_weight,
-    topics.course_topic_content_required_problem_weight
-    ORDER BY 
-    topics.course_topic_content_id;
+        ) topics
+        ON students.course_topic_content_id = topics.course_topic_content_id
+        GROUP BY
+        topics.course_topic_content_id,
+        topics.course_topic_content_name,
+        topics.course_topic_content_total_problem_weight,
+        topics.course_topic_content_required_problem_weight
+        ORDER BY 
+        topics.course_topic_content_id;
         `, {
             replacements: {
                 courseId: courseId,

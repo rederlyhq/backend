@@ -61,6 +61,7 @@ import * as fs from 'fs';
 import { getAverageGroupsBeforeDate, QUESTION_SQL_NAME, STUDENTTOPICOVERRIDE_SQL_NAME, TOPIC_SQL_NAME } from './statistics-helper';
 import qs = require('qs');
 import ForbiddenError from '../../exceptions/forbidden-error';
+import appSequelize from '../../database/app-sequelize';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -4944,6 +4945,87 @@ You can contact your student at ${options.student.email} or by replying to this 
             throw new ForbiddenError('You do not have access to this course');
         }
     }
+
+    async getGradesForTopics ({
+        courseId
+    }: {
+        courseId: number;
+    }): Promise<unknown> {
+        const result = await  appSequelize.query(`
+        SELECT
+    topics.course_topic_content_name as name,
+    topics.course_topic_content_total_problem_weight as "totalProblemWeight",
+    topics.course_topic_content_required_problem_weight as "requiredProblemWeight",
+    json_agg(students) as students
+    FROM
+    (
+        SELECT
+        course_topic_content.course_topic_content_id,
+        student_grade.user_id,
+        users.user_first_name || ' ' || users.user_last_name as "userName",
+        SUM(student_grade.student_grade_effective_score * course_topic_question.course_topic_question_weight) AS "pointsEarned"
+        FROM student_grade
+        INNER JOIN users ON users.user_id = student_grade.user_id and users.course_topic_question_active
+        INNER JOIN course_topic_question ON course_topic_question.course_topic_question_id = student_grade.course_topic_question_id and course_topic_question.course_topic_question_active
+        INNER JOIN course_topic_content ON course_topic_content.course_topic_content_id = course_topic_question.course_topic_content_id and course_topic_content.course_topic_content_active
+        INNER JOIN course_unit_content ON course_unit_content.course_unit_content_id = course_topic_content.course_unit_content_id and course_unit_content.course_unit_content_active
+        WHERE course_unit_content.course_id = :courseId AND student_grade.student_grade_active
+        GROUP BY course_topic_content.course_topic_content_id, student_grade.user_id, users.user_first_name, users.user_last_name
+        ORDER BY student_grade.user_id
+    ) students
+    INNER JOIN
+    (
+            SELECT
+            course_topic_content.course_topic_content_id,
+            course_topic_content.course_topic_content_name,
+            SUM(course_topic_question.course_topic_question_weight) as course_topic_content_total_problem_weight,
+            sum(CASE WHEN course_topic_question.course_topic_question_optional = FALSE THEN course_topic_question.course_topic_question_weight ELSE 0 END) as course_topic_content_required_problem_weight
+            FROM course_topic_content
+            INNER JOIN course_unit_content ON course_unit_content.course_unit_content_id = course_topic_content.course_unit_content_id AND course_unit_content.course_unit_content_active
+            INNER JOIN course_topic_question ON course_topic_question.course_topic_content_id = course_topic_content.course_topic_content_id AND course_topic_question.course_topic_question_active
+            WHERE course_unit_content.course_id = :courseId AND course_topic_content.course_topic_content_active
+            GROUP BY
+            course_topic_content.course_topic_content_id, course_topic_content.course_topic_content_name
+            ORDER BY course_topic_content.course_topic_content_id
+    ) topics
+    ON students.course_topic_content_id = topics.course_topic_content_id
+    GROUP BY
+    topics.course_topic_content_id,
+    topics.course_topic_content_name,
+    topics.course_topic_content_total_problem_weight,
+    topics.course_topic_content_required_problem_weight
+    ORDER BY 
+    topics.course_topic_content_id;
+        `, {
+            replacements: {
+                courseId: courseId,
+                type: sequelize.QueryTypes.SELECT,
+            }
+        });
+        type Student = {
+            userName: string;
+            pointsEarned: number;
+        };
+        // this isn't an array it's a tuple so 0 is guarenteed
+        const typedResult = result[0] as Array<{
+            // Defined fields
+            students?: Array<Student>;
+        } & {
+            // dictionary fields
+            [userName: string]: number;
+        }>;
+
+        return typedResult.map(row => {
+            // Can't be nil at this point
+            const students = row.students as Array<Student>;
+            delete row.students;
+            students.forEach(student => {
+                row[student.userName] = student.pointsEarned;
+            });
+            return row;
+        });
+    }
+
 }
 
 export const courseController = new CourseController();

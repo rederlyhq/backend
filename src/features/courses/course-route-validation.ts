@@ -464,6 +464,14 @@ export const getGradesValidation = {
     body: {},
 };
 
+export const getGradesForTopicsByCourseValidation = {
+    params: {
+        courseId: Joi.number().required(),
+    },
+    query: {},
+    body: {},
+};
+
 export const getStatisticsOnUnitsValidation = {
     params: {},
     query: {

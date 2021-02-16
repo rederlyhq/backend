@@ -236,7 +236,7 @@ router.post('/email',
             },
             content: req.body.content,
             subject: req.body.subject,
-            replyTo: user.preferredEmail,
+            replyTo: user.email,
         });
         next(httpResponse.Ok(null, result));
     }));

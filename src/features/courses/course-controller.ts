@@ -4505,7 +4505,7 @@ You can contact your student at ${options.student.email} or by replying to this 
                             as: 'studentGradeInstance',
                             attributes: ['id', 'webworkQuestionPath'],
                             where: {
-                                active: true,
+                                active: false,
                             },
                             include: [
                                 {
@@ -4513,16 +4513,25 @@ You can contact your student at ${options.student.email} or by replying to this 
                                     as: 'problemAttachments',
                                     attributes: ['id', 'cloudFilename', 'userLocalFilename', 'updatedAt'],
                                     where: {
-                                        active: true,
+                                        active: false,
                                     }
                                 }
                             ]
                         },
                     ]
                 });
+                
+                let attachments = gradeInstanceAttachments?.studentGradeInstance?.problemAttachments;                
+                if (mainData.topicTypeId === 1) {
+                    attachments = await grade.getProblemAttachments({
+                        where: {
+                            active: true,
+                        }
+                    });
+                }
 
                 data.questions[i].grades[j].webworkQuestionPath = gradeInstanceAttachments?.studentGradeInstance?.webworkQuestionPath;
-                data.questions[i].grades[j].problemAttachments = gradeInstanceAttachments?.studentGradeInstance?.problemAttachments;
+                data.questions[i].grades[j].problemAttachments = attachments;
             })
         );
 

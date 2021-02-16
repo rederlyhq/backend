@@ -179,7 +179,7 @@ export default class ExportPDFHelper {
                     showSolutions: showSolutions,
                     answersSubmitted: 1,
                     outputformat: OutputFormat.STATIC,
-                    permissionLevel: rendererHelper.getPermissionForRole(Role.PROFESSOR),
+                    permissionLevel: rendererHelper.getPermissionForRole(Role.STUDENT),
                 };
 
                 // This should be the renderer response.

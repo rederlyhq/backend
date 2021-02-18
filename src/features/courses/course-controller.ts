@@ -1726,9 +1726,17 @@ class CourseController {
 
         let showCorrectAnswers = false;
         let answersSubmitted: number | undefined;
-        if (options.role === Role.PROFESSOR && !_.isNil(workbook)) {
-            showCorrectAnswers = true;
-            answersSubmitted = 1;
+        if (options.role === Role.PROFESSOR && (!_.isNil(workbook) || options.showCorrectAnswers)) {
+            answersSubmitted = Number(true);
+
+            if (options.showCorrectAnswers !== false) {
+                showCorrectAnswers = true;
+            } else {
+                showCorrectAnswers = false;
+                calculatedRendererParameters.permissionLevel = rendererHelper.getPermissionForRole(Role.STUDENT);
+                calculatedRendererParameters.showSolutions = Number(false);
+                numIncorrect = 0;
+            }
         }
 
         const rendererData = await rendererHelper.getProblem({
@@ -1758,6 +1766,7 @@ class CourseController {
             showCorrectAnswers: true,
             outputformat: rendererHelper.getOutputFormatForRole(options.role),
             permissionLevel: rendererHelper.getPermissionForRole(options.role),
+            answersSubmitted: Number(options.showAnswersUpfront),
         });
 
         return {
@@ -4428,6 +4437,35 @@ You can contact your student at ${options.student.email} or by replying to this 
             subject: `${options.student.firstName} - Topic ${topic.id} - Question ${options.question.id}`,
             replyTo: options.student.email,
         });
+    }
+
+    async printBlankTopic(options: {topicId: number}): Promise<CourseTopicContent> {
+        const topicWithQuestions = await CourseTopicContent.findOne({
+            attributes: ['id', 'name'],
+            where: {
+                id: options.topicId,
+                active: true,
+            },
+            include: [
+                {
+                    model: CourseWWTopicQuestion,
+                    as: 'questions',
+                    attributes: ['id', 'problemNumber'],
+                    required: true,
+                    where: {
+                        active: true,
+                    },
+                }
+            ]
+        });
+
+        if (_.isNil(topicWithQuestions)) throw new NotFoundError('Could not find topic.');
+
+        // topicWithQuestions?.questions?.asyncForEach(async (question)=>{
+
+        // });
+
+        return topicWithQuestions;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

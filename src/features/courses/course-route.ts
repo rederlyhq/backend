@@ -317,7 +317,6 @@ router.get('/questions',
         }));
     }));
 
-
 router.get('/topic/:topicId/version/:userId',
     authenticationMiddleware,
     validate(getVersionValidation),
@@ -861,7 +860,7 @@ router.get('/question/:id',
         const rederlyUserRole = req.rederlyUserRole ?? requestingUser.roleId;
 
         const { id: questionId } = req.params as GetQuestionRequest.params;
-        const { readonly, workbookId, userId: requestedUserId, studentTopicAssessmentInfoId } = req.query;
+        const { readonly, workbookId, userId: requestedUserId, studentTopicAssessmentInfoId, showCorrectAnswers } = req.query;
         try {
             // check to see if we should allow this question to be viewed
             const {
@@ -883,7 +882,8 @@ router.get('/question/:id',
                 role: rederlyUserRole,
                 readonly,
                 workbookId,
-                studentTopicAssessmentInfoId
+                studentTopicAssessmentInfoId,
+                showCorrectAnswers,
             });
             next(httpResponse.Ok('Fetched question successfully', question));
 
@@ -968,6 +968,7 @@ router.post('/preview',
                 formURL: req.originalUrl,
                 formData: {},
                 role: rederlyUserRole,
+                showAnswersUpfront: query.showAnswersUpfront,
             });
             next(httpResponse.Ok('Fetched question successfully', question));
 

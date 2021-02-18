@@ -318,6 +318,7 @@ export interface GetQuestionOptions {
     workbookId?: number;
     readonly?: boolean;
     studentTopicAssessmentInfoId?: number;
+    showCorrectAnswers?: boolean;
 };
 
 export interface PreviewQuestionOptions {
@@ -326,6 +327,7 @@ export interface PreviewQuestionOptions {
     problemSeed?: number;
     formURL: string;
     formData: { [key: string]: unknown };
+    showAnswersUpfront?: boolean;
 };
 
 export interface GetQuestionResult {

@@ -1717,14 +1717,13 @@ class CourseController {
             }
             // make sure to grab the right path & seed if this is an assessment workbook!
             if (_.isNil(workbook.studentGradeInstanceId)) {
-                problemSeed = studentGrade.randomSeed;
                 numIncorrect = studentGrade.numAttempts;
             } else {
                 gradeInstance = await courseRepository.getStudentGradeInstance({id: workbook.studentGradeInstanceId});
                 if (_.isNil(gradeInstance)) throw new NotFoundError(`workbook ${workbook.id} has grade instance ${workbook.studentGradeInstanceId} which could not be found`);
-                sourceFilePath = gradeInstance.webworkQuestionPath;
-                problemSeed = gradeInstance.randomSeed;
             }
+            problemSeed = workbook.randomSeed;
+            sourceFilePath = workbook.problemPath;
             formData = workbook.submitted.form_data;
         }
 
@@ -1757,7 +1756,7 @@ class CourseController {
 
         const rendererData = await rendererHelper.getProblem({
             sourceFilePath,
-            problemSeed,
+            problemSeed: problemSeed,
             formURL: options.formURL,
             numIncorrect,
             formData,

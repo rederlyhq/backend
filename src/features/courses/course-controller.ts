@@ -1475,6 +1475,9 @@ class CourseController {
 
                     return question;
                 } else {
+                    const additionalProblemPaths = _.isSomething(problem.rederlyAdditionalPaths) ? JSON.parse(problem.rederlyAdditionalPaths) as string[] : undefined;
+                    const randomSeedRestrictions = _.isSomething(problem.rederlyRandomSeedRestrictions) ? JSON.parse(problem.rederlyRandomSeedRestrictions) as number[] : undefined;
+
                     let errors: CourseTopicQuestionErrors | null = null;
                     if (pgFilePath === undefined) {
                         throw new NotFoundError('The file path for this problem was not defined.');
@@ -1482,9 +1485,13 @@ class CourseController {
 
                     const parsedErrors = (options as CreateQuestionsForTopicFromParsedDefFileOptions).errors;
                     if (_.isNil(parsedErrors)) {
-                        if (await rendererHelper.isPathAccessibleToRenderer({problemPath: pgFilePath}) === false) {
-                            errors = {[pgFilePath]: [`${pgFilePath} cannot be found.`]};
-                        }
+                        const allProblemPaths = [pgFilePath, ...(additionalProblemPaths ?? [])];
+                        await allProblemPaths.asyncForEach(async (problemPath) => {
+                            if (await rendererHelper.isPathAccessibleToRenderer({problemPath: problemPath}) === false) {
+                                errors = errors ?? {};
+                                errors[pgFilePath] = [`${pgFilePath} cannot be found.`];
+                            }
+                        });
                     } else {
                         // If an error object was passed in from an archive import, pull specifically the errors associated with this path, or null.
                         errors = _.isNil(parsedErrors[pgFilePath]) ? null : {[pgFilePath]: parsedErrors[pgFilePath]};
@@ -1495,7 +1502,7 @@ class CourseController {
                         await topic.increment('errors');
                     }
 
-                    return this.addQuestion({
+                    const question = await this.addQuestion({
                         question: {
                             // active: true,
                             courseTopicContentId: options.courseTopicId,
@@ -1509,6 +1516,15 @@ class CourseController {
                         },
                         userIds: userIds
                     });
+
+                    if (_.isSomething(additionalProblemPaths) || _.isSomething(randomSeedRestrictions)) {
+                        await CourseQuestionAssessmentInfo.create({
+                            additionalProblemPaths: additionalProblemPaths,
+                            courseWWTopicQuestionId: question.id,
+                            randomSeedSet: randomSeedRestrictions,
+                        });
+                    }
+                    return question;
                 }
             });
         });
@@ -1701,14 +1717,13 @@ class CourseController {
             }
             // make sure to grab the right path & seed if this is an assessment workbook!
             if (_.isNil(workbook.studentGradeInstanceId)) {
-                problemSeed = studentGrade.randomSeed;
                 numIncorrect = studentGrade.numAttempts;
             } else {
                 gradeInstance = await courseRepository.getStudentGradeInstance({id: workbook.studentGradeInstanceId});
                 if (_.isNil(gradeInstance)) throw new NotFoundError(`workbook ${workbook.id} has grade instance ${workbook.studentGradeInstanceId} which could not be found`);
-                sourceFilePath = gradeInstance.webworkQuestionPath;
-                problemSeed = gradeInstance.randomSeed;
             }
+            problemSeed = workbook.randomSeed;
+            sourceFilePath = workbook.problemPath;
             formData = workbook.submitted.form_data;
         }
 
@@ -1741,7 +1756,7 @@ class CourseController {
 
         const rendererData = await rendererHelper.getProblem({
             sourceFilePath,
-            problemSeed,
+            problemSeed: problemSeed,
             formURL: options.formURL,
             numIncorrect,
             formData,

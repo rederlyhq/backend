@@ -35,6 +35,8 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
     public lastExported!: Date | null;
     public exportUrl!: string | null;
 
+    public description!: string;
+
     // This is the count of errors in problems associated with this topic.
     public errors!: number;
 
@@ -209,6 +211,12 @@ CourseTopicContent.init({
         type: DataTypes.STRING,
         allowNull: true,
         defaultValue: null,
+    },
+    description: {
+        field: 'course_topic_content_description',
+        type: DataTypes.TEXT,
+        allowNull: false,
+        defaultValue: '',
     },
     workbookCount: {
         type: DataTypes.VIRTUAL,

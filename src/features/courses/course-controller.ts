@@ -4489,7 +4489,7 @@ You can contact your student at ${options.student.email} or by replying to this 
          *      These are all the questions for that version. Should be the same for GradeInstanceIds with the same parent GradeId.
          */
         const mainData = await CourseTopicContent.findOne({
-            attributes: ['id', 'name'],
+            attributes: ['id', 'name', 'topicTypeId'],
             where: {
                 id: options.topicId,
                 active: true,
@@ -4527,11 +4527,10 @@ You can contact your student at ${options.student.email} or by replying to this 
             await question.grades?.asyncForEach(async (grade, j) => {
                 const influencingWorkbook = grade.lastInfluencingCreditedAttemptId ?? grade.lastInfluencingAttemptId;
                 if (_.isNil(influencingWorkbook)) {
-                    logger.error(`Cannot find the best version for Grade ${grade.id} with lastInfluencingCreditedAttemptId or lastInfluencingAttemptId.`);
-                    return;
+                    logger.warn(`Cannot find the best version for Grade ${grade.id} with lastInfluencingCreditedAttemptId or lastInfluencingAttemptId.`);
                 }
 
-                const gradeInstanceAttachments = await StudentWorkbook.findOne({
+                const gradeInstanceAttachments = influencingWorkbook ? await StudentWorkbook.findOne({
                     where: {
                         id: influencingWorkbook,
                         active: true,
@@ -4542,22 +4541,24 @@ You can contact your student at ${options.student.email} or by replying to this 
                             model: StudentGradeInstance,
                             as: 'studentGradeInstance',
                             attributes: ['id', 'webworkQuestionPath'],
+                            required: false,
                             where: {
-                                active: false,
+                                active: true,
                             },
                             include: [
                                 {
                                     model: ProblemAttachment,
                                     as: 'problemAttachments',
                                     attributes: ['id', 'cloudFilename', 'userLocalFilename', 'updatedAt'],
+                                    required: false,
                                     where: {
-                                        active: false,
+                                        active: true,
                                     }
                                 }
                             ]
                         },
                     ]
-                });
+                }) : null;
                 
                 let attachments = gradeInstanceAttachments?.studentGradeInstance?.problemAttachments;                
                 if (mainData.topicTypeId === 1) {

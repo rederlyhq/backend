@@ -1726,9 +1726,17 @@ class CourseController {
 
         let showCorrectAnswers = false;
         let answersSubmitted: number | undefined;
-        if (options.role === Role.PROFESSOR && !_.isNil(workbook)) {
-            showCorrectAnswers = true;
-            answersSubmitted = 1;
+        if (options.role === Role.PROFESSOR && (!_.isNil(workbook) || options.showCorrectAnswers)) {
+            answersSubmitted = Number(true);
+
+            if (options.showCorrectAnswers !== false) {
+                showCorrectAnswers = true;
+            } else {
+                showCorrectAnswers = false;
+                calculatedRendererParameters.permissionLevel = rendererHelper.getPermissionForRole(Role.STUDENT);
+                calculatedRendererParameters.showSolutions = Number(false);
+                numIncorrect = 0;
+            }
         }
 
         const rendererData = await rendererHelper.getProblem({
@@ -1758,6 +1766,7 @@ class CourseController {
             showCorrectAnswers: true,
             outputformat: rendererHelper.getOutputFormatForRole(options.role),
             permissionLevel: rendererHelper.getPermissionForRole(options.role),
+            answersSubmitted: Number(options.showAnswersUpfront),
         });
 
         return {
@@ -4430,6 +4439,35 @@ You can contact your student at ${options.student.email} or by replying to this 
         });
     }
 
+    async printBlankTopic(options: {topicId: number}): Promise<CourseTopicContent> {
+        const topicWithQuestions = await CourseTopicContent.findOne({
+            attributes: ['id', 'name'],
+            where: {
+                id: options.topicId,
+                active: true,
+            },
+            include: [
+                {
+                    model: CourseWWTopicQuestion,
+                    as: 'questions',
+                    attributes: ['id', 'problemNumber'],
+                    required: true,
+                    where: {
+                        active: true,
+                    },
+                }
+            ]
+        });
+
+        if (_.isNil(topicWithQuestions)) throw new NotFoundError('Could not find topic.');
+
+        // topicWithQuestions?.questions?.asyncForEach(async (question)=>{
+
+        // });
+
+        return topicWithQuestions;
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async getAllContentForVersion(options: GetAllContentForVersionOptions): Promise<any> {
 
@@ -4451,7 +4489,7 @@ You can contact your student at ${options.student.email} or by replying to this 
          *      These are all the questions for that version. Should be the same for GradeInstanceIds with the same parent GradeId.
          */
         const mainData = await CourseTopicContent.findOne({
-            attributes: ['id', 'name'],
+            attributes: ['id', 'name', 'topicTypeId'],
             where: {
                 id: options.topicId,
                 active: true,
@@ -4489,11 +4527,10 @@ You can contact your student at ${options.student.email} or by replying to this 
             await question.grades?.asyncForEach(async (grade, j) => {
                 const influencingWorkbook = grade.lastInfluencingCreditedAttemptId ?? grade.lastInfluencingAttemptId;
                 if (_.isNil(influencingWorkbook)) {
-                    logger.error(`Cannot find the best version for Grade ${grade.id} with lastInfluencingCreditedAttemptId or lastInfluencingAttemptId.`);
-                    return;
+                    logger.warn(`Cannot find the best version for Grade ${grade.id} with lastInfluencingCreditedAttemptId or lastInfluencingAttemptId.`);
                 }
 
-                const gradeInstanceAttachments = await StudentWorkbook.findOne({
+                const gradeInstanceAttachments = influencingWorkbook ? await StudentWorkbook.findOne({
                     where: {
                         id: influencingWorkbook,
                         active: true,
@@ -4504,6 +4541,7 @@ You can contact your student at ${options.student.email} or by replying to this 
                             model: StudentGradeInstance,
                             as: 'studentGradeInstance',
                             attributes: ['id', 'webworkQuestionPath'],
+                            required: false,
                             where: {
                                 active: true,
                             },
@@ -4512,6 +4550,7 @@ You can contact your student at ${options.student.email} or by replying to this 
                                     model: ProblemAttachment,
                                     as: 'problemAttachments',
                                     attributes: ['id', 'cloudFilename', 'userLocalFilename', 'updatedAt'],
+                                    required: false,
                                     where: {
                                         active: true,
                                     }
@@ -4519,10 +4558,19 @@ You can contact your student at ${options.student.email} or by replying to this 
                             ]
                         },
                     ]
-                });
+                }) : null;
+                
+                let attachments = gradeInstanceAttachments?.studentGradeInstance?.problemAttachments;                
+                if (mainData.topicTypeId === 1) {
+                    attachments = await grade.getProblemAttachments({
+                        where: {
+                            active: true,
+                        }
+                    });
+                }
 
                 data.questions[i].grades[j].webworkQuestionPath = gradeInstanceAttachments?.studentGradeInstance?.webworkQuestionPath;
-                data.questions[i].grades[j].problemAttachments = gradeInstanceAttachments?.studentGradeInstance?.problemAttachments;
+                data.questions[i].grades[j].problemAttachments = attachments;
             })
         );
 

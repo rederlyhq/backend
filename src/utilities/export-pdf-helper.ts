@@ -29,17 +29,40 @@ interface BulkPdfExport {
     }[];
 }
 
+interface BulkExporterZipAPI {
+    profUUID: string;
+    topicId: number;
+    showSolutions: boolean;
+}
+
+// This is a mapping object that helps us transform the question-first call into the student-first format we need.
+type StudentGradeLookup = Record<number, {
+        number: number;
+        srcdoc: string;
+        attachments: {url: string; name: string}[] | undefined;
+        effectiveScore: number;
+        legalScore: number;
+    }[]
+>;
+
 export default class ExportPDFHelper {
     bulkExportAxios = axios.create({
         baseURL: configurations.bulkPdfExport.baseUrl,
     });
     
-    start = async ({topic, professorUUID, showSolutions}: {topic: CourseTopicContent; professorUUID: string; showSolutions: boolean}): Promise<void> => {
+    setExportStartedOnTopic = async (topic: CourseTopicContent): Promise<CourseTopicContent> => {
         topic.lastExported = new Date();
         topic.exportUrl = null;
-        await topic.save();
+        return await topic.save();
+    }
+    
+    setExportFailedOnTopic = async (topic: CourseTopicContent): Promise<CourseTopicContent> => {
+        topic.lastExported = null;
+        topic.exportUrl = null;
+        return await topic.save();
+    }
 
-        // Find the specified topic
+    getTopicWithQuestionsAndGradeObjects = async (topic: CourseTopicContent): Promise<CourseTopicContent> => {
         const mainData = await CourseTopicContent.findOne({
             attributes: ['id', 'name', 'topicTypeId'],
             where: {
@@ -77,15 +100,16 @@ export default class ExportPDFHelper {
             throw new NotFoundError(`Could not find topic ${topic.id} to export.`);
         }
 
-        const studentGradeLookup: {
-            [userId: number]: {
-                number: number;
-                srcdoc: string;
-                attachments: {url: string; name: string}[] | undefined;
-                effectiveScore: number;
-                legalScore: number;
-            }[];
-        } = {};
+        return mainData;
+    }
+
+    start = async ({topic, professorUUID, showSolutions}: {topic: CourseTopicContent; professorUUID: string; showSolutions: boolean}): Promise<void> => {
+        await this.setExportStartedOnTopic(topic);
+
+        // Find the specified topic
+        const mainData = await this.getTopicWithQuestionsAndGradeObjects(topic);
+
+        const studentGradeLookup: StudentGradeLookup = {};
 
         await mainData.questions?.sequentialAsyncForEach(async (question) =>
             await question.grades?.sequentialAsyncForEach(async (grade) => {
@@ -155,7 +179,7 @@ export default class ExportPDFHelper {
                     showSolutions: showSolutions,
                     answersSubmitted: 1,
                     outputformat: OutputFormat.STATIC,
-                    permissionLevel: rendererHelper.getPermissionForRole(Role.PROFESSOR),
+                    permissionLevel: rendererHelper.getPermissionForRole(Role.STUDENT),
                 };
 
                 // This should be the renderer response.
@@ -210,17 +234,20 @@ export default class ExportPDFHelper {
         
         // Request zip
         try {
-            return await this.bulkExportAxios.get('export/', {
-                params: {
+            return await this.requestZipFromExporter({
                     profUUID: professorUUID, 
                     topicId: topic.id,
                     showSolutions
-                }
-            });
+                });
         } catch (e) {
             logger.error(e);
-            topic.lastExported = null;
-            await topic.save();
+            await this.setExportFailedOnTopic(topic);
         }
     };
+
+    requestZipFromExporter = async (params: BulkExporterZipAPI): Promise<void> => {
+        return await this.bulkExportAxios.get('export/', {
+            params
+        });
+    }
 }

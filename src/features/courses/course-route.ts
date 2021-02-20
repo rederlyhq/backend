@@ -754,7 +754,8 @@ router.post('/question',
         const newQuestion = await courseController.addQuestion({
             question: {
                 ...req.body
-            }
+            },
+            checkForActiveExams: null,
         });
         // TODO handle not found case
         next(httpResponse.Created('Course Question created successfully', newQuestion));

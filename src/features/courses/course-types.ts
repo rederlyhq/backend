@@ -694,6 +694,7 @@ export interface ImportCourseTarballResult {
 export interface AddQuestionOptions {
     question: Partial<CourseWWTopicQuestion>;
     userIds?: Array<number>;
+    checkForActiveExams: boolean | null;
 }
 
 export interface RequestNewProblemVersionOptions {

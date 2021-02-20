@@ -1464,7 +1464,8 @@ class CourseController {
                             hidden: false,
                             optional: false,
                         },
-                        userIds: userIds
+                        userIds: userIds,
+                        checkForActiveExams: topic.topicTypeId === 2,
                     });
 
                     await CourseQuestionAssessmentInfo.create({
@@ -1514,7 +1515,8 @@ class CourseController {
                             optional: false,
                             errors: errors ?? null,
                         },
-                        userIds: userIds
+                        userIds: userIds,
+                        checkForActiveExams: topic.topicTypeId === 2,
                     });
 
                     if (_.isSomething(additionalProblemPaths) || _.isSomething(randomSeedRestrictions)) {
@@ -1532,11 +1534,64 @@ class CourseController {
 
     async addQuestion(options: AddQuestionOptions): Promise<CourseWWTopicQuestion> {
         return await useDatabaseTransaction(async () => {
+            if (_.isNil(options.question.courseTopicContentId)) {
+                // This should not happen
+                throw new IllegalArgumentException('courseTopicContentId is required');
+            }
+            
             const result = await this.createQuestion(options.question);
-            await this.createGradesForQuestion({
+            const newGrades = await this.createGradesForQuestion({
                 questionId: result.id,
                 userIds: options.userIds
             });
+
+            const checkForActiveExams = _.isNil(options.checkForActiveExams) ? (await CourseTopicContent.findOne({
+                where: {
+                    id: options.question.courseTopicContentId,
+                    active: true    
+                }
+            }))?.topicTypeId === 2 : options.checkForActiveExams;
+
+            if (checkForActiveExams) {
+                const now = new Date();
+                const currentAssessments = await StudentTopicAssessmentInfo.findAll({
+                    include: [{
+                        model: TopicAssessmentInfo,
+                        as: 'topicAssessmentInfo',
+                        where: {
+                            courseTopicContentId: options.question.courseTopicContentId,
+                            active: true
+                        },
+                    }],
+                    where: {
+                        startTime: {
+                            [Sequelize.Op.lte]: now
+                        },
+                        endTime: {
+                            [Sequelize.Op.gte]: now
+                        },
+                        isClosed: false,
+                        active: true
+                    }
+                });
+    
+                await currentAssessments.asyncForEach(async (currentAssessment) => {
+                    const randomSeed = this.generateRandomSeed();
+                    const grade = _.find(newGrades, (grade) => grade.userId === currentAssessment.userId);
+                    if (_.isNil(grade)) {
+                        logger.error('TSNH: A grade for the newly added question was not found for a student whom has started the exam already');
+                        return;
+                    }
+                    await this.createNewStudentGradeInstance({
+                        randomSeed: randomSeed,
+                        studentGradeId: grade.id,
+                        userId: currentAssessment.userId,
+                        studentTopicAssessmentInfoId: currentAssessment.id,
+                        webworkQuestionPath: 'TODO',
+                        problemNumber: -999
+                    });
+                });
+            }
             return result;
         });
     }
@@ -3487,8 +3542,9 @@ class CourseController {
         });
     }
 
-    async createGradesForQuestion(options: CreateGradesForQuestionOptions): Promise<number> {
-        return useDatabaseTransaction(async (): Promise<number> => {
+    async createGradesForQuestion(options: CreateGradesForQuestionOptions): Promise<StudentGrade[]> {
+        return useDatabaseTransaction(async (): Promise<StudentGrade[]> => {
+            const grades: StudentGrade[] = [];
             const { questionId } = options;
             let userIds: Array<number> | undefined = options.userIds;
             if (_.isNil(userIds)) {
@@ -3498,12 +3554,13 @@ class CourseController {
                 userIds = results.map(result => result.userId);    
             }
             await userIds.asyncForEach(async (userId: number) => {
-                await this.createNewStudentGrade({
+                const grade = await this.createNewStudentGrade({
                     courseTopicQuestionId: questionId,
                     userId: userId
                 });
+                grades.push(grade);
             });
-            return userIds.length;
+            return grades;
         });
     }
 

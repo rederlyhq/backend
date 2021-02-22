@@ -1,6 +1,6 @@
 // TODO rename file
 
-import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin, HasOneGetAssociationMixin } from 'sequelize';
+import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin, HasOneGetAssociationMixin, HasOneCreateAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 import * as _ from 'lodash';
 
@@ -44,6 +44,7 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
     public getCourseQuestionAssessmentInfo!: HasOneGetAssociationMixin<CourseQuestionAssessmentInfo>;
     public getStudentTopicQuestionOverride!: HasManyGetAssociationsMixin<StudentTopicQuestionOverride>;
     public getStudentGradeInstances!: HasManyGetAssociationsMixin<StudentGradeInstance>;
+    public createCourseQuestionAssessmentInfo!: HasOneCreateAssociationMixin<CourseQuestionAssessmentInfo>;
 
     public topic?: CourseTopicContent;
     public courseQuestionAssessmentInfo?: CourseQuestionAssessmentInfo;

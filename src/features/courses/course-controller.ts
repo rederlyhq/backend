@@ -1518,7 +1518,7 @@ class CourseController {
                     });
 
                     if (_.isSomething(additionalProblemPaths) || _.isSomething(randomSeedRestrictions)) {
-                        await CourseQuestionAssessmentInfo.create({
+                        question.courseQuestionAssessmentInfo = await question.createCourseQuestionAssessmentInfo({
                             additionalProblemPaths: additionalProblemPaths,
                             courseWWTopicQuestionId: question.id,
                             randomSeedSet: randomSeedRestrictions,

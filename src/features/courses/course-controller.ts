@@ -1518,7 +1518,7 @@ class CourseController {
                     });
 
                     if (_.isSomething(additionalProblemPaths) || _.isSomething(randomSeedRestrictions)) {
-                        await CourseQuestionAssessmentInfo.create({
+                        question.courseQuestionAssessmentInfo = await question.createCourseQuestionAssessmentInfo({
                             additionalProblemPaths: additionalProblemPaths,
                             courseWWTopicQuestionId: question.id,
                             randomSeedSet: randomSeedRestrictions,
@@ -5044,13 +5044,18 @@ You can contact your student at ${options.student.email} or by replying to this 
             course_topic_content.course_topic_content_id,
             course_topic_content.course_topic_content_name,
             SUM(course_topic_question.course_topic_question_weight) as course_topic_content_total_problem_weight,
+            course_unit_content.course_unit_content_order,
+            course_topic_content.course_topic_content_order,
             sum(CASE WHEN course_topic_question.course_topic_question_optional = FALSE THEN course_topic_question.course_topic_question_weight ELSE 0 END) as course_topic_content_required_problem_weight
             FROM course_topic_content
             INNER JOIN course_unit_content ON course_unit_content.course_unit_content_id = course_topic_content.course_unit_content_id AND course_unit_content.course_unit_content_active
             INNER JOIN course_topic_question ON course_topic_question.course_topic_content_id = course_topic_content.course_topic_content_id AND course_topic_question.course_topic_question_active
             WHERE course_unit_content.course_id = :courseId AND course_topic_content.course_topic_content_active
             GROUP BY
-            course_topic_content.course_topic_content_id, course_topic_content.course_topic_content_name
+            course_topic_content.course_topic_content_id,
+            course_topic_content.course_topic_content_name,
+            course_unit_content.course_unit_content_order,
+            course_topic_content.course_topic_content_order
             ORDER BY course_topic_content.course_topic_content_id
         ) topics
         ON students.course_topic_content_id = topics.course_topic_content_id
@@ -5058,9 +5063,12 @@ You can contact your student at ${options.student.email} or by replying to this 
         topics.course_topic_content_id,
         topics.course_topic_content_name,
         topics.course_topic_content_total_problem_weight,
-        topics.course_topic_content_required_problem_weight
-        ORDER BY 
-        topics.course_topic_content_id;
+        topics.course_topic_content_required_problem_weight,
+        topics.course_unit_content_order,
+        topics.course_topic_content_order
+        ORDER BY
+        topics.course_unit_content_order,
+        topics.course_topic_content_order;
         `, {
             replacements: {
                 courseId: courseId,

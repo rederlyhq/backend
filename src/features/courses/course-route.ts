@@ -151,8 +151,14 @@ router.post('/def',
             webworkDefFileContent: req.file.buffer.toString(),
             courseTopicId: query.courseTopicId
         });
+
+        // Sequelize does not give the subobjects that are added after the fact so getting it here
+        const adjustedResults = results.map(result => ({
+            courseQuestionAssessmentInfo: result.courseQuestionAssessmentInfo?.get({plain: true}),
+            ...result.get({plain:true})
+        }));
         next(httpResponse.Created('Course Topic from DEF file created successfully', {
-            newQuestions: results
+            newQuestions: adjustedResults
         }));
     }));
 

@@ -7,6 +7,7 @@ export const feedbackValidation = {
         summary: Joi.string().required(),
         description: Joi.string().required(),
         version: Joi.string().optional(),
-        url: Joi.string().optional()
+        url: Joi.string().optional(),
+        userAgent: Joi.string().optional(),
     },
 };

@@ -227,6 +227,12 @@ export namespace GetGradesRequest {
     export type body = Joi.extractType<typeof validations.getGradesValidation.body>;
 };
 
+export namespace GetGradesForTopicsByCourseRequest {
+    export type params = Joi.extractType<typeof validations.getGradesForTopicsByCourseValidation.params>;
+    export type query = Joi.extractType<typeof validations.getGradesForTopicsByCourseValidation.query>;
+    export type body = Joi.extractType<typeof validations.getGradesForTopicsByCourseValidation.body>;
+};
+
 export namespace GetStatisticsOnUnitsRequest {
     export type params = Joi.extractType<typeof validations.getStatisticsOnUnitsValidation.params>;
     export type query = Joi.extractType<typeof validations.getStatisticsOnUnitsValidation.query>;

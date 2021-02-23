@@ -98,6 +98,7 @@
 #### Jira
 | Environment variable | Description | Default value |
 | --- | --- | --- |
+| JIRA_ENABLED | Whether or not to try to make the ticket with jira. If false it makes info log with details | true |
 | JIRA_EMAIL | The email used to authenticate with jira | |
 | JIRA_API_KEY | The api key used to authenticate with jira | |
 | JIRA_HOST | Where jira is hosted (currently cloud) | rederly.atlassian.net |

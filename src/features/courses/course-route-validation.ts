@@ -327,6 +327,7 @@ export const getQuestionValidation = {
         readonly: Joi.boolean().optional(),
         userId: Joi.number().optional(),
         studentTopicAssessmentInfoId: Joi.number().optional(),
+        showCorrectAnswers: Joi.boolean().optional(),
     },
     body: {}
 };
@@ -336,6 +337,7 @@ export const previewQuestionValidation = {
     query: {
         webworkQuestionPath: Joi.string().optional(),
         problemSeed: Joi.number().min(0).optional(),
+        showAnswersUpfront: Joi.boolean().optional().default(false),
     },
     body: null,
 };
@@ -461,6 +463,14 @@ export const getGradesValidation = {
         questionId: Joi.number().optional(),
         userId: Joi.number().optional(),
     },
+    body: {},
+};
+
+export const getGradesForTopicsByCourseValidation = {
+    params: {
+        courseId: Joi.number().required(),
+    },
+    query: {},
     body: {},
 };
 

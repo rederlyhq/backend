@@ -1,4 +1,4 @@
-import { Model, DataTypes, BelongsToGetAssociationMixin } from 'sequelize';
+import { Model, DataTypes, BelongsToGetAssociationMixin, Sequelize } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
 export default class StudentEnrollment extends Model {
@@ -70,7 +70,7 @@ StudentEnrollment.init({
         field: 'student_enrollment_enroll_date',
         type: DataTypes.DATE,
         allowNull: false,
-        defaultValue: appSequelize.literal('NOW()')
+        defaultValue: Sequelize.literal('NOW()')
     },
     dropDate: {
         field: 'student_enrollment_drop_date',

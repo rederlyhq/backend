@@ -1,6 +1,6 @@
 {
   "name": "backend",
-  "version": "1.8.5",
+  "version": "1.9.4",
   "description": "",
   "main": "index.js",
   "dependencies": {
@@ -68,7 +68,6 @@
     "@types/passport-local": "^1.0.33",
     "@types/pug": "^2.0.4",
     "@types/qs": "^6.9.5",
-    "@types/sequelize": "^4.28.9",
     "@types/tar": "^4.0.4",
     "@types/url-join": "^4.0.0",
     "@types/uuid": "^7.0.4",
@@ -107,7 +106,7 @@
     "sequelize:migrations:devundo": "npm run sequelize -- db:migrate:undo:all --to 20210125141500-bulk-export.js",
     "sequelize:built:migrations": "sequelize -- db:migrate",
     "lint": "eslint src/ --ext .ts",
-    "clean": "if [ -d ts-built ]; then rm -r ts-built; fi;",
+    "clean": "node ./utility-scripts/clean.js",
     "package": "node ./utility-scripts/package.js",
     "build:package": "npm run build && npm run package"
   },

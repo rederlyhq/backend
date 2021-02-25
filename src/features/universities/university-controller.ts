@@ -15,10 +15,10 @@ class UniversityController {
         return University.findAll({
             where: Sequelize.or(
                 {
-                    profEmailDomain: emailDomain
+                    profEmailDomain: emailDomain.toLowerCase()
                 },
                 {
-                    studentEmailDomain: emailDomain
+                    studentEmailDomain: emailDomain.toLowerCase()
                 },
             )
         });

@@ -227,6 +227,12 @@ export namespace GetGradesRequest {
     export type body = Joi.extractType<typeof validations.getGradesValidation.body>;
 };
 
+export namespace GetGradesForTopicsByCourseRequest {
+    export type params = Joi.extractType<typeof validations.getGradesForTopicsByCourseValidation.params>;
+    export type query = Joi.extractType<typeof validations.getGradesForTopicsByCourseValidation.query>;
+    export type body = Joi.extractType<typeof validations.getGradesForTopicsByCourseValidation.body>;
+};
+
 export namespace GetStatisticsOnUnitsRequest {
     export type params = Joi.extractType<typeof validations.getStatisticsOnUnitsValidation.params>;
     export type query = Joi.extractType<typeof validations.getStatisticsOnUnitsValidation.query>;
@@ -333,4 +339,16 @@ export namespace GetVersionRequest {
     export type params = Joi.extractType<typeof validations.getVersionValidation.params>;
     export type query = Joi.extractType<typeof validations.getVersionValidation.query>;
     export type body = Joi.extractType<typeof validations.getVersionValidation.body>;
+};
+
+export namespace BulkExportRequest {
+    export type params = Joi.extractType<typeof validations.bulkExportValidation.params>;
+    export type query = Joi.extractType<typeof validations.bulkExportValidation.query>;
+    export type body = Joi.extractType<typeof validations.bulkExportValidation.body>;
+};
+
+export namespace EndBulkExportRequest {
+    export type params = Joi.extractType<typeof validations.endBulkExportValidation.params>;
+    export type query = Joi.extractType<typeof validations.endBulkExportValidation.query>;
+    export type body = Joi.extractType<typeof validations.endBulkExportValidation.body>;
 };

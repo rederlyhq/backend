@@ -327,6 +327,7 @@ export const getQuestionValidation = {
         readonly: Joi.boolean().optional(),
         userId: Joi.number().optional(),
         studentTopicAssessmentInfoId: Joi.number().optional(),
+        showCorrectAnswers: Joi.boolean().optional(),
     },
     body: {}
 };
@@ -336,6 +337,7 @@ export const previewQuestionValidation = {
     query: {
         webworkQuestionPath: Joi.string().optional(),
         problemSeed: Joi.number().min(0).optional(),
+        showAnswersUpfront: Joi.boolean().optional().default(false),
     },
     body: null,
 };
@@ -385,7 +387,9 @@ export const enrollInCourseValidation = {
     query: {},
     body: {
         courseId: Joi.number().required(),
-        userId: Joi.number().required()
+        // TODO figure out alternatives
+        userId: Joi.number().optional(),
+        studentEmail: Joi.string().email().optional(),
     }
 };
 
@@ -459,6 +463,14 @@ export const getGradesValidation = {
         questionId: Joi.number().optional(),
         userId: Joi.number().optional(),
     },
+    body: {},
+};
+
+export const getGradesForTopicsByCourseValidation = {
+    params: {
+        courseId: Joi.number().required(),
+    },
+    query: {},
     body: {},
 };
 
@@ -622,4 +634,25 @@ export const getVersionValidation = {
     },
     query: {},
     body: {},
+};
+
+export const bulkExportValidation = {
+    params: {
+        topicId: Joi.number().required(),
+    },
+    query: {
+        showSolutions: Joi.boolean().optional().default(false),
+        force: Joi.boolean().optional(),
+    },
+    body: {},
+};
+
+export const endBulkExportValidation = {
+    params: {
+        topicId: Joi.number().required(),
+    },
+    query: {},
+    body: {
+        exportUrl: Joi.string().optional(),
+    },
 };

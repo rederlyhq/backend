@@ -169,13 +169,22 @@ class UserController {
         // I tried bcc: users.map(user => user.email) but I got an error that an email address was required
         const emailPromises = [];
         for (let i = 0; i < users.length; i++) {
+            const user = users[i];
+            const poorMansTemplate = `
+            Hello ${user.firstName} ${user.lastName},
+
+            You have received a message through Rederly:
+            ${emailOptions.content}
+
+            You can respond to ${emailOptions.replyTo} by replying to this email.
+            `;
             emailPromises.push(emailHelper.sendEmail({
                 template: 'generic',
                 locals: {
                     SUBJECT_TEXT: emailOptions.subject,
-                    BODY_TEXT: emailOptions.content,
+                    BODY_TEXT: poorMansTemplate,
                 },
-                email: users[i].email,
+                email: user.email,
                 replyTo: emailOptions.replyTo,
             }));
         }
@@ -394,7 +403,11 @@ class UserController {
             userObject
         } = options;
 
-        const emailDomain = userObject.email.split('@')[1];
+        const emailDomain = userObject.email.split('@')[1]?.toLowerCase();
+
+        if (_.isNil(emailDomain) || _.isEmpty(emailDomain)) {
+            throw new NoAssociatedUniversityError('Could not parse the email domain.');
+        }
 
         const universities = await universityController.getUniversitiesAssociatedWithEmail({
             emailDomain

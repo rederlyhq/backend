@@ -53,6 +53,8 @@ const webWorkDefProblemKeyMaps: Array<WebWorkDefKeyValueMap> = [
     new WebWorkDefKeyValueMap('prPeriod'),
     new WebWorkDefKeyValueMap('counts_parent_grade'),
     new WebWorkDefKeyValueMap('att_to_open_children'),
+    new WebWorkDefKeyValueMap('rederlyAdditionalPaths'),
+    new WebWorkDefKeyValueMap('rederlyRandomSeedRestrictions'),
 ];
 
 export class Problem {
@@ -64,6 +66,8 @@ export class Problem {
     public prPeriod?: string;
     public counts_parent_grade?: string;
     public att_to_open_children?: string;
+    public rederlyAdditionalPaths? : string;
+    public rederlyRandomSeedRestrictions? : string;
 }
 
 export default class WebWorkDef {

@@ -25,7 +25,8 @@ import curriculumRepository from '../curriculum/curriculum-repository';
 import CurriculumUnitContent from '../../database/models/curriculum-unit-content';
 import CurriculumTopicContent from '../../database/models/curriculum-topic-content';
 import CurriculumWWTopicQuestion from '../../database/models/curriculum-ww-topic-question';
-import WebWorkDef, { Problem } from '../../utilities/web-work-def-parser';
+import WebWorkDef, { Problem } from '@rederly/webwork-def-parser';
+import { getTopicSettingsFromDefFile } from '@rederly/rederly-utils';
 import { nameof } from '../../utilities/typescript-helpers';
 import Role from '../permissions/roles';
 import moment = require('moment');
@@ -4761,44 +4762,11 @@ You can contact your student at ${options.student.email} or by replying to this 
                 });
 
                 if (parsedWebworkDef.isExam()) {
-                    let possibleIntervals = 1;
-                    let timeInterval: number | undefined = undefined;
-                    if (!_.isNil(parsedWebworkDef.timeInterval)) {
-                        timeInterval = parseInt(parsedWebworkDef.timeInterval, 10);
-
-                        if (_.isNaN(timeInterval)) {
-                            throw new IllegalArgumentException(`The def file: ${defFile.defFileRelativePath} has an invalid time interval: ${parsedWebworkDef.timeInterval}.`);
-                        }
-
-                        timeInterval /= 60;
-
-                        if (timeInterval > 0) {
-                            if (_.isNil(parsedWebworkDef.openDate) || _.isNil(parsedWebworkDef.dueDate)) {
-                                throw new IllegalArgumentException(`The def file: ${defFile.defFileRelativePath} is missing the open or due date.`);
-                            }
-                            // The format from webwork has a timezone (i.e. EDT, EST)
-                            // However moment didn't have a nice way to format with the timezone
-                            // This should not be a problem unless the start and end date are in different timezones (daylight savings)
-                            const webworkDateFormat = 'MM/DD/YYYY [at] HH:mma';
-                            const examDuration = moment(parsedWebworkDef.dueDate, webworkDateFormat).diff(moment(parsedWebworkDef.openDate, webworkDateFormat));
-                            // / 60000 to convert to minutes
-                            possibleIntervals = examDuration / 60000 / timeInterval;
-                        }
-                        timeInterval = Math.round(timeInterval);
-                    }
+                    const topicSettings = getTopicSettingsFromDefFile(parsedWebworkDef);
                     const topicAssessmentInfo: Partial<TopicAssessmentInfoInterface> = _.omitBy({
                         // id,
                         courseTopicContentId: topic.id,
-                        duration: parsedWebworkDef.versionTimeLimit ? Math.round(parseInt(parsedWebworkDef.versionTimeLimit, 10) / 60) : undefined,
-                        hardCutoff: WebWorkDef.characterBoolean(parsedWebworkDef.capTimeLimit),
-                        hideHints: undefined,
-                        hideProblemsAfterFinish: WebWorkDef.characterBoolean(parsedWebworkDef.hideWork),
-                        maxGradedAttemptsPerVersion: parsedWebworkDef.attemptsPerVersion ? parseInt(parsedWebworkDef.attemptsPerVersion, 10) : undefined,
-                        maxVersions: parsedWebworkDef.versionsPerInterval ? Math.round(parseInt(parsedWebworkDef.versionsPerInterval, 10) * possibleIntervals) : undefined,
-                        randomizeOrder: WebWorkDef.numberBoolean(parsedWebworkDef.problemRandOrder),
-                        showItemizedResults: !WebWorkDef.characterBoolean(parsedWebworkDef.hideScoreByProblem),
-                        showTotalGradeImmediately: !WebWorkDef.characterBoolean(parsedWebworkDef.hideScore),
-                        versionDelay: timeInterval
+                        ...topicSettings.topicAssessmentInfo
                     }, _.isUndefined);
                     try {
                         await TopicAssessmentInfo.create(topicAssessmentInfo);

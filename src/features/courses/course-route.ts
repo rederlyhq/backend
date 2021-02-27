@@ -456,7 +456,10 @@ router.put('/topic/:id',
         });
         // TODO handle not found case
         next(httpResponse.Ok('Updated topic successfully', {
-            updatesResult,
+            updatesResult: updatesResult.map(result => ({
+                ...result.get({ plain: true }),
+                topicAssessmentInfo: result.topicAssessmentInfo
+            })),
             updatesCount: updatesResult.length
         }));
     }));

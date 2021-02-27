@@ -71,4 +71,10 @@ const logger = winston.createLogger({
   transports: transports
 });
 
+// This is an intentional any. I could extend the Global interface to have this fit in
+// However I don't want internal use of this attribute
+// The intention here is to share this with npm modules that need to use the logger
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(global as any).logger = logger;
+
 export default logger;

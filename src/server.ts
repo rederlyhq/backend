@@ -97,6 +97,14 @@ if (configurations.server.logInvalidlyPrefixedRequests || configurations.server.
     });
 }
 
+// Set disable cache headers
+app.use((req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    next();
+});
+
 const rateLimiterWhiteList: Array<RegExp> = [
     // Dev route, comment in if you are using scheduler test routes
     // generatePathRegex('/schedule/hook'),
@@ -146,7 +154,6 @@ app.use((req, res, next) => {
     res.setTimeout(apiTimeout, timeoutHandler);
     next();
 });
-
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));

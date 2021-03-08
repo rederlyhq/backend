@@ -2676,7 +2676,9 @@ class CourseController {
                 attributes: [],
                 required: false,
                 where: {
-                    userId: sequelize.literal(`"question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.userId.field} = "StudentGrade".${StudentGrade.rawAttributes.userId.field}`),
+                    userId: {
+                        [sequelize.Op.col]: `${StudentGrade.name}.${StudentGrade.rawAttributes.userId.field}`,
+                    },
                     active: true
                 }
             }

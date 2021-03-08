@@ -2676,6 +2676,7 @@ class CourseController {
                 attributes: [],
                 required: false,
                 where: {
+                    userId: sequelize.literal(`"question->topic->studentTopicOverride".${StudentTopicOverride.rawAttributes.userId.field} = "StudentGrade".${StudentGrade.rawAttributes.userId.field}`),
                     active: true
                 }
             }
@@ -2805,7 +2806,7 @@ class CourseController {
             // TODO This group needs to match the alias below, I'd like to find a better way to do this
             group = [`user.${User.rawAttributes.id.field}`,
                 `user.${User.rawAttributes.firstName.field}`,
-                `user.${User.rawAttributes.lastName.field}`
+                `user.${User.rawAttributes.lastName.field}`,
             ];
         }
 

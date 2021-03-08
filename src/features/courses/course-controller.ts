@@ -2676,6 +2676,9 @@ class CourseController {
                 attributes: [],
                 required: false,
                 where: {
+                    userId: {
+                        [sequelize.Op.col]: `${StudentGrade.name}.${StudentGrade.rawAttributes.userId.field}`,
+                    },
                     active: true
                 }
             }

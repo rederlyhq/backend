@@ -58,7 +58,7 @@ import { findFiles, FindFilesDefFileResult, FindFilesPGFileResult, FindFilesImag
 import * as nodePath from 'path';
 import * as tar from 'tar';
 import * as fs from 'fs';
-import { getAverageGroupsBeforeDate, QUESTION_SQL_NAME, STUDENTTOPICOVERRIDE_SQL_NAME, TOPIC_SQL_NAME } from './statistics-helper';
+import { getAverageGroupsBeforeDate, QUESTION_SQL_NAME, STUDENTTOPICOVERRIDE_SQL_NAME, TOPIC_SQL_NAME, getSystemScoreWithWeights } from './statistics-helper';
 import qs = require('qs');
 import ForbiddenError from '../../exceptions/forbidden-error';
 import appSequelize from '../../database/app-sequelize';
@@ -3081,6 +3081,10 @@ class CourseController {
             ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.ROOT_OF_QUERY, QUESTION_SQL_NAME.INCLUDED_AS_QUESTIONS, STUDENTTOPICOVERRIDE_SQL_NAME.INCLUDED_AS_STUDENTTOPICOVERRIDE),
         ] : [];
 
+        const systemScoreGroup: sequelize.ProjectionAlias = followQuestionRules ? 
+            getSystemScoreWithWeights(QUESTION_SQL_NAME.INCLUDED_AS_QUESTIONS) : 
+            [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'];
+
         return CourseTopicContent.findAll({
             where,
             attributes: [
@@ -3090,7 +3094,7 @@ class CourseController {
                 ...averageScoreGroup,
                 ...closedAndOpenedGroups,
                 [sequelize.fn('count', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
-                [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'],
+                systemScoreGroup,
                 [sequelize.literal(`count(CASE WHEN "questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN "questions->grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
                 [completionPercentAttribute, 'completionPercent'],
             ],

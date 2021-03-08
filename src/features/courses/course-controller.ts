@@ -2975,6 +2975,12 @@ class CourseController {
                     as: 'studentTopicOverride',
                     attributes: [],
                     required: false,
+                    where: {
+                        active: true,
+                        userId: {
+                            [sequelize.Op.col]: `"topics->questions->grades".${StudentGrade.rawAttributes.userId.field}`,
+                        },
+                    }
                 }
             ]
             }],
@@ -3025,6 +3031,12 @@ class CourseController {
                 as: 'studentTopicOverride',
                 attributes: [],
                 required: false,
+                where: {
+                    active: true,
+                    userId: {
+                        [sequelize.Op.col]: `"questions->grades".${StudentGrade.rawAttributes.userId.field}`,
+                    },
+                }
             }
         ];
 
@@ -3138,6 +3150,12 @@ class CourseController {
                     as: 'studentTopicOverride',
                     attributes: [],
                     required: false,
+                    where: {
+                        active: true,
+                        userId: {
+                            [sequelize.Op.col]: `"grades".${StudentGrade.rawAttributes.userId.field}`,
+                        },
+                    }
                 }]
             });
         }

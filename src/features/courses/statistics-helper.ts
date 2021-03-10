@@ -28,6 +28,27 @@ export enum STUDENTTOPICOVERRIDE_SQL_NAME {
     CHILD_OF_SINGLE_INC_TOPIC = 'topic->studentTopicOverride',
 }
 
+export const getSystemScoreWithWeights = (
+    questionName: QUESTION_SQL_NAME, 
+): sequelize.ProjectionAlias => {
+    const pointsEarned = `SUM(${StudentGrade.rawAttributes.partialCreditBestScore.field} * "${questionName}".${CourseWWTopicQuestion.rawAttributes.weight.field})`;
+
+    const pointsAvailable = `SUM(
+        CASE
+            WHEN "${questionName}".${CourseWWTopicQuestion.rawAttributes.optional.field} = FALSE
+            THEN "${questionName}".${CourseWWTopicQuestion.rawAttributes.weight.field}
+            ELSE 0
+        END)`;
+
+    return [sequelize.literal(`
+        CASE WHEN ${pointsAvailable} = 0 THEN
+            NULL
+        ELSE
+            ${pointsEarned} / ${pointsAvailable}
+        END
+    `), 'systemScore'];
+};
+
 // Calculate the grades for Open or Dead topics only
 // Adds pointsEarnedOpen, pointsAvailableOpen, and openAverage (or equivalent dead/Dead fields) to the query.
 export const getAverageGroupsBeforeDate = (

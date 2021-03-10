@@ -1470,7 +1470,9 @@ router.delete('/enroll',
         }
     }));
 
-router.get('/attachments/upload-url',
+// TODO: Switch to POST in next release to match Frontend API.
+// This was to avoid API failures from one release to another.
+router.all('/attachments/upload-url',
     authenticationMiddleware,
     validate(getAttachmentPresignedURLValidation),
     asyncHandler(async (req: RederlyExpressRequest<GetAttachmentPresignedURLRequest.params, unknown, GetAttachmentPresignedURLRequest.body, GetAttachmentPresignedURLRequest.query>, _res: Response, next: NextFunction) => {

@@ -547,7 +547,9 @@ export const gradeAssessmentValidation = {
 
 export const getAttachmentPresignedURLValidation = {
     params: {},
-    query: {},
+    query: {
+        cacheBuster: Joi.any().optional()
+    },
     body: {},
 };
 

@@ -26,6 +26,8 @@
     "jira-client": "^6.21.1",
     "joi-extract-type": "^15.0.8",
     "lodash": "^4.17.20",
+    "ltijs": "^5.6.6",
+    "ltijs-sequelize": "^2.3.3",
     "moment": "^2.29.1",
     "morgan": "^1.10.0",
     "multer": "^1.4.2",

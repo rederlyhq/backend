@@ -23,6 +23,7 @@ import { rederlyRequestNamespaceMiddleware } from './middleware/rederly-request-
 import { RederlyExpressRequest } from './extensions/rederly-express-request';
 import { v4 as uuidv4 } from 'uuid';
 import * as fse from 'fs-extra';
+import lti from './database/lti-init';
 
 interface ErrorResponse {
     statusCode: number;
@@ -158,6 +159,8 @@ app.use((req, res, next) => {
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+app.use('/lti', lti.app);
 
 // The line: app.use(bodyParser.json()); clears the namespace for some reason :shrug:
 app.use(rederlyRequestNamespaceMiddleware);

@@ -51,7 +51,7 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
     public readonly topicType!: TopicType;
     public readonly questions?: CourseWWTopicQuestion[];
     public readonly studentTopicOverride?: StudentTopicOverride[];
-    public readonly topicAssessmentInfo?: TopicAssessmentInfo;
+    public topicAssessmentInfo?: TopicAssessmentInfo;
     public studentTopicAssessmentInfo?: StudentTopicAssessmentInfo[];
     public readonly unit?: CourseUnitContent;
     public workbookCount?: number;

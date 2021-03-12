@@ -2936,40 +2936,10 @@ class CourseController {
 
         const topicWhere: sequelize.WhereOptions = { active: true };
 
-        const topicInclude = [{
-            model: CourseWWTopicQuestion,
-            as: 'questions',
-            attributes: [],
-            where: {
-                active: true,
-                hidden: false
-            },
-            include: [{
-                model: StudentGrade,
-                as: 'grades',
-                attributes: [],
-                where: {
-                    active: true,
-                }
-            }]
-        },
-        {
-            model: StudentTopicOverride,
-            as: 'studentTopicOverride',
-            attributes: [],
-            required: false,
-        }] as sequelize.IncludeOptions[];
-
         if (userRole === Role.STUDENT) {
             topicWhere[`$topics.topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`] = {
                 [sequelize.Op.or]: [true, null]
             };
-            topicInclude.push({
-                model: TopicAssessmentInfo,
-                as: 'topicAssessmentInfo',
-                attributes: [],
-                required: false,
-            });
         }
 
         return CourseUnitContent.findAll({
@@ -3051,10 +3021,14 @@ class CourseController {
             courseUnitContentId,
             [`$unit.${CourseUnitContent.rawAttributes.courseId.field}$`]: courseId,
             [`$questions.grades.${StudentGrade.rawAttributes.userId.field}$`]: userId,
-            [`$topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`]: {
-                [sequelize.Op.or]: [true, null]
-            }
         }).omitBy(_.isNil).value() as sequelize.WhereOptions;
+
+        if (userRole === Role.STUDENT) {
+            // TODO: Fix this.
+            (where as sequelize.WhereAttributeHash)[`$topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`] = {
+                [sequelize.Op.or]: [true, null]
+            };
+        }
 
         const include: sequelize.IncludeOptions[] = [
             {
@@ -3099,14 +3073,12 @@ class CourseController {
             });
         }
 
-        if (userRole === Role.STUDENT) {
-            include.push({
-                model: TopicAssessmentInfo,
-                as: 'topicAssessmentInfo',
-                attributes: [],
-                required: false,
-            });
-        }
+        include.push({
+            model: TopicAssessmentInfo,
+            as: 'topicAssessmentInfo',
+            attributes: [],
+            required: false,
+        });
 
         let averageScoreAttribute;
         // This is averageScoreAttribute, with points earned/available if applicable.

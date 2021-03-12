@@ -3151,13 +3151,17 @@ class CourseController {
             courseTopicContentId,
             [`$topic.unit.${CourseUnitContent.rawAttributes.courseId.field}$`]: courseId,
             [`$grades.${StudentGrade.rawAttributes.userId.field}$`]: userId,
-            [`$topic.topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`]: {
-                [sequelize.Op.or]: [true, null]
-            },
-            [`$topic.topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showItemizedResults.field}$`]: {
-                [sequelize.Op.or]: [true, null]
-            },
         }).omitBy(_.isNil).value() as sequelize.WhereOptions;
+
+        if (userRole === Role.STUDENT) {
+            // TODO: Fix this.
+            (where as sequelize.WhereAttributeHash)[`$topic.topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`] = {
+                [sequelize.Op.or]: [true, null]
+            };
+            (where as sequelize.WhereAttributeHash)[`$topic.topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showItemizedResults.field}$`] = {
+                [sequelize.Op.or]: [true, null]
+            };
+        }
 
         const include: sequelize.IncludeOptions[] = [{
             model: StudentGrade,

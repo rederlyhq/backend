@@ -229,7 +229,11 @@ export default class ExportPDFHelper {
                 problems: studentGrades,
                 professorUUID: professorUUID
             };
-            return await this.bulkExportAxios.post('export/', postObject);
+            return await this.bulkExportAxios.post('export/', postObject, {
+                params: {
+                    showSolutions: showSolutions
+                }
+            });
         });
         
         // Request zip

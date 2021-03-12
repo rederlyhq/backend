@@ -25,7 +25,8 @@ import curriculumRepository from '../curriculum/curriculum-repository';
 import CurriculumUnitContent from '../../database/models/curriculum-unit-content';
 import CurriculumTopicContent from '../../database/models/curriculum-topic-content';
 import CurriculumWWTopicQuestion from '../../database/models/curriculum-ww-topic-question';
-import WebWorkDef, { Problem } from '../../utilities/web-work-def-parser';
+import WebWorkDef, { Problem } from '@rederly/webwork-def-parser';
+import { getTopicSettingsFromDefFile } from '@rederly/rederly-utils';
 import { nameof } from '../../utilities/typescript-helpers';
 import Role from '../permissions/roles';
 import moment = require('moment');
@@ -58,7 +59,7 @@ import { findFiles, FindFilesDefFileResult, FindFilesPGFileResult, FindFilesImag
 import * as nodePath from 'path';
 import * as tar from 'tar';
 import * as fs from 'fs';
-import { getAverageGroupsBeforeDate, QUESTION_SQL_NAME, STUDENTTOPICOVERRIDE_SQL_NAME, TOPIC_SQL_NAME } from './statistics-helper';
+import { getAverageGroupsBeforeDate, QUESTION_SQL_NAME, STUDENTTOPICOVERRIDE_SQL_NAME, TOPIC_SQL_NAME, getSystemScoreWithWeights } from './statistics-helper';
 import qs = require('qs');
 import ForbiddenError from '../../exceptions/forbidden-error';
 import appSequelize from '../../database/app-sequelize';
@@ -2674,6 +2675,9 @@ class CourseController {
                 attributes: [],
                 required: false,
                 where: {
+                    userId: {
+                        [sequelize.Op.col]: `${StudentGrade.name}.${StudentGrade.rawAttributes.userId.field}`,
+                    },
                     active: true
                 }
             }
@@ -3009,6 +3013,12 @@ class CourseController {
                     as: 'studentTopicOverride',
                     attributes: [],
                     required: false,
+                    where: {
+                        active: true,
+                        userId: {
+                            [sequelize.Op.col]: `"topics->questions->grades".${StudentGrade.rawAttributes.userId.field}`,
+                        },
+                    }
                 },
                 {
                     model: TopicAssessmentInfo,
@@ -3069,6 +3079,12 @@ class CourseController {
                 as: 'studentTopicOverride',
                 attributes: [],
                 required: false,
+                where: {
+                    active: true,
+                    userId: {
+                        [sequelize.Op.col]: `"questions->grades".${StudentGrade.rawAttributes.userId.field}`,
+                    },
+                }
             }
         ];
 
@@ -3122,6 +3138,10 @@ class CourseController {
             ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.ROOT_OF_QUERY, QUESTION_SQL_NAME.INCLUDED_AS_QUESTIONS, STUDENTTOPICOVERRIDE_SQL_NAME.INCLUDED_AS_STUDENTTOPICOVERRIDE),
         ] : [];
 
+        const systemScoreGroup: sequelize.ProjectionAlias = followQuestionRules ? 
+            getSystemScoreWithWeights(QUESTION_SQL_NAME.INCLUDED_AS_QUESTIONS) : 
+            [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'];
+
         return CourseTopicContent.findAll({
             where,
             attributes: [
@@ -3131,7 +3151,7 @@ class CourseController {
                 ...averageScoreGroup,
                 ...closedAndOpenedGroups,
                 [sequelize.fn('count', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.id.field}`)), 'totalGrades'],
-                [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'],
+                systemScoreGroup,
                 [sequelize.literal(`count(CASE WHEN "questions->grades".${StudentGrade.rawAttributes.overallBestScore.field} >= 1 THEN "questions->grades".${StudentGrade.rawAttributes.id.field} END)`), 'completedCount'],
                 [completionPercentAttribute, 'completionPercent'],
             ],
@@ -3212,7 +3232,20 @@ class CourseController {
                 where: {
                     active: true
                 },
-                include: topicInclude
+                include: [
+                ...topicInclude,
+                {
+                    model: StudentTopicOverride,
+                    as: 'studentTopicOverride',
+                    attributes: [],
+                    required: false,
+                    where: {
+                        active: true,
+                        userId: {
+                            [sequelize.Op.col]: `"grades".${StudentGrade.rawAttributes.userId.field}`,
+                        },
+                    }
+                }]
             });
         }
 
@@ -4838,44 +4871,11 @@ You can contact your student at ${options.student.email} or by replying to this 
                 });
 
                 if (parsedWebworkDef.isExam()) {
-                    let possibleIntervals = 1;
-                    let timeInterval: number | undefined = undefined;
-                    if (!_.isNil(parsedWebworkDef.timeInterval)) {
-                        timeInterval = parseInt(parsedWebworkDef.timeInterval, 10);
-
-                        if (_.isNaN(timeInterval)) {
-                            throw new IllegalArgumentException(`The def file: ${defFile.defFileRelativePath} has an invalid time interval: ${parsedWebworkDef.timeInterval}.`);
-                        }
-
-                        timeInterval /= 60;
-
-                        if (timeInterval > 0) {
-                            if (_.isNil(parsedWebworkDef.openDate) || _.isNil(parsedWebworkDef.dueDate)) {
-                                throw new IllegalArgumentException(`The def file: ${defFile.defFileRelativePath} is missing the open or due date.`);
-                            }
-                            // The format from webwork has a timezone (i.e. EDT, EST)
-                            // However moment didn't have a nice way to format with the timezone
-                            // This should not be a problem unless the start and end date are in different timezones (daylight savings)
-                            const webworkDateFormat = 'MM/DD/YYYY [at] HH:mma';
-                            const examDuration = moment(parsedWebworkDef.dueDate, webworkDateFormat).diff(moment(parsedWebworkDef.openDate, webworkDateFormat));
-                            // / 60000 to convert to minutes
-                            possibleIntervals = examDuration / 60000 / timeInterval;
-                        }
-                        timeInterval = Math.round(timeInterval);
-                    }
+                    const topicSettings = getTopicSettingsFromDefFile(parsedWebworkDef);
                     const topicAssessmentInfo: Partial<TopicAssessmentInfoInterface> = _.omitBy({
                         // id,
                         courseTopicContentId: topic.id,
-                        duration: parsedWebworkDef.versionTimeLimit ? Math.round(parseInt(parsedWebworkDef.versionTimeLimit, 10) / 60) : undefined,
-                        hardCutoff: WebWorkDef.characterBoolean(parsedWebworkDef.capTimeLimit),
-                        hideHints: undefined,
-                        hideProblemsAfterFinish: WebWorkDef.characterBoolean(parsedWebworkDef.hideWork),
-                        maxGradedAttemptsPerVersion: parsedWebworkDef.attemptsPerVersion ? parseInt(parsedWebworkDef.attemptsPerVersion, 10) : undefined,
-                        maxVersions: parsedWebworkDef.versionsPerInterval ? Math.round(parseInt(parsedWebworkDef.versionsPerInterval, 10) * possibleIntervals) : undefined,
-                        randomizeOrder: WebWorkDef.numberBoolean(parsedWebworkDef.problemRandOrder),
-                        showItemizedResults: !WebWorkDef.characterBoolean(parsedWebworkDef.hideScoreByProblem),
-                        showTotalGradeImmediately: !WebWorkDef.characterBoolean(parsedWebworkDef.hideScore),
-                        versionDelay: timeInterval
+                        ...topicSettings.topicAssessmentInfo
                     }, _.isUndefined);
                     try {
                         await TopicAssessmentInfo.create(topicAssessmentInfo);

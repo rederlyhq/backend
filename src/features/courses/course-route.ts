@@ -459,7 +459,10 @@ router.put('/topic/:id',
         });
         // TODO handle not found case
         next(httpResponse.Ok('Updated topic successfully', {
-            updatesResult,
+            updatesResult: updatesResult.map(result => ({
+                ...result.get({ plain: true }),
+                topicAssessmentInfo: result.topicAssessmentInfo
+            })),
             updatesCount: updatesResult.length
         }));
     }));
@@ -1473,7 +1476,9 @@ router.delete('/enroll',
         }
     }));
 
-router.get('/attachments/upload-url',
+// TODO: Switch to POST in next release to match Frontend API.
+// This was to avoid API failures from one release to another.
+router.all('/attachments/upload-url',
     authenticationMiddleware,
     validate(getAttachmentPresignedURLValidation),
     asyncHandler(async (req: RederlyExpressRequest<GetAttachmentPresignedURLRequest.params, unknown, GetAttachmentPresignedURLRequest.body, GetAttachmentPresignedURLRequest.query>, _res: Response, next: NextFunction) => {

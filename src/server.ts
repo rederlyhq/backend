@@ -160,14 +160,20 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-app.use('/lti', lti.app);
-
 // The line: app.use(bodyParser.json()); clears the namespace for some reason :shrug:
 app.use(rederlyRequestNamespaceMiddleware);
 
 app.use(passport.initialize());
 
 app.use(basePath, router);
+
+app.use(basePath + 'lti', lti.app);
+
+lti.onConnect(async (token: any, req: any, res: { send: (arg0: string) => any; }, next: any) => {
+    console.log(token)
+    return res.send('User connected!')
+  }
+)
 
 // This is a developer option, it will be logged as a warning if it is on in production
 if (configurations.app.autoDeleteTemp) {

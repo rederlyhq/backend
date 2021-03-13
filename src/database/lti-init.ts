@@ -28,7 +28,16 @@ lti.setup('GIB_KEY',
             secure: false,
             sameSite: '',
         },
-        devMode: true
+        devMode: true,
+        dynReg: {
+            url: 'http://localhost:3001/backend-api/lti', // Tool Provider URL. Required field.
+            name: 'Rederly Tool', // Tool Provider name. Required field.
+            logo: 'http://app.rederly.com/rederly-logo-offwhite.webp', // Tool Provider logo URL.
+            description: 'Rederly Description', // Tool Provider description.
+            // redirectUris: [''], // Additional redirection URLs. The main URL is added by default.
+            // customParameters: { key: 'value' }, // Custom parameters.
+            autoActivate: false // Whether or not dynamically registered Platforms should be automatically activated. Defaults to false.
+        }
     }
 );
 
@@ -39,6 +48,9 @@ lti.onConnect((token: any, req: any, res: any) => {
     return res.send('It\'s alive!');
 });
 
-lti.deploy({serverless: true}).then(()=>console.log('lti deployed?'));
+lti.deploy({serverless: true}).then(async ()=>{
+    const platforms = await lti.getAllPlatforms()
+    console.log('LTI connected with existing platforms: ', platforms);
+});
 
 export default lti;

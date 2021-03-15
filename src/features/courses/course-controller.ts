@@ -2669,8 +2669,7 @@ class CourseController {
                     active: true
                 },
                 include: unitInclude || [],
-            },
-            {
+            }, {
                 model: StudentTopicOverride,
                 as: 'studentTopicOverride',
                 attributes: [],
@@ -2896,6 +2895,7 @@ class CourseController {
         const {
             courseId,
             userId,
+            userRole,
         } = options.where;
 
         const { followQuestionRules } = options;
@@ -2934,6 +2934,14 @@ class CourseController {
             ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.INCLUDED_AS_TOPICS, QUESTION_SQL_NAME.CHILDREN_OF_INCLUDED_TOPICS, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_INCLUDED_TOPICS),
         ] : [];
 
+        const topicWhere: sequelize.WhereOptions = { active: true };
+
+        if (userRole === Role.STUDENT) {
+            topicWhere[`$topics.topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`] = {
+                [sequelize.Op.or]: [true, null]
+            };
+        }
+
         return CourseUnitContent.findAll({
             where,
             attributes: [
@@ -2951,9 +2959,8 @@ class CourseController {
                 model: CourseTopicContent,
                 as: 'topics',
                 attributes: [],
-                where: {
-                    active: true
-                },
+                required: false,
+                where: topicWhere,
                 include: [{
                     model: CourseWWTopicQuestion,
                     as: 'questions',
@@ -2982,6 +2989,12 @@ class CourseController {
                             [sequelize.Op.col]: `"topics->questions->grades".${StudentGrade.rawAttributes.userId.field}`,
                         },
                     }
+                },
+                {
+                    model: TopicAssessmentInfo,
+                    as: 'topicAssessmentInfo',
+                    attributes: [],
+                    required: false,
                 }
             ]
             }],
@@ -2997,6 +3010,7 @@ class CourseController {
             courseUnitContentId,
             courseId,
             userId,
+            userRole,
         } = options.where;
 
         const { followQuestionRules } = options;
@@ -3008,6 +3022,13 @@ class CourseController {
             [`$unit.${CourseUnitContent.rawAttributes.courseId.field}$`]: courseId,
             [`$questions.grades.${StudentGrade.rawAttributes.userId.field}$`]: userId,
         }).omitBy(_.isNil).value() as sequelize.WhereOptions;
+
+        if (userRole === Role.STUDENT) {
+            // TODO: Fix this.
+            (where as sequelize.WhereAttributeHash)[`$topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`] = {
+                [sequelize.Op.or]: [true, null]
+            };
+        }
 
         const include: sequelize.IncludeOptions[] = [
             {
@@ -3051,6 +3072,13 @@ class CourseController {
                 }
             });
         }
+
+        include.push({
+            model: TopicAssessmentInfo,
+            as: 'topicAssessmentInfo',
+            attributes: [],
+            required: false,
+        });
 
         let averageScoreAttribute;
         // This is averageScoreAttribute, with points earned/available if applicable.
@@ -3112,6 +3140,7 @@ class CourseController {
             courseTopicContentId,
             courseId,
             userId,
+            userRole,
         } = options.where;
 
         const { followQuestionRules } = options;
@@ -3124,6 +3153,16 @@ class CourseController {
             [`$grades.${StudentGrade.rawAttributes.userId.field}$`]: userId,
         }).omitBy(_.isNil).value() as sequelize.WhereOptions;
 
+        if (userRole === Role.STUDENT) {
+            // TODO: Fix this.
+            (where as sequelize.WhereAttributeHash)[`$topic.topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`] = {
+                [sequelize.Op.or]: [true, null]
+            };
+            (where as sequelize.WhereAttributeHash)[`$topic.topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showItemizedResults.field}$`] = {
+                [sequelize.Op.or]: [true, null]
+            };
+        }
+
         const include: sequelize.IncludeOptions[] = [{
             model: StudentGrade,
             as: 'grades',
@@ -3134,7 +3173,34 @@ class CourseController {
             }
         }];
 
+        const topicInclude: sequelize.IncludeOptions[] = [{
+            model: StudentTopicOverride,
+            as: 'studentTopicOverride',
+            attributes: [],
+            required: false,
+        }];
+
         if (!_.isNil(courseId)) {
+            topicInclude.push({
+                model: CourseUnitContent,
+                as: 'unit',
+                attributes: [],
+                where: {
+                    active: true
+                }
+            });
+        }
+
+        if (userRole === Role.STUDENT) {
+            topicInclude.push({
+                model: TopicAssessmentInfo,
+                as: 'topicAssessmentInfo',
+                attributes: [],
+                required: false,
+            });
+        }
+
+        if (!_.isNil(courseId) || userRole === Role.STUDENT) {
             include.push({
                 model: CourseTopicContent,
                 as: 'topic',
@@ -3142,14 +3208,8 @@ class CourseController {
                 where: {
                     active: true
                 },
-                include: [{
-                    model: CourseUnitContent,
-                    as: 'unit',
-                    attributes: [],
-                    where: {
-                        active: true
-                    }
-                },
+                include: [
+                ...topicInclude,
                 {
                     model: StudentTopicOverride,
                     as: 'studentTopicOverride',

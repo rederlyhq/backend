@@ -78,6 +78,7 @@ router.get('/statistics/units',
                 where: {
                     courseId: req.query.courseId,
                     userId: req.query.userId,
+                    userRole: req.rederlyUserRole ?? Role.STUDENT,
                 },
                 followQuestionRules: !_.isNil(req.query.userId)
             });
@@ -102,6 +103,7 @@ router.get('/statistics/topics',
                     courseUnitContentId: req.query.courseUnitContentId,
                     courseId: req.query.courseId,
                     userId: req.query.userId,
+                    userRole: req.rederlyUserRole ?? Role.STUDENT,
                 },
                 followQuestionRules: !_.isNil(req.query.userId)
             });
@@ -126,6 +128,7 @@ router.get('/statistics/questions',
                     courseTopicContentId: req.query.courseTopicContentId,
                     courseId: req.query.courseId,
                     userId: req.query.userId,
+                    userRole: req.rederlyUserRole ?? Role.STUDENT,
                 },
                 followQuestionRules: !_.isNil(req.query.userId)
             });

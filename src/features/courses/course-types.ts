@@ -281,6 +281,7 @@ export interface GetStatisticsOnUnitsOptions {
     where: {
         courseId?: number;
         userId?: number;
+        userRole: Role;
     };
     followQuestionRules: boolean;
 }
@@ -290,6 +291,7 @@ export interface GetStatisticsOnTopicsOptions {
         courseUnitContentId?: number;
         courseId?: number;
         userId?: number;
+        userRole: Role;
     };
     followQuestionRules: boolean;
 }
@@ -299,6 +301,7 @@ export interface GetStatisticsOnQuestionsOptions {
         courseTopicContentId?: number;
         courseId?: number;
         userId?: number;
+        userRole: Role;
     };
     followQuestionRules: boolean;
 }

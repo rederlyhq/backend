@@ -658,3 +658,14 @@ export const endBulkExportValidation = {
         exportUrl: Joi.string().optional(),
     },
 };
+
+export const postFeedbackValidation = {
+    params: {
+    },
+    query: {
+        workbookId: Joi.number().required(),
+    },
+    body: {
+        content: Joi.string().required(),
+    },
+};

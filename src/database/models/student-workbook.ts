@@ -28,6 +28,7 @@ export interface StudentWorkbookInterface {
 
     createdAt: Date;
     updatedAt: Date;
+    feedback: string;
 }
 
 export default class StudentWorkbook extends Model implements StudentWorkbookInterface {
@@ -49,6 +50,7 @@ export default class StudentWorkbook extends Model implements StudentWorkbookInt
     public wasAfterAttemptLimit!: boolean;
     public wasLocked!: boolean;
     public wasAutoSubmitted!: boolean;
+    public feedback!: string;
 
     public getStudentGrade!: BelongsToGetAssociationMixin<StudentGrade>;
     public getUser!: BelongsToGetAssociationMixin<User>;
@@ -153,6 +155,12 @@ StudentWorkbook.init({
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false
+    },
+    feedback: {
+        field: 'student_workbook_feedback',
+        type: DataTypes.TEXT,
+        allowNull: false,
+        defaultValue: '',
     },
 }, {
     tableName: 'student_workbook',

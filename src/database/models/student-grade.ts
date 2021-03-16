@@ -56,8 +56,6 @@ export default class StudentGrade extends Model implements StudentGradeInterface
     // Updated with overallBestScore
     public lastInfluencingAttemptId!: number | null;
 
-    public feedback!: string;
-
     public getUser!: BelongsToGetAssociationMixin<User>;
     public getQuestion!: BelongsToGetAssociationMixin<CourseWWTopicQuestion>;
     public getLastInfluencingAttempt!: BelongsToGetAssociationMixin<StudentWorkbook>;
@@ -285,12 +283,6 @@ StudentGrade.init({
         field: 'student_grade_current_problem_state',
         type: DataTypes.JSONB,
         allowNull: true,
-    },
-    feedback: {
-        field: 'student_grade_feedback',
-        type: DataTypes.TEXT,
-        allowNull: false,
-        defaultValue: '',
     },
 }, {
     tableName: 'student_grade',

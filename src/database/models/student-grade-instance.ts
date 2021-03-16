@@ -57,8 +57,6 @@ export default class StudentGradeInstance extends Model implements StudentGradeI
     public getProblemAttachments!: BelongsToManyGetAssociationsMixin<ProblemAttachment>;
     public problemAttachments?: ProblemAttachment[];
 
-    public feedback!: string;
-
     // timestamps!
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -200,12 +198,6 @@ StudentGradeInstance.init({
         field: 'student_grade_instance_current_problem_state',
         type: DataTypes.JSONB,
         allowNull: true,
-    },
-    feedback: {
-        field: 'student_grade_instance_feedback',
-        type: DataTypes.TEXT,
-        allowNull: false,
-        defaultValue: '',
     },
 }, {
     tableName: 'student_grade_instance',

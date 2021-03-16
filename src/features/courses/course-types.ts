@@ -394,12 +394,14 @@ export interface SubmittedAssessmentResultContext {
 
 export interface ScoreAssessmentResult {
     problemScores: { [key: string]: number };
+    problemWeights: { [key: string]: number };
     bestVersionScore: number;
     bestOverallVersion: number;
 }
 
 export interface SubmitAssessmentAnswerResult {
     problemScores?: { [key: string]: number };
+    problemWeights?: { [key: string]: number };
     bestVersionScore?: number;
     bestOverallVersion?: number;
 }

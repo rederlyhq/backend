@@ -101,6 +101,14 @@ class CourseController {
                                 ...(userId && {userId: userId}),
                             },
                             required: false,
+                        },
+                        {
+                            model: TopicAssessmentInfo,
+                            as: 'topicAssessmentInfo',
+                            required: false,
+                            where: {
+                                active: true
+                            }
                         }
                     ],
                     required: false,
@@ -3024,7 +3032,6 @@ class CourseController {
         }).omitBy(_.isNil).value() as sequelize.WhereOptions;
 
         if (userRole === Role.STUDENT) {
-            // TODO: Fix this.
             (where as sequelize.WhereAttributeHash)[`$topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`] = {
                 [sequelize.Op.or]: [true, null]
             };
@@ -4002,6 +4009,7 @@ class CourseController {
         let bestVersionScore = 0;
         let bestOverallVersion = 0;
         const problemScores: { [key: string]: number } = {};
+        const problemWeights: { [key: string]: number } = {};
 
         results.forEach((result: SubmittedAssessmentResultContext) => {
             const { questionResponse, grade, instance, weight } = result;
@@ -4009,10 +4017,11 @@ class CourseController {
             bestVersionScore += weight * instance.scoreForBestVersion;
             bestOverallVersion += weight * grade.bestScore;
             problemScores[result.instance.problemNumber.toString(10)] = result.questionResponse.problem_result.score * result.weight;
+            problemWeights[result.instance.problemNumber.toString(10)] = result.weight;
         });
 
         problemScores['total'] = totalScore;
-        return {problemScores, bestVersionScore: bestVersionScore, bestOverallVersion};
+        return {problemScores, problemWeights, bestVersionScore: bestVersionScore, bestOverallVersion};
     }
 
     async submitAssessmentAnswers(studentTopicAssessmentInfoId: number, wasAutoSubmitted: boolean): Promise<SubmitAssessmentAnswerResult> {
@@ -4049,7 +4058,7 @@ class CourseController {
                 });
             });
 
-            const { problemScores, bestVersionScore, bestOverallVersion } = this.scoreAssessment(questionResponses);
+            const { problemScores, problemWeights, bestVersionScore, bestOverallVersion } = this.scoreAssessment(questionResponses);
             const isBestForThisVersion = problemScores.total >= bestVersionScore;
             const isBestOverallVersion = problemScores.total >= bestOverallVersion;
 
@@ -4169,6 +4178,7 @@ class CourseController {
 
             // use topic assessment info settings to decide what data is exposed to the frontend
             let problemScoresReturn: { [key: string]: number } | undefined;
+            let problemWeightsReturn: { [key: string]: number } | undefined;
             let bestVersionScoreReturn: number | undefined;
             let bestOverallVersionReturn: number | undefined;
             if (showTotalGradeImmediately){
@@ -4176,12 +4186,13 @@ class CourseController {
                 bestOverallVersionReturn = Math.max(bestOverallVersion, problemScores.total);
                 if (showItemizedResults) {
                     problemScoresReturn = problemScores;
+                    problemWeightsReturn = problemWeights;
                 } else {
                     problemScoresReturn = {total: problemScores.total};
                 }
             }
 
-            return { problemScores: problemScoresReturn, bestVersionScore: bestVersionScoreReturn, bestOverallVersion: bestOverallVersionReturn};
+            return { problemScores: problemScoresReturn, problemWeights: problemWeightsReturn, bestVersionScore: bestVersionScoreReturn, bestOverallVersion: bestOverallVersionReturn};
         });
     };
 

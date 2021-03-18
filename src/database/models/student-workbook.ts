@@ -28,7 +28,9 @@ export interface StudentWorkbookInterface {
 
     createdAt: Date;
     updatedAt: Date;
-    feedback: string;
+
+    // This is a Quill Delta object, which we don't need to manipulate here.
+    feedback: unknown;
 }
 
 export default class StudentWorkbook extends Model implements StudentWorkbookInterface {
@@ -50,7 +52,9 @@ export default class StudentWorkbook extends Model implements StudentWorkbookInt
     public wasAfterAttemptLimit!: boolean;
     public wasLocked!: boolean;
     public wasAutoSubmitted!: boolean;
-    public feedback!: string;
+    
+    // This is a Quill Delta object, which we don't need to manipulate here.
+    feedback: unknown;
 
     public getStudentGrade!: BelongsToGetAssociationMixin<StudentGrade>;
     public getUser!: BelongsToGetAssociationMixin<User>;
@@ -158,9 +162,9 @@ StudentWorkbook.init({
     },
     feedback: {
         field: 'student_workbook_feedback',
-        type: DataTypes.TEXT,
-        allowNull: false,
-        defaultValue: '',
+        type: DataTypes.JSONB,
+        allowNull: true,
+        defaultValue: null,
     },
 }, {
     tableName: 'student_workbook',

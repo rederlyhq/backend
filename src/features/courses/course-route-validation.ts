@@ -87,6 +87,7 @@ export const updateCourseTopicValidation = {
         contentOrder: Joi.number().optional(),
         courseUnitContentId: Joi.number().optional(),
         topicTypeId: Joi.number().optional(),
+        description: Joi.object().optional(),
         // Deletes cannot be undone, use delete endpoint
         // active: Joi.boolean().optional(),
         // Cannot change which curriculum topic it was created from

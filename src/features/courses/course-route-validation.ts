@@ -70,6 +70,8 @@ export const createCourseTopicValidation = {
         contentOrder: Joi.number().optional(),
         // Deletes are one directional and soft
         // active: Joi.boolean().optional().default(true),
+        // Defaults to null
+        description: Joi.object().optional().allow(null),
     },
     query: {}
 };
@@ -87,7 +89,7 @@ export const updateCourseTopicValidation = {
         contentOrder: Joi.number().optional(),
         courseUnitContentId: Joi.number().optional(),
         topicTypeId: Joi.number().optional(),
-        description: Joi.object().optional(),
+        description: Joi.object().optional().allow(null),
         // Deletes cannot be undone, use delete endpoint
         // active: Joi.boolean().optional(),
         // Cannot change which curriculum topic it was created from

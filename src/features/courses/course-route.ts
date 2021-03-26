@@ -356,6 +356,7 @@ router.put('/topic/:topicId/endExport',
         }
 
         if (_.isNil(req.body.exportUrl)) {
+            logger.error('The Exporter failed to successfully export a topic.');
             topic.exportUrl = null;
             topic.lastExported = null;
         } else {

@@ -5155,8 +5155,8 @@ You can contact your student at ${options.student.email} or by replying to this 
     async addFeedback({
         workbookId,
         content
-    }: AddFeedbackOptions): Promise<void> {
-        StudentWorkbook.update({
+    }: AddFeedbackOptions): Promise<[number, StudentWorkbook[]]> {
+        return await StudentWorkbook.update({
             feedback: content
         }, {
             where: {

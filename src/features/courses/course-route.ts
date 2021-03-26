@@ -1645,7 +1645,7 @@ router.post('/feedback',
     authenticationMiddleware,
     validate(postFeedbackValidation),
     asyncHandler(async (req: RederlyExpressRequest<PostFeedbackRequest.params, unknown, PostFeedbackRequest.body, unknown>, _res: Response, next: NextFunction) => {
-        const res = courseController.addFeedback({
+        const res = await courseController.addFeedback({
             content: req.body.content,
             workbookId: (req.query as PostFeedbackRequest.query).workbookId,
         });

@@ -705,3 +705,8 @@ export interface RequestNewProblemVersionOptions {
     userId: number;
     questionId: number;
 }
+
+export interface AddFeedbackOptions {
+    workbookId: number;
+    content: string;
+}

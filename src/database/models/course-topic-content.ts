@@ -35,6 +35,9 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
     public lastExported!: Date | null;
     public exportUrl!: string | null;
 
+    // This is a Quill Delta object, which we don't need to manipulate here.
+    public description!: unknown;
+
     // This is the count of errors in problems associated with this topic.
     public errors!: number;
 
@@ -207,6 +210,12 @@ CourseTopicContent.init({
     exportUrl: {
         field: 'course_topic_content_export_url',
         type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null,
+    },
+    description: {
+        field: 'course_topic_content_description',
+        type: DataTypes.JSONB,
         allowNull: true,
         defaultValue: null,
     },

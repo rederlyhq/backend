@@ -352,3 +352,9 @@ export namespace EndBulkExportRequest {
     export type query = Joi.extractType<typeof validations.endBulkExportValidation.query>;
     export type body = Joi.extractType<typeof validations.endBulkExportValidation.body>;
 };
+
+export namespace PostFeedbackRequest {
+    export type params = Joi.extractType<typeof validations.postFeedbackValidation.params>;
+    export type query = Joi.extractType<typeof validations.postFeedbackValidation.query>;
+    export type body = Joi.extractType<typeof validations.postFeedbackValidation.body>;
+};

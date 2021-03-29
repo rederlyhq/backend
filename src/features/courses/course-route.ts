@@ -231,20 +231,30 @@ router.get('/grades',
     authenticationMiddleware,
     validate(getGradesValidation),
     asyncHandler(async (req: RederlyExpressRequest<GetGradesRequest.params, unknown, GetGradesRequest.body, GetGradesRequest.query>, _res: Response, next: NextFunction) => {
-        try {
-            const grades = await courseController.getGrades({
-                where: {
-                    courseId: req.query.courseId,
-                    questionId: req.query.questionId,
-                    topicId: req.query.topicId,
-                    unitId: req.query.unitId,
-                    userId: req.query.userId,
-                }
-            });
-            next(httpResponse.Ok('Fetched successfully', grades));
-        } catch (e) {
-            next(e);
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
+
+        const requestingUser = req.rederlyUser ?? await req.session.getUser();
+        const rederlyUserRole = req.rederlyUserRole ?? requestingUser.roleId;
+
+        const userId = req.query.userId === 'me' ? requestingUser.id : req.query.userId;
+        if (rederlyUserRole === Role.STUDENT) {
+            if (userId !== requestingUser.id) {
+                throw new ForbiddenError('You may not retrieve grades by id.');
+            }
+        }
+
+        const grades = await courseController.getGrades({
+            where: {
+                courseId: req.query.courseId,
+                questionId: req.query.questionId,
+                topicId: req.query.topicId,
+                unitId: req.query.unitId,
+                userId,
+            }
+        });
+        next(httpResponse.Ok('Fetched successfully', grades));
     }));
 
 router.get('/:courseId/topic-grades',
@@ -802,8 +812,19 @@ router.get('/question/:id/grade',
         if (_.isNil(req.session)) {
             throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
-        const { userId, includeWorkbooks } = req.query as GetQuestionGradeRequest.query;
+        const requestingUser = req.rederlyUser ?? await req.session.getUser();
+        const rederlyUserRole = req.rederlyUserRole ?? requestingUser.roleId;
+
+        
+        const { userId: userIdQuery, includeWorkbooks } = req.query as GetQuestionGradeRequest.query;
         const { id: questionId } = req.params as GetQuestionGradeRequest.params;
+
+        const userId = userIdQuery === 'me' ? requestingUser.id : userIdQuery;
+        if (rederlyUserRole === Role.STUDENT) {
+            if (userId !== requestingUser.id) {
+                throw new ForbiddenError('You may not retrieve grades by id.');
+            }
+        }
 
         const grade = await courseController.getGradeForQuestion({
             questionId,
@@ -812,7 +833,6 @@ router.get('/question/:id/grade',
         });
 
         next(httpResponse.Ok('Fetched question grade successfully', grade));
-
     }));
 
 router.get('/question/:id/openlab',

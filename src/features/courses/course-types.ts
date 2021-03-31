@@ -269,12 +269,14 @@ export interface GetGradesOptions {
         questionId?: number;
         userId?: number;
     };
+    userRole: Role;
 }
 
 export interface GetGradeForQuestionOptions {
     questionId: number;
     userId: number;
     includeWorkbooks?: boolean;
+    userRole?: Role;
 }
 
 export interface GetStatisticsOnUnitsOptions {
@@ -364,7 +366,10 @@ export interface CanUserViewQuestionIdOptions {
 }
 
 export interface CanUserViewQuestionIdResult {
+    // This essentially checks hideProblemsAfterFinish.
     userCanViewQuestion: boolean;
+    // This essentially checks showItemizedResults.
+    userCanViewSolution?: boolean;
     message: string;
 }
 

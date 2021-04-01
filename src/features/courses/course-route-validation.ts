@@ -664,11 +664,11 @@ export const endBulkExportValidation = {
 
 export const postFeedbackValidation = {
     params: {
-    },
-    query: {
         workbookId: Joi.number().required(),
     },
+    query: {
+    },
     body: {
-        content: Joi.string().required(),
+        content: Joi.object().optional().allow(null),
     },
 };

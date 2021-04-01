@@ -2966,6 +2966,16 @@ class CourseController {
                 where: {
                     active: true,
                 },
+                include: [
+                    {
+                        model: ProblemAttachment,
+                        as: 'problemAttachments',
+                        required: false,
+                        where: {
+                            active: true,
+                        }
+                    }
+                ]
             }
         ];
 

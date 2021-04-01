@@ -711,5 +711,5 @@ export interface RequestNewProblemVersionOptions {
 
 export interface AddFeedbackOptions {
     workbookId: number;
-    content: string;
+    content: unknown;
 }

@@ -1645,16 +1645,18 @@ router.post('/question/editor/catalog',
         }));
     }));
 
-router.post('/feedback', 
+router.post('/workbook/:workbookId/feedback', 
     authenticationMiddleware,
     validate(postFeedbackValidation),
-    asyncHandler(async (req: RederlyExpressRequest<PostFeedbackRequest.params, unknown, PostFeedbackRequest.body, unknown>, _res: Response, next: NextFunction) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, PostFeedbackRequest.body, unknown>, _res: Response, next: NextFunction) => {
+
         const res = await courseController.addFeedback({
             content: req.body.content,
-            workbookId: (req.query as PostFeedbackRequest.query).workbookId,
+            workbookId: (req.params as PostFeedbackRequest.params).workbookId,
         });
 
-        next(httpResponse.Ok('Attachment record created', res));
+        next(httpResponse.Ok('Feedback saved', res));
     })
 );
 

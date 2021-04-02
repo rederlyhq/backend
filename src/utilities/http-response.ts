@@ -1,36 +1,24 @@
-interface HttpResponse {
-    message?: string | null;
-    // This is a generic object type for passing data down to the user
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data?: any;
-    statusCode: number;
+interface HttpResponse<DataType, StatusCodeType extends number> {
+    message: string;
+    data: DataType;
+    statusCode: StatusCodeType;
     status: string;
 }
 
-// data is any object to pass back to the user
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const createObject = (status: string, statusCode: number, message?: string | null, data?: any): HttpResponse => {
-    const resp: HttpResponse = {
-        statusCode,
-        status
+const createObject = <DataType, StatusCodeType extends number>(status: string, statusCode: StatusCodeType, message: string, data: DataType): HttpResponse<DataType, StatusCodeType> => {
+    const resp = {
+        statusCode: statusCode,
+        status: status,
+        message: message,
+        data: data,
     };
-    if (message !== undefined) {
-        resp.message = message;
-    }
-    if (data !== undefined) {
-        resp.data = data;
-    }
     return resp;
 };
 
 export default {
-    // Data is any object that you want to pass to the user
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Ok: (message?: string | null, data?: any): HttpResponse => createObject('Ok', 200, message, data),
-    // Data is any object that you want to pass to the user
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Created: (message?: string | null, data?: any): HttpResponse => createObject('Created', 201, message, data),
-    // Data is any object that you want to pass to the user
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Accepted: (message?: string | null, data?: any): HttpResponse => createObject('Accepted', 202, message, data),
+    Ok: <DataType>(message: string, data: DataType): HttpResponse<DataType, 200> => createObject('Ok', 200, message, data),
+    Created: <DataType>(message: string, data: DataType): HttpResponse<DataType, 201> => createObject('Created', 201, message, data),
+    Accepted: <DataType>(message: string, data: DataType): HttpResponse<DataType, 202> => createObject('Accepted', 202, message, data),
+
+    BadRequest: <DataType>(message: string, data: DataType): HttpResponse<DataType, 400> => createObject('Bad Request', 400, message, data),
 };

@@ -5,7 +5,7 @@ import httpResponse from '../../utilities/http-response';
 
 router.get('/',
     asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-        next(httpResponse.Ok('Health Ok'));
+        next(httpResponse.Ok('Health Ok', null));
     }));
 
 module.exports = router;

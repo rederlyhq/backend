@@ -5,6 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "@hapi/joi": "^15.1.1",
+    "@rederly/backend-validation": "file:../backend-validations",
     "@rederly/rederly-utils": "0.0.2",
     "@rederly/webwork-def-parser": "^1.0.1",
     "aws-sdk": "^2.815.0",

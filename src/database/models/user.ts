@@ -6,7 +6,7 @@ export default class User extends Model {
   public active!: boolean;
   public universityId!: number;
   // TODO: Make this an enum when adding administrators.
-  public roleId!: number;
+  public roleId!: Role;
   public firstName!: string;
   public lastName!: string;
   public email!: string;
@@ -208,3 +208,4 @@ import University from './university';
 import Permission from './permission';
 import StudentEnrollment from './student-enrollment';
 import StudentGrade from './student-grade';
+import Role from '../../features/permissions/roles';

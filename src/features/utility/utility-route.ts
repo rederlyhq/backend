@@ -47,7 +47,7 @@ router.use('/version',
 // No authentication
 asyncHandler(async (_req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
     const version = await versionPromise;
-    next(httpResponse.Ok(null, {
+    next(httpResponse.Ok('Version fetched', {
         packageJson: version
     }));
 }));
@@ -74,7 +74,7 @@ router.use('/secret-to-everyone',
 // No validation
 authenticationMiddleware,
 (_req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
-    next(httpResponse.Ok(null, configurations.hash));
+    next(httpResponse.Ok('Shhh...', configurations.hash));
 });
 
 interface ClientLogMessage {
@@ -103,7 +103,7 @@ asyncHandler(async (req: RederlyExpressRequest<ClientLogRequest.params, unknown,
         logLevel = logLevel || 'error';
         logger[logLevel](`Client Log: ${JSON.stringify(log)}`);
     });
-    next(httpResponse.Ok('Logged'));
+    next(httpResponse.Ok('Logged', null));
 }));
 
 module.exports = router;

@@ -2,30 +2,35 @@ import * as _ from 'lodash';
 import { Response, NextFunction } from 'express';
 import userController from './user-controller';
 const router = require('express').Router();
-import validate from '../../middleware/joi-validator';
-import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation, updatePasswordValidation, updateForgottonPasswordValidation, resendVerificationValidation, userStatusValidation, impersonateValidation } from './user-route-validation';
-import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest, ForgotPasswordRequest, UpdatePasswordRequest, UpdateForgottonPasswordRequest, ResendVerificationRequest, UserStatusRequest, ImpersonateRequest } from './user-route-request-types';
-import Boom = require('boom');
 import passport = require('passport');
 import { authenticationMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
 import IncludeGradeOptions from './include-grade-options';
-import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
+import { RederlyExpressRequest, DefaultExpressParams, DefaultExpressQuery } from '../../extensions/rederly-express-request';
 import logger from '../../utilities/logger';
 import { Constants } from '../../constants';
+import { DeepAddIndexSignature } from '../../extensions/typescript-utility-extensions';
 
+import { validationMiddleware, ValidationMiddlewareOptions } from '../../middleware/validation-middleware';
+
+interface TypedNextFunction<ArgumentType = unknown> extends NextFunction {
+    (arg: ArgumentType): void;
+}
+import { usersGetCheckIn } from '@rederly/backend-validation';
 router.all('/check-in',
     // No validation
     authenticationMiddleware,
-    (_req: RederlyExpressRequest<never, unknown, never, never>, _res: Response, next: NextFunction) => {
-        next(httpResponse.Ok());
+    validationMiddleware(usersGetCheckIn as ValidationMiddlewareOptions),
+    (_req: RederlyExpressRequest<DefaultExpressParams, unknown, never, DefaultExpressQuery>, _res: Response, next: TypedNextFunction<usersGetCheckIn.IResponse>) => {
+        next(httpResponse.Ok('Checked in', null));
     });
 
-router.post('/impersonate',
-    validate(impersonateValidation),
+    import { usersPostImpersonate } from '@rederly/backend-validation';
+    router.post('/impersonate',
+    validationMiddleware(usersPostImpersonate),
     authenticationMiddleware,
-    (req: RederlyExpressRequest<ImpersonateRequest.params, never, ImpersonateRequest.body, ImpersonateRequest.query>, res: Response, next: NextFunction) => {
+    (req: RederlyExpressRequest<DefaultExpressParams, never, usersPostImpersonate.IBody, DefaultExpressQuery>, res: Response, next: TypedNextFunction<usersPostImpersonate.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -38,13 +43,14 @@ router.post('/impersonate',
             expires: req.session.expiresAt
         };
         res.cookie('sessionToken', token, cookieOptions);
-        next(httpResponse.Ok());
+        next(httpResponse.Ok('Impersonated', null));
     });
 
+import { usersPostLogin } from '@rederly/backend-validation';
 router.post('/login',
-    validate(loginValidation),
+validationMiddleware(usersPostLogin),
     passport.authenticate('local'),
-    asyncHandler(async (req: RederlyExpressRequest<LoginRequest.params, unknown, LoginRequest.body, LoginRequest.query>, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<DefaultExpressParams, usersPostLogin.IResponse , usersPostLogin.IBody, DefaultExpressQuery>, res: Response, next: TypedNextFunction<usersPostLogin.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -57,41 +63,49 @@ router.post('/login',
             };
             const token = `${newSession.uuid}_${newSession.expiresAt.getTime()}`;
             res.cookie('sessionToken', token, cookieOptions);
-            next(httpResponse.Ok(null, {
-                roleId: role.id,
+            const resp = httpResponse.Ok('Logged in', {
+                roleId: role.id as Role,
                 firstName: user.firstName,
                 lastName: user.lastName,
                 userId: user.id,
                 uuid: user.uuid
-            }));
+            });
+            next(resp as DeepAddIndexSignature<typeof resp>);
         } else {
-            next(Boom.badRequest('Invalid login'));
+            const resp = httpResponse.BadRequest('Invalid login', null);
+            next(resp as DeepAddIndexSignature<typeof resp>);
         }
     }));
 
+import { usersPostRegister } from '@rederly/backend-validation';
 router.post('/register',
-    validate(registerValidation),
-    asyncHandler(async (req: RederlyExpressRequest<RegisterRequest.params, unknown, RegisterRequest.body, RegisterRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(usersPostRegister),
+    asyncHandler(async (req: RederlyExpressRequest<DefaultExpressParams, unknown, usersPostRegister.IBody, DefaultExpressQuery>, _res: Response, next: TypedNextFunction<usersPostRegister.IResponse>) => {
         // Typing is incorrect here, even if I specify the header twice it comes back as a string (comma delimeted)
         const baseUrl: string = req.headers.origin as string;
         if (_.isNil(baseUrl)) {
-            next(Boom.badRequest('The `origin` header is required!'));
+            const resp = httpResponse.BadRequest('The `origin` header is required!', null);
+            next(resp as DeepAddIndexSignature<typeof resp>);
             return;
         }
         const newUser = await userController.registerUser({
             userObject: req.body,
             baseUrl
         });
-        next(httpResponse.Created('User registered successfully', newUser));
+        const resp = httpResponse.Created('User registered successfully', newUser);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
+import { usersPostForgotPassword } from '@rederly/backend-validation';
+import Role from '../permissions/roles';
 router.post('/forgot-password',
-    validate(forgotPasswordValidation),
-    asyncHandler(async (req: RederlyExpressRequest<ForgotPasswordRequest.params, unknown, ForgotPasswordRequest.body, ForgotPasswordRequest.query>, res: Response, next: NextFunction) => {
+    validationMiddleware(usersPostForgotPassword),
+    asyncHandler(async (req: RederlyExpressRequest<DefaultExpressParams, usersPostForgotPassword.IResponse, usersPostForgotPassword.IBody, DefaultExpressQuery>, res: Response, next: TypedNextFunction<usersPostForgotPassword.IResponse>) => {
         // Typing is incorrect here, even if I specify the header twice it comes back as a string (comma delimeted)
         const baseUrl: string = req.headers.origin as string;
         if (_.isNil(baseUrl)) {
-            next(Boom.badRequest('The `origin` header is required!'));
+            const resp = httpResponse.BadRequest('The `origin` header is required!', null);
+            next(resp as DeepAddIndexSignature<typeof resp>);
             return;
         }
 
@@ -99,13 +113,15 @@ router.post('/forgot-password',
             email: req.body.email,
             baseUrl
         });
-        next(httpResponse.Ok('Forgot password request successful!'));
+        const resp = httpResponse.Ok('Forgot password request successful!', null);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
+import { usersPutUpdatePassword } from '@rederly/backend-validation';
 router.put('/update-password',
     authenticationMiddleware,
-    validate(updatePasswordValidation),
-    asyncHandler(async (req: RederlyExpressRequest<UpdatePasswordRequest.params, unknown, UpdatePasswordRequest.body, UpdatePasswordRequest.query>, res: Response, next: NextFunction) => {
+    validationMiddleware(usersPutUpdatePassword),
+    asyncHandler(async (req: RederlyExpressRequest<DefaultExpressParams, usersPutUpdatePassword.IResponse, usersPutUpdatePassword.IBody, DefaultExpressQuery>, res: Response, next: TypedNextFunction<usersPutUpdatePassword.IResponse>) => {
         const user = await req.session?.getUser();
         if(_.isNil(user)) {
             logger.error('Impossible! A user must exist with a session with authentication middleware');
@@ -116,40 +132,46 @@ router.put('/update-password',
             oldPassword: req.body.oldPassword,
             id: user.id
         });
-        next(httpResponse.Ok('Password updated!'));
+        const resp = httpResponse.Ok('Password updated!', null);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
+import { usersPutUpdateForgottonPassword } from '@rederly/backend-validation';
 router.put('/update-forgotton-password',
-    validate(updateForgottonPasswordValidation),
-    asyncHandler(async (req: RederlyExpressRequest<UpdateForgottonPasswordRequest.params, unknown, UpdateForgottonPasswordRequest.body, UpdateForgottonPasswordRequest.query>, res: Response, next: NextFunction) => {
+    validationMiddleware(usersPutUpdateForgottonPassword),
+    asyncHandler(async (req: RederlyExpressRequest<DefaultExpressParams, usersPutUpdateForgottonPassword.IResponse, usersPutUpdateForgottonPassword.IBody, DefaultExpressQuery>, res: Response, next: TypedNextFunction<usersPutUpdateForgottonPassword.IResponse>) => {
         await userController.updateForgottonPassword({
             newPassword: req.body.newPassword,
             email: req.body.email,
             forgotPasswordToken: req.body.forgotPasswordToken
         });
-        next(httpResponse.Ok('Forgot password request successful!'));
+        const resp = httpResponse.Ok('Forgot password request successful!', null);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
+import { usersGetVerify } from '@rederly/backend-validation';
 router.get('/verify',
-    validate(verifyValidation),
-    // Query and params are more restrictive types, however with express middlewhere we can and do modify to match our types from validation
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, VerifyRequest.body, any>, _res: Response, next: NextFunction) => {
-        const query = req.query as VerifyRequest.query;
+    validationMiddleware(usersGetVerify),
+    asyncHandler(async (req: RederlyExpressRequest<DefaultExpressParams, usersGetVerify.IResponse, unknown, DefaultExpressQuery>, _res: Response<usersGetVerify.IResponse>, next: TypedNextFunction<usersGetVerify.IResponse>) => {
+        const query = req.query as unknown as usersGetVerify.IQuery;
         const verified = await userController.verifyUser(query.verifyToken, query.confirmEmail);
         if (verified) {
-            next(httpResponse.Ok('Verified'));
+            const resp = httpResponse.Ok('Verified', null);
+            next(resp as DeepAddIndexSignature<typeof resp>);
         } else {
-            next(Boom.badRequest('Invalid verification token'));
+            const resp = httpResponse.BadRequest('Invalid verification token', null);
+            next(resp as DeepAddIndexSignature<typeof resp>);
         }
     }));
 
+import { usersPostResendVerification } from '@rederly/backend-validation';
 router.post('/resend-verification',
-    validate(resendVerificationValidation),
-    asyncHandler(async (req: RederlyExpressRequest<ResendVerificationRequest.params, unknown, ResendVerificationRequest.body, ResendVerificationRequest.query>, _res: Response, next: NextFunction) => {
+        validationMiddleware(usersPostResendVerification),
+        asyncHandler(async (req: RederlyExpressRequest<DefaultExpressParams, usersPostResendVerification.IResponse, usersPostResendVerification.IBody, DefaultExpressQuery>, _res: Response, next: TypedNextFunction<usersPostResendVerification.IResponse>) => {
         const baseUrl: string = req.headers.origin as string;
         if (_.isNil(baseUrl)) {
-            next(Boom.badRequest('The `origin` header is required!'));
+            const resp = httpResponse.BadRequest('The `origin` header is required!', null);
+            next(resp as DeepAddIndexSignature<typeof resp>);
             return;
         }
         await userController.setupUserVerification({
@@ -157,26 +179,29 @@ router.post('/resend-verification',
             refreshVerifyToken: true,
             userEmail: req.body.email
         });
-
-        next(httpResponse.Ok('Verification information updated'));
+        const resp = httpResponse.Ok('Verification information updated', null);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
+import { usersPostLogout } from '@rederly/backend-validation';
 router.post('/logout',
     authenticationMiddleware,
-    validate(logoutValidation),
-    asyncHandler(async (req: RederlyExpressRequest<LogoutRequest.params, unknown, LogoutRequest.body, LogoutRequest.query>, res: Response, next: NextFunction) => {
+    validationMiddleware(usersPostLogout),
+    asyncHandler(async (req: RederlyExpressRequest<DefaultExpressParams, usersPostLogout.IResponse, usersPostLogout.IBody, DefaultExpressQuery>, res: Response<usersPostLogout.IResponse>, next: TypedNextFunction<usersPostLogout.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new Error('Session is nil even after authentication middleware');
         }
         await userController.logout(req.session.dataValues.uuid);
         res.clearCookie('sessionToken');
-        next(httpResponse.Ok('Logged out'));
+        const resp = httpResponse.Ok('Logged out', null);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
+import { usersGetUsers } from '@rederly/backend-validation';
 router.get('/',
     authenticationMiddleware,
-    validate(listUsersValidation),
-    asyncHandler(async (req: RederlyExpressRequest<ListUsersRequest.params, unknown, ListUsersRequest.body, ListUsersRequest.query>, res: Response, next: NextFunction) => {
+    validationMiddleware(usersGetUsers),
+    asyncHandler(async (req: RederlyExpressRequest<DefaultExpressParams, usersGetUsers.IResponse, unknown, usersGetUsers.IQuery>, _res: Response<usersGetUsers.IResponse>, next: TypedNextFunction<usersGetUsers.IResponse>) => {
         const users = await userController.list({
             filters: {
                 userIds: req.query.userIds,
@@ -184,13 +209,15 @@ router.get('/',
                 includeGrades: req.query.includeGrades as IncludeGradeOptions
             }
         });
-        next(httpResponse.Ok(null, users));
+        const resp = httpResponse.Ok('Fetched users', users);
+        next(resp);
     }));
 
+import { usersGetStatus } from '@rederly/backend-validation';
 router.get('/status',
     authenticationMiddleware,
-    validate(userStatusValidation),
-    asyncHandler(async (req: RederlyExpressRequest<UserStatusRequest.params, unknown, UserStatusRequest.body, UserStatusRequest.query>, res: Response, next: NextFunction) => {
+    validationMiddleware(usersGetStatus as ValidationMiddlewareOptions),
+    asyncHandler(async (req: RederlyExpressRequest<DefaultExpressParams, usersGetStatus.IResponse, unknown, DefaultExpressQuery>, _res: Response<usersGetStatus.IResponse>, next: TypedNextFunction<usersGetStatus.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -202,28 +229,30 @@ router.get('/status',
             universityPaidUntil: university.paidUntil,
         };
 
-        next(httpResponse.Ok('fetched user status', response));
+        const resp = httpResponse.Ok('fetched user status', response);
+        next(resp);
     }));
 
+import { usersGetUsersById } from '@rederly/backend-validation';
 router.get('/:id',
     authenticationMiddleware,
-    validate(getUserValidation),
-    // Parameters complained when the type was provided
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetUserRequest.body, GetUserRequest.query>, _res: Response, next: NextFunction) => {
-        const params = req.params as GetUserRequest.params;
+    validationMiddleware(usersGetUsersById),
+    asyncHandler(async (req: RederlyExpressRequest<DefaultExpressParams, usersGetUsersById.IResponse, unknown, usersGetUsersById.IQuery>, _res: Response<usersGetUsersById.IResponse>, next: TypedNextFunction<usersGetUsersById.IResponse>) => {
+        const params = req.params as unknown as usersGetUsersById.IParams;
         const users = await userController.getUser({
             id: params.id,
             courseId: req.query.courseId,
             includeGrades: req.query.includeGrades as IncludeGradeOptions
         });
-        next(httpResponse.Ok(null, users));
+        const resp = httpResponse.Ok('Fetched user', users);
+        next(resp);
     }));
 
+import { usersPostEmail } from '@rederly/backend-validation';
 router.post('/email',
     authenticationMiddleware,
-    validate(emailUsersValidation),
-    asyncHandler(async (req: RederlyExpressRequest<EmailUsersRequest.params, unknown, EmailUsersRequest.body, EmailUsersRequest.query>, res: Response, next: NextFunction) => {
+    validationMiddleware(usersPostEmail),
+    asyncHandler(async (req: RederlyExpressRequest<DefaultExpressParams, unknown, usersPostEmail.IBody, DefaultExpressQuery>, res: Response<usersPostEmail.IResponse>, next: TypedNextFunction<usersPostEmail.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -238,7 +267,8 @@ router.post('/email',
             subject: req.body.subject,
             replyTo: user.email,
         });
-        next(httpResponse.Ok(null, result));
+        const resp = httpResponse.Ok('Email sent', result);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 module.exports = router;

@@ -5,9 +5,11 @@ import Session from '../database/models/session';
 import User from '../database/models/user';
 import Role from '../features/permissions/roles';
 
+export type DefaultExpressParams = core.ParamsDictionary;
+export type DefaultExpressQuery = core.Query;
 // This is the default typing in express which we are extending
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface RederlyExpressRequest<P extends core.Params = core.ParamsDictionary, ResBody = any, ReqBody = any, ReqQuery = core.Query, MetaType = any> extends Request<P, ResBody, ReqBody, ReqQuery> {
+export interface RederlyExpressRequest<P extends core.Params = DefaultExpressParams, ResBody = any, ReqBody = any, ReqQuery = DefaultExpressQuery, MetaType = any> extends Request<P, ResBody, ReqBody, ReqQuery> {
     session?: Session & {
         passport: {
             user: Session;

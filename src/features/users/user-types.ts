@@ -3,6 +3,7 @@ import User from '../../database/models/user';
 import { PartialWithRequiredFields } from '../../extensions/typescript-utility-extensions';
 import { WhereOptions } from 'sequelize/types';
 import { UpdatePasswordRequest, UpdateForgottonPasswordRequest } from './user-route-request-types';
+import Role from '../permissions/roles';
 
 export interface RegisterUserOptions {
     userObject: PartialWithRequiredFields<User, 'email' | 'password'>;
@@ -11,7 +12,7 @@ export interface RegisterUserOptions {
 
 export interface RegisterUserResponse {
     id: number;
-    roleId: number;
+    roleId: Role;
     emailSent: boolean;
     verificationBypass: boolean;
 }

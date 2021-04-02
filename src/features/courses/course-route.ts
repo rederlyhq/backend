@@ -66,7 +66,7 @@ router.post('/:courseId/import-archive',
             user: user,
             keepBucketsAsTopics: req.query.keepBucketsAsTopics ?? true
         });
-        next(httpResponse.Ok(null, result));
+        next(httpResponse.Ok('Imported', result));
     }));
 
 router.get('/statistics/units',
@@ -320,7 +320,7 @@ router.get('/questions',
             studentTopicAssessmentInfoId: req.query.studentTopicAssessmentInfoId ?? version?.id,
         });
 
-        next(httpResponse.Ok(null, {
+        next(httpResponse.Ok('Got questions', {
             questions: questions,
             topic
         }));
@@ -364,7 +364,7 @@ router.put('/topic/:topicId/endExport',
         }
         await topic.save();
 
-        next(httpResponse.Ok('Got it!'));
+        next(httpResponse.Ok('Got it!', null));
     })
 );
 
@@ -511,7 +511,7 @@ router.get('/assessment/topic/end/:id',
 
         await courseController.endAssessmentEarly(version, true);
 
-        next(httpResponse.Ok('Assessment version has been closed.'));
+        next(httpResponse.Ok('Assessment version has been closed.', null));
     }));
 
 router.get('/assessment/topic/:id/start',
@@ -853,7 +853,7 @@ router.get('/question/:id/sma',
 
         const updatedGrade = await courseController.requestProblemNewVersion({questionId, userId}); 
         if (_.isNil(updatedGrade)) {
-            next(httpResponse.Ok('No new versions of this problem could be found.'));
+            next(httpResponse.Ok('No new versions of this problem could be found.', null));
         } else {
             next(httpResponse.Ok('New version found!', updatedGrade));
         }
@@ -925,7 +925,7 @@ router.post('/assessment/topic/:id/submit/:version/auto',
                     assessmentVersionId: params.version,
                     topicId: params.id
                 }));
-                next(httpResponse.Ok('Attempts exceeded skipping auto submit'));
+                next(httpResponse.Ok('Attempts exceeded skipping auto submit', null));
             } else {
                 logger.error('Auto submit ran into uncaught error', e);
                 throw e;

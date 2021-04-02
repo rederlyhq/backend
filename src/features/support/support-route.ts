@@ -1,21 +1,22 @@
 import * as _ from 'lodash';
-import { Response, NextFunction } from 'express';
+import { Response } from 'express';
 const router = require('express').Router();
-import validate from '../../middleware/joi-validator';
 import { authenticationMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
-import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
-import { feedbackValidation } from './support-route-validation';
-import { FeedbackRequest } from './support-route-request-types';
+import { RederlyExpressRequest, EmptyExpressParams, EmptyExpressQuery } from '../../extensions/rederly-express-request';
 import supportController from './support-controller';
 import { Constants } from '../../constants';
 import Role from '../permissions/roles';
+import { validationMiddleware } from '../../middleware/validation-middleware';
+import { TypedNextFunction } from '../../extensions/rederly-express-request';
 
+
+import { supportPostSupport } from '@rederly/backend-validation';
 router.post('/',
     authenticationMiddleware,
-    validate(feedbackValidation),
-    asyncHandler(async (req: RederlyExpressRequest<FeedbackRequest.params, unknown, FeedbackRequest.body, FeedbackRequest.query>, res: Response, next: NextFunction) => {
+    validationMiddleware(supportPostSupport),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, unknown, supportPostSupport.IBody, EmptyExpressQuery>, res: Response, next: TypedNextFunction<supportPostSupport.IResponse>) => {
         if(_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }

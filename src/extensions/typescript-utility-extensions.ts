@@ -23,7 +23,7 @@ export type AddIndexSignature<DataType> = DataType & {
 
 // These two could be combined but vscode seems to get confused and it makes debugging harder
 type RecursiveAddIndexSignature<DataType> = {
-    [P in keyof DataType]: AddIndexSignature<DeepAddIndexSignature<DataType[P]>>;
+    [P in keyof DataType]: AddIndexSignature<RecursiveAddIndexSignature<DataType[P]>>;
 };
 
 export type DeepAddIndexSignature<DataType> = AddIndexSignature<RecursiveAddIndexSignature<DataType>>;

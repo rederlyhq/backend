@@ -1,12 +1,12 @@
 {
   "name": "backend",
-  "version": "1.10.3",
+  "version": "1.10.5",
   "description": "",
   "main": "index.js",
   "dependencies": {
     "@hapi/joi": "^15.1.1",
-    "@rederly/rederly-utils": "0.0.2",
-    "@rederly/webwork-def-parser": "^1.0.1",
+    "@rederly/rederly-utils": "https://github.com/rederlyhq/rederly-utils/releases/download/v0.0.3/rederly-rederly-utils-0.0.3.tgz",
+    "@rederly/webwork-def-parser": "https://github.com/rederlyhq/def-parser/releases/download/v1.0.2/rederly-webwork-def-parser-1.0.2.tgz",
     "aws-sdk": "^2.815.0",
     "axios": "^0.21.1",
     "bcrypt": "^5.0.0",

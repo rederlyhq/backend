@@ -107,7 +107,10 @@ class CourseController {
                             as: 'topicAssessmentInfo',
                             required: false,
                             where: {
-                                active: true
+                                active: true,
+                                // This restriction works and is used in the grades call.
+                                // It can be added later so the frontend doesn't have to double-check the Topic Type.
+                                // ['$"units->topics"."topic_type_id"$']: 2,
                             }
                         }
                     ],
@@ -3003,6 +3006,9 @@ class CourseController {
                     as: 'topicAssessmentInfo',
                     attributes: [],
                     required: false,
+                    where: {
+                        [`$topics.${CourseTopicContent.rawAttributes.topicTypeId.field}$`]: 2,
+                    }
                 }
             ]
             }],
@@ -3085,6 +3091,9 @@ class CourseController {
             as: 'topicAssessmentInfo',
             attributes: [],
             required: false,
+            where: {
+                [`$${CourseTopicContent.name}.${CourseTopicContent.rawAttributes.topicTypeId.field}$`]: 2,
+            }
         });
 
         let averageScoreAttribute;

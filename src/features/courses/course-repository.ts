@@ -254,6 +254,7 @@ class CourseRepository {
                 required: false,
                 where: {
                     active: true,
+                    [`$${CourseTopicContent.name}.${CourseTopicContent.rawAttributes.topicTypeId.field}$`]: 2,
                 },
             });
         }

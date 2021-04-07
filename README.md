@@ -63,6 +63,7 @@
 | DB_PASSWORD | The password for the user to login to the database | password |
 | DB_LOGGING | Whether or not queries should be output, used for debugging | false |
 | DB_SYNC | Whether or not to sync with the database | false |
+| DB_STATEMENT_TIMEOUT | Number of millis a db query is allowed to take (does not affect transactions) | 60000 |
 
 #### Email
 | Environment variable | Description | Default value |

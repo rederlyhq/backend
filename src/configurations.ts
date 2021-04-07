@@ -142,6 +142,7 @@ const configurations = {
         password: readStringValue('DB_PASSWORD', 'password'),
         logging: readBooleanValue('DB_LOGGING', false),
         sync: readBooleanValue('DB_SYNC', false),
+        statementTimeout: readIntValue('DB_STATEMENT_TIMEOUT', 60000),
     },
     email: {
         enabled: readBooleanValue('EMAIL_ENABLED', false),

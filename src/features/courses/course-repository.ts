@@ -245,7 +245,8 @@ class CourseRepository {
                     required: false,
                     where: {
                         active: true,
-                    }
+                    },
+                    limit: 1
                 }]
             });
             assessmentInclude.push({
@@ -254,6 +255,7 @@ class CourseRepository {
                 required: false,
                 where: {
                     active: true,
+                    [`$${CourseTopicContent.name}.${CourseTopicContent.rawAttributes.topicTypeId.field}$`]: 2,
                 },
             });
         }

@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { Model, DataTypes } from 'sequelize';
+import { Model, DataTypes, HasManyGetAssociationsMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
 interface TopicAssessmentInfoOverridesInterface {
@@ -40,6 +40,8 @@ export default class TopicAssessmentInfo extends Model implements TopicAssessmen
 
     public readonly studentTopicAssessmentOverride?: StudentTopicAssessmentOverride[];
     public readonly studentTopicAssessmentInfo?: StudentTopicAssessmentInfo[];
+
+    public readonly getStudentTopicAssessmentInfo!: HasManyGetAssociationsMixin<StudentTopicAssessmentInfo>;
 
     // timestamps!
     public readonly createdAt!: Date;

@@ -122,6 +122,14 @@ const configurations = {
         configSalt: readStringValue('CONFIG_SALT', ''),
         autoDeleteTemp: readBooleanValue('AUTO_DELETE_TEMP_FILES', true),
     },
+    monitoring: {
+        memory: {
+            debugThreshold: readIntValue('MONITORING_MEMORY_DEBUG_THRESHOLD', 40),
+            warningThreshold: readIntValue('MONITORING_MEMORY_WARNING_THRESHOLD', 60),
+            errorThreshold: readIntValue('MONITORING_MEMORY_ERROR_THRESHOLD', 80),
+            interval: readIntValue('MONITORING_MEMORY_INTERVAL', 10000)
+        }
+    },
     server: {
         port: readStringValue('SERVER_PORT', '3001'),
         basePath: readStringValue('SERVER_BASE_PATH', '/backend-api'),

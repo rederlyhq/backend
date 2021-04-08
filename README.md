@@ -37,6 +37,13 @@
 | --- | --- | --- |
 | AUTO_DELETE_TEMP_FILES | Whether or not to delete temp files once done with them, meant for debugging and will log a warning in production | true |
 
+#### Monitoring
+##### Memory
+| MONITORING_MEMORY_DEBUG_THRESHOLD | The memory usage percent that when crossed logs a debug statement | 40 |
+| MONITORING_MEMORY_WARNING_THRESHOLD | The memory usage percent that when crossed logs a warning | 60 |
+| MONITORING_MEMORY_ERROR_THRESHOLD | The memory usage percent that when crossed logs an error | 80 |
+| MONITORING_MEMORY_INTERVAL | How often the memory is checked | 10000 |
+
 #### Server
 | Environment variable | Description | Default value |
 | --- | --- | --- |

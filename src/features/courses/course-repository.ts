@@ -245,7 +245,8 @@ class CourseRepository {
                     required: false,
                     where: {
                         active: true,
-                    }
+                    },
+                    limit: 1
                 }]
             });
             assessmentInclude.push({
@@ -330,7 +331,6 @@ class CourseRepository {
         }
 
         try {
-            // console.log(options);
             const updates = await CourseTopicContent.update(options.updates, {
                 where: {
                     ...options.where,
@@ -354,11 +354,18 @@ class CourseRepository {
                         returning: true,
                     });
 
+                let topicAssessmentInfo = assessmentUpdates[1].first;
                 if (assessmentUpdates[0] === 0) {
-                    await TopicAssessmentInfo.create({
+                    topicAssessmentInfo = await TopicAssessmentInfo.create({
                         courseTopicContentId: updatedObj.id,
                         ...options.updates.topicAssessmentInfo
                     });
+                }
+
+                if (_.isSomething(updates[1].first)) {
+                    updates[1].first.topicAssessmentInfo = topicAssessmentInfo;
+                } else {
+                    logger.error('There was no topic associated with assessment info');
                 }
             }
 

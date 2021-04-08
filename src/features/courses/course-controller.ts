@@ -17,7 +17,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, ImportCourseTarballResult, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions, AddQuestionOptions, RequestNewProblemVersionOptions, BrowseProblemsCourseListOptions, GetSearchProblemResultsOptions, BrowseProblemsTopicListOptions, BrowseProblemsUnitListOptions, EnrollManuallyOptions, ManualEnrollmentResult } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, ImportCourseTarballResult, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions, AddQuestionOptions, RequestNewProblemVersionOptions, BrowseProblemsCourseListOptions, GetSearchProblemResultsOptions, BrowseProblemsTopicListOptions, BrowseProblemsUnitListOptions, EnrollManuallyOptions, ManualEnrollmentResult, AddFeedbackOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -25,7 +25,8 @@ import curriculumRepository from '../curriculum/curriculum-repository';
 import CurriculumUnitContent from '../../database/models/curriculum-unit-content';
 import CurriculumTopicContent from '../../database/models/curriculum-topic-content';
 import CurriculumWWTopicQuestion from '../../database/models/curriculum-ww-topic-question';
-import WebWorkDef, { Problem } from '../../utilities/web-work-def-parser';
+import WebWorkDef, { Problem } from '@rederly/webwork-def-parser';
+import { getTopicSettingsFromDefFile } from '@rederly/rederly-utils';
 import { nameof } from '../../utilities/typescript-helpers';
 import Role from '../permissions/roles';
 import moment = require('moment');
@@ -100,6 +101,17 @@ class CourseController {
                                 ...(userId && {userId: userId}),
                             },
                             required: false,
+                        },
+                        {
+                            model: TopicAssessmentInfo,
+                            as: 'topicAssessmentInfo',
+                            required: false,
+                            where: {
+                                active: true,
+                                // This restriction works and is used in the grades call.
+                                // It can be added later so the frontend doesn't have to double-check the Topic Type.
+                                // ['$"units->topics"."topic_type_id"$']: 2,
+                            }
                         }
                     ],
                     required: false,
@@ -2668,8 +2680,7 @@ class CourseController {
                     active: true
                 },
                 include: unitInclude || [],
-            },
-            {
+            }, {
                 model: StudentTopicOverride,
                 as: 'studentTopicOverride',
                 attributes: [],
@@ -2895,6 +2906,7 @@ class CourseController {
         const {
             courseId,
             userId,
+            userRole,
         } = options.where;
 
         const { followQuestionRules } = options;
@@ -2933,6 +2945,14 @@ class CourseController {
             ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.INCLUDED_AS_TOPICS, QUESTION_SQL_NAME.CHILDREN_OF_INCLUDED_TOPICS, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_INCLUDED_TOPICS),
         ] : [];
 
+        const topicWhere: sequelize.WhereOptions = { active: true };
+
+        if (userRole === Role.STUDENT) {
+            topicWhere[`$topics.topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`] = {
+                [sequelize.Op.or]: [true, null]
+            };
+        }
+
         return CourseUnitContent.findAll({
             where,
             attributes: [
@@ -2950,9 +2970,8 @@ class CourseController {
                 model: CourseTopicContent,
                 as: 'topics',
                 attributes: [],
-                where: {
-                    active: true
-                },
+                required: false,
+                where: topicWhere,
                 include: [{
                     model: CourseWWTopicQuestion,
                     as: 'questions',
@@ -2981,6 +3000,15 @@ class CourseController {
                             [sequelize.Op.col]: `"topics->questions->grades".${StudentGrade.rawAttributes.userId.field}`,
                         },
                     }
+                },
+                {
+                    model: TopicAssessmentInfo,
+                    as: 'topicAssessmentInfo',
+                    attributes: [],
+                    required: false,
+                    where: {
+                        [`$topics.${CourseTopicContent.rawAttributes.topicTypeId.field}$`]: 2,
+                    }
                 }
             ]
             }],
@@ -2996,6 +3024,7 @@ class CourseController {
             courseUnitContentId,
             courseId,
             userId,
+            userRole,
         } = options.where;
 
         const { followQuestionRules } = options;
@@ -3007,6 +3036,12 @@ class CourseController {
             [`$unit.${CourseUnitContent.rawAttributes.courseId.field}$`]: courseId,
             [`$questions.grades.${StudentGrade.rawAttributes.userId.field}$`]: userId,
         }).omitBy(_.isNil).value() as sequelize.WhereOptions;
+
+        if (userRole === Role.STUDENT) {
+            (where as sequelize.WhereAttributeHash)[`$topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`] = {
+                [sequelize.Op.or]: [true, null]
+            };
+        }
 
         const include: sequelize.IncludeOptions[] = [
             {
@@ -3050,6 +3085,16 @@ class CourseController {
                 }
             });
         }
+
+        include.push({
+            model: TopicAssessmentInfo,
+            as: 'topicAssessmentInfo',
+            attributes: [],
+            required: false,
+            where: {
+                [`$${CourseTopicContent.name}.${CourseTopicContent.rawAttributes.topicTypeId.field}$`]: 2,
+            }
+        });
 
         let averageScoreAttribute;
         // This is averageScoreAttribute, with points earned/available if applicable.
@@ -3111,6 +3156,7 @@ class CourseController {
             courseTopicContentId,
             courseId,
             userId,
+            userRole,
         } = options.where;
 
         const { followQuestionRules } = options;
@@ -3123,6 +3169,16 @@ class CourseController {
             [`$grades.${StudentGrade.rawAttributes.userId.field}$`]: userId,
         }).omitBy(_.isNil).value() as sequelize.WhereOptions;
 
+        if (userRole === Role.STUDENT) {
+            // TODO: Fix this.
+            (where as sequelize.WhereAttributeHash)[`$topic.topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`] = {
+                [sequelize.Op.or]: [true, null]
+            };
+            (where as sequelize.WhereAttributeHash)[`$topic.topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showItemizedResults.field}$`] = {
+                [sequelize.Op.or]: [true, null]
+            };
+        }
+
         const include: sequelize.IncludeOptions[] = [{
             model: StudentGrade,
             as: 'grades',
@@ -3133,7 +3189,34 @@ class CourseController {
             }
         }];
 
+        const topicInclude: sequelize.IncludeOptions[] = [{
+            model: StudentTopicOverride,
+            as: 'studentTopicOverride',
+            attributes: [],
+            required: false,
+        }];
+
         if (!_.isNil(courseId)) {
+            topicInclude.push({
+                model: CourseUnitContent,
+                as: 'unit',
+                attributes: [],
+                where: {
+                    active: true
+                }
+            });
+        }
+
+        if (userRole === Role.STUDENT) {
+            topicInclude.push({
+                model: TopicAssessmentInfo,
+                as: 'topicAssessmentInfo',
+                attributes: [],
+                required: false,
+            });
+        }
+
+        if (!_.isNil(courseId) || userRole === Role.STUDENT) {
             include.push({
                 model: CourseTopicContent,
                 as: 'topic',
@@ -3141,14 +3224,8 @@ class CourseController {
                 where: {
                     active: true
                 },
-                include: [{
-                    model: CourseUnitContent,
-                    as: 'unit',
-                    attributes: [],
-                    where: {
-                        active: true
-                    }
-                },
+                include: [
+                ...topicInclude,
                 {
                     model: StudentTopicOverride,
                     as: 'studentTopicOverride',
@@ -3941,6 +4018,7 @@ class CourseController {
         let bestVersionScore = 0;
         let bestOverallVersion = 0;
         const problemScores: { [key: string]: number } = {};
+        const problemWeights: { [key: string]: number } = {};
 
         results.forEach((result: SubmittedAssessmentResultContext) => {
             const { questionResponse, grade, instance, weight } = result;
@@ -3948,10 +4026,11 @@ class CourseController {
             bestVersionScore += weight * instance.scoreForBestVersion;
             bestOverallVersion += weight * grade.bestScore;
             problemScores[result.instance.problemNumber.toString(10)] = result.questionResponse.problem_result.score * result.weight;
+            problemWeights[result.instance.problemNumber.toString(10)] = result.weight;
         });
 
         problemScores['total'] = totalScore;
-        return {problemScores, bestVersionScore: bestVersionScore, bestOverallVersion};
+        return {problemScores, problemWeights, bestVersionScore: bestVersionScore, bestOverallVersion};
     }
 
     async submitAssessmentAnswers(studentTopicAssessmentInfoId: number, wasAutoSubmitted: boolean): Promise<SubmitAssessmentAnswerResult> {
@@ -3988,7 +4067,7 @@ class CourseController {
                 });
             });
 
-            const { problemScores, bestVersionScore, bestOverallVersion } = this.scoreAssessment(questionResponses);
+            const { problemScores, problemWeights, bestVersionScore, bestOverallVersion } = this.scoreAssessment(questionResponses);
             const isBestForThisVersion = problemScores.total >= bestVersionScore;
             const isBestOverallVersion = problemScores.total >= bestOverallVersion;
 
@@ -4108,6 +4187,7 @@ class CourseController {
 
             // use topic assessment info settings to decide what data is exposed to the frontend
             let problemScoresReturn: { [key: string]: number } | undefined;
+            let problemWeightsReturn: { [key: string]: number } | undefined;
             let bestVersionScoreReturn: number | undefined;
             let bestOverallVersionReturn: number | undefined;
             if (showTotalGradeImmediately){
@@ -4115,12 +4195,13 @@ class CourseController {
                 bestOverallVersionReturn = Math.max(bestOverallVersion, problemScores.total);
                 if (showItemizedResults) {
                     problemScoresReturn = problemScores;
+                    problemWeightsReturn = problemWeights;
                 } else {
                     problemScoresReturn = {total: problemScores.total};
                 }
             }
 
-            return { problemScores: problemScoresReturn, bestVersionScore: bestVersionScoreReturn, bestOverallVersion: bestOverallVersionReturn};
+            return { problemScores: problemScoresReturn, problemWeights: problemWeightsReturn, bestVersionScore: bestVersionScoreReturn, bestOverallVersion: bestOverallVersionReturn};
         });
     };
 
@@ -4786,44 +4867,11 @@ You can contact your student at ${options.student.email} or by replying to this 
                 });
 
                 if (parsedWebworkDef.isExam()) {
-                    let possibleIntervals = 1;
-                    let timeInterval: number | undefined = undefined;
-                    if (!_.isNil(parsedWebworkDef.timeInterval)) {
-                        timeInterval = parseInt(parsedWebworkDef.timeInterval, 10);
-
-                        if (_.isNaN(timeInterval)) {
-                            throw new IllegalArgumentException(`The def file: ${defFile.defFileRelativePath} has an invalid time interval: ${parsedWebworkDef.timeInterval}.`);
-                        }
-
-                        timeInterval /= 60;
-
-                        if (timeInterval > 0) {
-                            if (_.isNil(parsedWebworkDef.openDate) || _.isNil(parsedWebworkDef.dueDate)) {
-                                throw new IllegalArgumentException(`The def file: ${defFile.defFileRelativePath} is missing the open or due date.`);
-                            }
-                            // The format from webwork has a timezone (i.e. EDT, EST)
-                            // However moment didn't have a nice way to format with the timezone
-                            // This should not be a problem unless the start and end date are in different timezones (daylight savings)
-                            const webworkDateFormat = 'MM/DD/YYYY [at] HH:mma';
-                            const examDuration = moment(parsedWebworkDef.dueDate, webworkDateFormat).diff(moment(parsedWebworkDef.openDate, webworkDateFormat));
-                            // / 60000 to convert to minutes
-                            possibleIntervals = examDuration / 60000 / timeInterval;
-                        }
-                        timeInterval = Math.round(timeInterval);
-                    }
+                    const topicSettings = getTopicSettingsFromDefFile(parsedWebworkDef);
                     const topicAssessmentInfo: Partial<TopicAssessmentInfoInterface> = _.omitBy({
                         // id,
                         courseTopicContentId: topic.id,
-                        duration: parsedWebworkDef.versionTimeLimit ? Math.round(parseInt(parsedWebworkDef.versionTimeLimit, 10) / 60) : undefined,
-                        hardCutoff: WebWorkDef.characterBoolean(parsedWebworkDef.capTimeLimit),
-                        hideHints: undefined,
-                        hideProblemsAfterFinish: WebWorkDef.characterBoolean(parsedWebworkDef.hideWork),
-                        maxGradedAttemptsPerVersion: parsedWebworkDef.attemptsPerVersion ? parseInt(parsedWebworkDef.attemptsPerVersion, 10) : undefined,
-                        maxVersions: parsedWebworkDef.versionsPerInterval ? Math.round(parseInt(parsedWebworkDef.versionsPerInterval, 10) * possibleIntervals) : undefined,
-                        randomizeOrder: WebWorkDef.numberBoolean(parsedWebworkDef.problemRandOrder),
-                        showItemizedResults: !WebWorkDef.characterBoolean(parsedWebworkDef.hideScoreByProblem),
-                        showTotalGradeImmediately: !WebWorkDef.characterBoolean(parsedWebworkDef.hideScore),
-                        versionDelay: timeInterval
+                        ...topicSettings.topicAssessmentInfo
                     }, _.isUndefined);
                     try {
                         await TopicAssessmentInfo.create(topicAssessmentInfo);
@@ -5123,7 +5171,19 @@ You can contact your student at ${options.student.email} or by replying to this 
             return row;
         });
     }
-
+    
+    async addFeedback({
+        workbookId,
+        content
+    }: AddFeedbackOptions): Promise<[number, StudentWorkbook[]]> {
+        return await StudentWorkbook.update({
+            feedback: content
+        }, {
+            where: {
+                id: workbookId
+            }
+        });
+    }
 }
 
 export const courseController = new CourseController();

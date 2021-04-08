@@ -117,47 +117,49 @@ export interface ShowMeAnotherOptions {
 
 /* eslint-disable @typescript-eslint/camelcase */
 export const rendererResponseValidationScheme = Joi.object({
-    answers: Joi.object().pattern(/\w+/, Joi.object({
-        _filter_name: RederlyExtendedJoi.toStringedString().optional(), // Should be required, but we've seen problem source mess with the object with and drop the field
-        correct_ans: Joi.any().optional(), // I have seen string and number // REQUIRED BUT I SAW AN EXISTING PROBLEM WHERE AnSwEr0002 only had a name
-        original_student_ans: RederlyExtendedJoi.toStringedString().allow('').optional(), // TODO more validation with form data? // Should be required, but we've seen problem source mess with the object with and drop the field
-        preview_latex_string: RederlyExtendedJoi.toStringedString().allow('').allow(null).optional(), // TODO has special characters that seem to block string // Should be required, but we've seen problem source mess with the object with and drop the field
-        score: Joi.number().min(0).max(1).optional(), // Should be required, but we've seen problem source mess with the object with and drop the field
-        student_ans: RederlyExtendedJoi.toStringedString().allow('').optional(), // Should be required, but we've seen problem source mess with the object with and drop the field
-        correct_ans_latex_string: RederlyExtendedJoi.toStringedString().optional(), // TODO I don't see this in the object
-        entry_type: RederlyExtendedJoi.toStringedString().allow(null).optional(),
-        // ans_label: Joi.string().required(), // DOCUMENT SAYS DO NOT KEEP
-        // ans_message: Joi.string().required(), // DOCUMENT SAYS DO NOT KEEP
-        // ans_name: Joi.string().required(), // DOCUMENT SAYS DO NOT KEEP
-        // preview_text_string: Joi.string().required(), // DOCUMENT STATES AS INCONSISTENT
-        // type: Joi.string().required(), // DOCUMENT SAYS DO NOT KEEP
-        // done: Joi.any(), // Was null don't know what type it is
-        // error_flag: Joi.any(), // Was null don't know what type it is // DOCUMENT NOT SURE, OMITTING
-        // error_message: Joi.string().required(), // Was empty string when not set // DOCUMENT NOT SURE, OMITTING 
-        // extra: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
-        // firstElement: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
-        // ignoreInfinity: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
-        // ignoreStrings: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
-        // implicitList: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
-        // isPreview: Joi.any().required(), // DOCUMENT SAYS DO NOT KEEP
-        // list_type: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
-        // ordered: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
-        // partialCredit: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
-        // removeParens: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
-        // requireParenMatch: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
-        // short_type: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
-        // showCoordinateHints: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
-        // showEqualErrors: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
-        // showHints: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
-        // showLengthHints: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
-        // showParenHints: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
-        // showTypeWarnings: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
-        // showUnionReduceWarnings: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
-        // student_formula: Joi.any().optional(), // DOCUMENT NOT SURE, OMITTING
-        // student_value: Joi.any().optional(), // DOCUMENT NOT SURE, OMITTING
-        // studentsMustReduceUnions: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
-        // typeMatch: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
-    })).required(),
+    // We don't use this object and the renderer based on certain problems sends malformed responses
+    // answers: Joi.object().pattern(/\w+/, Joi.object({
+    //     // TODO all optional strings should allow null
+    //     _filter_name: RederlyExtendedJoi.toStringedString().optional(), // Should be required, but we've seen problem source mess with the object with and drop the field
+    //     correct_ans: Joi.any().optional(), // I have seen string and number // REQUIRED BUT I SAW AN EXISTING PROBLEM WHERE AnSwEr0002 only had a name
+    //     original_student_ans: RederlyExtendedJoi.toStringedString().allow('').optional(), // TODO more validation with form data? // Should be required, but we've seen problem source mess with the object with and drop the field
+    //     preview_latex_string: RederlyExtendedJoi.toStringedString().allow('').allow(null).optional(), // TODO has special characters that seem to block string // Should be required, but we've seen problem source mess with the object with and drop the field
+    //     score: Joi.number().min(0).max(1).optional(), // Should be required, but we've seen problem source mess with the object with and drop the field
+    //     student_ans: RederlyExtendedJoi.toStringedString().allow('').optional(), // Should be required, but we've seen problem source mess with the object with and drop the field
+    //     correct_ans_latex_string: RederlyExtendedJoi.toStringedString().optional(), // TODO I don't see this in the object
+    //     entry_type: RederlyExtendedJoi.toStringedString().allow(null).optional(),
+    //     // ans_label: Joi.string().required(), // DOCUMENT SAYS DO NOT KEEP
+    //     // ans_message: Joi.string().required(), // DOCUMENT SAYS DO NOT KEEP
+    //     // ans_name: Joi.string().required(), // DOCUMENT SAYS DO NOT KEEP
+    //     // preview_text_string: Joi.string().required(), // DOCUMENT STATES AS INCONSISTENT
+    //     // type: Joi.string().required(), // DOCUMENT SAYS DO NOT KEEP
+    //     // done: Joi.any(), // Was null don't know what type it is
+    //     // error_flag: Joi.any(), // Was null don't know what type it is // DOCUMENT NOT SURE, OMITTING
+    //     // error_message: Joi.string().required(), // Was empty string when not set // DOCUMENT NOT SURE, OMITTING 
+    //     // extra: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+    //     // firstElement: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+    //     // ignoreInfinity: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+    //     // ignoreStrings: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+    //     // implicitList: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+    //     // isPreview: Joi.any().required(), // DOCUMENT SAYS DO NOT KEEP
+    //     // list_type: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+    //     // ordered: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+    //     // partialCredit: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+    //     // removeParens: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+    //     // requireParenMatch: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+    //     // short_type: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+    //     // showCoordinateHints: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+    //     // showEqualErrors: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+    //     // showHints: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+    //     // showLengthHints: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+    //     // showParenHints: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+    //     // showTypeWarnings: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+    //     // showUnionReduceWarnings: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+    //     // student_formula: Joi.any().optional(), // DOCUMENT NOT SURE, OMITTING
+    //     // student_value: Joi.any().optional(), // DOCUMENT NOT SURE, OMITTING
+    //     // studentsMustReduceUnions: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+    //     // typeMatch: Joi.any().optional(), // DOCUMENT STATES AS INCONSISTENT
+    // })).required(),
     debug: Joi.object({
         // TODO are these required or optional
         // debug: Joi.array().items(Joi.string()).required(),

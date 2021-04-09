@@ -81,8 +81,6 @@ export interface GetCourseTopicRepositoryOptions {
     id: number;
     // For overrides
     userId?: number;
-    // to check if the topic has been 'used'
-    checkUsed?: boolean;
 }
 
 export interface GetTopicAssessmentInfoByTopicIdOptions {

@@ -1,6 +1,11 @@
 import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
+export enum TopicTypeLookup {
+    HOMEWORK = 1,
+    EXAM = 2,
+}
+
 export default class TopicType extends Model {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
     public name!: string;

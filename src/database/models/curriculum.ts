@@ -1,7 +1,17 @@
 import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
-export default class Curriculum extends Model {
+export interface CurriculumInterface {
+    id: number;
+    universityId: number;
+    name: string;
+    active: boolean;
+    public: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export default class Curriculum extends Model implements CurriculumInterface {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
     public universityId!: number;
     public name!: string;

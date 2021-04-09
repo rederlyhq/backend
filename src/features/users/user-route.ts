@@ -10,7 +10,7 @@ import IncludeGradeOptions from './include-grade-options';
 import { RederlyExpressRequest, TypedNextFunction, EmptyExpressParams, EmptyExpressQuery } from '../../extensions/rederly-express-request';
 import logger from '../../utilities/logger';
 import { Constants } from '../../constants';
-import { DeepAddIndexSignature, AddIndexSignature } from '../../extensions/typescript-utility-extensions';
+import { DeepAddIndexSignature } from '../../extensions/typescript-utility-extensions';
 
 import { validationMiddleware, ValidationMiddlewareOptions } from '../../middleware/validation-middleware';
 

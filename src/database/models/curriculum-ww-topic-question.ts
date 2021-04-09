@@ -4,7 +4,22 @@ import appSequelize from '../app-sequelize';
 import CurriculumQuestionAssessmentInfo from './curriculum-question-assessment-info';
 import CurriculumTopicContent from './curriculum-topic-content';
 
-export default class CurriculumWWTopicQuestion extends Model {
+export interface CurriculumWWTopicQuestionInterface {
+  id: number;
+  curriculumTopicContentId: number;
+  problemNumber: number;
+  webworkQuestionPath: string;
+  weight: number;
+  maxAttempts: number;
+  hidden: boolean;
+  active: boolean;
+  optional: boolean;
+
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export default class CurriculumWWTopicQuestion extends Model implements CurriculumWWTopicQuestionInterface {
   public id!: number; // Note that the `null assertion` `!` is required in strict mode.
   public curriculumTopicContentId!: number;
   public problemNumber!: number;

@@ -12,6 +12,7 @@ import { Logger } from 'winston';
 import { authenticationMiddleware } from '../../middleware/auth';
 import { statusHandler } from '../../middleware/status-handler';
 import { validationMiddleware } from '../../middleware/validation-middleware';
+import { DeepAddIndexSignature } from '../../extensions/typescript-utility-extensions';
 
 const packageJSONPath = '../../../package.json';
 
@@ -84,7 +85,6 @@ interface ClientLogMessage {
 }
 
 import { utilityPostClientLogs } from '@rederly/backend-validation';
-import { DeepAddIndexSignature } from '../../extensions/typescript-utility-extensions';
 router.post('/client-logs',
 validationMiddleware(utilityPostClientLogs),
 // No authentication

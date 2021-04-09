@@ -1,7 +1,18 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin, HasOneGetAssociationMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
-export default class CurriculumTopicContent extends Model {
+export interface CurriculumTopicContentInterface {
+    id: number;
+    curriculumUnitContentId: number;
+    name: string;
+    active: boolean;
+    contentOrder: number;
+    topicTypeId: number;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export default class CurriculumTopicContent extends Model implements CurriculumTopicContentInterface {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
     public curriculumUnitContentId!: number;
     public name!: string;

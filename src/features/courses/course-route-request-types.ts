@@ -358,3 +358,21 @@ export namespace PostFeedbackRequest {
     export type query = Joi.extractType<typeof validations.postFeedbackValidation.query>;
     export type body = Joi.extractType<typeof validations.postFeedbackValidation.body>;
 };
+
+export namespace PostUploadWorkbookFeedbackRequest {
+    export type params = Joi.extractType<typeof validations.postUploadWorkbookFeedbackValidation.params>;
+    export type query = Joi.extractType<typeof validations.postUploadWorkbookFeedbackValidation.query>;
+    export type body = Joi.extractType<typeof validations.postUploadWorkbookFeedbackValidation.body>;
+};
+
+export namespace PostUploadTopicFeedbackRequest {
+    export type params = Joi.extractType<typeof validations.postUploadTopicFeedbackValidation.params>;
+    export type query = Joi.extractType<typeof validations.postUploadTopicFeedbackValidation.query>;
+    export type body = Joi.extractType<typeof validations.postUploadTopicFeedbackValidation.body>;
+};
+
+export namespace PostUploadTopicDescriptionRequest {
+    export type params = Joi.extractType<typeof validations.postUploadTopicDescriptionValidation.params>;
+    export type query = Joi.extractType<typeof validations.postUploadTopicDescriptionValidation.query>;
+    export type body = Joi.extractType<typeof validations.postUploadTopicDescriptionValidation.body>;
+};

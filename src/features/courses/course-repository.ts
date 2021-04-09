@@ -31,6 +31,9 @@ import StudentGradeInstanceProblemAttachment from '../../database/models/student
 import StudentWorkbookProblemAttachment from '../../database/models/student-workbook-problem-attachment';
 import rendererHelper from '../../utilities/renderer-helper';
 import sequelize = require('sequelize');
+import WorkbookFeedbackProblemAttachment from '../../database/models/workbook-feedback-problem-attachment';
+import TopicFeedbackProblemAttachment from '../../database/models/topic-feedback-problem-attachment';
+import TopicDescriptionProblemAttachment from '../../database/models/topic-description-problem-attachment';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -1063,6 +1066,35 @@ class CourseRepository {
     createStudentWorkbookProblemAttachment(obj: Partial<StudentWorkbookProblemAttachment>): Promise<StudentWorkbookProblemAttachment> {
         return StudentWorkbookProblemAttachment.create(obj);
     }
+
+    async createWorkbookFeedbackAttachment(obj: Partial<ProblemAttachment>, workbookId: number): Promise<ProblemAttachment> {
+        const attachment = await ProblemAttachment.create(obj);
+        await WorkbookFeedbackProblemAttachment.create({
+            workbookId,
+            problemAttachmentId: attachment.id,
+        });
+        return attachment;
+    }
+
+    async createTopicFeedbackAttachment(obj: Partial<ProblemAttachment>, topicId: number, studentId: number): Promise<ProblemAttachment> {
+        const attachment = await ProblemAttachment.create(obj);
+        await TopicFeedbackProblemAttachment.create({
+            topicId,
+            studentId,
+            problemAttachmentId: attachment.id,
+        });
+        return attachment;
+    }
+
+    async createTopicDescriptionAttachment(obj: Partial<ProblemAttachment>, topicId: number): Promise<ProblemAttachment> {
+        const attachment = await ProblemAttachment.create(obj);
+        await TopicDescriptionProblemAttachment.create({
+            topicId,
+            problemAttachmentId: attachment.id,
+        });
+        return attachment;
+    }
+
 }
 
 const courseRepository = new CourseRepository();

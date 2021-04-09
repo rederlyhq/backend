@@ -672,3 +672,43 @@ export const postFeedbackValidation = {
         content: Joi.object().optional().allow(null),
     },
 };
+
+export const postUploadWorkbookFeedbackValidation = {
+    params: {
+        workbookId: Joi.number().required(),
+    },
+    query: {},
+    body: {
+        attachment: Joi.object({
+            cloudFilename: Joi.string().required(),
+            userLocalFilename: Joi.string().required(),    
+        }). required(),
+    },
+};
+
+export const postUploadTopicFeedbackValidation = {
+    params: {
+        topicId: Joi.number().required(),
+    },
+    query: {},
+    body: {
+        attachment: Joi.object({
+            cloudFilename: Joi.string().required(),
+            userLocalFilename: Joi.string().required(),    
+        }). required(),
+        studentId: Joi.number().required(),
+    },
+};
+
+export const postUploadTopicDescriptionValidation = {
+    params: {
+        topicId: Joi.number().required(),
+    },
+    query: {},
+    body: {
+        attachment: Joi.object({
+            cloudFilename: Joi.string().required(),
+            userLocalFilename: Joi.string().required(),    
+        }). required(),
+    },
+};

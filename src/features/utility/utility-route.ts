@@ -1,19 +1,17 @@
-import { Response, NextFunction } from 'express';
+import { Response } from 'express';
 const router = require('express').Router();
 import configurations from '../../configurations';
-import validate from '../../middleware/joi-validator';
 import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
-import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
+import { RederlyExpressRequest, EmptyExpressParams, EmptyExpressQuery, TypedNextFunction } from '../../extensions/rederly-express-request';
 import * as _ from 'lodash';
 import * as fs from 'fs';
 import * as path from 'path';
 import logger from '../../utilities/logger';
-import { clientLogValidation } from './utility-route-validation';
-import { ClientLogRequest } from './utility-route-request-types';
 import { Logger } from 'winston';
 import { authenticationMiddleware } from '../../middleware/auth';
 import { statusHandler } from '../../middleware/status-handler';
+import { validationMiddleware } from '../../middleware/validation-middleware';
 
 const packageJSONPath = '../../../package.json';
 
@@ -42,16 +40,18 @@ const versionPromise = new Promise<string | null>((resolve, reject) => {
     return null;
 });
 
-router.use('/version',
+import { utilityGetVersion } from '@rederly/backend-validation';
+router.get('/version',
 // No validation
 // No authentication
-asyncHandler(async (_req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
+asyncHandler(async (_req: RederlyExpressRequest<EmptyExpressParams, utilityGetVersion.IResponse, unknown, EmptyExpressQuery>, _res: Response<utilityGetVersion.IResponse>, next: TypedNextFunction<utilityGetVersion.IResponse>) => {
     const version = await versionPromise;
     next(httpResponse.Ok('Version fetched', {
         packageJson: version
     }));
 }));
 
+// import { utilityGetStatus } from '@rederly/backend-validation';
 router.get('/status',
 statusHandler({
     versionPromise: versionPromise,
@@ -70,21 +70,25 @@ statusHandler({
     }]
 }));
 
-router.use('/secret-to-everyone',
+import { utilityGetSecretToEveryone } from '@rederly/backend-validation';
+router.get('/secret-to-everyone',
 // No validation
 authenticationMiddleware,
-(_req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
-    next(httpResponse.Ok('Shhh...', configurations.hash));
+(_req: RederlyExpressRequest<EmptyExpressParams, utilityGetSecretToEveryone.IResponse, unknown, EmptyExpressQuery>, _res: Response<utilityGetSecretToEveryone.IResponse>, next: TypedNextFunction<utilityGetSecretToEveryone.IResponse>) => {
+    const resp = httpResponse.Ok('Shhh...', configurations.hash);
+    next(resp as DeepAddIndexSignature<typeof resp>);
 });
 
 interface ClientLogMessage {
     level?: keyof Logger;
 }
 
-router.use('/client-logs',
-validate(clientLogValidation),
+import { utilityPostClientLogs } from '@rederly/backend-validation';
+import { DeepAddIndexSignature } from '../../extensions/typescript-utility-extensions';
+router.post('/client-logs',
+validationMiddleware(utilityPostClientLogs),
 // No authentication
-asyncHandler(async (req: RederlyExpressRequest<ClientLogRequest.params, unknown, ClientLogRequest.body, ClientLogRequest.query>, _res: Response, next: NextFunction) => {
+asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, utilityPostClientLogs.IResponse, utilityPostClientLogs.IBody, EmptyExpressQuery>, _res: Response<utilityPostClientLogs.IResponse>, next: TypedNextFunction<utilityPostClientLogs.IResponse>) => {
     req.body.logs.forEach((log: unknown) => {
         let logLevel: keyof Logger | undefined = (log as ClientLogMessage).level;
         const availableLoggingLevels = Object.keys(logger.levels);

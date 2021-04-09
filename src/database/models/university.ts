@@ -2,7 +2,17 @@ import { Model, DataTypes, Sequelize } from 'sequelize';
 import appSequelize from '../app-sequelize';
 import User from './user';
 
-export default class University extends Model {
+export interface UniversityInterface {
+  id: number;
+  active: boolean;
+  universityName: string;
+  profEmailDomain: string;
+  studentEmailDomain: string;
+  verifyInstitutionalEmail: boolean;
+  paidUntil: Date;
+}
+
+export default class University extends Model implements UniversityInterface {
   public id!: number; // Note that the `null assertion` `!` is required in strict mode.
   public active!: boolean;
   public universityName!: string;

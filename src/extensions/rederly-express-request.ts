@@ -5,7 +5,7 @@ import Session from '../database/models/session';
 import User from '../database/models/user';
 import Role from '../features/permissions/roles';
 
-export interface TypedNextFunction<ArgumentType = unknown> extends NextFunction {
+export interface TypedNextFunction<ArgumentType = unknown> {
     (arg: ArgumentType): void;
 }
 

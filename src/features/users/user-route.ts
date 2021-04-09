@@ -10,7 +10,7 @@ import IncludeGradeOptions from './include-grade-options';
 import { RederlyExpressRequest, TypedNextFunction, EmptyExpressParams, EmptyExpressQuery } from '../../extensions/rederly-express-request';
 import logger from '../../utilities/logger';
 import { Constants } from '../../constants';
-import { DeepAddIndexSignature } from '../../extensions/typescript-utility-extensions';
+import { DeepAddIndexSignature, AddIndexSignature } from '../../extensions/typescript-utility-extensions';
 
 import { validationMiddleware, ValidationMiddlewareOptions } from '../../middleware/validation-middleware';
 
@@ -206,8 +206,8 @@ router.get('/',
                 includeGrades: req.query.includeGrades as IncludeGradeOptions
             }
         });
-        const resp = httpResponse.Ok('Fetched users', users);
-        next(resp);
+        const resp = httpResponse.Ok('Fetched users', users.map(user => user.get({plain: true}) as UserInterface));
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { usersGetStatus } from '@rederly/backend-validation';
@@ -227,7 +227,7 @@ router.get('/status',
         };
 
         const resp = httpResponse.Ok('fetched user status', response);
-        next(resp);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { usersGetUsersById } from '@rederly/backend-validation';
@@ -241,11 +241,12 @@ router.get('/:id',
             courseId: req.query.courseId,
             includeGrades: req.query.includeGrades as IncludeGradeOptions
         });
-        const resp = httpResponse.Ok('Fetched user', users);
-        next(resp);
+        const resp = httpResponse.Ok('Fetched user', users.get({plain: true}) as UserInterface);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { usersPostEmail } from '@rederly/backend-validation';
+import { UserInterface } from '../../database/models/user';
 router.post('/email',
     authenticationMiddleware,
     validationMiddleware(usersPostEmail),

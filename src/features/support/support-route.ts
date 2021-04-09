@@ -23,7 +23,7 @@ router.post('/',
 
         const user = await req.session.getUser();
         const role = await user.getRole();
-        const result = await supportController.createIssue({
+        await supportController.createIssue({
             description: `
             User name: ${user.firstName} ${user.lastName}
             User id: ${user.id}
@@ -39,7 +39,10 @@ router.post('/',
             `,
             summary: `SUPPORT: ${req.body.summary}`
         });
-        next(httpResponse.Ok('Support ticket created successfully', result));
+        // JiraApi.JsonResponse is not currently defined
+        // in the future it might make sense to pull out the information from the result of the previous method
+        // this might include the ticket number
+        next(httpResponse.Ok('Support ticket created successfully', null));
     }));
 
 module.exports = router;

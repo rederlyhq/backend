@@ -1,6 +1,33 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin, Sequelize } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
+export interface UserInterface {
+  id: number;
+  active: boolean;
+  universityId: number;
+  roleId: Role;
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  verifyToken: string | null;
+  verifyTokenExpiresAt: Date;
+  verified: boolean;
+  actuallyVerified: boolean;
+  preferredEmail: string;
+  preferredEmailInstitutionVerificationToken: string | null;
+  preferredEmailInstitutionVerificationTokenExpiresAt: Date;
+  preferredEmailVerificationToken: string | null;
+  preferredEmailVerificationTokenExpiresAt: Date;
+  forgotPasswordToken: string | null;
+  forgotPasswordTokenExpiresAt: Date;
+  uuid: string;
+  paidUntil: Date;
+  
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export default class User extends Model {
   public id!: number; // Note that the `null assertion` `!` is required in strict mode.
   public active!: boolean;
@@ -11,14 +38,14 @@ export default class User extends Model {
   public lastName!: string;
   public email!: string;
   public password!: string;
-  public verifyToken?: string | null;
+  public verifyToken!: string | null;
   public verifyTokenExpiresAt!: Date;
   public verified!: boolean;
   public actuallyVerified!: boolean;
   public preferredEmail!: string;
-  public preferredEmailInstitutionVerificationToken?: string;
+  public preferredEmailInstitutionVerificationToken!: string | null;
   public preferredEmailInstitutionVerificationTokenExpiresAt!: Date;
-  public preferredEmailVerificationToken?: string;
+  public preferredEmailVerificationToken!: string | null;
   public preferredEmailVerificationTokenExpiresAt!: Date;
   public forgotPasswordToken!: string | null;
   public forgotPasswordTokenExpiresAt!: Date

@@ -21,6 +21,13 @@ interface GetPresignedURLResponse {
     cloudFilename: string;
 }
 
+export enum AttachmentType {
+    STUDENT_WORK = '/work',
+    WORKBOOK_FEEDBACK = '/uploads/workbook',
+    TOPIC_FEEDBACK = '/uploads/topic',
+    TOPIC_DESCRIPTION = '/uploads/description',
+}
+
 class AttachmentHelper {
     private presignedUrlBaseUrl: string;
     private presignedUrlBasePath: string;
@@ -49,17 +56,18 @@ class AttachmentHelper {
         });
     }
 
-    private requestNewPresignedURL = async (): Promise<AxiosResponse<RequestPresignedURLResponse>> => {
+    private requestNewPresignedURL = async (type?: AttachmentType): Promise<AxiosResponse<RequestPresignedURLResponse>> => {
         try {
-            return await this.presignedAxios.get(this.presignedUrlBasePath);
+            console.log(`${this.presignedUrlBaseUrl}/${type ?? this.presignedUrlBasePath}`);
+            return await this.presignedAxios.get(type ?? this.presignedUrlBasePath);
         } catch (e) {
             // The stack from axios here is not very helpful
             throw new WrappedError('Could not get presigned url', e);
         }
     };
 
-    getNewPresignedURL = async (): Promise<GetPresignedURLResponse> => {
-        const result = await this.requestNewPresignedURL();
+    getNewPresignedURL = async (type?: AttachmentType): Promise<GetPresignedURLResponse> => {
+        const result = await this.requestNewPresignedURL(type);
         return {
             uploadURL: result.data.uploadURL,
             cloudFilename: result.data.photoFilename,

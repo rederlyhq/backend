@@ -1,4 +1,6 @@
 import * as Joi from '@hapi/joi';
+import { AttachmentType } from '../../utilities/attachments-helper';
+import { getEnumValues } from '../../utilities/utilities';
 
 export const createCourseValidation = {
     params: {},
@@ -551,7 +553,8 @@ export const gradeAssessmentValidation = {
 export const getAttachmentPresignedURLValidation = {
     params: {},
     query: {
-        cacheBuster: Joi.any().optional()
+        cacheBuster: Joi.any().optional(),
+        type: Joi.string().valid(...getEnumValues(AttachmentType))
     },
     body: {},
 };

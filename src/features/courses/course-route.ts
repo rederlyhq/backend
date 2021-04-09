@@ -26,7 +26,7 @@ import IllegalArgumentException from '../../exceptions/illegal-argument-exceptio
 import logger from '../../utilities/logger';
 import ForbiddenError from '../../exceptions/forbidden-error';
 import AttemptsExceededException from '../../exceptions/attempts-exceeded-exception';
-import attachmentHelper from '../../utilities/attachments-helper';
+import attachmentHelper, { AttachmentType } from '../../utilities/attachments-helper';
 import urljoin = require('url-join');
 import RederlyError from '../../exceptions/rederly-error';
 import openLabHelper from '../../utilities/openlab-helper';
@@ -1483,11 +1483,11 @@ router.delete('/enroll',
 
 // TODO: Switch to POST in next release to match Frontend API.
 // This was to avoid API failures from one release to another.
-router.all('/attachments/upload-url',
+router.post('/attachments/upload-url',
     authenticationMiddleware,
     validate(getAttachmentPresignedURLValidation),
     asyncHandler(async (req: RederlyExpressRequest<GetAttachmentPresignedURLRequest.params, unknown, GetAttachmentPresignedURLRequest.body, GetAttachmentPresignedURLRequest.query>, _res: Response, next: NextFunction) => {
-        const result = await attachmentHelper.getNewPresignedURL();
+        const result = await attachmentHelper.getNewPresignedURL(req.query.type as AttachmentType | undefined);
         next(httpResponse.Ok('Get new presigned url success', result));
     }));
 

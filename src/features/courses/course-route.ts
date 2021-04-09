@@ -1,11 +1,9 @@
-import { Request, Response, NextFunction } from 'express';
+import * as express from 'express';
+import { Response } from 'express';
 import courseController from './course-controller';
-const router = require('express').Router();
-import validate from '../../middleware/joi-validator';
 import { authenticationMiddleware, paidMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
-import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation, deleteEnrollmentValidation, createAssessmentVersionValidation, extendCourseTopicForUserValidation, extendCourseTopicQuestionValidation, getTopicValidation, submitAssessmentVersionValidation, endAssessmentVersionValidation, previewQuestionValidation, gradeAssessmentValidation, getAttachmentPresignedURLValidation, postAttachmentValidation, listAttachmentsValidation, deleteAttachmentValidation, emailProfValidation, readQuestionValidation, saveQuestionValidation, catalogValidation, getVersionValidation, getQuestionRawValidation, getQuestionGradeValidation, getQuestionOpenLabValidation, postImportCourseArchiveValidation, uploadAssetValidation, getQuestionShowMeAnotherValidation, browseProblemsCourseListValidation, browseProblemsSearchValidation, browseProblemsTopicListValidation, browseProblemsUnitListValidation, bulkExportValidation, endBulkExportValidation, getGradesForTopicsByCourseValidation, postFeedbackValidation } from './course-route-validation';
 import NotFoundError from '../../exceptions/not-found-error';
 import multer = require('multer');
 import * as proxy from 'express-http-proxy';
@@ -13,7 +11,8 @@ import * as qs from 'qs';
 import * as _ from 'lodash';
 import configurations from '../../configurations';
 import WrappedError from '../../exceptions/wrapped-error';
-import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
+type TypedNextFunction<THISISTEMP> = (arg?: any) => void;
+import { RederlyExpressRequest, EmptyExpressParams, EmptyExpressQuery } from '../../extensions/rederly-express-request';
 import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest, ExtendCourseTopicQuestionRequest, CreateAssessmentVersionRequest, SubmitAssessmentVersionRequest, UpdateGradeInstanceRequest, EndAssessmentVersionRequest, PreviewQuestionRequest, GradeAssessmentRequest, GetAttachmentPresignedURLRequest, PostAttachmentRequest, ListAttachmentsRequest, DeleteAttachmentRequest, EmailProfRequest, ReadQuestionRequest, SaveQuestionRequest, CatalogRequest, GetVersionRequest, GetQuestionRawRequest, GetQuestionGradeRequest, PostImportCourseArchiveRequest, GetQuestionOpenLabRequest, UploadAssetRequest, GetQuestionShowMeAnotherRequest, BrowseProblemsCourseListRequest, BrowseProblemsSearchRequest, BrowseProblemsTopicListRequest, BrowseProblemsUnitListRequest, BulkExportRequest, EndBulkExportRequest, GetGradesForTopicsByCourseRequest, PostFeedbackRequest } from './course-route-request-types';
 import Boom = require('boom');
 import { Constants } from '../../constants';
@@ -35,17 +34,19 @@ import { rederlyTempFileWrapper } from '../../middleware/rederly-temp-file-wrapp
 import ExportPDFHelper from '../../utilities/export-pdf-helper';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import { canUserViewCourse } from '../../middleware/permissions/course-permissions';
+import { validationMiddleware, ValidationMiddlewareOptions } from '../../middleware/validation-middleware';
+
+const router = express.Router();
 
 const fileUpload = multer();
 
+import { coursesPostImportArchive } from '@rederly/backend-validation';
 router.post('/:courseId/import-archive',
     authenticationMiddleware,
-    validate(postImportCourseArchiveValidation),
+    validationMiddleware(coursesPostImportArchive),
     paidMiddleware('Importing content from an archive'),
     rederlyTempFileWrapper((tmpFilePath: string) => multer({dest: tmpFilePath}).single('file')),
-    // This is due to a typescript issue where the type mismatches extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, PostImportCourseArchiveRequest.body, PostImportCourseArchiveRequest.query>, _res: unknown, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostImportArchive.IResponse, PostImportCourseArchiveRequest.body, PostImportCourseArchiveRequest.query>, _res: Response<coursesPostImportArchive.IResponse>, next: TypedNextFunction<coursesPostImportArchive.IResponse>) => {
         if (_.isNil(req.file)) {
             throw new IllegalArgumentException('Missing file.');
         }
@@ -69,10 +70,11 @@ router.post('/:courseId/import-archive',
         next(httpResponse.Ok('Imported', result));
     }));
 
+import { courseStatisticsGetUnits } from '@rederly/backend-validation';
 router.get('/statistics/units',
     authenticationMiddleware,
-    validate(getStatisticsOnUnitsValidation),
-    asyncHandler(async (req: RederlyExpressRequest<GetStatisticsOnUnitsRequest.params, unknown, GetStatisticsOnUnitsRequest.body, GetStatisticsOnUnitsRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(courseStatisticsGetUnits),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseStatisticsGetUnits.IResponse, GetStatisticsOnUnitsRequest.body, GetStatisticsOnUnitsRequest.query>, _res: Response<courseStatisticsGetUnits.IResponse>, next: TypedNextFunction<courseStatisticsGetUnits.IResponse>) => {
         try {
             const stats = await courseController.getStatisticsOnUnits({
                 where: {
@@ -83,7 +85,6 @@ router.get('/statistics/units',
                 followQuestionRules: !_.isNil(req.query.userId)
             });
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             next(httpResponse.Ok('Fetched successfully', {
                 data: stats,
                 ...getAveragesFromStatistics(stats),
@@ -93,10 +94,11 @@ router.get('/statistics/units',
         }
     }));
 
+import { courseStatisticsGetTopics } from '@rederly/backend-validation';
 router.get('/statistics/topics',
     authenticationMiddleware,
-    validate(getStatisticsOnTopicsValidation),
-    asyncHandler(async (req: RederlyExpressRequest<GetStatisticsOnTopicsRequest.params, unknown, GetStatisticsOnTopicsRequest.body, GetStatisticsOnTopicsRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(courseStatisticsGetTopics),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseStatisticsGetTopics.IResponse, GetStatisticsOnTopicsRequest.body, GetStatisticsOnTopicsRequest.query>, _res: Response<courseStatisticsGetTopics.IResponse>, next: TypedNextFunction<courseStatisticsGetTopics.IResponse>) => {
         try {
             const stats = await courseController.getStatisticsOnTopics({
                 where: {
@@ -108,7 +110,6 @@ router.get('/statistics/topics',
                 followQuestionRules: !_.isNil(req.query.userId)
             });
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             next(httpResponse.Ok('Fetched successfully', {
                 data: stats,
                 ...getAveragesFromStatistics(stats),
@@ -118,10 +119,11 @@ router.get('/statistics/topics',
         }
     }));
 
+import { courseStatisticsGetQuestions } from '@rederly/backend-validation';
 router.get('/statistics/questions',
     authenticationMiddleware,
-    validate(getStatisticsOnQuestionsValidation),
-    asyncHandler(async (req: RederlyExpressRequest<GetStatisticsOnQuestionsRequest.params, unknown, GetStatisticsOnQuestionsRequest.body, GetStatisticsOnQuestionsRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(courseStatisticsGetQuestions),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseStatisticsGetQuestions.IResponse, GetStatisticsOnQuestionsRequest.body, GetStatisticsOnQuestionsRequest.query>, _res: Response<courseStatisticsGetQuestions.IResponse>, next: TypedNextFunction<courseStatisticsGetQuestions.IResponse>) => {
         try {
             const stats = await courseController.getStatisticsOnQuestions({
                 where: {
@@ -133,7 +135,6 @@ router.get('/statistics/questions',
                 followQuestionRules: !_.isNil(req.query.userId)
             });
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             next(httpResponse.Ok('Fetched successfully', {
                 data: stats,
                 ...getAveragesFromStatistics(stats),
@@ -143,12 +144,13 @@ router.get('/statistics/questions',
         }
     }));
 
+import { coursesPostDef } from '@rederly/backend-validation';
 router.post('/def',
     authenticationMiddleware,
-    validate(createQuestionsForTopicFromDefFileValidation),
+    validationMiddleware(coursesPostDef),
     paidMiddleware('Importing a topic'),
     fileUpload.single('def-file'),
-    asyncHandler(async (req: RederlyExpressRequest<CreateQuestionsForTopicFromDefFileRequest.params, unknown, CreateQuestionsForTopicFromDefFileRequest.body, unknown>, _res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostDef.IResponse, CreateQuestionsForTopicFromDefFileRequest.body, unknown>, _res: Response<coursesPostDef.IResponse>, next: TypedNextFunction<coursesPostDef.IResponse>) => {
         const query = req.query as CreateQuestionsForTopicFromDefFileRequest.query;
         const results = await courseController.createQuestionsForTopicFromDefFileContent({
             webworkDefFileContent: req.file.buffer.toString(),
@@ -165,11 +167,12 @@ router.post('/def',
         }));
     }));
 
+import { coursesPostCourses } from '@rederly/backend-validation';
 router.post('/',
     authenticationMiddleware,
-    validate(createCourseValidation),
+    validationMiddleware(coursesPostCourses),
     paidMiddleware('Creating a new course'),
-    asyncHandler(async (req: RederlyExpressRequest<CreateCourseRequest.params, unknown, CreateCourseRequest.body, unknown>, _res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostCourses.IResponse, CreateCourseRequest.body, unknown>, _res: Response<coursesPostCourses.IResponse>, next: TypedNextFunction<coursesPostCourses.IResponse>) => {
         const query = req.query as CreateCourseRequest.query;
         try {
             if (_.isNil(req.session)) {
@@ -199,11 +202,12 @@ router.post('/',
         }
     }));
 
+import { coursesPostUnit } from '@rederly/backend-validation';
 router.post('/unit',
     authenticationMiddleware,
-    validate(createCourseUnitValidation),
+    validationMiddleware(coursesPostUnit),
     paidMiddleware('Adding units'),
-    asyncHandler(async (req: RederlyExpressRequest<CreateCourseUnitRequest.params, unknown, CreateCourseUnitRequest.body, CreateCourseUnitRequest.query>, _res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostUnit.IResponse, CreateCourseUnitRequest.body, CreateCourseUnitRequest.query>, _res: Response<coursesPostUnit.IResponse>, next: TypedNextFunction<coursesPostUnit.IResponse>) => {
         try {
             const newUnit = await courseController.createUnit({
                 ...req.body
@@ -215,11 +219,12 @@ router.post('/unit',
         }
     }));
 
+import { courseTopicPostTopic } from '@rederly/backend-validation';
 router.post('/topic',
     authenticationMiddleware,
-    validate(createCourseTopicValidation),
+    validationMiddleware(courseTopicPostTopic),
     paidMiddleware('Adding topics'),
-    asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseTopicPostTopic.IResponse, any, EmptyExpressQuery>, _res: Response<courseTopicPostTopic.IResponse>, next: TypedNextFunction<courseTopicPostTopic.IResponse>) => {
         const newTopic = await courseController.createTopic({
             ...req.body
         });
@@ -227,10 +232,11 @@ router.post('/topic',
         next(httpResponse.Created('Course Topic created successfully', newTopic));
     }));
 
+import { coursesGetGrades } from '@rederly/backend-validation';
 router.get('/grades',
     authenticationMiddleware,
-    validate(getGradesValidation),
-    asyncHandler(async (req: RederlyExpressRequest<GetGradesRequest.params, unknown, GetGradesRequest.body, GetGradesRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(coursesGetGrades),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetGrades.IResponse, GetGradesRequest.body, GetGradesRequest.query>, _res: Response<coursesGetGrades.IResponse>, next: TypedNextFunction<coursesGetGrades.IResponse>) => {
         try {
             const grades = await courseController.getGrades({
                 where: {
@@ -247,12 +253,11 @@ router.get('/grades',
         }
     }));
 
+import { coursesGetTopicGrades } from '@rederly/backend-validation';
 router.get('/:courseId/topic-grades',
     authenticationMiddleware,
-    validate(getGradesForTopicsByCourseValidation),
-    // This is due to a typescript issue where the type mismatches extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetGradesForTopicsByCourseRequest.body, GetGradesForTopicsByCourseRequest.query>, res: Response, next: NextFunction) => {
+    validationMiddleware(coursesGetTopicGrades),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetTopicGrades.IResponse, GetGradesForTopicsByCourseRequest.body, GetGradesForTopicsByCourseRequest.query>, res: Response<coursesGetTopicGrades.IResponse>, next: TypedNextFunction<coursesGetTopicGrades.IResponse>) => {
         const params = req.params as GetGradesForTopicsByCourseRequest.params;
         const topics = await courseController.getGradesForTopics({
             courseId: params.courseId,
@@ -263,10 +268,11 @@ router.get('/:courseId/topic-grades',
         }));
     }));
 
+import { coursesGetQuestions } from '@rederly/backend-validation';
 router.get('/questions',
     authenticationMiddleware,
-    validate(getQuestionsValidation),
-    asyncHandler(async (req: RederlyExpressRequest<GetQuestionsRequest.params, unknown, GetQuestionsRequest.body, GetQuestionsRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(coursesGetQuestions),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetQuestions.IResponse, GetQuestionsRequest.body, GetQuestionsRequest.query>, _res: Response<coursesGetQuestions.IResponse>, next: TypedNextFunction<coursesGetQuestions.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -326,27 +332,27 @@ router.get('/questions',
         }));
     }));
 
+// TOMTOM TODO
+// import { courseTopicGetTopicById } from '@rederly/backend-validation';
 router.get('/topic/:topicId/version/:userId',
     authenticationMiddleware,
-    validate(getVersionValidation),
-    // This is due to a typescript issue where the type mismatches extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetVersionRequest.body, GetVersionRequest.query>, _res: Response, next: NextFunction) => {
-        const params: GetVersionRequest.params = req.params;
+    // validationMiddleware(getVersionValidation),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, unknown, GetVersionRequest.body, GetVersionRequest.query>, _res: Response, next: TypedNextFunction<never>) => {
+        const params = req.params as GetVersionRequest.params;
         const result = await courseController.getAllContentForVersion({topicId: params.topicId, userId: params.userId});
         next(httpResponse.Ok('Fetched successfully', result));
     })
 );
 
+import { courseTopicPutEndExport } from '@rederly/backend-validation';
 router.put('/topic/:topicId/endExport', 
     // this call is expected from a microservice, so doesn't go through authentication
-    validate(endBulkExportValidation),
-    // This is due to a typescript issue where the type mismatches extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, EndBulkExportRequest.body, EndBulkExportRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(courseTopicPutEndExport),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseTopicPutEndExport.IResponse, EndBulkExportRequest.body, EndBulkExportRequest.query>, _res: Response<courseTopicPutEndExport.IResponse>, next: TypedNextFunction<courseTopicPutEndExport.IResponse>) => {
+        const params = req.params as EndBulkExportRequest.params;
         const topic = await CourseTopicContent.findOne({
             where: {
-                id: req.params.topicId,
+                id: params.topicId,
                 active: true,
             },
         });
@@ -368,17 +374,16 @@ router.put('/topic/:topicId/endExport',
     })
 );
 
+import { courseTopicPostStartExport } from '@rederly/backend-validation';
 router.post('/topic/:topicId/startExport',
     authenticationMiddleware,
-    validate(bulkExportValidation),
-    // This is due to a typescript issue where the type mismatches extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, BulkExportRequest.body, BulkExportRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(courseTopicPostStartExport),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseTopicPostStartExport.IResponse, BulkExportRequest.body, BulkExportRequest.query>, _res: Response<courseTopicPostStartExport.IResponse>, next: TypedNextFunction<courseTopicPostStartExport.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
         
-        const params: BulkExportRequest.params = req.params;
+        const params = req.params as BulkExportRequest.params;
         const query: BulkExportRequest.query = req.query;
         const professor = await req.session.getUser();
 
@@ -419,12 +424,13 @@ router.post('/topic/:topicId/startExport',
     })
 );
 
+import { courseTopicPutExtend } from '@rederly/backend-validation';
 router.put('/topic/extend',
     authenticationMiddleware,
-    validate(extendCourseTopicForUserValidation),
+    validationMiddleware(courseTopicPutExtend),
     paidMiddleware('Modifying topic settings'),
     asyncHandler(
-        async (req: RederlyExpressRequest<ExtendCourseTopicForUserRequest.params, ExtendCourseTopicForUserRequest.body, ExtendCourseTopicForUserRequest.query, unknown>, _res: Response, next: NextFunction) => {
+        async (req: RederlyExpressRequest<EmptyExpressParams, courseTopicPutExtend.IResponse, ExtendCourseTopicForUserRequest.body, EmptyExpressQuery, unknown>, _res: Response<courseTopicPutExtend.IResponse>, next: TypedNextFunction<courseTopicPutExtend.IResponse>) => {
             const query = req.query as ExtendCourseTopicForUserRequest.query;
             const body = req.body as ExtendCourseTopicForUserRequest.body;
 
@@ -442,13 +448,12 @@ router.put('/topic/extend',
             next(httpResponse.Ok('Extended topic successfully', updatesResult));
         }));
 
+import { courseTopicPutTopicById } from '@rederly/backend-validation';
 router.put('/topic/:id',
     authenticationMiddleware,
-    validate(updateCourseTopicValidation),
+    validationMiddleware(courseTopicPutTopicById),
     paidMiddleware('Modifying topic settings'),
-    // This is due to a typescript issue where the type mismatches extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseTopicRequest.body, UpdateCourseTopicRequest.query>, _res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseTopicPutTopicById.IResponse, UpdateCourseTopicRequest.body, UpdateCourseTopicRequest.query>, _res: Response<courseTopicPutTopicById.IResponse>, next: TypedNextFunction<courseTopicPutTopicById.IResponse>) => {
         const params = req.params as UpdateCourseTopicRequest.params;
         const updatesResult = await courseController.updateTopic({
             where: {
@@ -468,12 +473,11 @@ router.put('/topic/:id',
         }));
     }));
 
+import { coursesGetGradeById } from '@rederly/backend-validation';
 router.get('/assessment/topic/grade/:id',
     authenticationMiddleware,
-    validate(gradeAssessmentValidation),
-    // This is due to a typescript issue where the type mismatches extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GradeAssessmentRequest.body, GradeAssessmentRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(coursesGetGradeById),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetGradeById.IResponse, GradeAssessmentRequest.body, GradeAssessmentRequest.query>, _res: Response<coursesGetGradeById.IResponse>, next: TypedNextFunction<coursesGetGradeById.IResponse>) => {
         const params = req.params as GradeAssessmentRequest.params;
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
@@ -488,12 +492,11 @@ router.get('/assessment/topic/grade/:id',
         next(httpResponse.Ok('Fetched problems + workbooks successfully', {problems, topic}));
     }));
 
+import { coursesGetEndById } from '@rederly/backend-validation';
 router.get('/assessment/topic/end/:id',
     authenticationMiddleware,
-    validate(endAssessmentVersionValidation),
-    // This is due to a typescript issue where the type mismatches extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, EndAssessmentVersionRequest.body, EndAssessmentVersionRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(coursesGetEndById),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetEndById.IResponse, EndAssessmentVersionRequest.body, EndAssessmentVersionRequest.query>, _res: Response<coursesGetEndById.IResponse>, next: TypedNextFunction<coursesGetEndById.IResponse>) => {
         const params = req.params as EndAssessmentVersionRequest.params;
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
@@ -514,12 +517,12 @@ router.get('/assessment/topic/end/:id',
         next(httpResponse.Ok('Assessment version has been closed.', null));
     }));
 
+// TOMTOM TODO
+// import { coursesGetStart } from '@rederly/backend-validation';
 router.get('/assessment/topic/:id/start',
     authenticationMiddleware,
-    validate(createAssessmentVersionValidation),
-    // This is due to a typescript issue where the type mismatches extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, CreateAssessmentVersionRequest.body, CreateAssessmentVersionRequest.query>, _res: Response, next: NextFunction) => {
+    // validationMiddleware(createAssessmentVersionValidation),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, never, CreateAssessmentVersionRequest.body, CreateAssessmentVersionRequest.query>, _res: Response<never>, next: TypedNextFunction<never>) => {
         const params = req.params as CreateAssessmentVersionRequest.params;
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
@@ -544,13 +547,12 @@ router.get('/assessment/topic/:id/start',
         next(httpResponse.Ok('New version of this assessment created successfully', versionInfo));
     }));
 
+import { coursesDeleteUnitById } from '@rederly/backend-validation';
 router.delete('/unit/:id',
     authenticationMiddleware,
-    validate(deleteCourseUnitValidation),
+    validationMiddleware(coursesDeleteUnitById),
     paidMiddleware('Deleting units'),
-    // This is due to a typescript issue where the type mismatches extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, DeleteCourseUnitRequest.body, DeleteCourseUnitRequest.query>, _res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesDeleteUnitById.IResponse, DeleteCourseUnitRequest.body, DeleteCourseUnitRequest.query>, _res: Response<coursesDeleteUnitById.IResponse>, next: TypedNextFunction<coursesDeleteUnitById.IResponse>) => {
         const params = req.params as DeleteCourseUnitRequest.params;
         try {
             const updatesResult = await courseController.softDeleteUnits({
@@ -566,13 +568,12 @@ router.delete('/unit/:id',
         }
     }));
 
+import { courseTopicDeleteTopicById } from '@rederly/backend-validation';
 router.delete('/topic/:id',
     authenticationMiddleware,
-    validate(deleteCourseTopicValidation),
+    validationMiddleware(courseTopicDeleteTopicById),
     paidMiddleware('Deleting topics'),
-    // This is due to a typescript issue where the type mismatches extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, DeleteCourseTopicRequest.body, DeleteCourseTopicRequest.query>, _res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseTopicDeleteTopicById.IResponse, DeleteCourseTopicRequest.body, DeleteCourseTopicRequest.query>, _res: Response<courseTopicDeleteTopicById.IResponse>, next: TypedNextFunction<courseTopicDeleteTopicById.IResponse>) => {
         const params = req.params as DeleteCourseTopicRequest.params;
         try {
             const updatesResult = await courseController.softDeleteTopics({
@@ -588,13 +589,12 @@ router.delete('/topic/:id',
         }
     }));
 
+import { courseQuestionDeleteQuestionById } from '@rederly/backend-validation';
 router.delete('/question/:id',
     authenticationMiddleware,
-    validate(deleteCourseQuestionValidation),
+    validationMiddleware(courseQuestionDeleteQuestionById),
     paidMiddleware('Deleting questions'),
-    // This is due to a typescript issue where the type mismatches extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, DeleteCourseQuestionRequest.body, DeleteCourseQuestionRequest.query>, _res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionDeleteQuestionById.IResponse, DeleteCourseQuestionRequest.body, DeleteCourseQuestionRequest.query>, _res: Response<courseQuestionDeleteQuestionById.IResponse>, next: TypedNextFunction<courseQuestionDeleteQuestionById.IResponse>) => {
         const params = req.params as DeleteCourseQuestionRequest.params;
         try {
             const updatesResult = await courseController.softDeleteQuestions({
@@ -610,13 +610,12 @@ router.delete('/question/:id',
         }
     }));
 
+import { coursesPutUnitById } from '@rederly/backend-validation';
 router.put('/unit/:id',
     authenticationMiddleware,
-    validate(updateCourseUnitValidation),
+    validationMiddleware(coursesPutUnitById),
     paidMiddleware('Updating units'),
-    // This is to work around "extractMap" error
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseUnitRequest.body, UpdateCourseUnitRequest.query>, _res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPutUnitById.IResponse, UpdateCourseUnitRequest.body, UpdateCourseUnitRequest.query>, _res: Response<coursesPutUnitById.IResponse>, next: TypedNextFunction<coursesPutUnitById.IResponse>) => {
         try {
             const params = req.params as UpdateCourseUnitRequest.params;
             const updatesResult = await courseController.updateCourseUnit({
@@ -637,12 +636,11 @@ router.put('/unit/:id',
         }
     }));
 
+import { courseQuestionPutGradeById } from '@rederly/backend-validation';
 router.put('/question/grade/:id',
     authenticationMiddleware,
-    validate(updateGradeValidation),
-    // This is to work around "extractMap" error
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateGradeRequest.body, UpdateGradeRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(courseQuestionPutGradeById),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPutGradeById.IResponse, UpdateGradeRequest.body, UpdateGradeRequest.query>, _res: Response<courseQuestionPutGradeById.IResponse>, next: TypedNextFunction<courseQuestionPutGradeById.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -663,12 +661,11 @@ router.put('/question/grade/:id',
         }));
     }));
 
+import { courseQuestionPutInstanceById } from '@rederly/backend-validation';
 router.put('/question/grade/instance/:id',
     authenticationMiddleware,
-    validate(updateGradeValidation),
-    // This is to work around "extractMap" error
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateGradeInstanceRequest.body, UpdateGradeInstanceRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(courseQuestionPutInstanceById),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPutInstanceById.IResponse, UpdateGradeInstanceRequest.body, UpdateGradeInstanceRequest.query>, _res: Response<courseQuestionPutInstanceById.IResponse>, next: TypedNextFunction<courseQuestionPutInstanceById.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -689,15 +686,14 @@ router.put('/question/grade/instance/:id',
         }));
     }));
 
+import { courseQuestionPutExtend } from '@rederly/backend-validation';
 router.put('/question/extend',
     authenticationMiddleware,
-    validate(extendCourseTopicQuestionValidation),
+    validationMiddleware(courseQuestionPutExtend),
     paidMiddleware('Modifying questions'),
-    // This is due to a typescript issue where the type mismatches extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, ExtendCourseTopicQuestionRequest.body, unknown, any, unknown>, _res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPutExtend.IResponse, ExtendCourseTopicQuestionRequest.body, EmptyExpressQuery>, _res: Response<courseQuestionPutExtend.IResponse>, next: TypedNextFunction<courseQuestionPutExtend.IResponse>) => {
         const query = req.query as ExtendCourseTopicQuestionRequest.query;
-        const body = req.body as ExtendCourseTopicQuestionRequest.body;
+        const body = req.body;
 
         const extensions = await courseController.extendQuestionForUser({
             where: {
@@ -710,13 +706,12 @@ router.put('/question/extend',
         next(httpResponse.Ok('Extended topic successfully', extensions));
     }));
 
+import { courseQuestionPutQuestionById } from '@rederly/backend-validation';
 router.put('/question/:id',
     authenticationMiddleware,
-    validate(updateCourseTopicQuestionValidation),
+    validationMiddleware(courseQuestionPutQuestionById),
     paidMiddleware('Modifying questions'),
-    // This is to work around "extractMap" error
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseTopicQuestionRequest.body, UpdateCourseTopicQuestionRequest.query>, _res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPutQuestionById.IResponse, UpdateCourseTopicQuestionRequest.body, UpdateCourseTopicQuestionRequest.query>, _res: Response<courseQuestionPutQuestionById.IResponse>, next: TypedNextFunction<courseQuestionPutQuestionById.IResponse>) => {
         const params = req.params as UpdateCourseTopicQuestionRequest.params;
         const updatesResult = await courseController.updateQuestion({
             where: {
@@ -732,13 +727,12 @@ router.put('/question/:id',
         }));
     }));
 
+import { coursesPutCoursesById } from '@rederly/backend-validation';
 router.put('/:id',
     authenticationMiddleware,
-    validate(updateCourseValidation),
+    validationMiddleware(coursesPutCoursesById),
     paidMiddleware('Modifying courses'),
-    // This is to work around "extractMap" error
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseRequest.body, UpdateCourseRequest.query>, _res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPutCoursesById.IResponse, UpdateCourseRequest.body, UpdateCourseRequest.query>, _res: Response<coursesPutCoursesById.IResponse>, next: TypedNextFunction<coursesPutCoursesById.IResponse>) => {
         try {
             const params = req.params as UpdateCourseRequest.params;
             const updatesResult = await courseController.updateCourse({
@@ -759,11 +753,12 @@ router.put('/:id',
         }
     }));
 
+import { courseQuestionPostQuestion } from '@rederly/backend-validation';
 router.post('/question',
     authenticationMiddleware,
-    validate(createCourseTopicQuestionValidation),
+    validationMiddleware(courseQuestionPostQuestion),
     paidMiddleware('Adding questions'),
-    asyncHandler(async (req: RederlyExpressRequest<CreateCourseTopicQuestionRequest.params, unknown, CreateCourseTopicQuestionRequest.body, CreateCourseTopicQuestionRequest.query>, _res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostQuestion.IResponse, CreateCourseTopicQuestionRequest.body, CreateCourseTopicQuestionRequest.query>, _res: Response<courseQuestionPostQuestion.IResponse>, next: TypedNextFunction<courseQuestionPostQuestion.IResponse>) => {
         const newQuestion = await courseController.addQuestion({
             question: {
                 ...req.body
@@ -773,12 +768,11 @@ router.post('/question',
         next(httpResponse.Created('Course Question created successfully', newQuestion));
     }));
 
+import { courseQuestionGetRaw } from '@rederly/backend-validation';
 router.get('/question/:id/raw',
     authenticationMiddleware,
-    validate(getQuestionRawValidation),
-    // This is a typescript workaround since it tries to use the type extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetQuestionRawRequest.body, unknown>, _res: Response, next: NextFunction) => {
+    validationMiddleware(courseQuestionGetRaw),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionGetRaw.IResponse, GetQuestionRawRequest.body, unknown>, _res: Response<courseQuestionGetRaw.IResponse>, next: TypedNextFunction<courseQuestionGetRaw.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -793,12 +787,11 @@ router.get('/question/:id/raw',
         next(httpResponse.Ok('Fetched question successfully', question));
     }));
 
+import { courseQuestionGetGrade } from '@rederly/backend-validation';
 router.get('/question/:id/grade',
     authenticationMiddleware,
-    validate(getQuestionGradeValidation),
-    // This is a typescript workaround since it tries to use the type extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetQuestionGradeRequest.body, unknown>, _res: Response, next: NextFunction) => {
+    validationMiddleware(courseQuestionGetGrade),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionGetGrade.IResponse, GetQuestionGradeRequest.body, unknown>, _res: Response<courseQuestionGetGrade.IResponse>, next: TypedNextFunction<courseQuestionGetGrade.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -815,12 +808,11 @@ router.get('/question/:id/grade',
 
     }));
 
+import { courseQuestionGetOpenlab } from '@rederly/backend-validation';
 router.get('/question/:id/openlab',
     authenticationMiddleware,
-    validate(getQuestionOpenLabValidation),
-    // This is a typescript workaround since it tries to use the type extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetQuestionOpenLabRequest.body, GetQuestionOpenLabRequest.query>, res: Response, next: NextFunction) => {
+    validationMiddleware(courseQuestionGetOpenlab),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionGetOpenlab.IResponse, GetQuestionOpenLabRequest.body, GetQuestionOpenLabRequest.query>, res: Response<courseQuestionGetOpenlab.IResponse>, next: TypedNextFunction<courseQuestionGetOpenlab.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -838,12 +830,11 @@ router.get('/question/:id/openlab',
         next(httpResponse.Ok('Data sent to OpenLab successfully', openLabResponse));
     }));
 
+import { courseQuestionGetSma } from '@rederly/backend-validation';
 router.get('/question/:id/sma',
     authenticationMiddleware,
-    validate(getQuestionShowMeAnotherValidation),
-    // This is a typescript workaround since it tries to use the type extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetQuestionShowMeAnotherRequest.body, GetQuestionShowMeAnotherRequest.query>, res: Response, next: NextFunction) => {
+    validationMiddleware(courseQuestionGetSma),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionGetSma.IResponse, GetQuestionShowMeAnotherRequest.body, GetQuestionShowMeAnotherRequest.query>, res: Response<courseQuestionGetSma.IResponse>, next: TypedNextFunction<courseQuestionGetSma.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -859,12 +850,11 @@ router.get('/question/:id/sma',
         }
     }));
 
+import { courseQuestionGetQuestionById } from '@rederly/backend-validation';
 router.get('/question/:id',
     authenticationMiddleware,
-    validate(getQuestionValidation),
-    // This is a typescript workaround since it tries to use the type extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetQuestionRequest.body, GetQuestionRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(courseQuestionGetQuestionById),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionGetQuestionById.IResponse, GetQuestionRequest.body, GetQuestionRequest.query>, _res: Response<courseQuestionGetQuestionById.IResponse>, next: TypedNextFunction<courseQuestionGetQuestionById.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -910,11 +900,10 @@ router.get('/question/:id',
         }
     }));
 
+import { coursesPostAuto } from '@rederly/backend-validation';
 router.post('/assessment/topic/:id/submit/:version/auto',
-    validate(submitAssessmentVersionValidation),
-    // This is a typescript workaround since it tries to use the type extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, unknown, SubmitAssessmentVersionRequest.body, SubmitAssessmentVersionRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(coursesPostAuto),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostAuto.IResponse, SubmitAssessmentVersionRequest.body, SubmitAssessmentVersionRequest.query>, _res: Response<coursesPostAuto.IResponse>, next: TypedNextFunction<coursesPostAuto.IResponse>) => {
         const params = req.params as SubmitAssessmentVersionRequest.params;
         try {
             const assessmentResult = await courseController.submitAssessmentAnswers(params.version, true); // false: wasAutoSubmitted
@@ -933,6 +922,7 @@ router.post('/assessment/topic/:id/submit/:version/auto',
         }
     }));
 
+import { coursesPostPreview } from '@rederly/backend-validation';
 //TODO: Probably move this up?
 router.post('/preview',
     authenticationMiddleware,
@@ -941,10 +931,8 @@ router.post('/preview',
     bodyParser.raw({
         type: '*/*'
     }),
-    validate(previewQuestionValidation),
-    // This is a typescript workaround since it tries to use the type extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, GetQuestionRequest.body, PreviewQuestionRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(coursesPostPreview),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostPreview.IResponse, GetQuestionRequest.body, PreviewQuestionRequest.query>, _res: Response<coursesPostPreview.IResponse>, next: TypedNextFunction<coursesPostPreview.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -995,9 +983,7 @@ router.post('/preview',
         }
     }),
     proxy(configurations.renderer.url, {
-        // Can't use unknown due to restrictions on the type from express
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        proxyReqPathResolver: (req: RederlyExpressRequest<any, unknown, unknown, unknown, PostQuestionMeta>) => {
+        proxyReqPathResolver: (req: RederlyExpressRequest<EmptyExpressParams, unknown, unknown, unknown, PostQuestionMeta>) => {
             if (_.isNil(req.meta)) {
                 throw new Error('Previously fetched metadata is nil');
             }
@@ -1011,9 +997,7 @@ router.post('/preview',
             };
             return `${RENDERER_ENDPOINT}?${qs.stringify(params)}`;
         },
-        // Can't use unknown due to restrictions on the type from express
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        userResDecorator: async (proxyRes: Response, proxyResData, userReq: RederlyExpressRequest<any, unknown, unknown, unknown, PostQuestionMeta>) => {
+        userResDecorator: async (proxyRes: Response<coursesPostPreview.IResponse>, proxyResData, userReq: RederlyExpressRequest<EmptyExpressParams, coursesPostPreview.IResponse, unknown, EmptyExpressQuery, PostQuestionMeta>) => {
             if (_.isNil(userReq.session)) {
                 throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
             }
@@ -1052,12 +1036,11 @@ router.post('/preview',
         }
     }));
 
+import { coursesPostSubmitByVersion } from '@rederly/backend-validation';
 router.post('/assessment/topic/:id/submit/:version',
     authenticationMiddleware,
-    validate(submitAssessmentVersionValidation),
-    // This is a typescript workaround since it tries to use the type extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, unknown, SubmitAssessmentVersionRequest.body, SubmitAssessmentVersionRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(coursesPostSubmitByVersion),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostSubmitByVersion.IResponse, SubmitAssessmentVersionRequest.body, SubmitAssessmentVersionRequest.query>, _res: Response<coursesPostSubmitByVersion.IResponse>, next: TypedNextFunction<coursesPostSubmitByVersion.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -1079,6 +1062,7 @@ router.post('/assessment/topic/:id/submit/:version',
         next(httpResponse.Ok('Assessment submitted successfully', assessmentResult));
     }));
 
+import { courseQuestionPostQuestionById } from '@rederly/backend-validation';
 router.post('/question/:id',
     authenticationMiddleware,
     // TODO investigate if this is a problem
@@ -1086,9 +1070,7 @@ router.post('/question/:id',
     bodyParser.raw({
         type: '*/*'
     }),
-    // Can't use unknown due to restrictions on the type from express
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, unknown, unknown, PostQuestionMeta>, _res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostQuestionById.IResponse, unknown, unknown, PostQuestionMeta>, _res: Response<courseQuestionPostQuestionById.IResponse>, next: TypedNextFunction<courseQuestionPostQuestionById.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -1125,9 +1107,7 @@ router.post('/question/:id',
         next();
     }),
     proxy(configurations.renderer.url, {
-        // Can't use unknown due to restrictions on the type from express
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        proxyReqPathResolver: (req: RederlyExpressRequest<any, unknown, unknown, unknown, PostQuestionMeta>) => {
+        proxyReqPathResolver: (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostQuestionById.IResponse, unknown, unknown, PostQuestionMeta>) => {
             if (_.isNil(req.meta)) {
                 throw new Error('Previously fetched metadata is nil');
             }
@@ -1140,9 +1120,7 @@ router.post('/question/:id',
             };
             return `${RENDERER_ENDPOINT}?${qs.stringify(params)}`;
         },
-        // Can't use unknown due to restrictions on the type from express
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        userResDecorator: async (proxyRes: Response, proxyResData, userReq: RederlyExpressRequest<any, unknown, unknown, unknown, PostQuestionMeta>) => {
+        userResDecorator: async (proxyRes: Response, proxyResData, userReq: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostQuestionById.IResponse, unknown, unknown, PostQuestionMeta>) => {
             if (_.isNil(userReq.session)) {
                 throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
             }
@@ -1193,10 +1171,11 @@ router.post('/question/:id',
         }
     }));
 
+import { coursesGetCourses } from '@rederly/backend-validation';
 router.get('/',
     authenticationMiddleware,
-    validate(listCoursesValidation),
-    asyncHandler(async (req: RederlyExpressRequest<ListCoursesRequest.params, unknown, ListCoursesRequest.body, ListCoursesRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(coursesGetCourses),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetCourses.IResponse, ListCoursesRequest.body, ListCoursesRequest.query>, _res: Response<coursesGetCourses.IResponse>, next: TypedNextFunction<coursesGetCourses.IResponse>) => {
         const courses = await courseController.getCourses({
             filter: {
                 instructorId: req.query.instructorId,
@@ -1206,10 +1185,11 @@ router.get('/',
         next(httpResponse.Ok('Fetched successfully', courses));
     }));
 
+import { coursesGetCourseList } from '@rederly/backend-validation';
 router.get('/browse-problems/course-list',
     authenticationMiddleware,
-    validate(browseProblemsCourseListValidation),
-    asyncHandler(async (req: RederlyExpressRequest<BrowseProblemsCourseListRequest.params, unknown, BrowseProblemsCourseListRequest.body, BrowseProblemsCourseListRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(coursesGetCourseList),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetCourseList.IResponse, BrowseProblemsCourseListRequest.body, BrowseProblemsCourseListRequest.query>, _res: Response<coursesGetCourseList.IResponse>, next: TypedNextFunction<coursesGetCourseList.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -1229,10 +1209,11 @@ router.get('/browse-problems/course-list',
         }
     }));
 
+import { coursesGetUnitList } from '@rederly/backend-validation';
 router.get('/browse-problems/unit-list',
     authenticationMiddleware,
-    validate(browseProblemsUnitListValidation),
-    asyncHandler(async (req: RederlyExpressRequest<BrowseProblemsUnitListRequest.params, unknown, BrowseProblemsUnitListRequest.body, BrowseProblemsUnitListRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(coursesGetUnitList),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetUnitList.IResponse, BrowseProblemsUnitListRequest.body, BrowseProblemsUnitListRequest.query>, _res: Response<coursesGetUnitList.IResponse>, next: TypedNextFunction<coursesGetUnitList.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -1251,10 +1232,11 @@ router.get('/browse-problems/unit-list',
         }
     }));
 
+import { coursesGetTopicList } from '@rederly/backend-validation';
 router.get('/browse-problems/topic-list',
     authenticationMiddleware,
-    validate(browseProblemsTopicListValidation),
-    asyncHandler(async (req: RederlyExpressRequest<BrowseProblemsTopicListRequest.params, unknown, BrowseProblemsTopicListRequest.body, BrowseProblemsTopicListRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(coursesGetTopicList),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetTopicList.IResponse, BrowseProblemsTopicListRequest.body, BrowseProblemsTopicListRequest.query>, _res: Response<coursesGetTopicList.IResponse>, next: TypedNextFunction<coursesGetTopicList.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -1273,10 +1255,11 @@ router.get('/browse-problems/topic-list',
         }
     }));
 
+import { coursesGetSearch } from '@rederly/backend-validation';
 router.get('/browse-problems/search',
     authenticationMiddleware,
-    validate(browseProblemsSearchValidation),
-    asyncHandler(async (req: RederlyExpressRequest<BrowseProblemsSearchRequest.params, unknown, BrowseProblemsSearchRequest.body, BrowseProblemsSearchRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(coursesGetSearch),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetSearch.IResponse, BrowseProblemsSearchRequest.body, BrowseProblemsSearchRequest.query>, _res: Response<coursesGetSearch.IResponse>, next: TypedNextFunction<coursesGetSearch.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -1299,16 +1282,16 @@ router.get('/browse-problems/search',
         }
     }));
 
+import { courseTopicGetTopicById } from '@rederly/backend-validation';
 // This returns information about a specific topic. Currently, it only
 // returns extension information if a specific user is passed.
 router.get('/topic/:id',
     authenticationMiddleware,
-    validate(getTopicValidation),
-    // This is due to a typescript issue where the type mismatches extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetTopicRequest.body, GetTopicRequest.query, unknown>, _res: Response, next: NextFunction) => {
-        const result = await courseController.getTopicById({ 
-            id: req.params.id, 
+    validationMiddleware(courseTopicGetTopicById),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseTopicGetTopicById.IResponse, GetTopicRequest.body, GetTopicRequest.query, unknown>, _res: Response<courseTopicGetTopicById.IResponse>, next: TypedNextFunction<courseTopicGetTopicById.IResponse>) => {
+        const params = req.params as GetTopicRequest.params;
+        const result = await courseController.getTopicById({
+            id: params.id, 
             userId: req.query.userId, 
             includeQuestions: req.query.includeQuestions,
             includeWorkbookCount: req.query.includeWorkbookCount,
@@ -1321,10 +1304,11 @@ router.get('/topic/:id',
         next(httpResponse.Ok('Fetched successfully', result));
     }));
 
+import { coursesGetTopics } from '@rederly/backend-validation';
 router.get('/topics',
     authenticationMiddleware,
-    validate(getTopicsValidation),
-    asyncHandler(async (req: RederlyExpressRequest<GetTopicsRequest.params, unknown, GetTopicsRequest.body, GetTopicsRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(coursesGetTopics),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetTopics.IResponse, GetTopicsRequest.body, GetTopicsRequest.query>, _res: Response<coursesGetTopics.IResponse>, next: TypedNextFunction<coursesGetTopics.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -1340,13 +1324,12 @@ router.get('/topics',
         next(httpResponse.Ok('Fetched successfully', result));
     }));
 
+import { coursesPostEmail } from '@rederly/backend-validation';
 router.post('/:id/email',
     authenticationMiddleware,
-    validate(emailProfValidation),
-    // This is due to a typescript issue where the type mismatches extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, EmailProfRequest.body, EmailProfRequest.query>, res: Response, next: NextFunction) => {
-        const params: EmailProfRequest.params = req.params;
+    validationMiddleware(coursesPostEmail),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostEmail.IResponse, EmailProfRequest.body, EmailProfRequest.query>, res: Response<coursesPostEmail.IResponse>, next: TypedNextFunction<coursesPostEmail.IResponse>) => {
+        const params = req.params as EmailProfRequest.params;
 
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
@@ -1369,12 +1352,11 @@ router.post('/:id/email',
     })
 );
 
+import { coursesGetCoursesById } from '@rederly/backend-validation';
 router.get('/:id',
     authenticationMiddleware,
-    validate(getCourseValidation),
-    // This is a work around because typescript has errors with "extractMap"
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetCourseRequest.body, GetCourseRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(coursesGetCoursesById),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetCoursesById.IResponse, GetCourseRequest.body, GetCourseRequest.query>, _res: Response<coursesGetCoursesById.IResponse>, next: TypedNextFunction<coursesGetCoursesById.IResponse>) => {
         try {
             const params = req.params as GetCourseRequest.params;
             const userIdForExtensions = req.rederlyUserRole === Role.STUDENT ? req.session?.userId : undefined;
@@ -1385,7 +1367,7 @@ router.get('/:id',
         }
     }),
     canUserViewCourse,
-    asyncHandler(async (req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetCoursesById.IResponse, unknown, EmptyExpressQuery>, _res: Response<coursesGetCoursesById.IResponse>, next: TypedNextFunction<coursesGetCoursesById.IResponse>) => {
         if(_.isNil(req.course)) {
             throw new RederlyError('TSNH, course should have already been fetched');
         }
@@ -1403,10 +1385,11 @@ router.get('/:id',
     })
 );
 
+import { coursesPostEnroll } from '@rederly/backend-validation';
 router.post('/enroll',
     authenticationMiddleware,
-    validate(enrollInCourseValidation),
-    asyncHandler(async (req: RederlyExpressRequest<EnrollInCourseRequest.params, unknown, EnrollInCourseRequest.body, EnrollInCourseRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(coursesPostEnroll),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostEnroll.IResponse, EnrollInCourseRequest.body, EnrollInCourseRequest.query>, _res: Response<coursesPostEnroll.IResponse>, next: TypedNextFunction<coursesPostEnroll.IResponse>) => {
         try {
             if (_.isNil(req.body.userId) === _.isNil(req.body.studentEmail)) {
                 throw new IllegalArgumentException('Enrollment requires either userId or studentEmail, not both, not neither');
@@ -1434,18 +1417,21 @@ router.post('/enroll',
         }
     }));
 
+import { coursesPostEnrollByCode } from '@rederly/backend-validation';
 router.post('/enroll/:code',
     authenticationMiddleware,
-    validate(enrollInCourseByCodeValidation),
-    asyncHandler(async (req: RederlyExpressRequest<EnrollInCourseByCodeRequest.params | { [key: string]: string }, unknown, EnrollInCourseByCodeRequest.body, EnrollInCourseByCodeRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(coursesPostEnrollByCode),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostEnrollByCode.IResponse, EnrollInCourseByCodeRequest.body, EnrollInCourseByCodeRequest.query>, _res: Response<coursesPostEnrollByCode.IResponse>, next: TypedNextFunction<coursesPostEnrollByCode.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
+        const params = req.params as EnrollInCourseByCodeRequest.params;
+
         const session = req.session;
         try {
             const enrollment = await courseController.enrollByCode({
-                code: req.params.code,
+                code: params.code,
                 userId: session.userId
             });
             next(httpResponse.Ok('Enrolled', enrollment));
@@ -1458,11 +1444,12 @@ router.post('/enroll/:code',
         }
     }));
 
+import { coursesDeleteEnroll } from '@rederly/backend-validation';
 router.delete('/enroll',
     authenticationMiddleware,
-    validate(deleteEnrollmentValidation),
+    validationMiddleware(coursesDeleteEnroll),
     paidMiddleware('Un-enrolling users'),
-    asyncHandler(async (req: RederlyExpressRequest<DeleteEnrollmentRequest.params, unknown, DeleteEnrollmentRequest.body, DeleteEnrollmentRequest.query>, _res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesDeleteEnroll.IResponse, DeleteEnrollmentRequest.body, DeleteEnrollmentRequest.query>, _res: Response<coursesDeleteEnroll.IResponse>, next: TypedNextFunction<coursesDeleteEnroll.IResponse>) => {
         try {
             const success = await courseController.softDeleteEnrollment({
                 ...req.body,
@@ -1477,20 +1464,22 @@ router.delete('/enroll',
         }
     }));
 
+import { coursesPostUploadUrl } from '@rederly/backend-validation';
 // TODO: Switch to POST in next release to match Frontend API.
 // This was to avoid API failures from one release to another.
-router.all('/attachments/upload-url',
+router.post('/attachments/upload-url',
     authenticationMiddleware,
-    validate(getAttachmentPresignedURLValidation),
-    asyncHandler(async (req: RederlyExpressRequest<GetAttachmentPresignedURLRequest.params, unknown, GetAttachmentPresignedURLRequest.body, GetAttachmentPresignedURLRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(coursesPostUploadUrl),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostUploadUrl.IResponse, GetAttachmentPresignedURLRequest.body, GetAttachmentPresignedURLRequest.query>, _res: Response<coursesPostUploadUrl.IResponse>, next: TypedNextFunction<coursesPostUploadUrl.IResponse>) => {
         const result = await attachmentHelper.getNewPresignedURL();
         next(httpResponse.Ok('Get new presigned url success', result));
     }));
 
+import { coursesPostAttachments } from '@rederly/backend-validation';
 router.post('/attachments',
     authenticationMiddleware,
-    validate(postAttachmentValidation),
-    asyncHandler(async (req: RederlyExpressRequest<PostAttachmentRequest.params, unknown, PostAttachmentRequest.body, PostAttachmentRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(coursesPostAttachments),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostAttachments.IResponse, PostAttachmentRequest.body, PostAttachmentRequest.query>, _res: Response<coursesPostAttachments.IResponse>, next: TypedNextFunction<coursesPostAttachments.IResponse>) => {
         // TODO permission to check if user has access to the provided grade or grade instance
         const result = await courseController.createAttachment({
             obj: req.body.attachment,
@@ -1501,10 +1490,11 @@ router.post('/attachments',
         next(httpResponse.Ok('Attachment record created', result));
     }));
 
+import { coursesGetList } from '@rederly/backend-validation';
 router.get('/attachments/list',
     authenticationMiddleware,
-    validate(listAttachmentsValidation),
-    asyncHandler(async (req: RederlyExpressRequest<ListAttachmentsRequest.params, unknown, ListAttachmentsRequest.body, ListAttachmentsRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(coursesGetList),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetList.IResponse, ListAttachmentsRequest.body, ListAttachmentsRequest.query>, _res: Response<coursesGetList.IResponse>, next: TypedNextFunction<coursesGetList.IResponse>) => {
         // TODO permission to check if user has access to the provided grade or grade instance
         const result = await courseController.listAttachments({
             studentGradeId: req.query.studentGradeId,
@@ -1518,12 +1508,11 @@ router.get('/attachments/list',
         }));
     }));
 
+import { coursesDeleteAttachmentsById } from '@rederly/backend-validation';
 router.delete('/attachments/:id',
     authenticationMiddleware,
-    validate(deleteAttachmentValidation),
-    // This is due to a typescript issue where the type mismatches extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, DeleteAttachmentRequest.body, DeleteAttachmentRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(coursesDeleteAttachmentsById),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesDeleteAttachmentsById.IResponse, DeleteAttachmentRequest.body, DeleteAttachmentRequest.query>, _res: Response<coursesDeleteAttachmentsById.IResponse>, next: TypedNextFunction<coursesDeleteAttachmentsById.IResponse>) => {
         const params = req.params as DeleteAttachmentRequest.params;
         // TODO permission to check if user has access to the provided grade or grade instance
         const result = await courseController.deleteAttachment({
@@ -1533,12 +1522,11 @@ router.delete('/attachments/:id',
         next(httpResponse.Ok('Attachment deleted successfully', result));
     }));
 
+import { courseQuestionPostSave } from '@rederly/backend-validation';
 router.post('/question/editor/save',
     authenticationMiddleware,
-    validate(saveQuestionValidation),
-    // This is due to a typescript issue where the type mismatches extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<SaveQuestionRequest.params, unknown, SaveQuestionRequest.body, SaveQuestionRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(courseQuestionPostSave),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostSave.IResponse, SaveQuestionRequest.body, SaveQuestionRequest.query>, _res: Response<courseQuestionPostSave.IResponse>, next: TypedNextFunction<courseQuestionPostSave.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -1560,13 +1548,12 @@ router.post('/question/editor/save',
         }));
     }));
 
+import { courseQuestionPostUploadAsset } from '@rederly/backend-validation';
 router.post('/question/editor/upload-asset',
     authenticationMiddleware,
     rederlyTempFileWrapper((tmpFilePath: string) => multer({dest: tmpFilePath}).single('asset-file')),
-    validate(uploadAssetValidation),
-    // This is due to a typescript issue where the type mismatches extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<UploadAssetRequest.params, unknown, UploadAssetRequest.body, UploadAssetRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(courseQuestionPostUploadAsset),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostUploadAsset.IResponse, UploadAssetRequest.body, UploadAssetRequest.query>, _res: Response<courseQuestionPostUploadAsset.IResponse>, next: TypedNextFunction<courseQuestionPostUploadAsset.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -1588,12 +1575,11 @@ router.post('/question/editor/upload-asset',
         }));
     }));
 
+import { courseQuestionPostRead } from '@rederly/backend-validation';
 router.post('/question/editor/read',
     authenticationMiddleware,
-    validate(readQuestionValidation),
-    // This is due to a typescript issue where the type mismatches extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<ReadQuestionRequest.params, unknown, ReadQuestionRequest.body, ReadQuestionRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(courseQuestionPostRead),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostRead.IResponse, ReadQuestionRequest.body, ReadQuestionRequest.query>, _res: Response<courseQuestionPostRead.IResponse>, next: TypedNextFunction<courseQuestionPostRead.IResponse>) => {
         const sourceFilePath = req.body.filePath;
         // TODO if we use this regex elsewhere we should centralize
         // This should also be in the joi validation but due to time putting it here to handle the frontend
@@ -1613,12 +1599,11 @@ router.post('/question/editor/read',
         }));
     }));
 
+import { courseQuestionPostCatalog } from '@rederly/backend-validation';
 router.post('/question/editor/catalog',
     authenticationMiddleware,
-    validate(catalogValidation),
-    // This is due to a typescript issue where the type mismatches extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<CatalogRequest.params, unknown, CatalogRequest.body, CatalogRequest.query>, _res: Response, next: NextFunction) => {
+    validationMiddleware(courseQuestionPostCatalog as ValidationMiddlewareOptions),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostCatalog.IResponse, CatalogRequest.body, CatalogRequest.query>, _res: Response<courseQuestionPostCatalog.IResponse>, next: TypedNextFunction<courseQuestionPostCatalog.IResponse>) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -1642,10 +1627,11 @@ router.post('/question/editor/catalog',
         }));
     }));
 
+import { coursesPostFeedback } from '@rederly/backend-validation';
 router.post('/feedback', 
     authenticationMiddleware,
-    validate(postFeedbackValidation),
-    asyncHandler(async (req: RederlyExpressRequest<PostFeedbackRequest.params, unknown, PostFeedbackRequest.body, unknown>, _res: Response, next: NextFunction) => {
+    validationMiddleware(coursesPostFeedback),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostCatalog.IResponse, PostFeedbackRequest.body, unknown>, _res: Response<courseQuestionPostCatalog.IResponse>, next: TypedNextFunction<coursesPostFeedback.IResponse>) => {
         const res = await courseController.addFeedback({
             content: req.body.content,
             workbookId: (req.query as PostFeedbackRequest.query).workbookId,

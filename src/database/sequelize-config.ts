@@ -1,7 +1,5 @@
 import configurations from '../configurations';
-// When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const Sequelize = require('sequelize');
+import { Sequelize, Options as SequelizeOptions } from 'sequelize';
 import cls = require('cls-hooked');
 import { Constants } from '../constants';
 import logger from '../utilities/logger';
@@ -31,16 +29,21 @@ const {
     user,
     password,
     logging,
+    statementTimeout
 } = configurations.db;
 
-// Sequelize requires it like this
-module.exports = {
+const sequelizeConfig: SequelizeOptions = {
     username: user,
     password: password,
     database: name,
     host,
     dialect: 'postgres',
     logging: logging && formatter(),
+    dialectOptions: {
+        // set a limit for how long a query can take to run (in millis)
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        statement_timeout: statementTimeout
+    },
     define: {
         timestamps: true,
         underscored: true
@@ -51,3 +54,6 @@ module.exports = {
         idle: 10000
     },
 };
+
+// Sequelize requires it like this
+module.exports = sequelizeConfig;

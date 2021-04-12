@@ -1,7 +1,7 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsMixin, Sequelize } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
-interface StudentTopicAssessmentInfoInterface {
+export interface StudentTopicAssessmentInfoInterface {
     id: number;
     topicAssessmentInfoId: number;
     userId: number;

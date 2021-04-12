@@ -1,6 +1,6 @@
 import StudentGrade from '../../database/models/student-grade';
 import StudentWorkbook from '../../database/models/student-workbook';
-import User from '../../database/models/user';
+import User, { UserInterface } from '../../database/models/user';
 import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface, CourseTopicQuestionErrors } from '../../database/models/course-ww-topic-question';
 import Course from '../../database/models/course';
 import { WhereOptions } from 'sequelize/types';
@@ -18,7 +18,7 @@ import StudentTopicAssessmentInfo from '../../database/models/student-topic-asse
 import ProblemAttachment from '../../database/models/problem-attachment';
 import { BucketDefFileResult, FindFilesDefFileResult } from '../../utilities/webwork-utilities/importer';
 import WebWorkDef from '@rederly/webwork-def-parser';
-import StudentEnrollment from '../../database/models/student-enrollment';
+import StudentEnrollment, { StudentEnrollmentInterface } from '../../database/models/student-enrollment';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -37,6 +37,15 @@ export interface ManualEnrollmentResult {
     enrollment: StudentEnrollment;
     user: User;
 }
+
+interface StripSequelizeFromManualEnrollmentResultResult {
+    enrollment: StudentEnrollmentInterface;
+    user: UserInterface;
+}
+export const stripSequelizeFromManualEnrollmentResult = (input: ManualEnrollmentResult): StripSequelizeFromManualEnrollmentResultResult => ({
+    enrollment: input.enrollment.get({plain: true}) as StudentEnrollmentInterface,
+    user: input.user.get({plain: true}) as UserInterface
+});
 
 export interface CourseListOptions {
     filter: {

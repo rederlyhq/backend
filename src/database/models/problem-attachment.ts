@@ -2,7 +2,7 @@ import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize';
 import StudentGradeInstance from './student-grade-instance';
 
-interface ProblemAttachmentInterface {
+export interface ProblemAttachmentInterface {
     id: number;
     cloudFilename: string;
     userLocalFilename: string;

@@ -17,9 +17,9 @@ import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatistic
 import Boom = require('boom');
 import { Constants } from '../../constants';
 import Role from '../permissions/roles';
-import { PostQuestionMeta } from './course-types';
+import { PostQuestionMeta, stripSequelizeFromManualEnrollmentResult } from './course-types';
 import rendererHelper, { RENDERER_ENDPOINT, GetProblemParameters, RendererResponse } from '../../utilities/renderer-helper';
-import StudentGrade from '../../database/models/student-grade';
+import StudentGrade, { StudentGradeInterface } from '../../database/models/student-grade';
 import bodyParser = require('body-parser');
 import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
 import logger from '../../utilities/logger';
@@ -32,9 +32,20 @@ import openLabHelper from '../../utilities/openlab-helper';
 import { getAveragesFromStatistics } from './statistics-helper';
 import { rederlyTempFileWrapper } from '../../middleware/rederly-temp-file-wrapper';
 import ExportPDFHelper from '../../utilities/export-pdf-helper';
-import CourseTopicContent from '../../database/models/course-topic-content';
+import CourseTopicContent, { CourseTopicContentInterface } from '../../database/models/course-topic-content';
 import { canUserViewCourse } from '../../middleware/permissions/course-permissions';
 import { validationMiddleware, ValidationMiddlewareOptions } from '../../middleware/validation-middleware';
+import { DeepAddIndexSignature } from '../../extensions/typescript-utility-extensions';
+import { CourseUnitContentInterface } from '../../database/models/course-unit-content';
+import { CourseWWTopicQuestionInterface } from '../../database/models/course-ww-topic-question';
+import { CourseInterface } from '../../database/models/course';
+import { stripSequelizeFromUpsertResult, stripSequelizeFromUpdateResult } from '../../generic-interfaces/sequelize-generic-interfaces';
+import { StudentTopicOverrideInterface } from '../../database/models/student-topic-override';
+import { TopicAssessmentInfoInterface } from '../../database/models/topic-assessment-info';
+import { StudentTopicAssessmentInfoInterface } from '../../database/models/student-topic-assessment-info';
+import { StudentGradeInstanceInterface } from '../../database/models/student-grade-instance';
+import { StudentTopicQuestionOverrideInterface } from '../../database/models/student-topic-question-override';
+import { StudentWorkbookInterface } from '../../database/models/student-workbook';
 
 const router = express.Router();
 
@@ -67,7 +78,8 @@ router.post('/:courseId/import-archive',
             user: user,
             keepBucketsAsTopics: req.query.keepBucketsAsTopics ?? true
         });
-        next(httpResponse.Ok('Imported', result));
+        const resp = httpResponse.Ok('Imported', result);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { courseStatisticsGetUnits } from '@rederly/backend-validation';
@@ -85,10 +97,11 @@ router.get('/statistics/units',
                 followQuestionRules: !_.isNil(req.query.userId)
             });
 
-            next(httpResponse.Ok('Fetched successfully', {
-                data: stats,
+            const resp = httpResponse.Ok('Fetched successfully', {
+                data: stats.map(stat => stat.get({plain: true}) as CourseUnitContentInterface),
                 ...getAveragesFromStatistics(stats),
-            }));
+            });
+            next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             next(e);
         }
@@ -110,10 +123,11 @@ router.get('/statistics/topics',
                 followQuestionRules: !_.isNil(req.query.userId)
             });
 
-            next(httpResponse.Ok('Fetched successfully', {
-                data: stats,
+            const resp = httpResponse.Ok('Fetched successfully', {
+                data: stats.map(stat => stat.get({plain: true}) as CourseTopicContentInterface),
                 ...getAveragesFromStatistics(stats),
-            }));
+            });
+            next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             next(e);
         }
@@ -135,10 +149,11 @@ router.get('/statistics/questions',
                 followQuestionRules: !_.isNil(req.query.userId)
             });
 
-            next(httpResponse.Ok('Fetched successfully', {
-                data: stats,
+            const resp = httpResponse.Ok('Fetched successfully', {
+                data: stats.map(stat => stat.get({plain: true}) as CourseWWTopicQuestionInterface),
                 ...getAveragesFromStatistics(stats),
-            }));
+            });
+            next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             next(e);
         }
@@ -162,9 +177,10 @@ router.post('/def',
             courseQuestionAssessmentInfo: result.courseQuestionAssessmentInfo?.get({plain: true}),
             ...result.get({plain:true})
         }));
-        next(httpResponse.Created('Course Topic from DEF file created successfully', {
+        const resp = httpResponse.Created('Course Topic from DEF file created successfully', {
             newQuestions: adjustedResults
-        }));
+        });
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { coursesPostCourses } from '@rederly/backend-validation';
@@ -196,7 +212,8 @@ router.post('/',
                     useCurriculum: query.useCurriculum
                 }
             });
-            next(httpResponse.Created('Course created successfully', newCourse));
+            const resp = httpResponse.Created('Course created successfully', newCourse.get({plain: true}) as CourseInterface);
+            next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             next(e);
         }
@@ -213,7 +230,8 @@ router.post('/unit',
                 ...req.body
             });
             // TODO handle not found case
-            next(httpResponse.Created('Course Unit created successfully', newUnit));
+            const resp = httpResponse.Created('Course Unit created successfully', newUnit.get({plain: true}) as CourseUnitContentInterface);
+            next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             next(e);
         }
@@ -229,7 +247,8 @@ router.post('/topic',
             ...req.body
         });
 
-        next(httpResponse.Created('Course Topic created successfully', newTopic));
+        const resp = httpResponse.Created('Course Topic created successfully', newTopic.get({plain: true}) as CourseTopicContentInterface);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { coursesGetGrades } from '@rederly/backend-validation';
@@ -247,7 +266,8 @@ router.get('/grades',
                     userId: req.query.userId,
                 }
             });
-            next(httpResponse.Ok('Fetched successfully', grades));
+            const resp = httpResponse.Ok('Fetched successfully', grades.map(grade => grade.get({plain: true}) as StudentGradeInterface));
+            next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             next(e);
         }
@@ -263,9 +283,10 @@ router.get('/:courseId/topic-grades',
             courseId: params.courseId,
         });
 
-        next(httpResponse.Ok('Fetched successfully', {
+        const resp = httpResponse.Ok('Fetched successfully', {
             topics: topics
-        }));
+        });
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { coursesGetQuestions } from '@rederly/backend-validation';
@@ -285,7 +306,6 @@ router.get('/questions',
                 userId = session.userId;
             } else {
                 throw new IllegalArgumentException('userIdInput as a string must be the value `me`');
-                return;
             }
         } else if (typeof userIdInput === 'number') {
             userId = userIdInput;
@@ -326,21 +346,22 @@ router.get('/questions',
             studentTopicAssessmentInfoId: req.query.studentTopicAssessmentInfoId ?? version?.id,
         });
 
-        next(httpResponse.Ok('Got questions', {
-            questions: questions,
-            topic
-        }));
+        const resp = httpResponse.Ok('Got questions', {
+            questions: questions.map(question => question.get({plain: true}) as CourseWWTopicQuestionInterface),
+            topic: topic?.get({plain: true}) as CourseTopicContentInterface
+        });
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
-// TOMTOM TODO
-// import { courseTopicGetTopicById } from '@rederly/backend-validation';
+import { courseTopicGetVersionByUserId } from '@rederly/backend-validation';
 router.get('/topic/:topicId/version/:userId',
     authenticationMiddleware,
-    // validationMiddleware(getVersionValidation),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, unknown, GetVersionRequest.body, GetVersionRequest.query>, _res: Response, next: TypedNextFunction<never>) => {
+    validationMiddleware(courseTopicGetVersionByUserId),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseTopicGetVersionByUserId.IResponse, GetVersionRequest.body, GetVersionRequest.query>, _res: Response<courseTopicGetVersionByUserId.IResponse>, next: TypedNextFunction<courseTopicGetVersionByUserId.IResponse>) => {
         const params = req.params as GetVersionRequest.params;
         const result = await courseController.getAllContentForVersion({topicId: params.topicId, userId: params.userId});
-        next(httpResponse.Ok('Fetched successfully', result));
+        const resp = httpResponse.Ok('Fetched successfully', result);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     })
 );
 
@@ -370,7 +391,8 @@ router.put('/topic/:topicId/endExport',
         }
         await topic.save();
 
-        next(httpResponse.Ok('Got it!', null));
+        const resp = httpResponse.Ok('Got it!', null);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     })
 );
 
@@ -419,7 +441,8 @@ router.post('/topic/:topicId/startExport',
                 topic.save();
             });
             
-            next(httpResponse.Ok('Loading', exportDetails));
+            const resp = httpResponse.Ok('Loading', exportDetails);
+            next(resp as DeepAddIndexSignature<typeof resp>);
         }
     })
 );
@@ -445,7 +468,11 @@ router.put('/topic/extend',
                 updates: body,
             });
             // TODO handle not found case
-            next(httpResponse.Ok('Extended topic successfully', updatesResult));
+            const resp = httpResponse.Ok('Extended topic successfully', {
+                extendTopicResult: stripSequelizeFromUpsertResult<StudentTopicOverrideInterface>(updatesResult.extendTopicResult),
+                extendTopicAssessmentResult: stripSequelizeFromUpsertResult<StudentTopicOverrideInterface>(updatesResult.extendTopicAssessmentResult)
+            });
+            next(resp as DeepAddIndexSignature<typeof resp>);
         }));
 
 import { courseTopicPutTopicById } from '@rederly/backend-validation';
@@ -464,13 +491,14 @@ router.put('/topic/:id',
             }
         });
         // TODO handle not found case
-        next(httpResponse.Ok('Updated topic successfully', {
+        const resp = httpResponse.Ok('Updated topic successfully', {
             updatesResult: updatesResult.map(result => ({
-                ...result.get({ plain: true }),
-                topicAssessmentInfo: result.topicAssessmentInfo
+                ...result.get({ plain: true }) as CourseTopicContentInterface,
+                topicAssessmentInfo: result.topicAssessmentInfo as TopicAssessmentInfoInterface
             })),
             updatesCount: updatesResult.length
-        }));
+        });
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { coursesGetGradeById } from '@rederly/backend-validation';
@@ -489,7 +517,11 @@ router.get('/assessment/topic/grade/:id',
         }
 
         const {problems, topic} = await courseController.getAssessmentForGrading({topicId: params.id});
-        next(httpResponse.Ok('Fetched problems + workbooks successfully', {problems, topic}));
+        const resp = httpResponse.Ok('Fetched problems + workbooks successfully', {
+            problems: problems.map(problem => problem.get({plain: true}) as CourseWWTopicQuestionInterface),
+            topic: topic.get({plain: true}) as CourseTopicContentInterface
+        });
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { coursesGetEndById } from '@rederly/backend-validation';
@@ -514,15 +546,15 @@ router.get('/assessment/topic/end/:id',
 
         await courseController.endAssessmentEarly(version, true);
 
-        next(httpResponse.Ok('Assessment version has been closed.', null));
+        const resp = httpResponse.Ok('Assessment version has been closed.', null);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
-// TOMTOM TODO
-// import { coursesGetStart } from '@rederly/backend-validation';
+import { coursesGetStart } from '@rederly/backend-validation';
 router.get('/assessment/topic/:id/start',
     authenticationMiddleware,
-    // validationMiddleware(createAssessmentVersionValidation),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, never, CreateAssessmentVersionRequest.body, CreateAssessmentVersionRequest.query>, _res: Response<never>, next: TypedNextFunction<never>) => {
+    validationMiddleware(coursesGetStart),
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetStart.IResponse, CreateAssessmentVersionRequest.body, CreateAssessmentVersionRequest.query>, _res: Response<coursesGetStart.IResponse>, next: TypedNextFunction<coursesGetStart.IResponse>) => {
         const params = req.params as CreateAssessmentVersionRequest.params;
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
@@ -544,7 +576,8 @@ router.get('/assessment/topic/:id/start',
             requestURL: req.headers['rederly-origin'] as string | undefined // need this because it incorrectly thinks it can be an array
         });
 
-        next(httpResponse.Ok('New version of this assessment created successfully', versionInfo));
+        const resp = httpResponse.Ok('New version of this assessment created successfully', versionInfo.get({plain: true}) as StudentTopicAssessmentInfoInterface);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { coursesDeleteUnitById } from '@rederly/backend-validation';
@@ -559,10 +592,9 @@ router.delete('/unit/:id',
                 id: params.id
             });
             // TODO handle not found case
-            next(httpResponse.Ok('Deleted units and subobjects successfully', {
-                updatedRecords: updatesResult.updatedRecords,
-                updatesCount: updatesResult.updatedCount
-            }));
+            const resp = httpResponse.Ok('Deleted units and subobjects successfully', stripSequelizeFromUpdateResult<CourseUnitContentInterface>(updatesResult));
+            
+            next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             next(e);
         }
@@ -580,10 +612,8 @@ router.delete('/topic/:id',
                 id: params.id
             });
             // TODO handle not found case
-            next(httpResponse.Ok('Deleted topics and subobjects successfully', {
-                updatedRecords: updatesResult.updatedRecords,
-                updatesCount: updatesResult.updatedCount
-            }));
+            const resp = httpResponse.Ok('Deleted topics and subobjects successfully', stripSequelizeFromUpdateResult<CourseTopicContentInterface>(updatesResult));
+            next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             next(e);
         }
@@ -601,10 +631,8 @@ router.delete('/question/:id',
                 id: params.id
             });
             // TODO handle not found case
-            next(httpResponse.Ok('Deleted questions and subobjects successfully', {
-                updatedRecords: updatesResult.updatedRecords,
-                updatesCount: updatesResult.updatedCount
-            }));
+            const resp = httpResponse.Ok('Deleted questions and subobjects successfully', stripSequelizeFromUpdateResult<CourseWWTopicQuestionInterface>(updatesResult));
+            next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             next(e);
         }
@@ -618,7 +646,7 @@ router.put('/unit/:id',
     asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPutUnitById.IResponse, UpdateCourseUnitRequest.body, UpdateCourseUnitRequest.query>, _res: Response<coursesPutUnitById.IResponse>, next: TypedNextFunction<coursesPutUnitById.IResponse>) => {
         try {
             const params = req.params as UpdateCourseUnitRequest.params;
-            const updatesResult = await courseController.updateCourseUnit({
+            const updatedRecords = await courseController.updateCourseUnit({
                 where: {
                     id: params.id
                 },
@@ -627,10 +655,11 @@ router.put('/unit/:id',
                 }
             });
             // TODO handle not found case
-            next(httpResponse.Ok('Updated unit successfully', {
-                updatesResult,
-                updatesCount: updatesResult.length
+            const resp = httpResponse.Ok('Updated unit successfully', stripSequelizeFromUpdateResult<CourseUnitContentInterface>({
+                updatedRecords: updatedRecords,
+                updatedCount: updatedRecords.length
             }));
+            next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             next(e);
         }
@@ -646,7 +675,7 @@ router.put('/question/grade/:id',
         }
 
         const params = req.params as UpdateCourseTopicQuestionRequest.params;
-        const updatesResult = await courseController.updateGrade({
+        const updatedRecords = await courseController.updateGrade({
             where: {
                 id: params.id
             },
@@ -655,10 +684,8 @@ router.put('/question/grade/:id',
             },
             initiatingUserId: req.session.userId
         });
-        next(httpResponse.Ok('Updated grade successfully', {
-            updatesResult,
-            updatesCount: updatesResult.updatedCount
-        }));
+        const resp = httpResponse.Ok('Updated grade successfully', stripSequelizeFromUpdateResult<StudentGradeInterface>(updatedRecords));
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { courseQuestionPutInstanceById } from '@rederly/backend-validation';
@@ -680,10 +707,8 @@ router.put('/question/grade/instance/:id',
             },
             initiatingUserId: req.session.userId
         });
-        next(httpResponse.Ok('Updated grade successfully', {
-            updatesResult,
-            updatesCount: updatesResult.updatedCount
-        }));
+        const resp = httpResponse.Ok('Updated grade successfully', stripSequelizeFromUpdateResult<StudentGradeInstanceInterface>(updatesResult));
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { courseQuestionPutExtend } from '@rederly/backend-validation';
@@ -703,7 +728,8 @@ router.put('/question/extend',
                 ...body
             }
         });
-        next(httpResponse.Ok('Extended topic successfully', extensions));
+        const resp = httpResponse.Ok('Extended topic successfully', stripSequelizeFromUpsertResult<StudentTopicQuestionOverrideInterface>(extensions));
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { courseQuestionPutQuestionById } from '@rederly/backend-validation';
@@ -721,10 +747,11 @@ router.put('/question/:id',
                 ...req.body
             }
         });
-        next(httpResponse.Ok('Updated question successfully', {
-            updatesResult,
-            updatesCount: updatesResult.length
+        const resp = httpResponse.Ok('Updated question successfully', stripSequelizeFromUpdateResult<CourseWWTopicQuestionInterface>({
+            updatedRecords: updatesResult,
+            updatedCount: updatesResult.length
         }));
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { coursesPutCoursesById } from '@rederly/backend-validation';
@@ -744,10 +771,11 @@ router.put('/:id',
                 }
             });
             // TODO handle not found case
-            next(httpResponse.Ok('Updated course successfully', {
-                updatesResult,
-                updatesCount: updatesResult.length
+            const resp = httpResponse.Ok('Updated course successfully', stripSequelizeFromUpdateResult<CourseInterface>({
+                updatedRecords: updatesResult,
+                updatedCount: updatesResult.length
             }));
+            next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             next(e);
         }
@@ -765,7 +793,8 @@ router.post('/question',
             }
         });
         // TODO handle not found case
-        next(httpResponse.Created('Course Question created successfully', newQuestion));
+        const resp = httpResponse.Created('Course Question created successfully', newQuestion.get({plain: true}) as CourseWWTopicQuestionInterface);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { courseQuestionGetRaw } from '@rederly/backend-validation';
@@ -784,7 +813,8 @@ router.get('/question/:id/raw',
                 id: questionId,
                 userId,
             });
-        next(httpResponse.Ok('Fetched question successfully', question));
+        const resp = httpResponse.Ok('Fetched question successfully', question.get({plain: true}) as CourseWWTopicQuestionInterface);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { courseQuestionGetGrade } from '@rederly/backend-validation';
@@ -804,8 +834,8 @@ router.get('/question/:id/grade',
             includeWorkbooks
         });
 
-        next(httpResponse.Ok('Fetched question grade successfully', grade));
-
+        const resp = httpResponse.Ok('Fetched question grade successfully', (grade?.get({plain: true}) as StudentGradeInterface) ?? null);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { courseQuestionGetOpenlab } from '@rederly/backend-validation';
@@ -827,7 +857,8 @@ router.get('/question/:id/openlab',
         const openLabRedirectInfo = await courseController.prepareOpenLabRedirect({user, questionId, baseURL});
         const openLabResponse = await openLabHelper.askForHelp(openLabRedirectInfo);
 
-        next(httpResponse.Ok('Data sent to OpenLab successfully', openLabResponse));
+        const resp = httpResponse.Ok('Data sent to OpenLab successfully', openLabResponse);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { courseQuestionGetSma } from '@rederly/backend-validation';
@@ -844,9 +875,11 @@ router.get('/question/:id/sma',
 
         const updatedGrade = await courseController.requestProblemNewVersion({questionId, userId}); 
         if (_.isNil(updatedGrade)) {
-            next(httpResponse.Ok('No new versions of this problem could be found.', null));
+            const resp = httpResponse.Ok('No new versions of this problem could be found.', null);
+            next(resp as DeepAddIndexSignature<typeof resp>);
         } else {
-            next(httpResponse.Ok('New version found!', updatedGrade));
+            const resp = httpResponse.Ok('New version found!', updatedGrade.get({plain: true}) as StudentGradeInterface);
+            next(resp as DeepAddIndexSignature<typeof resp>);
         }
     }));
 
@@ -888,7 +921,8 @@ router.get('/question/:id',
                 studentTopicAssessmentInfoId,
                 showCorrectAnswers,
             });
-            next(httpResponse.Ok('Fetched question successfully', question));
+            const resp = httpResponse.Ok('Fetched question successfully', question);
+            next(resp as DeepAddIndexSignature<typeof resp>);
 
             // If testing renderer integration from the browser without the front end simply return the rendered html
             // To do so first uncomment the below res.send and comment out the above next
@@ -907,14 +941,16 @@ router.post('/assessment/topic/:id/submit/:version/auto',
         const params = req.params as SubmitAssessmentVersionRequest.params;
         try {
             const assessmentResult = await courseController.submitAssessmentAnswers(params.version, true); // false: wasAutoSubmitted
-            next(httpResponse.Ok('Assessment submitted successfully', assessmentResult));
+            const resp = httpResponse.Ok('Assessment submitted successfully', assessmentResult);
+            next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             if (e instanceof AttemptsExceededException) {
                 logger.warn('This assessment version has no attempts remaining but was auto submitted.', JSON.stringify({
                     assessmentVersionId: params.version,
                     topicId: params.id
                 }));
-                next(httpResponse.Ok('Attempts exceeded skipping auto submit', null));
+                const resp = httpResponse.Ok('Attempts exceeded skipping auto submit', null);
+                next(resp as DeepAddIndexSignature<typeof resp>);    
             } else {
                 logger.error('Auto submit ran into uncaught error', e);
                 throw e;
@@ -932,7 +968,7 @@ router.post('/preview',
         type: '*/*'
     }),
     validationMiddleware(coursesPostPreview),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostPreview.IResponse, GetQuestionRequest.body, PreviewQuestionRequest.query>, _res: Response<coursesPostPreview.IResponse>, next: TypedNextFunction<coursesPostPreview.IResponse>) => {
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostPreview.IResponse, GetQuestionRequest.body, PreviewQuestionRequest.query>, _res: Response<coursesPostPreview.IResponse>, next: TypedNextFunction<undefined>) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -957,7 +993,7 @@ router.post('/preview',
                     webworkQuestionPath: query.webworkQuestionPath
                 },
             };
-            return next();
+            return next(undefined);
         }
         if (_.isNil(query.webworkQuestionPath)) {
             throw new Error('Missing required field');
@@ -971,7 +1007,9 @@ router.post('/preview',
                 role: rederlyUserRole,
                 showAnswersUpfront: query.showAnswersUpfront,
             });
-            next(httpResponse.Ok('Fetched question successfully', question));
+            const resp = httpResponse.Ok('Fetched question successfully', question);
+            next(resp as DeepAddIndexSignature<typeof resp>);
+
 
             // If testing renderer integration from the browser without the front end simply return the rendered html
             // To do so first uncomment the below res.send and comment out the above next
@@ -1021,11 +1059,13 @@ router.post('/preview',
                 throw new WrappedError(`Error parsing data response from renderer on question ${userReq.meta?.studentGrade?.courseWWTopicQuestionId} for grade ${userReq.meta?.studentGrade?.id}`, e);
             }
 
-            // There is no way to get next callback, however anything thrown will get sent to next
-            // Using the below line will responde with a 201 the way we do in our routes
-            throw httpResponse.Ok('Answer submitted for question', {
+            const resp = httpResponse.Ok('Answer submitted for question', {
                 rendererData: rendererHelper.cleanRendererResponseForTheResponse(rendererResponse),
             });
+            // next(resp as DeepAddIndexSignature<typeof resp>);
+            // There is no way to get next callback, however anything thrown will get sent to next
+            // Using the below line will responde with a 201 the way we do in our routes
+            throw resp;
 
             // If testing renderer integration from the browser without the front end simply return the rendered html
             // To do so first uncomment the below return and comment out the above throw
@@ -1059,7 +1099,8 @@ router.post('/assessment/topic/:id/submit/:version',
         }
 
         const assessmentResult = await courseController.submitAssessmentAnswers(params.version, false); // false: wasAutoSubmitted
-        next(httpResponse.Ok('Assessment submitted successfully', assessmentResult));
+        const resp = httpResponse.Ok('Assessment submitted successfully', assessmentResult);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { courseQuestionPostQuestionById } from '@rederly/backend-validation';
@@ -1070,7 +1111,7 @@ router.post('/question/:id',
     bodyParser.raw({
         type: '*/*'
     }),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostQuestionById.IResponse, unknown, unknown, PostQuestionMeta>, _res: Response<courseQuestionPostQuestionById.IResponse>, next: TypedNextFunction<courseQuestionPostQuestionById.IResponse>) => {
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostQuestionById.IResponse, unknown, unknown, PostQuestionMeta>, _res: Response<courseQuestionPostQuestionById.IResponse>, next: TypedNextFunction<undefined>) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -1104,7 +1145,7 @@ router.post('/question/:id',
             studentGrade: studentGrade?.get({ plain: true }) as StudentGrade,
             courseQuestion: question
         };
-        next();
+        next(undefined);
     }),
     proxy(configurations.renderer.url, {
         proxyReqPathResolver: (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostQuestionById.IResponse, unknown, unknown, PostQuestionMeta>) => {
@@ -1120,7 +1161,7 @@ router.post('/question/:id',
             };
             return `${RENDERER_ENDPOINT}?${qs.stringify(params)}`;
         },
-        userResDecorator: async (proxyRes: Response, proxyResData, userReq: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostQuestionById.IResponse, unknown, unknown, PostQuestionMeta>) => {
+        userResDecorator: async (proxyRes: Response<courseQuestionPostQuestionById.IResponse>, proxyResData, userReq: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostQuestionById.IResponse, unknown, unknown, PostQuestionMeta>) => {
             if (_.isNil(userReq.session)) {
                 throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
             }
@@ -1155,12 +1196,14 @@ router.post('/question/:id',
                 submitted: rendererResponse,
             });
 
-            // There is no way to get next callback, however anything thrown will get sent to next
-            // Using the below line will responde with a 201 the way we do in our routes
-            throw httpResponse.Ok('Answer submitted for question', {
+            const resp = httpResponse.Ok('Answer submitted for question', {
                 rendererData: rendererHelper.cleanRendererResponseForTheResponse(rendererResponse),
                 ...result
             });
+            // next(resp as DeepAddIndexSignature<typeof resp>);
+            // There is no way to get next callback, however anything thrown will get sent to next
+            // Using the below line will responde with a 201 the way we do in our routes
+            throw resp;
 
             // If testing renderer integration from the browser without the front end simply return the rendered html
             // To do so first uncomment the below return and comment out the above throw
@@ -1182,7 +1225,8 @@ router.get('/',
                 enrolledUserId: req.query.enrolledUserId,
             }
         });
-        next(httpResponse.Ok('Fetched successfully', courses));
+        const resp = httpResponse.Ok('Fetched successfully', courses.map(course => course.get({plain: true}) as CourseInterface));
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { coursesGetCourseList } from '@rederly/backend-validation';
@@ -1201,9 +1245,10 @@ router.get('/browse-problems/course-list',
                     instructorId: instructorId,
                 }
             });
-            next(httpResponse.Ok('Fetched successfully', {
-                courses: courses
-            }));
+            const resp = httpResponse.Ok('Fetched successfully', {
+                courses: courses.map(course => course.get({plain: true}) as CourseInterface)
+            });
+            next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             next(e);
         }
@@ -1224,9 +1269,10 @@ router.get('/browse-problems/unit-list',
                     courseId: req.query.courseId,
                 }
             });
-            next(httpResponse.Ok('Fetched successfully', {
-                units: units
-            }));
+            const resp = httpResponse.Ok('Fetched successfully', {
+                units: units.map(unit => unit.get({plain: true}) as CourseUnitContentInterface)
+            });
+            next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             next(e);
         }
@@ -1247,9 +1293,10 @@ router.get('/browse-problems/topic-list',
                     unitId: req.query.unitId,
                 }
             });
-            next(httpResponse.Ok('Fetched successfully', {
-                topics: topics
-            }));
+            const resp = httpResponse.Ok('Fetched successfully', {
+                topics: topics.map(topic => topic.get({plain: true}) as CourseTopicContentInterface)
+            });
+            next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             next(e);
         }
@@ -1274,9 +1321,10 @@ router.get('/browse-problems/search',
                     topicId: req.query.topicId,
                 }
             });
-            next(httpResponse.Ok('Fetched successfully', {
-                problems: problems
-            }));
+            const resp = httpResponse.Ok('Fetched successfully', {
+                problems: problems.map(problem => problem.get({plain: true}) as CourseWWTopicQuestionInterface)
+            });
+            next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             next(e);
         }
@@ -1301,7 +1349,8 @@ router.get('/topic/:id',
             result.calculateWorkbookCount();
         }
 
-        next(httpResponse.Ok('Fetched successfully', result));
+        const resp = httpResponse.Ok('Fetched successfully', result.get({plain: true}) as CourseTopicContentInterface);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { coursesGetTopics } from '@rederly/backend-validation';
@@ -1321,7 +1370,8 @@ router.get('/topics',
             isOpen: req.query.isOpen,
             userId
         });
-        next(httpResponse.Ok('Fetched successfully', result));
+        const resp = httpResponse.Ok('Fetched successfully', result.map(topic => topic.get({plain: true}) as CourseTopicContentInterface));
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { coursesPostEmail } from '@rederly/backend-validation';
@@ -1348,7 +1398,8 @@ router.post('/:id/email',
             student: user,
             baseURL: baseURL,
         });
-        next(httpResponse.Ok('Your message was sent to your professor.', result));
+        const resp = httpResponse.Ok('Your message was sent to your professor.', result);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     })
 );
 
@@ -1356,12 +1407,12 @@ import { coursesGetCoursesById } from '@rederly/backend-validation';
 router.get('/:id',
     authenticationMiddleware,
     validationMiddleware(coursesGetCoursesById),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetCoursesById.IResponse, GetCourseRequest.body, GetCourseRequest.query>, _res: Response<coursesGetCoursesById.IResponse>, next: TypedNextFunction<coursesGetCoursesById.IResponse>) => {
+    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetCoursesById.IResponse, GetCourseRequest.body, GetCourseRequest.query>, _res: Response<coursesGetCoursesById.IResponse>, next: TypedNextFunction<undefined>) => {
         try {
             const params = req.params as GetCourseRequest.params;
             const userIdForExtensions = req.rederlyUserRole === Role.STUDENT ? req.session?.userId : undefined;
             req.course = await courseController.getCourseById(params.id, userIdForExtensions);
-            next();
+            next(undefined);
         } catch (e) {
             next(e);
         }
@@ -1378,10 +1429,11 @@ router.get('/:id',
             }
         });
         const canAskForHelp = university?.universityName === 'CityTech' ?? false;
-        next(httpResponse.Ok('Fetched successfully', {
+        const resp = httpResponse.Ok('Fetched successfully', {
             ...req.course.get({plain: true}),
             canAskForHelp,
-        }));
+        });
+        next(resp as DeepAddIndexSignature<typeof resp>);
     })
 );
 
@@ -1398,19 +1450,23 @@ router.post('/enroll',
                     userId: req.body.userId,
                     courseId: req.body.courseId
                 });
-                next(httpResponse.Ok('Enrolled', enrollment));
+                const resp = httpResponse.Ok('Enrolled', stripSequelizeFromManualEnrollmentResult(enrollment));
+                next(resp as DeepAddIndexSignature<typeof resp>);    
             } else if (!_.isNil(req.body.studentEmail)) {
                 const enrollment = await courseController.enrollManually({
                     studentEmail: req.body.studentEmail,
                     courseId: req.body.courseId
                 });
-                next(httpResponse.Ok('Enrolled', enrollment));
+                const resp = httpResponse.Ok('Enrolled', stripSequelizeFromManualEnrollmentResult(enrollment));
+                next(resp as DeepAddIndexSignature<typeof resp>);
             } else {
                 throw new RederlyError('Enroll: Strict type checking error handling lead to impossible situation');
             }
         } catch (e) {
             if (e instanceof NotFoundError) {
-                next(Boom.notFound(e.message));
+                const resp = Boom.notFound(e.message);
+                // next(resp as DeepAddIndexSignature<typeof resp>);
+                next(resp);
             } else {
                 next(e);
             }
@@ -1434,10 +1490,12 @@ router.post('/enroll/:code',
                 code: params.code,
                 userId: session.userId
             });
-            next(httpResponse.Ok('Enrolled', enrollment));
+            const resp = httpResponse.Ok('Enrolled', enrollment.get({plain: true}) as StudentEnrollmentInterface);
+            next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             if (e instanceof NotFoundError) {
-                next(Boom.notFound(e.message));
+                const resp = Boom.notFound(e.message);
+                next(resp);    
             } else {
                 next(e);
             }
@@ -1454,10 +1512,12 @@ router.delete('/enroll',
             const success = await courseController.softDeleteEnrollment({
                 ...req.body,
             });
-            next(httpResponse.Ok('Student was dropped', success));
+            const resp = httpResponse.Ok('Student was dropped', success);
+            next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             if (e instanceof NotFoundError) {
-                next(Boom.notFound(e.message));
+                const resp = Boom.notFound(e.message);
+                next(resp);    
             } else {
                 next(e);
             }
@@ -1472,7 +1532,8 @@ router.post('/attachments/upload-url',
     validationMiddleware(coursesPostUploadUrl),
     asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostUploadUrl.IResponse, GetAttachmentPresignedURLRequest.body, GetAttachmentPresignedURLRequest.query>, _res: Response<coursesPostUploadUrl.IResponse>, next: TypedNextFunction<coursesPostUploadUrl.IResponse>) => {
         const result = await attachmentHelper.getNewPresignedURL();
-        next(httpResponse.Ok('Get new presigned url success', result));
+        const resp = httpResponse.Ok('Get new presigned url success', result);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { coursesPostAttachments } from '@rederly/backend-validation';
@@ -1487,7 +1548,8 @@ router.post('/attachments',
             studentGradeInstanceId: req.body.studentGradeInstanceId,
             studentWorkbookId: req.body.studentWorkbookId
         });
-        next(httpResponse.Ok('Attachment record created', result));
+        const resp = httpResponse.Ok('Attachment record created', result.get({plain: true}) as ProblemAttachmentInterface);
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { coursesGetList } from '@rederly/backend-validation';
@@ -1502,10 +1564,11 @@ router.get('/attachments/list',
             studentWorkbookId: req.query.studentWorkbookId,
         });
 
-        next(httpResponse.Ok('Attachments fetched successfully', {
-            attachments: result,
+        const resp = httpResponse.Ok('Attachments fetched successfully', {
+            attachments: result.map(attachment => attachment.get({plain: true}) as ProblemAttachmentInterface),
             baseUrl: configurations.attachments.baseUrl
-        }));
+        });
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { coursesDeleteAttachmentsById } from '@rederly/backend-validation';
@@ -1519,7 +1582,8 @@ router.delete('/attachments/:id',
             problemAttachmentId: params.id
         });
 
-        next(httpResponse.Ok('Attachment deleted successfully', result));
+        const resp = httpResponse.Ok('Attachment deleted successfully', stripSequelizeFromUpdateResult<ProblemAttachmentInterface>(result));
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { courseQuestionPostSave } from '@rederly/backend-validation';
@@ -1543,9 +1607,10 @@ router.post('/question/editor/save',
             writeFilePath: writeFilePath,
         });
 
-        next(httpResponse.Ok('Saved', {
+        const resp = httpResponse.Ok('Saved', {
             filePath: result
-        }));
+        });
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { courseQuestionPostUploadAsset } from '@rederly/backend-validation';
@@ -1570,9 +1635,10 @@ router.post('/question/editor/upload-asset',
             rendererPath: writeFilePath
         });
 
-        next(httpResponse.Ok('Uploaded', {
+        const resp = httpResponse.Ok('Uploaded', {
             filePath: result
-        }));
+        });
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { courseQuestionPostRead } from '@rederly/backend-validation';
@@ -1594,9 +1660,10 @@ router.post('/question/editor/read',
             sourceFilePath: sourceFilePath
         });
 
-        next(httpResponse.Ok('Loaded', {
+        const resp = httpResponse.Ok('Loaded', {
             problemSource: result
-        }));
+        });
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { courseQuestionPostCatalog } from '@rederly/backend-validation';
@@ -1622,12 +1689,15 @@ router.post('/question/editor/catalog',
             maxDepth: 100,
         });
 
-        next(httpResponse.Ok('Loaded', {
+        const resp = httpResponse.Ok('Loaded', {
             problems: Object.keys(result).filter(elm => elm.endsWith('.pg'))
-        }));
+        });
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { coursesPostFeedback } from '@rederly/backend-validation';
+import { ProblemAttachmentInterface } from '../../database/models/problem-attachment';
+import { StudentEnrollmentInterface } from '../../database/models/student-enrollment';
 router.post('/feedback', 
     authenticationMiddleware,
     validationMiddleware(coursesPostFeedback),
@@ -1637,7 +1707,8 @@ router.post('/feedback',
             workbookId: (req.query as PostFeedbackRequest.query).workbookId,
         });
 
-        next(httpResponse.Ok('Attachment record created', res));
+        const resp = httpResponse.Ok('Attachment record created', stripSequelizeFromUpdateResult<StudentWorkbookInterface>(res));
+        next(resp as DeepAddIndexSignature<typeof resp>);
     })
 );
 

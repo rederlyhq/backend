@@ -16,6 +16,9 @@ export interface CourseTopicContentInterface {
     partialExtend: boolean;
     createdAt: Date;
     updatedAt: Date;
+
+    workbookCount?: number;
+    versionCount?: number;
 }
 
 export default class CourseTopicContent extends Model implements CourseTopicContentInterface {

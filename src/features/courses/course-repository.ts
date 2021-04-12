@@ -14,7 +14,7 @@ import Course from '../../database/models/course';
 import logger from '../../utilities/logger';
 import StudentWorkbook from '../../database/models/student-workbook';
 import StudentGrade from '../../database/models/student-grade';
-import StudentTopicOverride from '../../database/models/student-topic-override';
+import StudentTopicOverride, { StudentTopicOverrideInterface } from '../../database/models/student-topic-override';
 import StudentTopicQuestionOverride from '../../database/models/student-topic-question-override';
 import StudentGradeOverride from '../../database/models/student-grade-override';
 import StudentGradeLockAction from '../../database/models/student-grade-lock-action';
@@ -396,7 +396,7 @@ class CourseRepository {
 
         try {
             const found = await StudentTopicOverride.findOne({where: {...options.where, active: true}});
-            const original = found?.get({ plain: true });
+            const original = found;
 
             if (!found) {
                 const newExtension = await StudentTopicOverride.create({...options.where, ...options.updates.extensions}, {validate: true});
@@ -420,7 +420,7 @@ class CourseRepository {
                     createdNewEntry: false,
                     updatedCount: updates[0],
                     updatedRecords: updates[1],
-                    original,
+                    original: original,
                 };
             }
         } catch (e) {
@@ -462,7 +462,7 @@ class CourseRepository {
                     }
                 }]
             });
-            const original = found?.get({ plain: true });
+            const original = found;
 
             if (!found) {
                 logger.debug('Assessment override not found... creating');
@@ -494,7 +494,7 @@ class CourseRepository {
                     createdNewEntry: false,
                     updatedCount: updates[0],
                     updatedRecords: updates[1],
-                    original,
+                    original: original,
                 };
             }
         } catch (e) {
@@ -1022,7 +1022,7 @@ class CourseRepository {
     async extendTopicQuestionByUser(options: ExtendTopicQuestionForUserOptions): Promise<UpsertResult<StudentTopicQuestionOverride>> {
         try {
             const found = await StudentTopicQuestionOverride.findOne({where: {...options.where, active: true}});
-            const original = found?.get({ plain: true });
+            const original = found;
             if (!found) {
                 const newExtension = await StudentTopicQuestionOverride.create({...options.where, ...options.updates}, {validate: true});
 
@@ -1043,7 +1043,7 @@ class CourseRepository {
                 createdNewEntry: false,
                 updatedCount: updates[0],
                 updatedRecords: updates[1],
-                original
+                original: original
             };
         } catch (e) {
             throw new WrappedError(`Could not extend question for ${options.where}`, e);

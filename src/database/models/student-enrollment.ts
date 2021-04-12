@@ -1,7 +1,17 @@
 import { Model, DataTypes, BelongsToGetAssociationMixin, Sequelize } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
-export default class StudentEnrollment extends Model {
+export interface StudentEnrollmentInterface {
+    id: number;
+    active: boolean;
+    courseId: number;
+    userId: number;
+    enrollDate: Date;
+    dropDate: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+export default class StudentEnrollment extends Model implements StudentEnrollmentInterface {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
     public active!: boolean;
     public courseId!: number;

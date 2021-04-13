@@ -3,7 +3,6 @@ import { Response } from 'express';
 import courseController from './course-controller';
 import { authenticationMiddleware, paidMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
-import * as asyncHandler from 'express-async-handler';
 import NotFoundError from '../../exceptions/not-found-error';
 import multer = require('multer');
 import * as proxy from 'express-http-proxy';
@@ -12,7 +11,7 @@ import * as _ from 'lodash';
 import configurations from '../../configurations';
 import WrappedError from '../../exceptions/wrapped-error';
 type TypedNextFunction<THISISTEMP> = (arg?: any) => void;
-import { RederlyExpressRequest, EmptyExpressParams, EmptyExpressQuery } from '../../extensions/rederly-express-request';
+import { RederlyExpressRequest, EmptyExpressParams, EmptyExpressQuery, asyncHandler } from '../../extensions/rederly-express-request';
 import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest, ExtendCourseTopicQuestionRequest, CreateAssessmentVersionRequest, SubmitAssessmentVersionRequest, UpdateGradeInstanceRequest, EndAssessmentVersionRequest, PreviewQuestionRequest, GradeAssessmentRequest, GetAttachmentPresignedURLRequest, PostAttachmentRequest, ListAttachmentsRequest, DeleteAttachmentRequest, EmailProfRequest, ReadQuestionRequest, SaveQuestionRequest, CatalogRequest, GetVersionRequest, GetQuestionRawRequest, GetQuestionGradeRequest, PostImportCourseArchiveRequest, GetQuestionOpenLabRequest, UploadAssetRequest, GetQuestionShowMeAnotherRequest, BrowseProblemsCourseListRequest, BrowseProblemsSearchRequest, BrowseProblemsTopicListRequest, BrowseProblemsUnitListRequest, BulkExportRequest, EndBulkExportRequest, GetGradesForTopicsByCourseRequest, PostFeedbackRequest } from './course-route-request-types';
 import Boom = require('boom');
 import { Constants } from '../../constants';
@@ -46,6 +45,8 @@ import { StudentTopicAssessmentInfoInterface } from '../../database/models/stude
 import { StudentGradeInstanceInterface } from '../../database/models/student-grade-instance';
 import { StudentTopicQuestionOverrideInterface } from '../../database/models/student-topic-question-override';
 import { StudentWorkbookInterface } from '../../database/models/student-workbook';
+import { ProblemAttachmentInterface } from '../../database/models/problem-attachment';
+import { StudentEnrollmentInterface } from '../../database/models/student-enrollment';
 
 const router = express.Router();
 
@@ -57,7 +58,7 @@ router.post('/:courseId/import-archive',
     validationMiddleware(coursesPostImportArchive),
     paidMiddleware('Importing content from an archive'),
     rederlyTempFileWrapper((tmpFilePath: string) => multer({dest: tmpFilePath}).single('file')),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostImportArchive.IResponse, PostImportCourseArchiveRequest.body, PostImportCourseArchiveRequest.query>, _res: Response<coursesPostImportArchive.IResponse>, next: TypedNextFunction<coursesPostImportArchive.IResponse>) => {
+    asyncHandler(async (req: RederlyExpressRequest<courseStatisticsGetUnits.IParams, coursesPostImportArchive.IResponse, PostImportCourseArchiveRequest.body, PostImportCourseArchiveRequest.query>, _res: Response<coursesPostImportArchive.IResponse>, next: TypedNextFunction<coursesPostImportArchive.IResponse>) => {
         if (_.isNil(req.file)) {
             throw new IllegalArgumentException('Missing file.');
         }
@@ -86,7 +87,7 @@ import { courseStatisticsGetUnits } from '@rederly/backend-validation';
 router.get('/statistics/units',
     authenticationMiddleware,
     validationMiddleware(courseStatisticsGetUnits),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseStatisticsGetUnits.IResponse, GetStatisticsOnUnitsRequest.body, GetStatisticsOnUnitsRequest.query>, _res: Response<courseStatisticsGetUnits.IResponse>, next: TypedNextFunction<courseStatisticsGetUnits.IResponse>) => {
+    asyncHandler(async (req: RederlyExpressRequest<courseStatisticsGetUnits.IParams, courseStatisticsGetUnits.IResponse, GetStatisticsOnUnitsRequest.body, GetStatisticsOnUnitsRequest.query>, _res: Response<courseStatisticsGetUnits.IResponse>, next: TypedNextFunction<courseStatisticsGetUnits.IResponse>) => {
         try {
             const stats = await courseController.getStatisticsOnUnits({
                 where: {
@@ -277,10 +278,10 @@ import { coursesGetTopicGrades } from '@rederly/backend-validation';
 router.get('/:courseId/topic-grades',
     authenticationMiddleware,
     validationMiddleware(coursesGetTopicGrades),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetTopicGrades.IResponse, GetGradesForTopicsByCourseRequest.body, GetGradesForTopicsByCourseRequest.query>, res: Response<coursesGetTopicGrades.IResponse>, next: TypedNextFunction<coursesGetTopicGrades.IResponse>) => {
-        const params = req.params as GetGradesForTopicsByCourseRequest.params;
+    asyncHandler<coursesGetTopicGrades.IParams, coursesGetTopicGrades.IResponse, coursesGetTopicGrades.IBody, coursesGetTopicGrades.IQuery>(async (req, _res, next) => {
+        // const params = req.params as GetGradesForTopicsByCourseRequest.params;
         const topics = await courseController.getGradesForTopics({
-            courseId: params.courseId,
+            courseId: req.params.id,
         });
 
         const resp = httpResponse.Ok('Fetched successfully', {
@@ -1696,8 +1697,6 @@ router.post('/question/editor/catalog',
     }));
 
 import { coursesPostFeedback } from '@rederly/backend-validation';
-import { ProblemAttachmentInterface } from '../../database/models/problem-attachment';
-import { StudentEnrollmentInterface } from '../../database/models/student-enrollment';
 router.post('/feedback', 
     authenticationMiddleware,
     validationMiddleware(coursesPostFeedback),

@@ -1,18 +1,19 @@
 import * as _ from 'lodash';
+import * as express from 'express';
 import { Response } from 'express';
 import userController from './user-controller';
-const router = require('express').Router();
 import passport = require('passport');
 import { authenticationMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
-import * as asyncHandler from 'express-async-handler';
 import IncludeGradeOptions from './include-grade-options';
-import { RederlyExpressRequest, TypedNextFunction, EmptyExpressParams, EmptyExpressQuery } from '../../extensions/rederly-express-request';
+import { RederlyExpressRequest, TypedNextFunction, EmptyExpressParams, EmptyExpressQuery, asyncHandler } from '../../extensions/rederly-express-request';
 import logger from '../../utilities/logger';
 import { Constants } from '../../constants';
 import { DeepAddIndexSignature } from '../../extensions/typescript-utility-extensions';
 
 import { validationMiddleware, ValidationMiddlewareOptions } from '../../middleware/validation-middleware';
+
+const router = express.Router();
 
 import { usersGetCheckIn } from '@rederly/backend-validation';
 router.all('/check-in',
@@ -234,10 +235,9 @@ import { usersGetUsersById } from '@rederly/backend-validation';
 router.get('/:id',
     authenticationMiddleware,
     validationMiddleware(usersGetUsersById),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, usersGetUsersById.IResponse, unknown, usersGetUsersById.IQuery>, _res: Response<usersGetUsersById.IResponse>, next: TypedNextFunction<usersGetUsersById.IResponse>) => {
-        const params = req.params as unknown as usersGetUsersById.IParams;
+    asyncHandler(async (req: RederlyExpressRequest<usersGetUsersById.IParams, usersGetUsersById.IResponse, unknown, usersGetUsersById.IQuery>, _res: Response<usersGetUsersById.IResponse>, next: TypedNextFunction<usersGetUsersById.IResponse>) => {
         const users = await userController.getUser({
-            id: params.id,
+            id: req.params.id,
             courseId: req.query.courseId,
             includeGrades: req.query.includeGrades as IncludeGradeOptions
         });

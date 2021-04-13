@@ -1,5 +1,4 @@
 import * as express from 'express';
-import { Response } from 'express';
 import courseController from './course-controller';
 import { authenticationMiddleware, paidMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
@@ -10,9 +9,7 @@ import * as qs from 'qs';
 import * as _ from 'lodash';
 import configurations from '../../configurations';
 import WrappedError from '../../exceptions/wrapped-error';
-type TypedNextFunction<THISISTEMP> = (arg?: any) => void;
-import { RederlyExpressRequest, EmptyExpressParams, EmptyExpressQuery, asyncHandler } from '../../extensions/rederly-express-request';
-import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest, ExtendCourseTopicQuestionRequest, CreateAssessmentVersionRequest, SubmitAssessmentVersionRequest, UpdateGradeInstanceRequest, EndAssessmentVersionRequest, PreviewQuestionRequest, GradeAssessmentRequest, GetAttachmentPresignedURLRequest, PostAttachmentRequest, ListAttachmentsRequest, DeleteAttachmentRequest, EmailProfRequest, ReadQuestionRequest, SaveQuestionRequest, CatalogRequest, GetVersionRequest, GetQuestionRawRequest, GetQuestionGradeRequest, PostImportCourseArchiveRequest, GetQuestionOpenLabRequest, UploadAssetRequest, GetQuestionShowMeAnotherRequest, BrowseProblemsCourseListRequest, BrowseProblemsSearchRequest, BrowseProblemsTopicListRequest, BrowseProblemsUnitListRequest, BulkExportRequest, EndBulkExportRequest, GetGradesForTopicsByCourseRequest, PostFeedbackRequest } from './course-route-request-types';
+import { RederlyExpressRequest, EmptyExpressParams, EmptyExpressQuery, /*asyncHandler*/ } from '../../extensions/rederly-express-request';
 import Boom = require('boom');
 import { Constants } from '../../constants';
 import Role from '../permissions/roles';
@@ -48,6 +45,24 @@ import { StudentWorkbookInterface } from '../../database/models/student-workbook
 import { ProblemAttachmentInterface } from '../../database/models/problem-attachment';
 import { StudentEnrollmentInterface } from '../../database/models/student-enrollment';
 
+// TODO temporary, for development so the backend will still build
+export interface RederlyRequestHandler<P extends {} = {}, ResBody = unknown, ReqBody = unknown, ReqQuery extends {} = {}, MetaType = never> {
+    // tslint:disable-next-line callable-types (This is extended from and can't extend from a type alias in ts<2.2)
+    // temporary
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (req: RederlyExpressRequest<P, ResBody, ReqBody, ReqQuery, MetaType>, res: express.Response<ResBody>, next: (arg?: any) => void): void;
+}
+
+export const asyncHandler = <P extends {} = {}, ResBody = unknown, ReqBody = unknown, ReqQuery extends {} = {}, MetaType = never>(requestHandler: RederlyRequestHandler<P, ResBody, ReqBody, ReqQuery, MetaType>): express.RequestHandler => async (req, res, next): Promise<void> => {
+    try {
+        // temporary
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await requestHandler(req as any, res, next);
+    } catch (e) {
+        next(e);
+    }
+};
+
 const router = express.Router();
 
 const fileUpload = multer();
@@ -58,7 +73,7 @@ router.post('/:courseId/import-archive',
     validationMiddleware(coursesPostImportArchive),
     paidMiddleware('Importing content from an archive'),
     rederlyTempFileWrapper((tmpFilePath: string) => multer({dest: tmpFilePath}).single('file')),
-    asyncHandler(async (req: RederlyExpressRequest<coursesPostImportArchive.IParams, coursesPostImportArchive.IResponse, coursesPostImportArchive.IBody, coursesPostImportArchive.IQuery>, _res: Response<coursesPostImportArchive.IResponse>, next: TypedNextFunction<coursesPostImportArchive.IResponse>) => {
+    asyncHandler<coursesPostImportArchive.IParams, coursesPostImportArchive.IResponse, coursesPostImportArchive.IBody, coursesPostImportArchive.IQuery>(async (req, _res, next) => {
         if (_.isNil(req.file)) {
             throw new IllegalArgumentException('Missing file.');
         }
@@ -86,7 +101,7 @@ import { courseStatisticsGetUnits } from '@rederly/backend-validation';
 router.get('/statistics/units',
     authenticationMiddleware,
     validationMiddleware(courseStatisticsGetUnits),
-    asyncHandler(async (req: RederlyExpressRequest<courseStatisticsGetUnits.IParams, courseStatisticsGetUnits.IResponse, GetStatisticsOnUnitsRequest.body, GetStatisticsOnUnitsRequest.query>, _res: Response<courseStatisticsGetUnits.IResponse>, next: TypedNextFunction<courseStatisticsGetUnits.IResponse>) => {
+    asyncHandler<courseStatisticsGetUnits.IParams, courseStatisticsGetUnits.IResponse, courseStatisticsGetUnits.IBody, courseStatisticsGetUnits.IQuery>(async (req, _res, next) => {
         try {
             const stats = await courseController.getStatisticsOnUnits({
                 where: {
@@ -111,7 +126,7 @@ import { courseStatisticsGetTopics } from '@rederly/backend-validation';
 router.get('/statistics/topics',
     authenticationMiddleware,
     validationMiddleware(courseStatisticsGetTopics),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseStatisticsGetTopics.IResponse, GetStatisticsOnTopicsRequest.body, GetStatisticsOnTopicsRequest.query>, _res: Response<courseStatisticsGetTopics.IResponse>, next: TypedNextFunction<courseStatisticsGetTopics.IResponse>) => {
+    asyncHandler<courseStatisticsGetTopics.IParams, courseStatisticsGetTopics.IResponse, courseStatisticsGetTopics.IBody, courseStatisticsGetTopics.IQuery>(async (req, _res, next) => {
         try {
             const stats = await courseController.getStatisticsOnTopics({
                 where: {
@@ -137,7 +152,7 @@ import { courseStatisticsGetQuestions } from '@rederly/backend-validation';
 router.get('/statistics/questions',
     authenticationMiddleware,
     validationMiddleware(courseStatisticsGetQuestions),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseStatisticsGetQuestions.IResponse, GetStatisticsOnQuestionsRequest.body, GetStatisticsOnQuestionsRequest.query>, _res: Response<courseStatisticsGetQuestions.IResponse>, next: TypedNextFunction<courseStatisticsGetQuestions.IResponse>) => {
+    asyncHandler<courseStatisticsGetQuestions.IParams, courseStatisticsGetQuestions.IResponse, courseStatisticsGetQuestions.IBody, courseStatisticsGetQuestions.IQuery>(async (req, _res, next) => {
         try {
             const stats = await courseController.getStatisticsOnQuestions({
                 where: {
@@ -165,11 +180,10 @@ router.post('/def',
     validationMiddleware(coursesPostDef),
     paidMiddleware('Importing a topic'),
     fileUpload.single('def-file'),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostDef.IResponse, CreateQuestionsForTopicFromDefFileRequest.body, unknown>, _res: Response<coursesPostDef.IResponse>, next: TypedNextFunction<coursesPostDef.IResponse>) => {
-        const query = req.query as CreateQuestionsForTopicFromDefFileRequest.query;
+    asyncHandler<coursesPostDef.IParams, coursesPostDef.IResponse, coursesPostDef.IBody, coursesPostDef.IQuery>(async (req, _res, next) => {
         const results = await courseController.createQuestionsForTopicFromDefFileContent({
             webworkDefFileContent: req.file.buffer.toString(),
-            courseTopicId: query.courseTopicId
+            courseTopicId: req.query.courseTopicId
         });
 
         // Sequelize does not give the subobjects that are added after the fact so getting it here
@@ -188,14 +202,13 @@ router.post('/',
     authenticationMiddleware,
     validationMiddleware(coursesPostCourses),
     paidMiddleware('Creating a new course'),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostCourses.IResponse, CreateCourseRequest.body, unknown>, _res: Response<coursesPostCourses.IResponse>, next: TypedNextFunction<coursesPostCourses.IResponse>) => {
-        const query = req.query as CreateCourseRequest.query;
+    asyncHandler<coursesPostCourses.IParams, coursesPostCourses.IResponse, coursesPostCourses.IBody, coursesPostCourses.IQuery>(async (req, _res, next) => {
         try {
             if (_.isNil(req.session)) {
                 throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
             }
 
-            if (_.isNil(query.useCurriculum)) {
+            if (_.isNil(req.query.useCurriculum)) {
                 throw new Error('useCurriculum has a default value and therefore is not possible to be nil');
             }
             const session = req.session;
@@ -209,7 +222,7 @@ router.post('/',
                     ...req.body
                 },
                 options: {
-                    useCurriculum: query.useCurriculum
+                    useCurriculum: req.query.useCurriculum
                 }
             });
             const resp = httpResponse.Created('Course created successfully', newCourse.get({plain: true}) as CourseInterface);
@@ -224,7 +237,7 @@ router.post('/unit',
     authenticationMiddleware,
     validationMiddleware(coursesPostUnit),
     paidMiddleware('Adding units'),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostUnit.IResponse, CreateCourseUnitRequest.body, CreateCourseUnitRequest.query>, _res: Response<coursesPostUnit.IResponse>, next: TypedNextFunction<coursesPostUnit.IResponse>) => {
+    asyncHandler<coursesPostUnit.IParams, coursesPostUnit.IResponse, coursesPostUnit.IBody, coursesPostUnit.IQuery>(async (req, _res, next) => {
         try {
             const newUnit = await courseController.createUnit({
                 ...req.body
@@ -242,7 +255,7 @@ router.post('/topic',
     authenticationMiddleware,
     validationMiddleware(courseTopicPostTopic),
     paidMiddleware('Adding topics'),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseTopicPostTopic.IResponse, any, EmptyExpressQuery>, _res: Response<courseTopicPostTopic.IResponse>, next: TypedNextFunction<courseTopicPostTopic.IResponse>) => {
+    asyncHandler<courseTopicPostTopic.IParams, courseTopicPostTopic.IResponse, courseTopicPostTopic.IBody, courseTopicPostTopic.IQuery>(async (req, _res, next) => {
         const newTopic = await courseController.createTopic({
             ...req.body
         });
@@ -255,7 +268,7 @@ import { coursesGetGrades } from '@rederly/backend-validation';
 router.get('/grades',
     authenticationMiddleware,
     validationMiddleware(coursesGetGrades),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetGrades.IResponse, GetGradesRequest.body, GetGradesRequest.query>, _res: Response<coursesGetGrades.IResponse>, next: TypedNextFunction<coursesGetGrades.IResponse>) => {
+    asyncHandler<coursesGetGrades.IParams, coursesGetGrades.IResponse, coursesGetGrades.IBody, coursesGetGrades.IQuery>(async (req, _res, next) => {
         try {
             const grades = await courseController.getGrades({
                 where: {
@@ -278,7 +291,6 @@ router.get('/:courseId/topic-grades',
     authenticationMiddleware,
     validationMiddleware(coursesGetTopicGrades),
     asyncHandler<coursesGetTopicGrades.IParams, coursesGetTopicGrades.IResponse, coursesGetTopicGrades.IBody, coursesGetTopicGrades.IQuery>(async (req, _res, next) => {
-        // const params = req.params as GetGradesForTopicsByCourseRequest.params;
         const topics = await courseController.getGradesForTopics({
             courseId: req.params.id,
         });
@@ -293,7 +305,7 @@ import { coursesGetQuestions } from '@rederly/backend-validation';
 router.get('/questions',
     authenticationMiddleware,
     validationMiddleware(coursesGetQuestions),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetQuestions.IResponse, GetQuestionsRequest.body, GetQuestionsRequest.query>, _res: Response<coursesGetQuestions.IResponse>, next: TypedNextFunction<coursesGetQuestions.IResponse>) => {
+    asyncHandler<coursesGetQuestions.IParams, coursesGetQuestions.IResponse, coursesGetQuestions.IBody, coursesGetQuestions.IQuery>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -357,9 +369,8 @@ import { courseTopicGetVersionByUserId } from '@rederly/backend-validation';
 router.get('/topic/:topicId/version/:userId',
     authenticationMiddleware,
     validationMiddleware(courseTopicGetVersionByUserId),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseTopicGetVersionByUserId.IResponse, GetVersionRequest.body, GetVersionRequest.query>, _res: Response<courseTopicGetVersionByUserId.IResponse>, next: TypedNextFunction<courseTopicGetVersionByUserId.IResponse>) => {
-        const params = req.params as GetVersionRequest.params;
-        const result = await courseController.getAllContentForVersion({topicId: params.topicId, userId: params.userId});
+    asyncHandler<courseTopicGetVersionByUserId.IParams, courseTopicGetVersionByUserId.IResponse, courseTopicGetVersionByUserId.IBody, courseTopicGetVersionByUserId.IQuery>(async (req, _res, next) => {
+        const result = await courseController.getAllContentForVersion({topicId: req.params.topicId, userId: req.params.userId});
         const resp = httpResponse.Ok('Fetched successfully', result);
         next(resp as DeepAddIndexSignature<typeof resp>);
     })
@@ -369,11 +380,10 @@ import { courseTopicPutEndExport } from '@rederly/backend-validation';
 router.put('/topic/:topicId/endExport', 
     // this call is expected from a microservice, so doesn't go through authentication
     validationMiddleware(courseTopicPutEndExport),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseTopicPutEndExport.IResponse, EndBulkExportRequest.body, EndBulkExportRequest.query>, _res: Response<courseTopicPutEndExport.IResponse>, next: TypedNextFunction<courseTopicPutEndExport.IResponse>) => {
-        const params = req.params as EndBulkExportRequest.params;
+    asyncHandler<courseTopicPutEndExport.IParams, courseTopicPutEndExport.IResponse, courseTopicPutEndExport.IBody, courseTopicPutEndExport.IQuery>(async (req, _res, next) => {
         const topic = await CourseTopicContent.findOne({
             where: {
-                id: params.topicId,
+                id: req.params.id,
                 active: true,
             },
         });
@@ -400,18 +410,16 @@ import { courseTopicPostStartExport } from '@rederly/backend-validation';
 router.post('/topic/:topicId/startExport',
     authenticationMiddleware,
     validationMiddleware(courseTopicPostStartExport),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseTopicPostStartExport.IResponse, BulkExportRequest.body, BulkExportRequest.query>, _res: Response<courseTopicPostStartExport.IResponse>, next: TypedNextFunction<courseTopicPostStartExport.IResponse>) => {
+    asyncHandler<courseTopicPostStartExport.IParams, courseTopicPostStartExport.IResponse, courseTopicPostStartExport.IBody, courseTopicPostStartExport.IQuery>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
         
-        const params = req.params as BulkExportRequest.params;
-        const query: BulkExportRequest.query = req.query;
         const professor = await req.session.getUser();
 
         const topic = await CourseTopicContent.findOne({
             where: {
-                id: params.topicId,
+                id: req.params.id,
                 active: true,
             },
         });
@@ -426,13 +434,13 @@ router.post('/topic/:topicId/startExport',
         const helper = new ExportPDFHelper();
 
         // If we're just checking, return what's already here.
-        if (query.force === false) {
+        if (req.query.force === false) {
             next(httpResponse.Ok('Details', exportDetails));
         } else {
             helper.start({
                 topic, 
                 professorUUID: professor.uuid,
-                showSolutions: query.showSolutions ?? false,
+                showSolutions: req.query.showSolutions ?? false,
             })
             .then(() => logger.info(`Finished uploading ${topic.id}.`))
             .catch((e) => {
@@ -452,20 +460,17 @@ router.put('/topic/extend',
     authenticationMiddleware,
     validationMiddleware(courseTopicPutExtend),
     paidMiddleware('Modifying topic settings'),
-    asyncHandler(
-        async (req: RederlyExpressRequest<EmptyExpressParams, courseTopicPutExtend.IResponse, ExtendCourseTopicForUserRequest.body, EmptyExpressQuery, unknown>, _res: Response<courseTopicPutExtend.IResponse>, next: TypedNextFunction<courseTopicPutExtend.IResponse>) => {
-            const query = req.query as ExtendCourseTopicForUserRequest.query;
-            const body = req.body as ExtendCourseTopicForUserRequest.body;
-
+    asyncHandler<courseTopicPutExtend.IParams, courseTopicPutExtend.IResponse, courseTopicPutExtend.IBody, courseTopicPutExtend.IQuery>(
+        async (req, _res, next) => {
             const updatesResult = await courseController.extendTopicForUser({
                 where: {
-                    courseTopicContentId: query.courseTopicContentId,
-                    userId: query.userId
+                    courseTopicContentId: req.query.courseTopicContentId,
+                    userId: req.query.userId
                 },
                 assessmentWhere: {
-                    topicAssessmentInfoId: query.topicAssessmentInfoId
+                    topicAssessmentInfoId: req.query.topicAssessmentInfoId
                 },
-                updates: body,
+                updates: req.body,
             });
             // TODO handle not found case
             const resp = httpResponse.Ok('Extended topic successfully', {
@@ -480,11 +485,10 @@ router.put('/topic/:id',
     authenticationMiddleware,
     validationMiddleware(courseTopicPutTopicById),
     paidMiddleware('Modifying topic settings'),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseTopicPutTopicById.IResponse, UpdateCourseTopicRequest.body, UpdateCourseTopicRequest.query>, _res: Response<courseTopicPutTopicById.IResponse>, next: TypedNextFunction<courseTopicPutTopicById.IResponse>) => {
-        const params = req.params as UpdateCourseTopicRequest.params;
+    asyncHandler<courseTopicPutTopicById.IParams, courseTopicPutTopicById.IResponse, courseTopicPutTopicById.IBody, courseTopicPutTopicById.IQuery>(async (req, _res, next) => {
         const updatesResult = await courseController.updateTopic({
             where: {
-                id: params.id
+                id: req.params.id
             },
             updates: {
                 ...req.body
@@ -505,18 +509,17 @@ import { coursesGetGradeById } from '@rederly/backend-validation';
 router.get('/assessment/topic/grade/:id',
     authenticationMiddleware,
     validationMiddleware(coursesGetGradeById),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetGradeById.IResponse, GradeAssessmentRequest.body, GradeAssessmentRequest.query>, _res: Response<coursesGetGradeById.IResponse>, next: TypedNextFunction<coursesGetGradeById.IResponse>) => {
-        const params = req.params as GradeAssessmentRequest.params;
+    asyncHandler<coursesGetGradeById.IParams, coursesGetGradeById.IResponse, coursesGetGradeById.IBody, coursesGetGradeById.IQuery>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
         const user = req.rederlyUser ?? await req.session.getUser();
-        if (await courseController.canUserGradeAssessment({user, topicId: params.id}) === false) {
+        if (await courseController.canUserGradeAssessment({user, topicId: req.params.id}) === false) {
             throw new ForbiddenError('You are not allowed to grade this assessment.');
         }
 
-        const {problems, topic} = await courseController.getAssessmentForGrading({topicId: params.id});
+        const {problems, topic} = await courseController.getAssessmentForGrading({topicId: req.params.id});
         const resp = httpResponse.Ok('Fetched problems + workbooks successfully', {
             problems: problems.map(problem => problem.get({plain: true}) as CourseWWTopicQuestionInterface),
             topic: topic.get({plain: true}) as CourseTopicContentInterface
@@ -528,13 +531,12 @@ import { coursesGetEndById } from '@rederly/backend-validation';
 router.get('/assessment/topic/end/:id',
     authenticationMiddleware,
     validationMiddleware(coursesGetEndById),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetEndById.IResponse, EndAssessmentVersionRequest.body, EndAssessmentVersionRequest.query>, _res: Response<coursesGetEndById.IResponse>, next: TypedNextFunction<coursesGetEndById.IResponse>) => {
-        const params = req.params as EndAssessmentVersionRequest.params;
+    asyncHandler<coursesGetEndById.IParams, coursesGetEndById.IResponse, coursesGetEndById.IBody, coursesGetEndById.IQuery>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
         const user = req.rederlyUser ?? await req.session.getUser();
-        const version = await courseController.getStudentTopicAssessmentInfoById(params.id);
+        const version = await courseController.getStudentTopicAssessmentInfoById(req.params.id);
 
         if (version.userId !== user.id) {
             throw new ForbiddenError('You may not end an exam that does not belong to you.');
@@ -554,8 +556,7 @@ import { coursesGetStart } from '@rederly/backend-validation';
 router.get('/assessment/topic/:id/start',
     authenticationMiddleware,
     validationMiddleware(coursesGetStart),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetStart.IResponse, CreateAssessmentVersionRequest.body, CreateAssessmentVersionRequest.query>, _res: Response<coursesGetStart.IResponse>, next: TypedNextFunction<coursesGetStart.IResponse>) => {
-        const params = req.params as CreateAssessmentVersionRequest.params;
+    asyncHandler<coursesGetStart.IParams, coursesGetStart.IResponse, coursesGetStart.IBody, coursesGetStart.IQuery>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -563,7 +564,7 @@ router.get('/assessment/topic/:id/start',
         const rederlyUserRole = req.rederlyUserRole ?? user.roleId;
 
         // function returns boolean and IF the user is not allowed to start a new version, a reason is included
-        const { userCanStartNewVersion, message, data } = await courseController.canUserStartNewVersion({ user, topicId: params.id, role: rederlyUserRole });
+        const { userCanStartNewVersion, message, data } = await courseController.canUserStartNewVersion({ user, topicId: req.params.id, role: rederlyUserRole });
 
         // will never have true + message
         if (userCanStartNewVersion === false && !_.isNil(message)) {
@@ -571,7 +572,7 @@ router.get('/assessment/topic/:id/start',
         }
 
         const versionInfo = await courseController.createGradeInstancesForAssessment({
-            topicId: params.id,
+            topicId: req.params.id,
             userId: user.id,
             requestURL: req.headers['rederly-origin'] as string | undefined // need this because it incorrectly thinks it can be an array
         });
@@ -585,11 +586,10 @@ router.delete('/unit/:id',
     authenticationMiddleware,
     validationMiddleware(coursesDeleteUnitById),
     paidMiddleware('Deleting units'),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesDeleteUnitById.IResponse, DeleteCourseUnitRequest.body, DeleteCourseUnitRequest.query>, _res: Response<coursesDeleteUnitById.IResponse>, next: TypedNextFunction<coursesDeleteUnitById.IResponse>) => {
-        const params = req.params as DeleteCourseUnitRequest.params;
+    asyncHandler<coursesDeleteUnitById.IParams, coursesDeleteUnitById.IResponse, coursesDeleteUnitById.IBody, coursesDeleteUnitById.IQuery>(async (req, _res, next) => {
         try {
             const updatesResult = await courseController.softDeleteUnits({
-                id: params.id
+                id: req.params.id
             });
             // TODO handle not found case
             const resp = httpResponse.Ok('Deleted units and subobjects successfully', stripSequelizeFromUpdateResult<CourseUnitContentInterface>(updatesResult));
@@ -605,11 +605,10 @@ router.delete('/topic/:id',
     authenticationMiddleware,
     validationMiddleware(courseTopicDeleteTopicById),
     paidMiddleware('Deleting topics'),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseTopicDeleteTopicById.IResponse, DeleteCourseTopicRequest.body, DeleteCourseTopicRequest.query>, _res: Response<courseTopicDeleteTopicById.IResponse>, next: TypedNextFunction<courseTopicDeleteTopicById.IResponse>) => {
-        const params = req.params as DeleteCourseTopicRequest.params;
+    asyncHandler<courseTopicDeleteTopicById.IParams, courseTopicDeleteTopicById.IResponse, courseTopicDeleteTopicById.IBody, courseTopicDeleteTopicById.IQuery>(async (req, _res, next) => {
         try {
             const updatesResult = await courseController.softDeleteTopics({
-                id: params.id
+                id: req.params.id
             });
             // TODO handle not found case
             const resp = httpResponse.Ok('Deleted topics and subobjects successfully', stripSequelizeFromUpdateResult<CourseTopicContentInterface>(updatesResult));
@@ -624,11 +623,10 @@ router.delete('/question/:id',
     authenticationMiddleware,
     validationMiddleware(courseQuestionDeleteQuestionById),
     paidMiddleware('Deleting questions'),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionDeleteQuestionById.IResponse, DeleteCourseQuestionRequest.body, DeleteCourseQuestionRequest.query>, _res: Response<courseQuestionDeleteQuestionById.IResponse>, next: TypedNextFunction<courseQuestionDeleteQuestionById.IResponse>) => {
-        const params = req.params as DeleteCourseQuestionRequest.params;
+    asyncHandler<courseQuestionDeleteQuestionById.IParams, courseQuestionDeleteQuestionById.IResponse, courseQuestionDeleteQuestionById.IBody, courseQuestionDeleteQuestionById.IQuery>(async (req, _res, next) => {
         try {
             const updatesResult = await courseController.softDeleteQuestions({
-                id: params.id
+                id: req.params.id
             });
             // TODO handle not found case
             const resp = httpResponse.Ok('Deleted questions and subobjects successfully', stripSequelizeFromUpdateResult<CourseWWTopicQuestionInterface>(updatesResult));
@@ -643,12 +641,11 @@ router.put('/unit/:id',
     authenticationMiddleware,
     validationMiddleware(coursesPutUnitById),
     paidMiddleware('Updating units'),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPutUnitById.IResponse, UpdateCourseUnitRequest.body, UpdateCourseUnitRequest.query>, _res: Response<coursesPutUnitById.IResponse>, next: TypedNextFunction<coursesPutUnitById.IResponse>) => {
+    asyncHandler<coursesPutUnitById.IParams, coursesPutUnitById.IResponse, coursesPutUnitById.IBody, coursesPutUnitById.IQuery>(async (req, _res, next) => {
         try {
-            const params = req.params as UpdateCourseUnitRequest.params;
             const updatedRecords = await courseController.updateCourseUnit({
                 where: {
-                    id: params.id
+                    id: req.params.id
                 },
                 updates: {
                     ...req.body
@@ -669,15 +666,14 @@ import { courseQuestionPutGradeById } from '@rederly/backend-validation';
 router.put('/question/grade/:id',
     authenticationMiddleware,
     validationMiddleware(courseQuestionPutGradeById),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPutGradeById.IResponse, UpdateGradeRequest.body, UpdateGradeRequest.query>, _res: Response<courseQuestionPutGradeById.IResponse>, next: TypedNextFunction<courseQuestionPutGradeById.IResponse>) => {
+    asyncHandler<courseQuestionPutGradeById.IParams, courseQuestionPutGradeById.IResponse, courseQuestionPutGradeById.IBody, courseQuestionPutGradeById.IQuery>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const params = req.params as UpdateCourseTopicQuestionRequest.params;
         const updatedRecords = await courseController.updateGrade({
             where: {
-                id: params.id
+                id: req.params.id
             },
             updates: {
                 ...req.body
@@ -692,15 +688,14 @@ import { courseQuestionPutInstanceById } from '@rederly/backend-validation';
 router.put('/question/grade/instance/:id',
     authenticationMiddleware,
     validationMiddleware(courseQuestionPutInstanceById),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPutInstanceById.IResponse, UpdateGradeInstanceRequest.body, UpdateGradeInstanceRequest.query>, _res: Response<courseQuestionPutInstanceById.IResponse>, next: TypedNextFunction<courseQuestionPutInstanceById.IResponse>) => {
+    asyncHandler<courseQuestionPutInstanceById.IParams, courseQuestionPutInstanceById.IResponse, courseQuestionPutInstanceById.IBody, courseQuestionPutInstanceById.IQuery>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const params = req.params as UpdateGradeInstanceRequest.params;
         const updatesResult = await courseController.updateGradeInstance({
             where: {
-                id: params.id
+                id: req.params.id
             },
             updates: {
                 ...req.body
@@ -716,16 +711,13 @@ router.put('/question/extend',
     authenticationMiddleware,
     validationMiddleware(courseQuestionPutExtend),
     paidMiddleware('Modifying questions'),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPutExtend.IResponse, ExtendCourseTopicQuestionRequest.body, EmptyExpressQuery>, _res: Response<courseQuestionPutExtend.IResponse>, next: TypedNextFunction<courseQuestionPutExtend.IResponse>) => {
-        const query = req.query as ExtendCourseTopicQuestionRequest.query;
-        const body = req.body;
-
+    asyncHandler<courseQuestionPutExtend.IParams, courseQuestionPutExtend.IResponse, courseQuestionPutExtend.IBody, courseQuestionPutExtend.IQuery>(async (req, _res, next) => {
         const extensions = await courseController.extendQuestionForUser({
             where: {
-                ...query
+                ...req.query
             },
             updates: {
-                ...body
+                ...req.body
             }
         });
         const resp = httpResponse.Ok('Extended topic successfully', stripSequelizeFromUpsertResult<StudentTopicQuestionOverrideInterface>(extensions));
@@ -737,11 +729,10 @@ router.put('/question/:id',
     authenticationMiddleware,
     validationMiddleware(courseQuestionPutQuestionById),
     paidMiddleware('Modifying questions'),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPutQuestionById.IResponse, UpdateCourseTopicQuestionRequest.body, UpdateCourseTopicQuestionRequest.query>, _res: Response<courseQuestionPutQuestionById.IResponse>, next: TypedNextFunction<courseQuestionPutQuestionById.IResponse>) => {
-        const params = req.params as UpdateCourseTopicQuestionRequest.params;
+    asyncHandler<courseQuestionPutQuestionById.IParams, courseQuestionPutQuestionById.IResponse, courseQuestionPutQuestionById.IBody, courseQuestionPutQuestionById.IQuery>(async (req, _res, next) => {
         const updatesResult = await courseController.updateQuestion({
             where: {
-                id: params.id
+                id: req.params.id
             },
             updates: {
                 ...req.body
@@ -759,12 +750,11 @@ router.put('/:id',
     authenticationMiddleware,
     validationMiddleware(coursesPutCoursesById),
     paidMiddleware('Modifying courses'),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPutCoursesById.IResponse, UpdateCourseRequest.body, UpdateCourseRequest.query>, _res: Response<coursesPutCoursesById.IResponse>, next: TypedNextFunction<coursesPutCoursesById.IResponse>) => {
+    asyncHandler<coursesPutCoursesById.IParams, coursesPutCoursesById.IResponse, coursesPutCoursesById.IBody, coursesPutCoursesById.IQuery>(async (req, _res, next) => {
         try {
-            const params = req.params as UpdateCourseRequest.params;
             const updatesResult = await courseController.updateCourse({
                 where: {
-                    id: params.id
+                    id: req.params.id
                 },
                 updates: {
                     ...req.body
@@ -786,7 +776,7 @@ router.post('/question',
     authenticationMiddleware,
     validationMiddleware(courseQuestionPostQuestion),
     paidMiddleware('Adding questions'),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostQuestion.IResponse, CreateCourseTopicQuestionRequest.body, CreateCourseTopicQuestionRequest.query>, _res: Response<courseQuestionPostQuestion.IResponse>, next: TypedNextFunction<courseQuestionPostQuestion.IResponse>) => {
+    asyncHandler<courseQuestionPostQuestion.IParams, courseQuestionPostQuestion.IResponse, courseQuestionPostQuestion.IBody, courseQuestionPostQuestion.IQuery>(async (req, _res, next) => {
         const newQuestion = await courseController.addQuestion({
             question: {
                 ...req.body
@@ -801,13 +791,13 @@ import { courseQuestionGetRaw } from '@rederly/backend-validation';
 router.get('/question/:id/raw',
     authenticationMiddleware,
     validationMiddleware(courseQuestionGetRaw),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionGetRaw.IResponse, GetQuestionRawRequest.body, unknown>, _res: Response<courseQuestionGetRaw.IResponse>, next: TypedNextFunction<courseQuestionGetRaw.IResponse>) => {
+    asyncHandler<courseQuestionGetRaw.IParams, courseQuestionGetRaw.IResponse, courseQuestionGetRaw.IBody, courseQuestionGetRaw.IQuery>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const { id: questionId } = req.params as GetQuestionRawRequest.params;
-        const { userId } = req.query as GetQuestionRawRequest.query;
+        const { id: questionId } = req.params;
+        const { userId } = req.query;
 
         const question = await courseController.getQuestionWithoutRenderer({
                 id: questionId,
@@ -821,12 +811,12 @@ import { courseQuestionGetGrade } from '@rederly/backend-validation';
 router.get('/question/:id/grade',
     authenticationMiddleware,
     validationMiddleware(courseQuestionGetGrade),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionGetGrade.IResponse, GetQuestionGradeRequest.body, unknown>, _res: Response<courseQuestionGetGrade.IResponse>, next: TypedNextFunction<courseQuestionGetGrade.IResponse>) => {
+    asyncHandler<courseQuestionGetGrade.IParams, courseQuestionGetGrade.IResponse, courseQuestionGetGrade.IBody, courseQuestionGetGrade.IQuery>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
-        const { userId, includeWorkbooks } = req.query as GetQuestionGradeRequest.query;
-        const { id: questionId } = req.params as GetQuestionGradeRequest.params;
+        const { userId, includeWorkbooks } = req.query;
+        const { id: questionId } = req.params;
 
         const grade = await courseController.getGradeForQuestion({
             questionId,
@@ -842,13 +832,13 @@ import { courseQuestionGetOpenlab } from '@rederly/backend-validation';
 router.get('/question/:id/openlab',
     authenticationMiddleware,
     validationMiddleware(courseQuestionGetOpenlab),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionGetOpenlab.IResponse, GetQuestionOpenLabRequest.body, GetQuestionOpenLabRequest.query>, res: Response<courseQuestionGetOpenlab.IResponse>, next: TypedNextFunction<courseQuestionGetOpenlab.IResponse>) => {
+    asyncHandler<courseQuestionGetOpenlab.IParams, courseQuestionGetOpenlab.IResponse, courseQuestionGetOpenlab.IBody, courseQuestionGetOpenlab.IQuery>(async (req, res, next) => {
         if (_.isNil(req.session)) {
             throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
         const user = req.rederlyUser ?? await req.session.getUser();
-        const { id: questionId } = req.params as GetQuestionOpenLabRequest.params;
+        const { id: questionId } = req.params;
         const baseURL = req.headers['rederly-origin'] as string | undefined; // need this because it incorrectly thinks it can be an array
         if (_.isNil(baseURL)) {
             throw new RederlyError('Could not determine the base URL from the ask for help request');
@@ -865,13 +855,13 @@ import { courseQuestionGetSma } from '@rederly/backend-validation';
 router.get('/question/:id/sma',
     authenticationMiddleware,
     validationMiddleware(courseQuestionGetSma),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionGetSma.IResponse, GetQuestionShowMeAnotherRequest.body, GetQuestionShowMeAnotherRequest.query>, res: Response<courseQuestionGetSma.IResponse>, next: TypedNextFunction<courseQuestionGetSma.IResponse>) => {
+    asyncHandler<courseQuestionGetSma.IParams, courseQuestionGetSma.IResponse, courseQuestionGetSma.IBody, courseQuestionGetSma.IQuery>(async (req, res, next) => {
         if (_.isNil(req.session)) {
             throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
         const userId = await req.session.userId;
-        const { id: questionId } = req.params as GetQuestionShowMeAnotherRequest.params;
+        const { id: questionId } = req.params;
 
         const updatedGrade = await courseController.requestProblemNewVersion({questionId, userId}); 
         if (_.isNil(updatedGrade)) {
@@ -887,7 +877,7 @@ import { courseQuestionGetQuestionById } from '@rederly/backend-validation';
 router.get('/question/:id',
     authenticationMiddleware,
     validationMiddleware(courseQuestionGetQuestionById),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionGetQuestionById.IResponse, GetQuestionRequest.body, GetQuestionRequest.query>, _res: Response<courseQuestionGetQuestionById.IResponse>, next: TypedNextFunction<courseQuestionGetQuestionById.IResponse>) => {
+    asyncHandler<courseQuestionGetQuestionById.IParams, courseQuestionGetQuestionById.IResponse, courseQuestionGetQuestionById.IBody, courseQuestionGetQuestionById.IQuery>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -895,7 +885,7 @@ router.get('/question/:id',
         const requestingUser = req.rederlyUser ?? await req.session.getUser();
         const rederlyUserRole = req.rederlyUserRole ?? requestingUser.roleId;
 
-        const { id: questionId } = req.params as GetQuestionRequest.params;
+        const { id: questionId } = req.params;
         const { readonly, workbookId, userId: requestedUserId, studentTopicAssessmentInfoId, showCorrectAnswers } = req.query;
         try {
             // check to see if we should allow this question to be viewed
@@ -937,17 +927,16 @@ router.get('/question/:id',
 import { coursesPostAuto } from '@rederly/backend-validation';
 router.post('/assessment/topic/:id/submit/:version/auto',
     validationMiddleware(coursesPostAuto),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostAuto.IResponse, SubmitAssessmentVersionRequest.body, SubmitAssessmentVersionRequest.query>, _res: Response<coursesPostAuto.IResponse>, next: TypedNextFunction<coursesPostAuto.IResponse>) => {
-        const params = req.params as SubmitAssessmentVersionRequest.params;
+    asyncHandler<coursesPostAuto.IParams, coursesPostAuto.IResponse, coursesPostAuto.IBody, coursesPostAuto.IQuery>(async (req, _res, next) => {
         try {
-            const assessmentResult = await courseController.submitAssessmentAnswers(params.version, true); // false: wasAutoSubmitted
+            const assessmentResult = await courseController.submitAssessmentAnswers(req.params.version, true); // false: wasAutoSubmitted
             const resp = httpResponse.Ok('Assessment submitted successfully', assessmentResult);
             next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             if (e instanceof AttemptsExceededException) {
                 logger.warn('This assessment version has no attempts remaining but was auto submitted.', JSON.stringify({
-                    assessmentVersionId: params.version,
-                    topicId: params.id
+                    assessmentVersionId: req.params.version,
+                    topicId: req.params.id
                 }));
                 const resp = httpResponse.Ok('Attempts exceeded skipping auto submit', null);
                 next(resp as DeepAddIndexSignature<typeof resp>);    
@@ -968,7 +957,9 @@ router.post('/preview',
         type: '*/*'
     }),
     validationMiddleware(coursesPostPreview),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostPreview.IResponse, GetQuestionRequest.body, PreviewQuestionRequest.query>, _res: Response<coursesPostPreview.IResponse>, next: TypedNextFunction<undefined>) => {
+    // Before this wasn't being strongly typed, it is based on the other one but uses dummy data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler<coursesPostPreview.IParams, coursesPostPreview.IResponse, coursesPostPreview.IBody, coursesPostPreview.IQuery, any>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -977,7 +968,6 @@ router.post('/preview',
         const rederlyUserRole = req.rederlyUserRole ?? user.roleId;
         if (rederlyUserRole === Role.STUDENT) throw new ForbiddenError('Preview is not available.');
 
-        const query = req.query as PreviewQuestionRequest.query;
         if (!_.isNil(req.body) && !_.isEmpty(req.body)) {
             req.meta = {
                 rendererParams: {
@@ -987,25 +977,25 @@ router.post('/preview',
                 },
                 studentGrade: {
                     numAttempts: 0,
-                    randomSeed: query.problemSeed,
+                    randomSeed: req.query.problemSeed,
                 },
                 courseQuestion: {
-                    webworkQuestionPath: query.webworkQuestionPath
+                    webworkQuestionPath: req.query.webworkQuestionPath
                 },
             };
             return next(undefined);
         }
-        if (_.isNil(query.webworkQuestionPath)) {
+        if (_.isNil(req.query.webworkQuestionPath)) {
             throw new Error('Missing required field');
         }
         try {
             const question = await courseController.previewQuestion({
-                webworkQuestionPath: query.webworkQuestionPath,
-                problemSeed: query.problemSeed,
+                webworkQuestionPath: req.query.webworkQuestionPath,
+                problemSeed: req.query.problemSeed,
                 formURL: req.originalUrl,
                 formData: {},
                 role: rederlyUserRole,
-                showAnswersUpfront: query.showAnswersUpfront,
+                showAnswersUpfront: req.query.showAnswersUpfront,
             });
             const resp = httpResponse.Ok('Fetched question successfully', question);
             next(resp as DeepAddIndexSignature<typeof resp>);
@@ -1021,11 +1011,11 @@ router.post('/preview',
         }
     }),
     proxy(configurations.renderer.url, {
-        proxyReqPathResolver: (req: RederlyExpressRequest<EmptyExpressParams, unknown, unknown, unknown, PostQuestionMeta>) => {
+        proxyReqPathResolver: (req: RederlyExpressRequest<EmptyExpressParams, coursesPostPreview.IResponse, coursesPostPreview.IBody, EmptyExpressQuery, PostQuestionMeta>) => {
             if (_.isNil(req.meta)) {
                 throw new Error('Previously fetched metadata is nil');
             }
-            const params: GetProblemParameters = {
+            const rendererParams: GetProblemParameters = {
                 format: 'json',
                 formURL: req.originalUrl,
                 baseURL: '/',
@@ -1033,9 +1023,9 @@ router.post('/preview',
                 numIncorrect: req.meta.studentGrade?.numAttempts,
                 problemSeed: req.meta.studentGrade?.randomSeed
             };
-            return `${RENDERER_ENDPOINT}?${qs.stringify(params)}`;
+            return `${RENDERER_ENDPOINT}?${qs.stringify(rendererParams)}`;
         },
-        userResDecorator: async (proxyRes: Response<coursesPostPreview.IResponse>, proxyResData, userReq: RederlyExpressRequest<EmptyExpressParams, coursesPostPreview.IResponse, unknown, EmptyExpressQuery, PostQuestionMeta>) => {
+        userResDecorator: async (proxyRes, proxyResData, userReq: RederlyExpressRequest<EmptyExpressParams, coursesPostPreview.IResponse, coursesPostPreview.IBody, EmptyExpressQuery, PostQuestionMeta>) => {
             if (_.isNil(userReq.session)) {
                 throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
             }
@@ -1080,16 +1070,15 @@ import { coursesPostSubmitByVersion } from '@rederly/backend-validation';
 router.post('/assessment/topic/:id/submit/:version',
     authenticationMiddleware,
     validationMiddleware(coursesPostSubmitByVersion),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostSubmitByVersion.IResponse, SubmitAssessmentVersionRequest.body, SubmitAssessmentVersionRequest.query>, _res: Response<coursesPostSubmitByVersion.IResponse>, next: TypedNextFunction<coursesPostSubmitByVersion.IResponse>) => {
+    asyncHandler<coursesPostSubmitByVersion.IParams, coursesPostSubmitByVersion.IResponse, coursesPostSubmitByVersion.IBody, coursesPostSubmitByVersion.IQuery>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
         const user = req.rederlyUser ?? await req.session.getUser();
 
-        const params = req.params as SubmitAssessmentVersionRequest.params;
 
-        const studentTopicAssessmentInfo = await courseController.getStudentTopicAssessmentInfoById(params.version);
+        const studentTopicAssessmentInfo = await courseController.getStudentTopicAssessmentInfoById(req.params.version);
         if (user.id != studentTopicAssessmentInfo.userId) {
             throw new Error('You cannot submit an assessment that does not belong to you.');
         }
@@ -1098,7 +1087,7 @@ router.post('/assessment/topic/:id/submit/:version',
             throw new IllegalArgumentException('This assessment version has no attempts remaining.');
         }
 
-        const assessmentResult = await courseController.submitAssessmentAnswers(params.version, false); // false: wasAutoSubmitted
+        const assessmentResult = await courseController.submitAssessmentAnswers(req.params.version, false); // false: wasAutoSubmitted
         const resp = httpResponse.Ok('Assessment submitted successfully', assessmentResult);
         next(resp as DeepAddIndexSignature<typeof resp>);
     }));
@@ -1111,7 +1100,7 @@ router.post('/question/:id',
     bodyParser.raw({
         type: '*/*'
     }),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostQuestionById.IResponse, unknown, unknown, PostQuestionMeta>, _res: Response<courseQuestionPostQuestionById.IResponse>, next: TypedNextFunction<undefined>) => {
+    asyncHandler<courseQuestionPostQuestionById.IParams, courseQuestionPostQuestionById.IResponse, courseQuestionPostQuestionById.IBody, courseQuestionPostQuestionById.IQuery, PostQuestionMeta>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -1119,11 +1108,7 @@ router.post('/question/:id',
         const user = req.rederlyUser ?? await req.session.getUser();
         const rederlyUserRole = req.rederlyUserRole ?? user.roleId;
 
-        const params = req.params as unknown as {
-            id: number;
-        };
-
-        const question = await courseController.getQuestionRecord(params.id);
+        const question = await courseController.getQuestionRecord(req.params.id);
 
         const rendererParams = await courseController.getCalculatedRendererParams({
             courseQuestion: question,
@@ -1134,7 +1119,7 @@ router.post('/question/:id',
         const studentGrade = await StudentGrade.findOne({
             where: {
                 userId: user.id,
-                courseWWTopicQuestionId: params.id
+                courseWWTopicQuestionId: req.params.id
             }
         });
 
@@ -1148,20 +1133,22 @@ router.post('/question/:id',
         next(undefined);
     }),
     proxy(configurations.renderer.url, {
-        proxyReqPathResolver: (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostQuestionById.IResponse, unknown, unknown, PostQuestionMeta>) => {
+        proxyReqPathResolver: (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostQuestionById.IResponse, courseQuestionPostQuestionById.IBody, EmptyExpressQuery, PostQuestionMeta>) => {
             if (_.isNil(req.meta)) {
                 throw new Error('Previously fetched metadata is nil');
             }
-            const params: GetProblemParameters = {
+            const rendererParams: GetProblemParameters = {
                 format: 'json',
                 formURL: req.originalUrl,
                 baseURL: '/',
                 ...req.meta?.rendererParams,
                 numIncorrect: req.meta.studentGrade?.numAttempts
             };
-            return `${RENDERER_ENDPOINT}?${qs.stringify(params)}`;
+            return `${RENDERER_ENDPOINT}?${qs.stringify(rendererParams)}`;
         },
-        userResDecorator: async (proxyRes: Response<courseQuestionPostQuestionById.IResponse>, proxyResData, userReq: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostQuestionById.IResponse, unknown, unknown, PostQuestionMeta>) => {
+        userResDecorator: async (proxyRes, proxyResData, userReq: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostQuestionById.IResponse, courseQuestionPostQuestionById.IBody, EmptyExpressQuery, PostQuestionMeta>) => {
+            // Async handler can't be used here since this is part of the proxy
+            const params = userReq.params as courseQuestionPostQuestionById.IParams;
             if (_.isNil(userReq.session)) {
                 throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
             }
@@ -1185,13 +1172,9 @@ router.post('/question/:id',
                 throw new WrappedError(`Error parsing data response from renderer on question ${userReq.meta?.studentGrade?.courseWWTopicQuestionId} for grade ${userReq.meta?.studentGrade?.id}`, e);
             }
 
-            const params = userReq.params as unknown as {
-                id: number;
-            };
-
             const result = await courseController.submitAnswer({
                 userId: userReq.session.userId,
-                questionId: params.id as number,
+                questionId: params.id,
                 score: rendererResponse.problem_result.score,
                 submitted: rendererResponse,
             });
@@ -1218,7 +1201,7 @@ import { coursesGetCourses } from '@rederly/backend-validation';
 router.get('/',
     authenticationMiddleware,
     validationMiddleware(coursesGetCourses),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetCourses.IResponse, ListCoursesRequest.body, ListCoursesRequest.query>, _res: Response<coursesGetCourses.IResponse>, next: TypedNextFunction<coursesGetCourses.IResponse>) => {
+    asyncHandler<coursesGetCourses.IParams, coursesGetCourses.IResponse, coursesGetCourses.IBody, coursesGetCourses.IQuery>(async (req, _res, next) => {
         const courses = await courseController.getCourses({
             filter: {
                 instructorId: req.query.instructorId,
@@ -1233,7 +1216,7 @@ import { coursesGetCourseList } from '@rederly/backend-validation';
 router.get('/browse-problems/course-list',
     authenticationMiddleware,
     validationMiddleware(coursesGetCourseList),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetCourseList.IResponse, BrowseProblemsCourseListRequest.body, BrowseProblemsCourseListRequest.query>, _res: Response<coursesGetCourseList.IResponse>, next: TypedNextFunction<coursesGetCourseList.IResponse>) => {
+    asyncHandler<coursesGetCourseList.IParams, coursesGetCourseList.IResponse, coursesGetCourseList.IBody, coursesGetCourseList.IQuery>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -1258,7 +1241,7 @@ import { coursesGetUnitList } from '@rederly/backend-validation';
 router.get('/browse-problems/unit-list',
     authenticationMiddleware,
     validationMiddleware(coursesGetUnitList),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetUnitList.IResponse, BrowseProblemsUnitListRequest.body, BrowseProblemsUnitListRequest.query>, _res: Response<coursesGetUnitList.IResponse>, next: TypedNextFunction<coursesGetUnitList.IResponse>) => {
+    asyncHandler<coursesGetUnitList.IParams, coursesGetUnitList.IResponse, coursesGetUnitList.IBody, coursesGetUnitList.IQuery>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -1282,7 +1265,7 @@ import { coursesGetTopicList } from '@rederly/backend-validation';
 router.get('/browse-problems/topic-list',
     authenticationMiddleware,
     validationMiddleware(coursesGetTopicList),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetTopicList.IResponse, BrowseProblemsTopicListRequest.body, BrowseProblemsTopicListRequest.query>, _res: Response<coursesGetTopicList.IResponse>, next: TypedNextFunction<coursesGetTopicList.IResponse>) => {
+    asyncHandler<coursesGetTopicList.IParams, coursesGetTopicList.IResponse, coursesGetTopicList.IBody, coursesGetTopicList.IQuery>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -1306,7 +1289,7 @@ import { coursesGetSearch } from '@rederly/backend-validation';
 router.get('/browse-problems/search',
     authenticationMiddleware,
     validationMiddleware(coursesGetSearch),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetSearch.IResponse, BrowseProblemsSearchRequest.body, BrowseProblemsSearchRequest.query>, _res: Response<coursesGetSearch.IResponse>, next: TypedNextFunction<coursesGetSearch.IResponse>) => {
+    asyncHandler<coursesGetSearch.IParams, coursesGetSearch.IResponse, coursesGetSearch.IBody, coursesGetSearch.IQuery>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -1336,10 +1319,9 @@ import { courseTopicGetTopicById } from '@rederly/backend-validation';
 router.get('/topic/:id',
     authenticationMiddleware,
     validationMiddleware(courseTopicGetTopicById),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseTopicGetTopicById.IResponse, GetTopicRequest.body, GetTopicRequest.query, unknown>, _res: Response<courseTopicGetTopicById.IResponse>, next: TypedNextFunction<courseTopicGetTopicById.IResponse>) => {
-        const params = req.params as GetTopicRequest.params;
+    asyncHandler<courseTopicGetTopicById.IParams, courseTopicGetTopicById.IResponse, courseTopicGetTopicById.IBody, courseTopicGetTopicById.IQuery>(async (req, _res, next) => {
         const result = await courseController.getTopicById({
-            id: params.id, 
+            id: req.params.id, 
             userId: req.query.userId, 
             includeQuestions: req.query.includeQuestions,
             includeWorkbookCount: req.query.includeWorkbookCount,
@@ -1357,7 +1339,7 @@ import { coursesGetTopics } from '@rederly/backend-validation';
 router.get('/topics',
     authenticationMiddleware,
     validationMiddleware(coursesGetTopics),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetTopics.IResponse, GetTopicsRequest.body, GetTopicsRequest.query>, _res: Response<coursesGetTopics.IResponse>, next: TypedNextFunction<coursesGetTopics.IResponse>) => {
+    asyncHandler<coursesGetTopics.IParams, coursesGetTopics.IResponse, coursesGetTopics.IBody, coursesGetTopics.IQuery>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -1378,8 +1360,7 @@ import { coursesPostEmail } from '@rederly/backend-validation';
 router.post('/:id/email',
     authenticationMiddleware,
     validationMiddleware(coursesPostEmail),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostEmail.IResponse, EmailProfRequest.body, EmailProfRequest.query>, res: Response<coursesPostEmail.IResponse>, next: TypedNextFunction<coursesPostEmail.IResponse>) => {
-        const params = req.params as EmailProfRequest.params;
+    asyncHandler<coursesPostEmail.IParams, coursesPostEmail.IResponse, coursesPostEmail.IBody, coursesPostEmail.IQuery>(async (req, res, next) => {
 
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
@@ -1392,7 +1373,7 @@ router.post('/:id/email',
             throw new IllegalArgumentException('rederly-origin is required in the request');
         }
         const result = await courseController.emailProfessor({
-            courseId: params.id,
+            courseId: req.params.id,
             content: req.body.content,
             question: req.body.question,
             student: user,
@@ -1407,18 +1388,17 @@ import { coursesGetCoursesById } from '@rederly/backend-validation';
 router.get('/:id',
     authenticationMiddleware,
     validationMiddleware(coursesGetCoursesById),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetCoursesById.IResponse, GetCourseRequest.body, GetCourseRequest.query>, _res: Response<coursesGetCoursesById.IResponse>, next: TypedNextFunction<undefined>) => {
+    asyncHandler<coursesGetCoursesById.IParams, coursesGetCoursesById.IResponse, coursesGetCoursesById.IBody, coursesGetCoursesById.IQuery>(async (req, _res, next) => {
         try {
-            const params = req.params as GetCourseRequest.params;
             const userIdForExtensions = req.rederlyUserRole === Role.STUDENT ? req.session?.userId : undefined;
-            req.course = await courseController.getCourseById(params.id, userIdForExtensions);
+            req.course = await courseController.getCourseById(req.params.id, userIdForExtensions);
             next(undefined);
         } catch (e) {
             next(e);
         }
     }),
     canUserViewCourse,
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetCoursesById.IResponse, unknown, EmptyExpressQuery>, _res: Response<coursesGetCoursesById.IResponse>, next: TypedNextFunction<coursesGetCoursesById.IResponse>) => {
+    asyncHandler<coursesGetCoursesById.IParams, coursesGetCoursesById.IResponse, coursesGetCoursesById.IBody, coursesGetCoursesById.IQuery>(async (req, _res, next) => {
         if(_.isNil(req.course)) {
             throw new RederlyError('TSNH, course should have already been fetched');
         }
@@ -1441,7 +1421,7 @@ import { coursesPostEnroll } from '@rederly/backend-validation';
 router.post('/enroll',
     authenticationMiddleware,
     validationMiddleware(coursesPostEnroll),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostEnroll.IResponse, EnrollInCourseRequest.body, EnrollInCourseRequest.query>, _res: Response<coursesPostEnroll.IResponse>, next: TypedNextFunction<coursesPostEnroll.IResponse>) => {
+    asyncHandler<coursesPostEnroll.IParams, coursesPostEnroll.IResponse, coursesPostEnroll.IBody, coursesPostEnroll.IQuery>(async (req, _res, next) => {
         try {
             if (_.isNil(req.body.userId) === _.isNil(req.body.studentEmail)) {
                 throw new IllegalArgumentException('Enrollment requires either userId or studentEmail, not both, not neither');
@@ -1477,17 +1457,16 @@ import { coursesPostEnrollByCode } from '@rederly/backend-validation';
 router.post('/enroll/:code',
     authenticationMiddleware,
     validationMiddleware(coursesPostEnrollByCode),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostEnrollByCode.IResponse, EnrollInCourseByCodeRequest.body, EnrollInCourseByCodeRequest.query>, _res: Response<coursesPostEnrollByCode.IResponse>, next: TypedNextFunction<coursesPostEnrollByCode.IResponse>) => {
+    asyncHandler<coursesPostEnrollByCode.IParams, coursesPostEnrollByCode.IResponse, coursesPostEnrollByCode.IBody, coursesPostEnrollByCode.IQuery>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        const params = req.params as EnrollInCourseByCodeRequest.params;
 
         const session = req.session;
         try {
             const enrollment = await courseController.enrollByCode({
-                code: params.code,
+                code: req.params.code,
                 userId: session.userId
             });
             const resp = httpResponse.Ok('Enrolled', enrollment.get({plain: true}) as StudentEnrollmentInterface);
@@ -1507,7 +1486,7 @@ router.delete('/enroll',
     authenticationMiddleware,
     validationMiddleware(coursesDeleteEnroll),
     paidMiddleware('Un-enrolling users'),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesDeleteEnroll.IResponse, DeleteEnrollmentRequest.body, DeleteEnrollmentRequest.query>, _res: Response<coursesDeleteEnroll.IResponse>, next: TypedNextFunction<coursesDeleteEnroll.IResponse>) => {
+    asyncHandler<coursesDeleteEnroll.IParams, coursesDeleteEnroll.IResponse, coursesDeleteEnroll.IBody, coursesDeleteEnroll.IQuery>(async (req, _res, next) => {
         try {
             const success = await courseController.softDeleteEnrollment({
                 ...req.body,
@@ -1525,12 +1504,10 @@ router.delete('/enroll',
     }));
 
 import { coursesPostUploadUrl } from '@rederly/backend-validation';
-// TODO: Switch to POST in next release to match Frontend API.
-// This was to avoid API failures from one release to another.
 router.post('/attachments/upload-url',
     authenticationMiddleware,
     validationMiddleware(coursesPostUploadUrl),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostUploadUrl.IResponse, GetAttachmentPresignedURLRequest.body, GetAttachmentPresignedURLRequest.query>, _res: Response<coursesPostUploadUrl.IResponse>, next: TypedNextFunction<coursesPostUploadUrl.IResponse>) => {
+    asyncHandler<coursesPostUploadUrl.IParams, coursesPostUploadUrl.IResponse, coursesPostUploadUrl.IBody, coursesPostUploadUrl.IQuery>(async (req, _res, next) => {
         const result = await attachmentHelper.getNewPresignedURL();
         const resp = httpResponse.Ok('Get new presigned url success', result);
         next(resp as DeepAddIndexSignature<typeof resp>);
@@ -1540,7 +1517,7 @@ import { coursesPostAttachments } from '@rederly/backend-validation';
 router.post('/attachments',
     authenticationMiddleware,
     validationMiddleware(coursesPostAttachments),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesPostAttachments.IResponse, PostAttachmentRequest.body, PostAttachmentRequest.query>, _res: Response<coursesPostAttachments.IResponse>, next: TypedNextFunction<coursesPostAttachments.IResponse>) => {
+    asyncHandler<coursesPostAttachments.IParams, coursesPostAttachments.IResponse, coursesPostAttachments.IBody, coursesPostAttachments.IQuery>(async (req, _res, next) => {
         // TODO permission to check if user has access to the provided grade or grade instance
         const result = await courseController.createAttachment({
             obj: req.body.attachment,
@@ -1556,7 +1533,7 @@ import { coursesGetList } from '@rederly/backend-validation';
 router.get('/attachments/list',
     authenticationMiddleware,
     validationMiddleware(coursesGetList),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesGetList.IResponse, ListAttachmentsRequest.body, ListAttachmentsRequest.query>, _res: Response<coursesGetList.IResponse>, next: TypedNextFunction<coursesGetList.IResponse>) => {
+    asyncHandler<coursesGetList.IParams, coursesGetList.IResponse, coursesGetList.IBody, coursesGetList.IQuery>(async (req, _res, next) => {
         // TODO permission to check if user has access to the provided grade or grade instance
         const result = await courseController.listAttachments({
             studentGradeId: req.query.studentGradeId,
@@ -1575,11 +1552,10 @@ import { coursesDeleteAttachmentsById } from '@rederly/backend-validation';
 router.delete('/attachments/:id',
     authenticationMiddleware,
     validationMiddleware(coursesDeleteAttachmentsById),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, coursesDeleteAttachmentsById.IResponse, DeleteAttachmentRequest.body, DeleteAttachmentRequest.query>, _res: Response<coursesDeleteAttachmentsById.IResponse>, next: TypedNextFunction<coursesDeleteAttachmentsById.IResponse>) => {
-        const params = req.params as DeleteAttachmentRequest.params;
+    asyncHandler<coursesDeleteAttachmentsById.IParams, coursesDeleteAttachmentsById.IResponse, coursesDeleteAttachmentsById.IBody, coursesDeleteAttachmentsById.IQuery>(async (req, _res, next) => {
         // TODO permission to check if user has access to the provided grade or grade instance
         const result = await courseController.deleteAttachment({
-            problemAttachmentId: params.id
+            problemAttachmentId: req.params.id
         });
 
         const resp = httpResponse.Ok('Attachment deleted successfully', stripSequelizeFromUpdateResult<ProblemAttachmentInterface>(result));
@@ -1590,7 +1566,7 @@ import { courseQuestionPostSave } from '@rederly/backend-validation';
 router.post('/question/editor/save',
     authenticationMiddleware,
     validationMiddleware(courseQuestionPostSave),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostSave.IResponse, SaveQuestionRequest.body, SaveQuestionRequest.query>, _res: Response<courseQuestionPostSave.IResponse>, next: TypedNextFunction<courseQuestionPostSave.IResponse>) => {
+    asyncHandler<courseQuestionPostSave.IParams, courseQuestionPostSave.IResponse, courseQuestionPostSave.IBody, courseQuestionPostSave.IQuery>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -1618,7 +1594,7 @@ router.post('/question/editor/upload-asset',
     authenticationMiddleware,
     rederlyTempFileWrapper((tmpFilePath: string) => multer({dest: tmpFilePath}).single('asset-file')),
     validationMiddleware(courseQuestionPostUploadAsset),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostUploadAsset.IResponse, UploadAssetRequest.body, UploadAssetRequest.query>, _res: Response<courseQuestionPostUploadAsset.IResponse>, next: TypedNextFunction<courseQuestionPostUploadAsset.IResponse>) => {
+    asyncHandler<courseQuestionPostUploadAsset.IParams, courseQuestionPostUploadAsset.IResponse, courseQuestionPostUploadAsset.IBody, courseQuestionPostUploadAsset.IQuery>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -1645,7 +1621,7 @@ import { courseQuestionPostRead } from '@rederly/backend-validation';
 router.post('/question/editor/read',
     authenticationMiddleware,
     validationMiddleware(courseQuestionPostRead),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostRead.IResponse, ReadQuestionRequest.body, ReadQuestionRequest.query>, _res: Response<courseQuestionPostRead.IResponse>, next: TypedNextFunction<courseQuestionPostRead.IResponse>) => {
+    asyncHandler<courseQuestionPostRead.IParams, courseQuestionPostRead.IResponse, courseQuestionPostRead.IBody, courseQuestionPostRead.IQuery>(async (req, _res, next) => {
         const sourceFilePath = req.body.filePath;
         // TODO if we use this regex elsewhere we should centralize
         // This should also be in the joi validation but due to time putting it here to handle the frontend
@@ -1670,7 +1646,7 @@ import { courseQuestionPostCatalog } from '@rederly/backend-validation';
 router.post('/question/editor/catalog',
     authenticationMiddleware,
     validationMiddleware(courseQuestionPostCatalog as ValidationMiddlewareOptions),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostCatalog.IResponse, CatalogRequest.body, CatalogRequest.query>, _res: Response<courseQuestionPostCatalog.IResponse>, next: TypedNextFunction<courseQuestionPostCatalog.IResponse>) => {
+    asyncHandler<courseQuestionPostCatalog.IParams, courseQuestionPostCatalog.IResponse, courseQuestionPostCatalog.IBody, courseQuestionPostCatalog.IQuery>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -1699,10 +1675,10 @@ import { coursesPostFeedback } from '@rederly/backend-validation';
 router.post('/feedback', 
     authenticationMiddleware,
     validationMiddleware(coursesPostFeedback),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, courseQuestionPostCatalog.IResponse, PostFeedbackRequest.body, unknown>, _res: Response<courseQuestionPostCatalog.IResponse>, next: TypedNextFunction<coursesPostFeedback.IResponse>) => {
+    asyncHandler<coursesPostFeedback.IParams, courseQuestionPostCatalog.IResponse, coursesPostFeedback.IBody, coursesPostFeedback.IQuery>(async (req, _res, next) => {
         const res = await courseController.addFeedback({
             content: req.body.content,
-            workbookId: (req.query as PostFeedbackRequest.query).workbookId,
+            workbookId: req.query.workbookId,
         });
 
         const resp = httpResponse.Ok('Attachment record created', stripSequelizeFromUpdateResult<StudentWorkbookInterface>(res));

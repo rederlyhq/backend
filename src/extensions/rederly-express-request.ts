@@ -53,12 +53,12 @@ export interface RederlyExpressRequest<P extends DictionaryDefault = DictionaryD
 //     }
 // };
 
-export interface RederlyRequestHandler<P extends {} = {}, ResBody = unknown, ReqBody = unknown, ReqQuery extends {} = {}> {
+export interface RederlyRequestHandler<P extends {} = {}, ResBody = unknown, ReqBody = unknown, ReqQuery extends {} = {}, MetaType = never> {
     // tslint:disable-next-line callable-types (This is extended from and can't extend from a type alias in ts<2.2)
-    (req: RederlyExpressRequest<P, ResBody, ReqBody, ReqQuery>, res: Response<ResBody>, next: TypedNextFunction<ResBody>): void;
+    (req: RederlyExpressRequest<P, ResBody, ReqBody, ReqQuery, MetaType>, res: Response<ResBody>, next: TypedNextFunction<ResBody>): void;
 }
 
-export const asyncHandler = <P extends {} = {}, ResBody = unknown, ReqBody = unknown, ReqQuery extends {} = {}>(requestHandler: RederlyRequestHandler<P, ResBody, ReqBody, ReqQuery>): RequestHandler => async (req, res, next): Promise<void> => {
+export const asyncHandler = <P extends {} = {}, ResBody = unknown, ReqBody = unknown, ReqQuery extends {} = {}, MetaType = never>(requestHandler: RederlyRequestHandler<P, ResBody, ReqBody, ReqQuery, MetaType>): RequestHandler => async (req, res, next): Promise<void> => {
     try {
         await requestHandler(req as any, res, next);
     } catch (e) {

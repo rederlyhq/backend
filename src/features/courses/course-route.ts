@@ -1684,7 +1684,7 @@ router.post('/upload/topic/:topicId/description',
     validate(postUploadTopicDescriptionValidation),
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, PostUploadTopicDescriptionRequest.body, PostUploadTopicDescriptionRequest.query>, _res: Response, next: NextFunction) => {
         // TODO permission to check if user has access to the provided grade or grade instance
-        const result = await courseRepository.createWorkbookFeedbackAttachment(req.body.attachment, (req.params as PostUploadTopicDescriptionRequest.params).topicId);
+        const result = await courseRepository.createTopicDescriptionAttachment(req.body.attachment, (req.params as PostUploadTopicDescriptionRequest.params).topicId);
         next(httpResponse.Ok('Attachment record created', result));
     }));
 

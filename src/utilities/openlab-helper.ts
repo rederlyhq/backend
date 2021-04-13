@@ -1,8 +1,6 @@
 import axios from 'axios';
 import configurations from '../configurations';
 import * as _ from 'lodash';
-import * as Joi from '@hapi/joi';
-import 'joi-extract-type';
 import { isAxiosError } from './axios-helper';
 import logger from './logger';
 import WrappedError from '../exceptions/wrapped-error';
@@ -10,11 +8,6 @@ import { OpenLabRedirectInfo } from '../features/courses/course-types';
 import * as qs from 'qs';
 import formHelper, { unmergeStrategies } from './form-helper';
 import RederlyError from '../exceptions/rederly-error';
-
-/* eslint-disable @typescript-eslint/camelcase */
-export const openlabResponseValidationScheme = Joi.string().required();
-/* eslint-enable @typescript-eslint/camelcase */
-export type OpenLabResponse = Joi.extractType<typeof openlabResponseValidationScheme>;
 
 class OpenLabHelper {
     openLabAxios = axios.create({
@@ -39,7 +32,7 @@ class OpenLabHelper {
         studentName,
         emailURL,
         rawHTML,
-    }: OpenLabRedirectInfo): Promise<OpenLabResponse> {
+    }: OpenLabRedirectInfo): Promise<string> {
         let pgObject = '';
         if (!_.isNil(rawHTML)) {
             pgObject = Buffer.from(rawHTML).toString('base64');

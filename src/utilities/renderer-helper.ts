@@ -2,13 +2,12 @@ import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import configurations from '../configurations';
 import Role from '../features/permissions/roles';
 import * as _ from 'lodash';
-import * as Joi from '@hapi/joi';
-import 'joi-extract-type';
+import * as Joi from 'joi';
 import { isAxiosError } from './axios-helper';
 import logger from './logger';
 import NotFoundError from '../exceptions/not-found-error';
 import WrappedError from '../exceptions/wrapped-error';
-import { RederlyExtendedJoi } from '../extensions/rederly-extended-joi';
+// import { RederlyExtendedJoi } from '../extensions/rederly-extended-joi';
 import urljoin = require('url-join');
 import * as fs from'fs';
 import formHelper, { unmergeStrategies } from './form-helper';
@@ -196,7 +195,19 @@ export const rendererResponseValidationScheme = Joi.object({
     renderedHTML: Joi.string().required(),
 }).required();
 /* eslint-enable @typescript-eslint/camelcase */
-export type RendererResponse = Joi.extractType<typeof rendererResponseValidationScheme>;
+// export type RendererResponse = Joi.extractType<typeof rendererResponseValidationScheme>;
+// Was using joi extract type but that required an old version of joi
+// TODO switch to json schema
+export interface RendererResponse {
+    debug?: unknown;
+    problem_result: {
+        errors: string;
+        msg: string;
+        score: number;
+        type: string;
+    };
+    renderedHTML: string;
+}
 
 export interface ShowMeAnotherResponse {
     problem: RendererResponse;
@@ -256,7 +267,7 @@ class RendererHelper {
             resp = JSON.parse(resp);
         }
 
-        const result = await rendererResponseValidationScheme.validate<RendererResponse>(resp as RendererResponse, {
+        const result: RendererResponse = await rendererResponseValidationScheme.validateAsync(resp, {
             abortEarly: true,
             allowUnknown: true,
             stripUnknown: false, // we will use this for typing the response, however for the database we will have a different scheme

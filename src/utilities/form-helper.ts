@@ -1,5 +1,4 @@
 import * as _ from 'lodash';
-import 'joi-extract-type';
 import * as FormData from 'form-data';
 import logger from './logger';
 

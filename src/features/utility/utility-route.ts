@@ -12,7 +12,7 @@ import { statusHandler } from '../../middleware/status-handler';
 import { validationMiddleware } from '../../middleware/validation-middleware';
 import { DeepAddIndexSignature } from '../../extensions/typescript-utility-extensions';
 
-const router = express.Router();
+export const router = express.Router();
 
 const packageJSONPath = '../../../package.json';
 
@@ -109,5 +109,3 @@ asyncHandler<utilityPostClientLogs.IParams, utilityPostClientLogs.IResponse, uti
     });
     next(httpResponse.Ok('Logged', null));
 }));
-
-module.exports = router;

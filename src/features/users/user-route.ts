@@ -13,7 +13,7 @@ import { UserInterface } from '../../database/models/user';
 
 import { validationMiddleware, ValidationMiddlewareOptions } from '../../middleware/validation-middleware';
 
-const router = express.Router();
+export const router = express.Router();
 
 import { usersGetCheckIn } from '@rederly/backend-validation';
 router.all('/check-in',
@@ -266,5 +266,3 @@ router.post('/email',
         const resp = httpResponse.Ok('Email sent', result);
         next(resp as DeepAddIndexSignature<typeof resp>);
     }));
-
-module.exports = router;

@@ -14,7 +14,7 @@ import { CurriculumUnitContentInterface } from '../../database/models/curriculum
 import { CurriculumTopicContentInterface } from '../../database/models/curriculum-topic-content';
 import { CurriculumWWTopicQuestionInterface } from '../../database/models/curriculum-ww-topic-question';
 
-const router = express.Router();
+export const router = express.Router();
 
 import { curriculumPostCurriculum } from '@rederly/backend-validation';
 router.post('/',
@@ -180,5 +180,3 @@ router.get('/:id',
             next(e);
         }
     }));
-
-module.exports = router;

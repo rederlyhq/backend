@@ -63,7 +63,7 @@ export const asyncHandler = <P extends {} = {}, ResBody = unknown, ReqBody = unk
     }
 };
 
-const router = express.Router();
+export const router = express.Router();
 
 const fileUpload = multer();
 
@@ -1685,5 +1685,3 @@ router.post('/feedback',
         next(resp as DeepAddIndexSignature<typeof resp>);
     })
 );
-
-module.exports = router;

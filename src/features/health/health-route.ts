@@ -3,7 +3,7 @@ import httpResponse from '../../utilities/http-response';
 import { validationMiddleware, ValidationMiddlewareOptions } from '../../middleware/validation-middleware';
 import { asyncHandler } from '../../extensions/rederly-express-request';
 
-const router = express.Router();
+export const router = express.Router();
 
 import { healthGetHealth } from '@rederly/backend-validation';
 router.get('/',
@@ -12,5 +12,3 @@ router.get('/',
         const resp = httpResponse.Ok('Health Ok', null);
         next(resp);
     }));
-
-module.exports = router;

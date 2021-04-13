@@ -8,7 +8,7 @@ import { Constants } from '../../constants';
 import Role from '../permissions/roles';
 import { validationMiddleware } from '../../middleware/validation-middleware';
 
-const router = express.Router();
+export const router = express.Router();
 
 import { supportPostSupport } from '@rederly/backend-validation';
 router.post('/',
@@ -42,5 +42,3 @@ router.post('/',
         // this might include the ticket number
         next(httpResponse.Ok('Support ticket created successfully', null));
     }));
-
-module.exports = router;

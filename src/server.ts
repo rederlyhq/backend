@@ -2,9 +2,7 @@ import configurations from './configurations';
 import logger from './utilities/logger';
 import bodyParser = require('body-parser');
 import cookieParser = require('cookie-parser');
-// Switching to import caused errors
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const router = require('./routes');
+import { router } from './routes';
 
 import express = require('express');
 import { Request, Response, NextFunction } from 'express';

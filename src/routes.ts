@@ -1,15 +1,19 @@
-// This file is just an aggregation of passing the routes to the router
-/* eslint-disable @typescript-eslint/no-var-requires */
-import express = require('express');
-const router = express.Router();
+/**
+ * This file is just an aggregation of passing the routes to the router
+ */
+import * as express from 'express';
+import { router as userRouter } from './features/users/user-route';
+import { router as courseRouter } from './features/courses/course-route';
+import { router as healthRouter } from './features/health/health-route';
+import { router as curriculumRouter } from './features/curriculum/curriculum-route';
+import { router as supportRouter } from './features/support/support-route';
+import { router as utilityRouter } from './features/utility/utility-route';
 
-router.use('/users', require('./features/users/user-route'));
-router.use('/courses', require('./features/courses/course-route'));
-router.use('/health', require('./features/health/health-route'));
-router.use('/curriculum', require('./features/curriculum/curriculum-route'));
-router.use('/support', require('./features/support/support-route'));
-router.use('/utility', require('./features/utility/utility-route'));
-// Dev routes for testing the scheduler, if your using this remember to uncomment the white lister for it as well in server.ts limiter
-// router.use('/schedule', require('./scheduler-routes'));
+export const router = express.Router();
 
-module.exports = router;
+router.use('/users', userRouter);
+router.use('/courses', courseRouter);
+router.use('/health', healthRouter);
+router.use('/curriculum', curriculumRouter);
+router.use('/support', supportRouter);
+router.use('/utility', utilityRouter);

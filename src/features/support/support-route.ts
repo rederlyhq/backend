@@ -1,22 +1,20 @@
 import * as _ from 'lodash';
-import { Response } from 'express';
-const router = require('express').Router();
+import * as express from 'express';
 import { authenticationMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
-import * as asyncHandler from 'express-async-handler';
-import { RederlyExpressRequest, EmptyExpressParams, EmptyExpressQuery } from '../../extensions/rederly-express-request';
+import { asyncHandler } from '../../extensions/rederly-express-request';
 import supportController from './support-controller';
 import { Constants } from '../../constants';
 import Role from '../permissions/roles';
 import { validationMiddleware } from '../../middleware/validation-middleware';
-import { TypedNextFunction } from '../../extensions/rederly-express-request';
 
+const router = express.Router();
 
 import { supportPostSupport } from '@rederly/backend-validation';
 router.post('/',
     authenticationMiddleware,
     validationMiddleware(supportPostSupport),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, unknown, supportPostSupport.IBody, EmptyExpressQuery>, res: Response, next: TypedNextFunction<supportPostSupport.IResponse>) => {
+    asyncHandler<supportPostSupport.IParams, supportPostSupport.IResponse, supportPostSupport.IBody, supportPostSupport.IQuery>(async (req, _res, next) => {
         if(_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }

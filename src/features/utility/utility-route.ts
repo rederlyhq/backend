@@ -1,9 +1,7 @@
-import { Response } from 'express';
-const router = require('express').Router();
+import * as express from 'express';
 import configurations from '../../configurations';
 import httpResponse from '../../utilities/http-response';
-import * as asyncHandler from 'express-async-handler';
-import { RederlyExpressRequest, EmptyExpressParams, EmptyExpressQuery, TypedNextFunction } from '../../extensions/rederly-express-request';
+import { asyncHandler } from '../../extensions/rederly-express-request';
 import * as _ from 'lodash';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -13,6 +11,8 @@ import { authenticationMiddleware } from '../../middleware/auth';
 import { statusHandler } from '../../middleware/status-handler';
 import { validationMiddleware } from '../../middleware/validation-middleware';
 import { DeepAddIndexSignature } from '../../extensions/typescript-utility-extensions';
+
+const router = express.Router();
 
 const packageJSONPath = '../../../package.json';
 
@@ -45,7 +45,7 @@ import { utilityGetVersion } from '@rederly/backend-validation';
 router.get('/version',
 // No validation
 // No authentication
-asyncHandler(async (_req: RederlyExpressRequest<EmptyExpressParams, utilityGetVersion.IResponse, unknown, EmptyExpressQuery>, _res: Response<utilityGetVersion.IResponse>, next: TypedNextFunction<utilityGetVersion.IResponse>) => {
+asyncHandler<utilityGetVersion.IParams, utilityGetVersion.IResponse, utilityGetVersion.IBody, utilityGetVersion.IQuery>(async (_req, _res, next) => {
     const version = await versionPromise;
     next(httpResponse.Ok('Version fetched', {
         packageJson: version
@@ -75,10 +75,10 @@ import { utilityGetSecretToEveryone } from '@rederly/backend-validation';
 router.get('/secret-to-everyone',
 // No validation
 authenticationMiddleware,
-(_req: RederlyExpressRequest<EmptyExpressParams, utilityGetSecretToEveryone.IResponse, unknown, EmptyExpressQuery>, _res: Response<utilityGetSecretToEveryone.IResponse>, next: TypedNextFunction<utilityGetSecretToEveryone.IResponse>) => {
+asyncHandler<utilityGetSecretToEveryone.IParams, utilityGetSecretToEveryone.IResponse, utilityGetSecretToEveryone.IBody, utilityGetSecretToEveryone.IQuery>((_req, _res, next) => {
     const resp = httpResponse.Ok('Shhh...', configurations.hash);
     next(resp as DeepAddIndexSignature<typeof resp>);
-});
+}));
 
 interface ClientLogMessage {
     level?: keyof Logger;
@@ -88,7 +88,7 @@ import { utilityPostClientLogs } from '@rederly/backend-validation';
 router.post('/client-logs',
 validationMiddleware(utilityPostClientLogs),
 // No authentication
-asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, utilityPostClientLogs.IResponse, utilityPostClientLogs.IBody, EmptyExpressQuery>, _res: Response<utilityPostClientLogs.IResponse>, next: TypedNextFunction<utilityPostClientLogs.IResponse>) => {
+asyncHandler<utilityPostClientLogs.IParams, utilityPostClientLogs.IResponse, utilityPostClientLogs.IBody, utilityPostClientLogs.IQuery>(async (req, _res, next) => {
     req.body.logs.forEach((log: unknown) => {
         let logLevel: keyof Logger | undefined = (log as ClientLogMessage).level;
         const availableLoggingLevels = Object.keys(logger.levels);

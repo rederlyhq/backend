@@ -1,14 +1,14 @@
-import { Request, Response } from 'express';
-const router = require('express').Router();
-import * as asyncHandler from 'express-async-handler';
+import * as express from 'express';
 import httpResponse from '../../utilities/http-response';
 import { validationMiddleware, ValidationMiddlewareOptions } from '../../middleware/validation-middleware';
-import { TypedNextFunction } from '../../extensions/rederly-express-request';
+import { asyncHandler } from '../../extensions/rederly-express-request';
+
+const router = express.Router();
 
 import { healthGetHealth } from '@rederly/backend-validation';
 router.get('/',
     validationMiddleware(healthGetHealth as ValidationMiddlewareOptions),
-    asyncHandler(async (_req: Request, _res: Response<healthGetHealth.IResponse>, next: TypedNextFunction<healthGetHealth.IResponse>) => {
+    asyncHandler<healthGetHealth.IParams, healthGetHealth.IResponse, healthGetHealth.IBody, healthGetHealth.IParams>(async (_req, _res, next) => {
         const resp = httpResponse.Ok('Health Ok', null);
         next(resp);
     }));

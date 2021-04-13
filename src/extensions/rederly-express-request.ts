@@ -58,7 +58,7 @@ export interface RederlyRequestHandler<P extends {} = {}, ResBody = unknown, Req
     (req: RederlyExpressRequest<P, ResBody, ReqBody, ReqQuery>, res: Response<ResBody>, next: TypedNextFunction<ResBody>): void;
 }
 
-export const asyncHandler = <P extends {} = {}, ResBody = unknown, ReqBody = unknown, ReqQuery extends {} = {}>(requestHandler: RederlyRequestHandler<P, ResBody, ReqBody, ReqQuery>): RequestHandler => async (req, res, next: TypedNextFunction<ResBody>): Promise<void> => {
+export const asyncHandler = <P extends {} = {}, ResBody = unknown, ReqBody = unknown, ReqQuery extends {} = {}>(requestHandler: RederlyRequestHandler<P, ResBody, ReqBody, ReqQuery>): RequestHandler => async (req, res, next): Promise<void> => {
     try {
         await requestHandler(req as any, res, next);
     } catch (e) {

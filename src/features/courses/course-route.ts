@@ -58,11 +58,10 @@ router.post('/:courseId/import-archive',
     validationMiddleware(coursesPostImportArchive),
     paidMiddleware('Importing content from an archive'),
     rederlyTempFileWrapper((tmpFilePath: string) => multer({dest: tmpFilePath}).single('file')),
-    asyncHandler(async (req: RederlyExpressRequest<courseStatisticsGetUnits.IParams, coursesPostImportArchive.IResponse, PostImportCourseArchiveRequest.body, PostImportCourseArchiveRequest.query>, _res: Response<coursesPostImportArchive.IResponse>, next: TypedNextFunction<coursesPostImportArchive.IResponse>) => {
+    asyncHandler(async (req: RederlyExpressRequest<coursesPostImportArchive.IParams, coursesPostImportArchive.IResponse, coursesPostImportArchive.IBody, coursesPostImportArchive.IQuery>, _res: Response<coursesPostImportArchive.IResponse>, next: TypedNextFunction<coursesPostImportArchive.IResponse>) => {
         if (_.isNil(req.file)) {
             throw new IllegalArgumentException('Missing file.');
         }
-        const params = req.params as PostImportCourseArchiveRequest.params;
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -75,7 +74,7 @@ router.post('/:courseId/import-archive',
         const result = await courseController.importCourseTarball({
             filePath: req.file.path,
             fileName: req.file.originalname,
-            courseId: params.courseId,
+            courseId: req.params.id,
             user: user,
             keepBucketsAsTopics: req.query.keepBucketsAsTopics ?? true
         });

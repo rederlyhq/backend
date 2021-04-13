@@ -1,12 +1,10 @@
 import * as _ from 'lodash';
-import { Response } from 'express';
 import * as express from 'express';
 import { authenticationMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
-import * as asyncHandler from 'express-async-handler';
 import curriculumController from './curriculum-controller';
 import logger from '../../utilities/logger';
-import { RederlyExpressRequest, TypedNextFunction, EmptyExpressParams, EmptyExpressQuery } from '../../extensions/rederly-express-request';
+import { asyncHandler } from '../../extensions/rederly-express-request';
 import Curriculum, { CurriculumInterface } from '../../database/models/curriculum';
 import { Constants } from '../../constants';
 import { useDatabaseTransaction } from '../../utilities/database-helper';
@@ -14,6 +12,7 @@ import { validationMiddleware, ValidationMiddlewareOptions } from '../../middlew
 import { DeepAddIndexSignature } from '../../extensions/typescript-utility-extensions';
 import { CurriculumUnitContentInterface } from '../../database/models/curriculum-unit-content';
 import { CurriculumTopicContentInterface } from '../../database/models/curriculum-topic-content';
+import { CurriculumWWTopicQuestionInterface } from '../../database/models/curriculum-ww-topic-question';
 
 const router = express.Router();
 
@@ -21,7 +20,7 @@ import { curriculumPostCurriculum } from '@rederly/backend-validation';
 router.post('/',
     authenticationMiddleware,
     validationMiddleware(curriculumPostCurriculum),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, curriculumPostCurriculum.IResponse, curriculumPostCurriculum.IBody, EmptyExpressQuery>, _res: Response<curriculumPostCurriculum.IResponse>, next: TypedNextFunction<curriculumPostCurriculum.IResponse>) => {
+    asyncHandler<curriculumPostCurriculum.IParams, curriculumPostCurriculum.IResponse, curriculumPostCurriculum.IBody, curriculumPostCurriculum.IQuery>(async (req, _res, next) => {
         try {
             if(_.isNil(req.session)) {
                 throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
@@ -58,7 +57,7 @@ import { curriculumPostUnit } from '@rederly/backend-validation';
 router.post('/unit',
     authenticationMiddleware,
     validationMiddleware(curriculumPostUnit),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, curriculumPostUnit.IResponse, curriculumPostUnit.IBody, EmptyExpressQuery>, _res: Response<curriculumPostUnit.IResponse>, next: TypedNextFunction<curriculumPostUnit.IResponse>) => {
+    asyncHandler<curriculumPostUnit.IParams, curriculumPostUnit.IResponse, curriculumPostUnit.IBody, curriculumPostUnit.IQuery>(async (req, _res, next) => {
         try {
             const newUnit = await curriculumController.createUnit({
                 ...req.body
@@ -75,7 +74,7 @@ import { curriculumPostTopic } from '@rederly/backend-validation';
 router.post('/topic',
     authenticationMiddleware,
     validationMiddleware(curriculumPostTopic),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, curriculumPostTopic.IResponse, curriculumPostTopic.IBody, EmptyExpressQuery>, _res: Response<curriculumPostTopic.IResponse>, next: TypedNextFunction<curriculumPostTopic.IResponse>) => {
+    asyncHandler<curriculumPostTopic.IParams, curriculumPostTopic.IResponse, curriculumPostTopic.IBody, curriculumPostTopic.IQuery>(async (req, _res, next) => {
         try {
             const newTopic = await curriculumController.createTopic({
                 ...req.body
@@ -92,12 +91,11 @@ import { curriculumPutUnitById } from '@rederly/backend-validation';
 router.put('/unit/:id',
     authenticationMiddleware,
     validationMiddleware(curriculumPutUnitById),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, curriculumPutUnitById.IResponse, curriculumPutUnitById.IBody, EmptyExpressQuery>, res: Response<curriculumPutUnitById.IResponse>, next: TypedNextFunction<curriculumPutUnitById.IResponse>) => {
+    asyncHandler<curriculumPutUnitById.IParams, curriculumPutUnitById.IResponse, curriculumPutUnitById.IBody, curriculumPutUnitById.IQuery>(async (req, _res, next) => {
         try {
-            const params = req.params as curriculumPutUnitById.IParams;
             const updates = await curriculumController.updateUnit({
                 where: {
-                    id: params.id
+                    id: req.params.id
                 },
                 updates: {
                     ...req.body
@@ -115,12 +113,11 @@ import { curriculumPutTopicById } from '@rederly/backend-validation';
 router.put('/topic/:id',
     authenticationMiddleware,
     validationMiddleware(curriculumPutTopicById),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, curriculumPutTopicById.IResponse, curriculumPutTopicById.IBody, EmptyExpressQuery>, _res: Response<curriculumPutTopicById.IResponse>, next: TypedNextFunction<curriculumPutTopicById.IResponse>) => {
+    asyncHandler<curriculumPutTopicById.IParams, curriculumPutTopicById.IResponse, curriculumPutTopicById.IBody, curriculumPutTopicById.IQuery>(async (req, _res, next) => {
         try {
-            const params = req.params as curriculumPutTopicById.IParams;
             const updates = await curriculumController.updateTopic({
                 where: {
-                    id: params.id
+                    id: req.params.id
                 },
                 updates: {
                     ...req.body
@@ -138,7 +135,7 @@ import { curriculumPostQuestion } from '@rederly/backend-validation';
 router.post('/question',
     authenticationMiddleware,
     validationMiddleware(curriculumPostQuestion),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, curriculumPostQuestion.IResponse, curriculumPutTopicById.IBody, EmptyExpressQuery>, res: Response<curriculumPostQuestion.IResponse>, next: TypedNextFunction<curriculumPostQuestion.IResponse>) => {
+    asyncHandler<curriculumPostQuestion.IParams, curriculumPostQuestion.IResponse, curriculumPostQuestion.IBody, curriculumPostQuestion.IQuery>(async (req, res, next) => {
         try {
             const newQuestion = await curriculumController.createQuestion({
                 ...req.body
@@ -155,7 +152,7 @@ import { curriculumGetCurriculum } from '@rederly/backend-validation';
 router.get('/',
     authenticationMiddleware,
     validationMiddleware(curriculumGetCurriculum as ValidationMiddlewareOptions),
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, curriculumGetCurriculum.IResponse, unknown, EmptyExpressQuery>, res: Response<curriculumGetCurriculum.IResponse>, next: TypedNextFunction<curriculumGetCurriculum.IResponse>) => {
+    asyncHandler<curriculumGetCurriculum.IParams, curriculumGetCurriculum.IResponse, curriculumGetCurriculum.IBody, curriculumGetCurriculum.IQuery>(async (req, res, next) => {
         try {
             if (_.isNil(req.session)) {
                 throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
@@ -171,17 +168,12 @@ router.get('/',
     }));
 
 import { curriculumGetCurriculumById } from '@rederly/backend-validation';
-import { CurriculumWWTopicQuestionInterface } from '../../database/models/curriculum-ww-topic-question';
 router.get('/:id',
     authenticationMiddleware,
     validationMiddleware(curriculumGetCurriculumById),
-    // This is due to typescript not accepting it as the first parameter
-    // We take it as any and then immediately cast it
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<EmptyExpressParams, curriculumGetCurriculumById.IResponse, unknown, EmptyExpressQuery>, res: Response<curriculumGetCurriculumById.IResponse>, next: TypedNextFunction<curriculumGetCurriculumById.IResponse>) => {
+    asyncHandler<curriculumGetCurriculumById.IParams, curriculumGetCurriculumById.IResponse, curriculumPostCurriculum.IBody, curriculumGetCurriculumById.IQuery>(async (req, res, next) => {
         try {
-            const params = req.params as curriculumGetCurriculumById.IParams;
-            const curriculum = await curriculumController.getCurriculumById(params.id);
+            const curriculum = await curriculumController.getCurriculumById(req.params.id);
             const resp = httpResponse.Ok('Fetched successfully', curriculum.get({plain: true}) as CurriculumInterface);
             next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {

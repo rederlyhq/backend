@@ -1,12 +1,10 @@
-import { NextFunction } from 'express';
-import expressAsyncHandler = require('express-async-handler');
-import _ = require('lodash');
+import * as _ from 'lodash';
 import ForbiddenError from '../../exceptions/forbidden-error';
 import RederlyError from '../../exceptions/rederly-error';
-import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
+import { asyncHandler } from '../../extensions/rederly-express-request';
 import courseController from '../../features/courses/course-controller';
 
-export const canUserViewCourse = expressAsyncHandler(async (req: RederlyExpressRequest, _res: unknown, next: NextFunction) => {
+export const canUserViewCourse = asyncHandler(async (req, _res, next) => {
     if(_.isNil(req.session) || _.isNil(req.rederlyUser)) {
         throw new ForbiddenError('Viewing a course requires authentication');
     }
@@ -21,5 +19,5 @@ export const canUserViewCourse = expressAsyncHandler(async (req: RederlyExpressR
         rederlyUserRole: req.rederlyUserRole
     });
     
-    next();
+    next(undefined);
 });

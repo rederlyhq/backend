@@ -4943,7 +4943,7 @@ You can contact your student at ${options.student.email} or by replying to this 
         return {
             unit: {
                 // avoid infinite chain
-                ...unit.get({plain: true}),
+                ...unit.get({plain: true}) as CourseUnitContentInterface,
                 topics: topics
             },
             missingFileErrors: {

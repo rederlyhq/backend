@@ -16,6 +16,10 @@ export interface CourseTopicContentInterface {
     partialExtend: boolean;
     createdAt: Date;
     updatedAt: Date;
+    errors: number;
+    lastExported: Date | null;
+    exportUrl: string | null;
+    description: unknown;
 
     workbookCount?: number;
     versionCount?: number;

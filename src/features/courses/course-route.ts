@@ -94,7 +94,7 @@ router.post('/:courseId/import-archive',
             keepBucketsAsTopics: req.query.keepBucketsAsTopics ?? true
         });
         const resp = httpResponse.Ok('Imported', result);
-        next(resp as DeepAddIndexSignature<typeof resp>);
+        next(resp);
     }));
 
 import { courseStatisticsGetUnits } from '@rederly/backend-validation';
@@ -1675,7 +1675,7 @@ import { coursesPostFeedback } from '@rederly/backend-validation';
 router.post('/feedback', 
     authenticationMiddleware,
     validationMiddleware(coursesPostFeedback),
-    asyncHandler<coursesPostFeedback.IParams, courseQuestionPostCatalog.IResponse, coursesPostFeedback.IBody, coursesPostFeedback.IQuery>(async (req, _res, next) => {
+    asyncHandler<coursesPostFeedback.IParams, coursesPostFeedback.IResponse, coursesPostFeedback.IBody, coursesPostFeedback.IQuery>(async (req, _res, next) => {
         const res = await courseController.addFeedback({
             content: req.body.content,
             workbookId: req.query.workbookId,

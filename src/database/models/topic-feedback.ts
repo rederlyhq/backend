@@ -2,19 +2,21 @@ import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize';
 import CourseTopicContent from './course-topic-content';
 
-interface TopicFeedbackProblemAttachmentInterface {
+interface TopicFeedbackInterface {
     id: number;
-    topicFeedbackId: number;
-    problemAttachmentId: number;
+    topicId: number;
+    userId: number;
+    feedback: unknown | null;
     createdAt: Date;
     updatedAt: Date;
     active: boolean;
 }
 
-export default class TopicFeedbackProblemAttachment extends Model implements TopicFeedbackProblemAttachmentInterface {
+export default class TopicFeedback extends Model implements TopicFeedbackInterface {
     public id!: number;
-    public topicFeedbackId!: number;
-    public problemAttachmentId!: number;
+    public topicId!: number;
+    public userId!: number;
+    public feedback!: unknown;
     public active!: boolean;
     
     // timestamps!
@@ -27,36 +29,52 @@ export default class TopicFeedbackProblemAttachment extends Model implements Top
     static createAssociations(): void {
         // This is a hack to add the associations later to avoid cyclic dependencies
         /* eslint-disable @typescript-eslint/no-use-before-define */
-        TopicFeedbackProblemAttachment.belongsTo(ProblemAttachment, {
+        TopicFeedback.belongsTo(ProblemAttachment, {
             foreignKey: 'problemAttachmentId',
             targetKey: 'id',
             as: 'problemAttachment'
         });
-        TopicFeedbackProblemAttachment.belongsTo(TopicFeedback, {
-            foreignKey: 'topicFeedbackId',
+        TopicFeedback.belongsTo(User, {
+            foreignKey: 'userId',
             targetKey: 'id',
-            as: 'topicFeedback'
+            as: 'student'
+        });
+        TopicFeedback.belongsTo(CourseTopicContent, {
+            foreignKey: 'topicId',
+            targetKey: 'id',
+            as: 'topic'
+        });
+        
+        TopicFeedback.belongsToMany(ProblemAttachment, {
+            through: TopicFeedbackProblemAttachment,
+            as: 'problemAttachments',
         });
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }
 
-TopicFeedbackProblemAttachment.init({
+TopicFeedback.init({
     id: {
         field: 'id',
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
     },
-    topicFeedbackId: {
-        field: 'topic_feedback_id',
+    topicId: {
+        field: 'topic_id',
         type: DataTypes.INTEGER,
         allowNull: false,
     },
-    problemAttachmentId: {
-        field: 'problem_attachment_id',
+    userId: {
+        field: 'user_id',
         type: DataTypes.INTEGER,
         allowNull: false,
+    },
+    feedback: {
+        field: 'feedback',
+        type: DataTypes.JSONB,
+        allowNull: true,
+        defaultValue: null,
     },
     active: {
         field: 'active',
@@ -75,11 +93,12 @@ TopicFeedbackProblemAttachment.init({
         allowNull: false,
     },
 }, {
-    tableName: 'topic_feedback_problem_attachment',
+    tableName: 'topic_feedback',
     sequelize: appSequelize, // this bit is important
 });
 
 import ProblemAttachment from './problem-attachment';
-import TopicFeedback from './topic-feedback';
+import TopicFeedbackProblemAttachment from './topic-feedback-problem-attachment';
+import User from './user';
 
 // -------------------------------------------

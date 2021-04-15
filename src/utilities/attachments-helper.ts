@@ -58,8 +58,7 @@ class AttachmentHelper {
 
     private requestNewPresignedURL = async (type?: AttachmentType): Promise<AxiosResponse<RequestPresignedURLResponse>> => {
         try {
-            console.log(`${this.presignedUrlBaseUrl}/${type ?? this.presignedUrlBasePath}`);
-            return await this.presignedAxios.get(type ?? this.presignedUrlBasePath);
+            return await this.presignedAxios.get(type ? `${configurations.attachments.uploadsPresignedUrlBasePath}/${type}` : this.presignedUrlBasePath);
         } catch (e) {
             // The stack from axios here is not very helpful
             throw new WrappedError('Could not get presigned url', e);

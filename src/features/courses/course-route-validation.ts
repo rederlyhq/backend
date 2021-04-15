@@ -699,7 +699,7 @@ export const postUploadTopicFeedbackValidation = {
             cloudFilename: Joi.string().required(),
             userLocalFilename: Joi.string().required(),    
         }). required(),
-        studentId: Joi.number().required(),
+        userId: Joi.number().required(),
     },
 };
 
@@ -713,5 +713,16 @@ export const postUploadTopicDescriptionValidation = {
             cloudFilename: Joi.string().required(),
             userLocalFilename: Joi.string().required(),    
         }). required(),
+    },
+};
+
+export const postTopicFeedbackValidation = {
+    params: {
+        topicId: Joi.number().required(),
+        userId: Joi.number().required(),
+    },
+    query: {},
+    body: {
+        content: Joi.object().optional().allow(null),
     },
 };

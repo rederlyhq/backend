@@ -376,3 +376,9 @@ export namespace PostUploadTopicDescriptionRequest {
     export type query = Joi.extractType<typeof validations.postUploadTopicDescriptionValidation.query>;
     export type body = Joi.extractType<typeof validations.postUploadTopicDescriptionValidation.body>;
 };
+
+export namespace PostTopicFeedbackRequest {
+    export type params = Joi.extractType<typeof validations.postTopicFeedbackValidation.params>;
+    export type query = Joi.extractType<typeof validations.postTopicFeedbackValidation.query>;
+    export type body = Joi.extractType<typeof validations.postTopicFeedbackValidation.body>;
+};

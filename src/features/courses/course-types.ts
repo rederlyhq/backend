@@ -4,7 +4,7 @@ import User, { UserInterface } from '../../database/models/user';
 import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface, CourseTopicQuestionErrors } from '../../database/models/course-ww-topic-question';
 import Course from '../../database/models/course';
 import { WhereOptions } from 'sequelize/types';
-import CourseUnitContent from '../../database/models/course-unit-content';
+import CourseUnitContent, { CourseUnitContentInterface } from '../../database/models/course-unit-content';
 import CourseTopicContent, { CourseTopicContentInterface } from '../../database/models/course-topic-content';
 import Role from '../permissions/roles';
 import { OutputFormat, RendererResponse } from '../../utilities/renderer-helper';
@@ -699,7 +699,7 @@ export interface ImportTarballOptions {
 }
 
 export interface ImportCourseTarballResult {
-    unit: Partial<CourseUnitContent>;
+    unit: Omit<CourseUnitContentInterface, 'topics'> & { topics: CourseTopicContentInterface[] };
     missingFileErrors: {
         missingPGFileErrors: Array<string>;
         missingAssetFileErrors: Array<string>;

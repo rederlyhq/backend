@@ -18,6 +18,9 @@
     "execMap": {
       "ts": "node --require ts-node/register"
     },
+    "events": {
+      "start": "node -e \"process.stdout.write('\u001b[3J\u001b[1J');console.clear();\""
+    },
     "signal": "SIGINT",
     "delay": "1000"
   }

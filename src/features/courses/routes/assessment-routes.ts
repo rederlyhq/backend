@@ -13,25 +13,7 @@ import IllegalArgumentException from '../../../exceptions/illegal-argument-excep
 import { StudentTopicAssessmentInfoInterface } from '../../../database/models/student-topic-assessment-info';
 import AttemptsExceededException from '../../../exceptions/attempts-exceeded-exception';
 import logger from '../../../utilities/logger';
-
-import { RederlyExpressRequest } from '../../../extensions/rederly-express-request';
-// TODO temporary, for development so the backend will still build
-export interface RederlyRequestHandler<P extends {} = {}, ResBody = unknown, ReqBody = unknown, ReqQuery extends {} = {}, MetaType = never> {
-    // tslint:disable-next-line callable-types (This is extended from and can't extend from a type alias in ts<2.2)
-    // temporary
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (req: RederlyExpressRequest<P, ResBody, ReqBody, ReqQuery, MetaType>, res: express.Response<ResBody>, next: (arg?: any) => void): void;
-}
-
-export const asyncHandler = <P extends {} = {}, ResBody = unknown, ReqBody = unknown, ReqQuery extends {} = {}, MetaType = never>(requestHandler: RederlyRequestHandler<P, ResBody, ReqBody, ReqQuery, MetaType>): express.RequestHandler => async (req, res, next): Promise<void> => {
-    try {
-        // temporary
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await requestHandler(req as any, res, next);
-    } catch (e) {
-        next(e);
-    }
-};
+import { asyncHandler } from '../../../extensions/rederly-express-request';
 
 export const router = express.Router();
 
@@ -79,7 +61,7 @@ router.get('/assessment/topic/end/:id',
         await courseController.endAssessmentEarly(version, true);
 
         const resp = httpResponse.Ok('Assessment version has been closed.', null);
-        next(resp as DeepAddIndexSignature<typeof resp>);
+        next(resp);
     }));
 
 import { coursesGetStart } from '@rederly/backend-validation';

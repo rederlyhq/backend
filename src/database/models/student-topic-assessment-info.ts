@@ -13,6 +13,9 @@ export interface StudentTopicAssessmentInfoInterface {
     isClean: boolean;
     isClosed: boolean;
     active: boolean;
+
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 // Generated every time a student starts a new version.

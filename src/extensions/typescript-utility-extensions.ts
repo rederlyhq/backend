@@ -15,8 +15,8 @@ export type PartialWithRequiredFields<T, K extends keyof T> = {
 // export type DeepRemoveIndex<T> = RemoveIndex<{
 //     [P in keyof T]: DeepRemoveIndex<T[P]>;
 // }>;
-type IgnorePrimitives<DataType, TargetDataType> =
-DataType extends (Date | string | number | boolean) ? DataType : TargetDataType;
+export type IgnorePrimitives<DataType, TargetDataType> =
+DataType extends (Date | string | number | boolean | null | undefined) ? DataType : TargetDataType;
  
 export type AddIndexSignature<DataType> = 
 IgnorePrimitives<DataType, DataType & {
@@ -30,7 +30,7 @@ IgnorePrimitives<DataType, DataType & {
 // };
 
 // These two could be combined but vscode seems to get confused and it makes debugging harder
-type RecursiveAddIndexSignature<DataType> = {
+export type RecursiveAddIndexSignature<DataType> = {
     [P in keyof DataType]: IgnorePrimitives<DataType[P], AddIndexSignature<RecursiveAddIndexSignature<DataType[P]>>>;
 };
 

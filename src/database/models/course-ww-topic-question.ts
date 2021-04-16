@@ -4,6 +4,10 @@ import { Model, DataTypes, BelongsToGetAssociationMixin, HasManyGetAssociationsM
 import appSequelize from '../app-sequelize';
 import * as _ from 'lodash';
 
+export interface CourseTopicQuestionErrors {
+    [path: string]: string[];
+}
+
 export interface CourseWWTopicQuestionInterface {
     id: number;
     courseTopicContentId: number;
@@ -18,10 +22,9 @@ export interface CourseWWTopicQuestionInterface {
     createdAt: Date;
     updatedAt: Date;
     courseQuestionAssessmentInfo?: CourseQuestionAssessmentInfo;
-}
-
-export interface CourseTopicQuestionErrors {
-    [path: string]: string[];
+    smaEnabled: boolean;
+    errors: CourseTopicQuestionErrors | null;
+    description: unknown;
 }
 
 export default class CourseWWTopicQuestion extends Model implements CourseWWTopicQuestionInterface {
@@ -35,6 +38,8 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
     public active!: boolean;
     public optional!: boolean;
     public curriculumQuestionId!: number;
+    public smaEnabled!: boolean;
+    public description!: unknown;
 
     // These are errors in the webworkQuestionPath, but might expand in the future to include more errors.
     public errors!: CourseTopicQuestionErrors | null;
@@ -184,6 +189,12 @@ CourseWWTopicQuestion.init({
     },
     errors: {
         field: 'course_topic_question_errors',
+        type: DataTypes.JSONB,
+        allowNull: true,
+        defaultValue: null,
+    },
+    description: {
+        field: 'course_topic_question_description',
         type: DataTypes.JSONB,
         allowNull: true,
         defaultValue: null,

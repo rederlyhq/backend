@@ -214,6 +214,9 @@ const configurations = {
     bulkPdfExport: {
         baseUrl: readStringValue('BULK_PDF_EXPORT_URL', 'http://localhost:3005'),
     },
+    libraryBrowser: {
+        baseUrl: readStringValue('LIBRARY_BROWSER_BASE_URL', 'http://localhost:3004')
+    },
     loadPromise: new Promise<void>((resolve, reject) => {
         // Avoid cyclic dependency by deferring the logging until after all the imports are done
         setTimeout(() => {

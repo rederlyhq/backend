@@ -13,6 +13,7 @@ export interface CourseUnitContentInterface {
     updatedAt: Date;
     
     topics?: CourseTopicContentInterface[];
+    course?: CourseInterface;
 }
 
 export default class CourseUnitContent extends Model implements CourseUnitContentInterface {
@@ -25,7 +26,7 @@ export default class CourseUnitContent extends Model implements CourseUnitConten
 
     public getCourse!: BelongsToGetAssociationMixin<Course>;
 
-    public readonly course!: Course;
+    public readonly course?: Course;
     public topics?: CourseTopicContent[];
 
     // timestamps!
@@ -119,6 +120,6 @@ CourseUnitContent.init({
     ]
 });
 
-import Course from './course';
+import Course, { CourseInterface } from './course';
 import CourseTopicContent, { CourseTopicContentInterface } from './course-topic-content';
 import CurriculumUnitContent from './curriculum-unit-content';

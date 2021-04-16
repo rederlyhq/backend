@@ -23,6 +23,8 @@ export interface CourseTopicContentInterface {
 
     workbookCount?: number;
     versionCount?: number;
+
+    unit?: CourseUnitContentInterface;
 }
 
 export default class CourseTopicContent extends Model implements CourseTopicContentInterface {
@@ -259,7 +261,7 @@ CourseTopicContent.init({
 
 import CurriculumTopicContent from './curriculum-topic-content';
 import TopicType from './topic-type';
-import CourseUnitContent from './course-unit-content';
+import CourseUnitContent, { CourseUnitContentInterface } from './course-unit-content';
 import CourseWWTopicQuestion from './course-ww-topic-question';
 import TopicAssessmentInfo from './topic-assessment-info';
 import StudentTopicOverride, { StudentTopicOverrideOveridesInterface } from './student-topic-override';

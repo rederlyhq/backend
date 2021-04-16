@@ -25,6 +25,7 @@ export interface CourseWWTopicQuestionInterface {
     smaEnabled: boolean;
     errors: CourseTopicQuestionErrors | null;
     description: unknown;
+    topic?: CourseTopicContent;
 }
 
 export default class CourseWWTopicQuestion extends Model implements CourseWWTopicQuestionInterface {

@@ -10,25 +10,8 @@ import { DeepAddIndexSignature } from '../../../extensions/typescript-utility-ex
 import { CourseUnitContentInterface } from '../../../database/models/course-unit-content';
 import { CourseWWTopicQuestionInterface } from '../../../database/models/course-ww-topic-question';
 import { CourseInterface } from '../../../database/models/course';
-
-import { RederlyExpressRequest } from '../../../extensions/rederly-express-request';
-// TODO temporary, for development so the backend will still build
-export interface RederlyRequestHandler<P extends {} = {}, ResBody = unknown, ReqBody = unknown, ReqQuery extends {} = {}, MetaType = never> {
-    // tslint:disable-next-line callable-types (This is extended from and can't extend from a type alias in ts<2.2)
-    // temporary
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (req: RederlyExpressRequest<P, ResBody, ReqBody, ReqQuery, MetaType>, res: express.Response<ResBody>, next: (arg?: any) => void): void;
-}
-
-export const asyncHandler = <P extends {} = {}, ResBody = unknown, ReqBody = unknown, ReqQuery extends {} = {}, MetaType = never>(requestHandler: RederlyRequestHandler<P, ResBody, ReqBody, ReqQuery, MetaType>): express.RequestHandler => async (req, res, next): Promise<void> => {
-    try {
-        // temporary
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await requestHandler(req as any, res, next);
-    } catch (e) {
-        next(e);
-    }
-};
+import { asyncHandler } from '../../../extensions/rederly-express-request';
+import { CourseQuestionAssessmentInfoInterface } from '../../../database/models/course-question-assessment-info';
 
 export const router = express.Router();
 
@@ -126,7 +109,15 @@ router.get('/browse-problems/search',
                 }
             });
             const resp = httpResponse.Ok('Fetched successfully', {
-                problems: problems.map(problem => problem.get({plain: true}) as CourseWWTopicQuestionInterface)
+                problems: problems.map(problem => problem.get({plain: true}) as Omit<CourseWWTopicQuestionInterface, 'courseQuestionAssessmentInfo' | 'topic'> & { 
+                    courseQuestionAssessmentInfo: CourseQuestionAssessmentInfoInterface;
+                    topic: Omit<CourseTopicContentInterface, 'unit'> & { 
+                        courseQuestionAssessmentInfo: CourseQuestionAssessmentInfoInterface;
+                        unit: Omit<CourseUnitContentInterface, 'course'> & {
+                            course: CourseInterface;
+                        };
+                    };
+                })
             });
             next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {

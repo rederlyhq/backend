@@ -496,16 +496,21 @@ class CourseController {
     };
     
     async createCourse(options: CreateCourseOptions): Promise<Course> {
-        if (options.options.useCurriculum) {
+        if (options.object.curriculumId || options.object.originatingCourseId) {
             return useDatabaseTransaction(async () => {
                 // I didn't want this in the transaction, however use strict throws errors if not
-                if (_.isNil(options.object.curriculumId)) {
-                    throw new NotFoundError('Cannot useCurriculum if curriculumId is not given');
-                }
-                const curriculum = await curriculumRepository.getCurriculumById(options.object.curriculumId);
+                // if (_.isNil(options.object.curriculumId)) {
+                //     throw new NotFoundError('Cannot useCurriculum if curriculumId is not given');
+                // }
+                // const curriculum = await curriculumRepository.getCurriculumById(options.object.curriculumId);
+                const curriculum = await this.getCourseById(112);
+                delete options.object.curriculumId;
+
+                console.log('Got curriculum ', curriculum);
                 const createdCourse = await courseRepository.createCourse(options.object);
                 logger.debug('Created a course from a curriculum.');
-                await curriculum.units?.asyncForEach(async (curriculumUnit: CurriculumUnitContent) => {
+                await curriculum.units?.asyncForEach(async (curriculumUnit: CurriculumUnitContent | CourseUnitContent) => {
+                    logger.debug('Cloning units.');
                     if (curriculumUnit.active === false) {
                         logger.debug(`Inactive curriculum unit was fetched in query for create course ID#${curriculumUnit.id}`);
                         return;
@@ -515,11 +520,11 @@ class CourseController {
                         // active: curriculumUnit.active,
                         contentOrder: curriculumUnit.contentOrder,
                         courseId: createdCourse.id,
-                        curriculumUnitId: curriculumUnit.id,
+                        curriculumUnitId: (curriculumUnit instanceof CourseUnitContent) ? undefined : curriculumUnit.id,
                         name: curriculumUnit.name,
                     });
 
-                    await curriculumUnit.topics?.asyncForEach(async (curriculumTopic: CurriculumTopicContent) => {
+                    await curriculumUnit.topics?.asyncForEach(async (curriculumTopic: CurriculumTopicContent | CourseTopicContent) => {
                         if (curriculumTopic.active === false) {
                             logger.debug(`Inactive curriculum topic was fetched in query for create course ID#${curriculumTopic.id}`);
                             return;
@@ -527,7 +532,7 @@ class CourseController {
 
                         const createdCourseTopic: CourseTopicContent = await courseRepository.createCourseTopic({
                             // active: curriculumTopic.active,
-                            curriculumTopicContentId: curriculumTopic.id,
+                            curriculumTopicContentId: (curriculumTopic instanceof CourseTopicContent) ? undefined : curriculumTopic.id,
                             courseUnitContentId: createdCourseUnit.id,
                             topicTypeId: curriculumTopic.topicTypeId,
                             name: curriculumTopic.name,
@@ -539,17 +544,19 @@ class CourseController {
                             partialExtend: false
                         });
 
-                        const topicAssessmentInfo = await curriculumTopic.getCurriculumTopicAssessmentInfo();
+                        const topicAssessmentInfo = (curriculumTopic instanceof CourseTopicContent) ? 
+                            await curriculumTopic.getTopicAssessmentInfo() :
+                            await curriculumTopic.getCurriculumTopicAssessmentInfo();
 
                         if (!_.isNil(topicAssessmentInfo)) {
                             await TopicAssessmentInfo.create({
                                 ..._.omit(topicAssessmentInfo.get({plain: true}), ['id']),
                                 courseTopicContentId: createdCourseTopic.id,
-                                curriculumTopicAssessmentInfoId: topicAssessmentInfo.id,
+                                curriculumTopicAssessmentInfoId: (topicAssessmentInfo instanceof TopicAssessmentInfo) ? undefined : topicAssessmentInfo.id,
                             });
                         }
 
-                        await curriculumTopic.questions?.asyncForEach(async (curriculumQuestion: CurriculumWWTopicQuestion) => {
+                        await curriculumTopic.questions?.asyncForEach(async (curriculumQuestion: CurriculumWWTopicQuestion | CourseWWTopicQuestion) => {
                             if (curriculumQuestion.active === false) {
                                 logger.debug(`Inactive curriculum question was fetched in query for create course ID#${curriculumQuestion.id}`);
                                 return;
@@ -564,21 +571,22 @@ class CourseController {
                                 maxAttempts: curriculumQuestion.maxAttempts,
                                 hidden: curriculumQuestion.hidden,
                                 optional: curriculumQuestion.optional,
-                                curriculumQuestionId: curriculumQuestion.id
+                                curriculumQuestionId: (curriculumQuestion instanceof CourseWWTopicQuestion) ? undefined : curriculumQuestion.id
                             });
 
-                            const questionAssessmentInfo = await curriculumQuestion.getCurriculumQuestionAssessmentInfo();
+                            const questionAssessmentInfo = (curriculumQuestion instanceof CourseWWTopicQuestion) ? 
+                                await curriculumQuestion.getCourseQuestionAssessmentInfo() :
+                                await curriculumQuestion.getCurriculumQuestionAssessmentInfo();
 
                             if (!_.isNil(questionAssessmentInfo)) {
                                 const createFromCurriculum = {
                                     ..._.omit(questionAssessmentInfo.get({plain: true}), ['id']),
                                     courseWWTopicQuestionId: createdCourseQuestion.id,
-                                    curriculumQuestionAssessmentInfoId: questionAssessmentInfo.id,
+                                    curriculumQuestionAssessmentInfoId: (questionAssessmentInfo instanceof CourseQuestionAssessmentInfo) ? undefined : questionAssessmentInfo.id,
                                 };
 
                                 await CourseQuestionAssessmentInfo.create(createFromCurriculum);
                             }
-
                         });
                     });
                 });

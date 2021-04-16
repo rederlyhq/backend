@@ -247,9 +247,6 @@ export interface UpdateQuestionsOptions {
 
 export interface CreateCourseOptions {
     object: Partial<Course>;
-    options: {
-        useCurriculum: boolean;
-    };
 }
 
 export interface UpdateCourseOptions {

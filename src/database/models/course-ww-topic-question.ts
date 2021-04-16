@@ -18,6 +18,7 @@ export interface CourseWWTopicQuestionInterface {
     createdAt: Date;
     updatedAt: Date;
     courseQuestionAssessmentInfo?: CourseQuestionAssessmentInfo;
+    originatingQuestionId: number;
 }
 
 export interface CourseTopicQuestionErrors {
@@ -35,6 +36,7 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
     public active!: boolean;
     public optional!: boolean;
     public curriculumQuestionId!: number;
+    public originatingQuestionId!: number;
 
     // These are errors in the webworkQuestionPath, but might expand in the future to include more errors.
     public errors!: CourseTopicQuestionErrors | null;
@@ -188,6 +190,12 @@ CourseWWTopicQuestion.init({
         allowNull: true,
         defaultValue: null,
     },
+    originatingQuestionId: {
+        field: 'originating_question_id',
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: null,
+    }
 }, {
     tableName: 'course_topic_question',
     sequelize: appSequelize, // this bit is important

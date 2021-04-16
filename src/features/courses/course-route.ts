@@ -171,32 +171,22 @@ router.post('/',
     paidMiddleware('Creating a new course'),
     asyncHandler(async (req: RederlyExpressRequest<CreateCourseRequest.params, unknown, CreateCourseRequest.body, unknown>, _res: Response, next: NextFunction) => {
         const query = req.query as CreateCourseRequest.query;
-        try {
-            if (_.isNil(req.session)) {
-                throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
-            }
-
-            if (_.isNil(query.useCurriculum)) {
-                throw new Error('useCurriculum has a default value and therefore is not possible to be nil');
-            }
-            const session = req.session;
-            const user = await session.getUser();
-            const university = await user.getUniversity();
-
-            const newCourse = await courseController.createCourse({
-                object: {
-                    instructorId: user.id,
-                    universityId: university.id,
-                    ...req.body
-                },
-                options: {
-                    useCurriculum: query.useCurriculum
-                }
-            });
-            next(httpResponse.Created('Course created successfully', newCourse));
-        } catch (e) {
-            next(e);
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
+
+        const session = req.session;
+        const user = await session.getUser();
+        const university = await user.getUniversity();
+
+        const newCourse = await courseController.createCourse({
+            object: {
+                instructorId: user.id,
+                universityId: university.id,
+                ...req.body
+            }
+        });
+        next(httpResponse.Created('Course created successfully', newCourse));
     }));
 
 router.post('/unit',

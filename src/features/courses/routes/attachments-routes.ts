@@ -8,25 +8,7 @@ import attachmentHelper from '../../../utilities/attachments-helper';
 import { ProblemAttachmentInterface } from '../../../database/models/problem-attachment';
 import configurations from '../../../configurations';
 import { stripSequelizeFromUpdateResult } from '../../../generic-interfaces/sequelize-generic-interfaces';
-
-import { RederlyExpressRequest } from '../../../extensions/rederly-express-request';
-// TODO temporary, for development so the backend will still build
-export interface RederlyRequestHandler<P extends {} = {}, ResBody = unknown, ReqBody = unknown, ReqQuery extends {} = {}, MetaType = never> {
-    // tslint:disable-next-line callable-types (This is extended from and can't extend from a type alias in ts<2.2)
-    // temporary
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (req: RederlyExpressRequest<P, ResBody, ReqBody, ReqQuery, MetaType>, res: express.Response<ResBody>, next: (arg?: any) => void): void;
-}
-
-export const asyncHandler = <P extends {} = {}, ResBody = unknown, ReqBody = unknown, ReqQuery extends {} = {}, MetaType = never>(requestHandler: RederlyRequestHandler<P, ResBody, ReqBody, ReqQuery, MetaType>): express.RequestHandler => async (req, res, next): Promise<void> => {
-    try {
-        // temporary
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await requestHandler(req as any, res, next);
-    } catch (e) {
-        next(e);
-    }
-};
+import { asyncHandler } from '../../../extensions/rederly-express-request';
 
 export const router = express.Router();
 import { coursesPostUploadUrl } from '@rederly/backend-validation';

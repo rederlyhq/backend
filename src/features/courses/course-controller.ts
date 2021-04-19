@@ -71,6 +71,12 @@ const Sequelize = require('sequelize');
 
 const ABSOLUTE_RENDERER_PATH_REGEX = /^(:?private\/|Contrib\/|webwork-open-problem-library\/|Library\/)/;
 
+export enum ListCoursesFilters {
+    ALL = 'ALL',
+    ACTIVE = 'ACTIVE',
+    PAST = 'PAST'
+}
+
 class CourseController {
     getCourseById(id: number, userId?: number): Promise<Course> {
         return Course.findOne({
@@ -333,7 +339,10 @@ class CourseController {
     }
 
     getCourses(options: CourseListOptions): Bluebird<Course[]> {
-        const where: sequelize.WhereOptions = {};
+        let where: sequelize.WhereOptions = {
+            active: true,
+        };
+
         const include: sequelize.IncludeOptions[] = [];
         if (options.filter.instructorId !== null && options.filter.instructorId !== undefined) {
             where.instructorId = options.filter.instructorId;
@@ -352,13 +361,40 @@ class CourseController {
             });
         }
 
-        if (!_.has(where, 'active')) {
-            where.active = true;
+        if (!_.isNil(options.filter.filterOptions)) {
+            switch (options.filter.filterOptions) {
+                case ListCoursesFilters.ACTIVE:
+                    where = {
+                        ...where,
+                        start: {
+                            [sequelize.Op.lte]: sequelize.literal('NOW()'),
+                        },
+                        end: {
+                            [sequelize.Op.gte]: sequelize.literal('NOW()'),
+                        }
+                    };
+                    break;
+                case ListCoursesFilters.PAST:
+                    where = {
+                        ...where,
+                        end: {
+                            [sequelize.Op.lt]: sequelize.literal('NOW()'),
+                        }
+                    };
+                    break;
+                default:
+                    // No work to be done for all.
+                    break;
+            }
         }
 
         return Course.findAll({
             where,
             include,
+            order: [
+                ['end', 'DESC'],
+                ['start', 'DESC'],
+            ]
         });
     }
 
@@ -497,20 +533,19 @@ class CourseController {
     
     async createCourse(options: CreateCourseOptions): Promise<Course> {
         if (options.object.curriculumId || options.object.originatingCourseId) {
-            return useDatabaseTransaction(async () => {
-                // I didn't want this in the transaction, however use strict throws errors if not
-                // if (_.isNil(options.object.curriculumId)) {
-                //     throw new NotFoundError('Cannot useCurriculum if curriculumId is not given');
-                // }
-                // const curriculum = await curriculumRepository.getCurriculumById(options.object.curriculumId);
-                const curriculum = await this.getCourseById(112);
-                delete options.object.curriculumId;
+            if (options.object.curriculumId && options.object.originatingCourseId) {
+                logger.warn(`Both a curriculum and an originating course were specified. ${options.object.curriculumId}, ${options.object.originatingCourseId}`);
+            }
 
-                console.log('Got curriculum ', curriculum);
+            return useDatabaseTransaction(async () => {
+                
+                // const curriculum = await curriculumRepository.getCurriculumById(options.object.curriculumId);
+                const curriculum = options.object.originatingCourseId ? 
+                    await this.getCourseById(options.object.originatingCourseId) : 
+                    await curriculumRepository.getCurriculumById(options.object.curriculumId ?? -1);
+
                 const createdCourse = await courseRepository.createCourse(options.object);
-                logger.debug('Created a course from a curriculum.');
                 await curriculum.units?.asyncForEach(async (curriculumUnit: CurriculumUnitContent | CourseUnitContent) => {
-                    logger.debug('Cloning units.');
                     if (curriculumUnit.active === false) {
                         logger.debug(`Inactive curriculum unit was fetched in query for create course ID#${curriculumUnit.id}`);
                         return;
@@ -520,7 +555,8 @@ class CourseController {
                         // active: curriculumUnit.active,
                         contentOrder: curriculumUnit.contentOrder,
                         courseId: createdCourse.id,
-                        curriculumUnitId: (curriculumUnit instanceof CourseUnitContent) ? undefined : curriculumUnit.id,
+                        curriculumUnitId: (curriculumUnit instanceof CourseUnitContent) ? curriculumUnit.curriculumUnitId : curriculumUnit.id,
+                        originatingUnitId: (curriculumUnit instanceof CourseUnitContent) ? curriculumUnit.id : undefined,
                         name: curriculumUnit.name,
                     });
 
@@ -532,7 +568,8 @@ class CourseController {
 
                         const createdCourseTopic: CourseTopicContent = await courseRepository.createCourseTopic({
                             // active: curriculumTopic.active,
-                            curriculumTopicContentId: (curriculumTopic instanceof CourseTopicContent) ? undefined : curriculumTopic.id,
+                            curriculumTopicContentId: (curriculumTopic instanceof CourseTopicContent) ? curriculumTopic.curriculumTopicContentId : curriculumTopic.id,
+                            originatingTopicId: (curriculumTopic instanceof CourseTopicContent) ? curriculumTopic.id : undefined,
                             courseUnitContentId: createdCourseUnit.id,
                             topicTypeId: curriculumTopic.topicTypeId,
                             name: curriculumTopic.name,
@@ -552,7 +589,8 @@ class CourseController {
                             await TopicAssessmentInfo.create({
                                 ..._.omit(topicAssessmentInfo.get({plain: true}), ['id']),
                                 courseTopicContentId: createdCourseTopic.id,
-                                curriculumTopicAssessmentInfoId: (topicAssessmentInfo instanceof TopicAssessmentInfo) ? undefined : topicAssessmentInfo.id,
+                                curriculumTopicAssessmentInfoId: (topicAssessmentInfo instanceof TopicAssessmentInfo) ? topicAssessmentInfo.curriculumTopicAssessmentInfoId : topicAssessmentInfo.id,
+                                originatingTopicAssessmentId: (topicAssessmentInfo instanceof TopicAssessmentInfo) ? topicAssessmentInfo.id : undefined,
                             });
                         }
 
@@ -571,7 +609,8 @@ class CourseController {
                                 maxAttempts: curriculumQuestion.maxAttempts,
                                 hidden: curriculumQuestion.hidden,
                                 optional: curriculumQuestion.optional,
-                                curriculumQuestionId: (curriculumQuestion instanceof CourseWWTopicQuestion) ? undefined : curriculumQuestion.id
+                                curriculumQuestionId: (curriculumQuestion instanceof CourseWWTopicQuestion) ? curriculumQuestion.curriculumQuestionId : curriculumQuestion.id,
+                                originatingQuestionId: (curriculumQuestion instanceof CourseWWTopicQuestion) ? curriculumQuestion.id : undefined,
                             });
 
                             const questionAssessmentInfo = (curriculumQuestion instanceof CourseWWTopicQuestion) ? 
@@ -582,7 +621,8 @@ class CourseController {
                                 const createFromCurriculum = {
                                     ..._.omit(questionAssessmentInfo.get({plain: true}), ['id']),
                                     courseWWTopicQuestionId: createdCourseQuestion.id,
-                                    curriculumQuestionAssessmentInfoId: (questionAssessmentInfo instanceof CourseQuestionAssessmentInfo) ? undefined : questionAssessmentInfo.id,
+                                    curriculumQuestionAssessmentInfoId: (questionAssessmentInfo instanceof CourseQuestionAssessmentInfo) ? questionAssessmentInfo.curriculumQuestionAssessmentInfoId : questionAssessmentInfo.id,
+                                    originatingQuestionAssessmentInfoId: (questionAssessmentInfo instanceof CourseQuestionAssessmentInfo) ? questionAssessmentInfo.id : undefined,
                                 };
 
                                 await CourseQuestionAssessmentInfo.create(createFromCurriculum);

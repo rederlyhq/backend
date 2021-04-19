@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import courseController from './course-controller';
+import courseController, { ListCoursesFilters } from './course-controller';
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator';
 import { authenticationMiddleware, paidMiddleware } from '../../middleware/auth';
@@ -1191,6 +1191,7 @@ router.get('/',
             filter: {
                 instructorId: req.query.instructorId,
                 enrolledUserId: req.query.enrolledUserId,
+                filterOptions: req.query.filterOptions as ListCoursesFilters,
             }
         });
         next(httpResponse.Ok('Fetched successfully', courses));

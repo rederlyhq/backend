@@ -1,4 +1,6 @@
 import * as Joi from '@hapi/joi';
+import { getEnumValues } from '../../utilities/utilities';
+import { ListCoursesFilters } from './course-controller';
 
 export const createCourseValidation = {
     params: {},
@@ -417,6 +419,7 @@ export const listCoursesValidation = {
     query: {
         instructorId: Joi.number().optional(),
         enrolledUserId: Joi.number().optional(),
+        filterOptions: Joi.string().valid(...getEnumValues(ListCoursesFilters)).optional().default(ListCoursesFilters.ALL),
     },
     body: {},
 };

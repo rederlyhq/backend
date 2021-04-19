@@ -229,35 +229,7 @@ class CourseRepository {
     /* ************************* ************************* */
     async getCourseTopic(options: GetCourseTopicRepositoryOptions): Promise<CourseTopicContent> {
         const include: sequelize.IncludeOptions[] = [];
-        const assessmentInclude: sequelize.IncludeOptions[] = [];
 
-        if (options.checkUsed) {
-            include.push({
-                model: CourseWWTopicQuestion,
-                as: 'questions',
-                required: false,
-                where: {
-                    active: true,
-                },
-                include: [{
-                    model: StudentWorkbook,
-                    as: 'workbooks',
-                    required: false,
-                    where: {
-                        active: true,
-                    },
-                    limit: 1
-                }]
-            });
-            assessmentInclude.push({
-                model: StudentTopicAssessmentInfo,
-                as: 'studentTopicAssessmentInfo',
-                required: false,
-                where: {
-                    active: true,
-                },
-            });
-        }
         include.push({
             model: TopicAssessmentInfo,
             as: 'topicAssessmentInfo',
@@ -265,7 +237,6 @@ class CourseRepository {
                 active: true
             },
             required: false,
-            include: assessmentInclude,
         });
 
         const result = await CourseTopicContent.findOne({

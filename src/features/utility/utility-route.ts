@@ -14,7 +14,7 @@ import { ClientLogRequest } from './utility-route-request-types';
 import { Logger } from 'winston';
 import { authenticationMiddleware } from '../../middleware/auth';
 import { statusHandler } from '../../middleware/status-handler';
-
+import { getMemoryStatistics } from '../../daemons';
 const packageJSONPath = '../../../package.json';
 
 /**
@@ -61,12 +61,28 @@ statusHandler({
             name: 'renderer',
             url: `${configurations.renderer.url}/version.txt`,
             crawl: true
+        }, {
+            name: 'bulk-export-pdf',
+            url: `${configurations.bulkPdfExport.baseUrl}/export/utility/health`,
+            crawl: true    
+        }, {
+            name: 'scheduler',
+            url: `${configurations.scheduler.basePath}/health`,
+            crawl: true
+        }, {
+            name: 'library-browser',
+            url: `${configurations.libraryBrowser.baseUrl}/library-browser/version`,
+            crawl: true
         }
     ],
-    statusAccessibleOptions: [{
-        name: 'bulk-export-pdf',
-        url: `${configurations.bulkPdfExport.baseUrl}/export/utility/status`,
-        crawl: true
+    // statusAccessibleOptions: [{
+    //     name: 'bulk-export-pdf',
+    //     url: `${configurations.bulkPdfExport.baseUrl}/export/utility/status`,
+    //     crawl: true
+    // }],
+    metaFetches: [{
+        call: getMemoryStatistics,
+        key: 'memory'
     }]
 }));
 

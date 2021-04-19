@@ -63,6 +63,7 @@ import { getAverageGroupsBeforeDate, QUESTION_SQL_NAME, STUDENTTOPICOVERRIDE_SQL
 import qs = require('qs');
 import ForbiddenError from '../../exceptions/forbidden-error';
 import appSequelize from '../../database/app-sequelize';
+import { TopicTypeLookup } from '../../database/models/topic-type';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -110,7 +111,7 @@ class CourseController {
                                 active: true,
                                 // This restriction works and is used in the grades call.
                                 // It can be added later so the frontend doesn't have to double-check the Topic Type.
-                                // ['$"units->topics"."topic_type_id"$']: 2,
+                                ['$"units->topics"."topic_type_id"$']: 2,
                             }
                         }
                     ],
@@ -207,6 +208,7 @@ class CourseController {
             where: {
                 active: true,
                 // courseTopicContentId: id,
+                [`$${CourseTopicContent.name}.${CourseTopicContent.rawAttributes.topicTypeId.field}$`]: 2,
             },
             include: subInclude
         });
@@ -710,21 +712,56 @@ class CourseController {
         });
     }
 
+    async checkIfTopicIsUsed(topic: CourseTopicContent): Promise<boolean> {
+        if (topic.topicTypeId === TopicTypeLookup.EXAM) {
+            const studentTopicAssessmentInfo = await topic.topicAssessmentInfo?.getStudentTopicAssessmentInfo({
+                attributes: [],
+                limit: 1,
+                where: {
+                    active: true
+                }
+            });
+
+            if ((studentTopicAssessmentInfo?.length ?? 0) > 0) {
+                return true;
+            }
+        }
+
+        // Could wrap this in a generic homework check, but I like keeping it as a catchall
+        const singleTopicWorkbook = await StudentWorkbook.findOne({
+            attributes: [],
+            include: [{
+                model: CourseWWTopicQuestion,
+                as: 'courseWWTopicQuestion',
+                limit: 1,
+                separate: false,
+                attributes: [],
+                where: {
+                    active: true,
+                    courseTopicContentId: topic.id,
+                },
+                required: true
+            }],
+            limit: 1,
+            where: {
+                active: true,
+            }
+        });
+
+
+        if (_.isSomething(singleTopicWorkbook)) {
+                return true;
+        }
+        return false;
+    }
+
     async updateTopic(options: UpdateTopicOptions): Promise<CourseTopicContent[]> {
         const existingTopic = await courseRepository.getCourseTopic({
             id: options.where.id,
-            checkUsed: true,
         });
 
-        const workbookCount = existingTopic.calculateWorkbookCount();
-        const versionCount = existingTopic.calculateVersionCount();
         const topicIsChangingTypes = !_.isNil(options.updates.topicTypeId) && (existingTopic.topicTypeId !== options.updates.topicTypeId);
-
-        if ((
-                (workbookCount && workbookCount > 0) || 
-                (versionCount && versionCount > 0)
-            ) && topicIsChangingTypes
-        ) {
+        if (topicIsChangingTypes && await this.checkIfTopicIsUsed(existingTopic)) {
             throw new IllegalArgumentException('Topic type cannot be changed. Students have begun working on this topic.');
         }
 
@@ -3213,6 +3250,10 @@ class CourseController {
                 as: 'topicAssessmentInfo',
                 attributes: [],
                 required: false,
+                where: {
+                    active: true,
+                    [`$topic.${CourseTopicContent.rawAttributes.topicTypeId.field}$`]: 2,
+                }
             });
         }
 
@@ -4237,12 +4278,14 @@ class CourseController {
                 where: {
                     id: topicId,
                     active: true,
+                    // Should this be limited by topicTypeId?
                 },
                 include: [{
                     model: TopicAssessmentInfo,
                     as: 'topicAssessmentInfo',
                     where: {
                         active: true,
+                        // Should this be limited by topicTypeId?
                     },
                     include: [{
                         model: StudentTopicAssessmentInfo,

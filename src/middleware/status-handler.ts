@@ -12,6 +12,7 @@ interface StatusResponse {
     version: string | null;
     dependencies: DependencyObject[];
     percentUp: number;
+    meta: {[key: string]: unknown | undefined};
 }
 
 // This is the promise response before it gets tot he end where it adds extra info
@@ -38,12 +39,17 @@ interface CheckAccessibleOptions {
     crawl: boolean;
 }
 
+interface MetaOptions {
+    call: () => unknown | Promise<unknown>;
+    key: string;
+}
 
 const checkAccessible = ({ name, url, crawl }: CheckAccessibleOptions): Promise<DependencyObject> => {
     return axios.get(url, {
         params: {
             crawl: crawl
-        }
+        },
+        timeout: 10000
     })
         // We don't know what this response might be, we only try to crawl in but null coalesce out
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -88,6 +94,7 @@ interface StatusHandlerOptions {
     statusAccessibleOptions?: CheckAccessibleOptions[];
     healthAccessibleOptions?: CheckAccessibleOptions[];
     customChecks?: CustomCheckOptions[];
+    metaFetches?: MetaOptions[];
 }
 
 let alreadyCrawling = false;
@@ -95,7 +102,8 @@ export const statusHandler = ({
     versionPromise = Promise.resolve(null),
     statusAccessibleOptions = [],
     healthAccessibleOptions = [],
-    customChecks = []
+    customChecks = [],
+    metaFetches = []
 }: StatusHandlerOptions): Handler => async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     const crawling = req.query.crawl === 'true';
     try {
@@ -103,7 +111,8 @@ export const statusHandler = ({
         const responseData: StatusResponse = {
             version: version,
             dependencies: [],
-            percentUp: 0
+            percentUp: 0,
+            meta: {}
         };
 
         let statusPromises: Promise<DependencyObject>[] = [];
@@ -151,6 +160,12 @@ export const statusHandler = ({
         responseData.percentUp = (upCount + 1) / (allResults.length + 1);
 
         allResults.forEach(result => responseData.dependencies.push(result));
+
+        const metaPromises = metaFetches.map(async metaFetch => {
+            const meta = await metaFetch.call();
+            responseData.meta[metaFetch.key] = meta;
+        });
+        await Promise.all(metaPromises);
 
         next(httpResponse.Ok('Fetched successfully', responseData));
     } catch (e) {

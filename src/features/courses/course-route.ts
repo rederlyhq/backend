@@ -1443,6 +1443,16 @@ router.post('/enroll/:code',
         }
 
         const session = req.session;
+
+        // TODO remove once we have elevated permissions
+        if (_.isNil(req.rederlyUser)) {
+            throw new Error('Enroll by code: Rederly user is missing');
+        }
+        
+        if (req.rederlyUser.roleId === Role.PROFESSOR) {
+            throw new IllegalArgumentException('Professors can not enroll by code');
+        }
+
         try {
             const enrollment = await courseController.enrollByCode({
                 code: req.params.code,

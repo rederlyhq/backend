@@ -1,6 +1,5 @@
 import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize';
-import CourseTopicContent from './course-topic-content';
 
 interface TopicFeedbackProblemAttachmentInterface {
     id: number;

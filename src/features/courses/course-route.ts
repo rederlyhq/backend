@@ -1664,6 +1664,7 @@ router.post('/workbook/:workbookId/feedback',
 router.post('/upload/workbook/:workbookId/feedback',
     authenticationMiddleware,
     validate(postUploadWorkbookFeedbackValidation),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, PostUploadWorkbookFeedbackRequest.body, PostUploadWorkbookFeedbackRequest.query>, _res: Response, next: NextFunction) => {
         // TODO permission to check if user has access to the provided grade or grade instance
         const result = await courseRepository.createWorkbookFeedbackAttachment(req.body.attachment, (req.params as PostUploadWorkbookFeedbackRequest.params).workbookId);
@@ -1673,9 +1674,9 @@ router.post('/upload/workbook/:workbookId/feedback',
 router.post('/upload/topic/:topicId/feedback',
     authenticationMiddleware,
     validate(postUploadTopicFeedbackValidation),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, PostUploadTopicFeedbackRequest.body, PostUploadTopicFeedbackRequest.query>, _res: Response, next: NextFunction) => {
         // TODO permission to check if user has access to the provided grade or grade instance
-        console.log(req.params);
         const result = await courseRepository.createTopicFeedbackAttachment(req.body.attachment, (req.params as PostUploadTopicFeedbackRequest.params).topicId, req.body.userId);
         next(httpResponse.Ok('Attachment record created', result));
     }));
@@ -1683,6 +1684,7 @@ router.post('/upload/topic/:topicId/feedback',
 router.post('/upload/topic/:topicId/description',
     authenticationMiddleware,
     validate(postUploadTopicDescriptionValidation),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, PostUploadTopicDescriptionRequest.body, PostUploadTopicDescriptionRequest.query>, _res: Response, next: NextFunction) => {
         // TODO permission to check if user has access to the provided grade or grade instance
         const result = await courseRepository.createTopicDescriptionAttachment(req.body.attachment, (req.params as PostUploadTopicDescriptionRequest.params).topicId);
@@ -1692,6 +1694,7 @@ router.post('/upload/topic/:topicId/description',
 router.get('/feedback/topic/:topicId/user/:userId',
     authenticationMiddleware,
     // validate(postTopicFeedbackValidation),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, PostUploadTopicDescriptionRequest.body, PostUploadTopicDescriptionRequest.query>, _res: Response, next: NextFunction) => {
         const result = await courseRepository.getTopicFeedback({
             topicId: req.params.topicId,
@@ -1704,6 +1707,7 @@ router.get('/feedback/topic/:topicId/user/:userId',
 router.post('/feedback/topic/:topicId/user/:userId',
     authenticationMiddleware,
     validate(postTopicFeedbackValidation),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, PostTopicFeedbackRequest.body, PostTopicFeedbackRequest.query>, _res: Response, next: NextFunction) => {
         const result = await courseRepository.createTopicFeedback({
             topicId: req.params.topicId,

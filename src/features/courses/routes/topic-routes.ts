@@ -14,25 +14,8 @@ import ExportPDFHelper from '../../../utilities/export-pdf-helper';
 import { StudentTopicOverrideInterface } from '../../../database/models/student-topic-override';
 import { TopicAssessmentInfoInterface } from '../../../database/models/topic-assessment-info';
 import Role from '../../permissions/roles';
-
-import { RederlyExpressRequest } from '../../../extensions/rederly-express-request';
-// TODO temporary, for development so the backend will still build
-export interface RederlyRequestHandler<P extends {} = {}, ResBody = unknown, ReqBody = unknown, ReqQuery extends {} = {}, MetaType = never> {
-    // tslint:disable-next-line callable-types (This is extended from and can't extend from a type alias in ts<2.2)
-    // temporary
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (req: RederlyExpressRequest<P, ResBody, ReqBody, ReqQuery, MetaType>, res: express.Response<ResBody>, next: (arg?: any) => void): void;
-}
-
-export const asyncHandler = <P extends {} = {}, ResBody = unknown, ReqBody = unknown, ReqQuery extends {} = {}, MetaType = never>(requestHandler: RederlyRequestHandler<P, ResBody, ReqBody, ReqQuery, MetaType>): express.RequestHandler => async (req, res, next): Promise<void> => {
-    try {
-        // temporary
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await requestHandler(req as any, res, next);
-    } catch (e) {
-        next(e);
-    }
-};
+import { asyncHandler } from '../../../extensions/rederly-express-request';
+import { StudentTopicAssessmentOverrideInterface } from '../../../database/models/student-topic-assessment-override';
 
 export const router = express.Router();
 
@@ -160,7 +143,9 @@ router.post('/topic',
                 // TODO handle not found case
                 const resp = httpResponse.Ok('Extended topic successfully', {
                     extendTopicResult: stripSequelizeFromUpsertResult<StudentTopicOverrideInterface>(updatesResult.extendTopicResult),
-                    extendTopicAssessmentResult: stripSequelizeFromUpsertResult<StudentTopicOverrideInterface>(updatesResult.extendTopicAssessmentResult)
+                    extendTopicAssessmentResult: stripSequelizeFromUpsertResult<StudentTopicAssessmentOverrideInterface & {
+                        student_topic_assessment_override_max_graded_attempts_per_versi: number;
+                    }>(updatesResult.extendTopicAssessmentResult)
                 });
                 next(resp as DeepAddIndexSignature<typeof resp>);
             }));
@@ -181,11 +166,11 @@ router.post('/topic',
             });
             // TODO handle not found case
             const resp = httpResponse.Ok('Updated topic successfully', {
-                updatesResult: updatesResult.map(result => ({
+                updatedRecords: updatesResult.map(result => ({
                     ...result.get({ plain: true }) as CourseTopicContentInterface,
                     topicAssessmentInfo: result.topicAssessmentInfo as TopicAssessmentInfoInterface
                 })),
-                updatesCount: updatesResult.length
+                updatedCount: updatesResult.length
             });
             next(resp as DeepAddIndexSignature<typeof resp>);
         }));
@@ -202,7 +187,9 @@ router.delete('/topic/:id',
                 id: req.params.id
             });
             // TODO handle not found case
-            const resp = httpResponse.Ok('Deleted topics and subobjects successfully', stripSequelizeFromUpdateResult<CourseTopicContentInterface>(updatesResult));
+            const resp = httpResponse.Ok('Deleted topics and subobjects successfully', stripSequelizeFromUpdateResult<Omit<CourseTopicContentInterface, 'studentTopicOverride'> & {
+                studentTopicOverride: StudentTopicOverrideInterface[];
+            }>(updatesResult));
             next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             next(e);
@@ -228,7 +215,10 @@ router.get('/topic/:id',
             result.calculateWorkbookCount();
         }
 
-        const resp = httpResponse.Ok('Fetched successfully', result.get({plain: true}) as CourseTopicContentInterface);
+        const resp = httpResponse.Ok('Fetched successfully', result.get({plain: true}) as Omit<CourseTopicContentInterface, 'topicAssessmentInfo' | 'studentTopicOverride'> & {
+            topicAssessmentInfo: TopicAssessmentInfoInterface | null;
+            studentTopicOverride: StudentTopicOverrideInterface[];
+        });
         next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
@@ -249,6 +239,8 @@ router.get('/topics',
             isOpen: req.query.isOpen,
             userId
         });
-        const resp = httpResponse.Ok('Fetched successfully', result.map(topic => topic.get({plain: true}) as CourseTopicContentInterface));
+        const resp = httpResponse.Ok('Fetched successfully', result.map(topic => topic.get({plain: true}) as Omit<CourseTopicContentInterface, 'studentTopicOverride'> & {
+            studentTopicOverride: StudentTopicOverrideInterface[];
+        }));
         next(resp as DeepAddIndexSignature<typeof resp>);
     }));

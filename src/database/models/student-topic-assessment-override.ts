@@ -14,6 +14,9 @@ export interface StudentTopicAssessmentOverrideInterface extends StudentTopicAss
     topicAssessmentInfoId: number;
     userId: number;
     active: boolean;
+
+    updatedAt: Date;
+    createdAt: Date;
 }
 
 export default class StudentTopicAssessmentOverride extends Model implements StudentTopicAssessmentOverrideInterface {

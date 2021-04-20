@@ -26,6 +26,8 @@ export interface CourseTopicContentInterface {
 
     unit?: CourseUnitContentInterface;
     questions?: CourseWWTopicQuestionInterface[];
+    studentTopicOverride?: StudentTopicOverrideInterface[];
+    topicAssessmentInfo?: TopicAssessmentInfoInterface | null;
 }
 
 export default class CourseTopicContent extends Model implements CourseTopicContentInterface {
@@ -264,6 +266,6 @@ import CurriculumTopicContent from './curriculum-topic-content';
 import TopicType, { TopicTypeEnum } from './topic-type';
 import CourseUnitContent, { CourseUnitContentInterface } from './course-unit-content';
 import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface } from './course-ww-topic-question';
-import TopicAssessmentInfo from './topic-assessment-info';
-import StudentTopicOverride, { StudentTopicOverrideOveridesInterface } from './student-topic-override';
+import TopicAssessmentInfo, { TopicAssessmentInfoInterface } from './topic-assessment-info';
+import StudentTopicOverride, { StudentTopicOverrideOveridesInterface, StudentTopicOverrideInterface } from './student-topic-override';
 import StudentTopicAssessmentInfo from './student-topic-assessment-info';

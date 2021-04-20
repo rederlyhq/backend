@@ -14,6 +14,9 @@ export interface StudentTopicOverrideInterface extends StudentTopicOverrideOveri
     courseTopicContentId: number;
     userId: number;
     active: boolean;
+
+    updatedAt: Date;
+    createdAt: Date;
 }
 
 export default class StudentTopicOverride extends Model implements StudentTopicOverrideInterface {

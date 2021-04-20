@@ -6,7 +6,7 @@ export interface CourseTopicContentInterface {
     id: number;
     curriculumTopicContentId: number;
     courseUnitContentId: number;
-    topicTypeId: number;
+    topicTypeId: TopicTypeEnum;
     name: string;
     active: boolean;
     contentOrder: number;
@@ -25,13 +25,14 @@ export interface CourseTopicContentInterface {
     versionCount?: number;
 
     unit?: CourseUnitContentInterface;
+    questions?: CourseWWTopicQuestionInterface[];
 }
 
 export default class CourseTopicContent extends Model implements CourseTopicContentInterface {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
     public curriculumTopicContentId!: number;
     public courseUnitContentId!: number;
-    public topicTypeId!: number;
+    public topicTypeId!: TopicTypeEnum;
     public name!: string;
     public active!: boolean;
     public contentOrder!: number;
@@ -260,9 +261,9 @@ CourseTopicContent.init({
 });
 
 import CurriculumTopicContent from './curriculum-topic-content';
-import TopicType from './topic-type';
+import TopicType, { TopicTypeEnum } from './topic-type';
 import CourseUnitContent, { CourseUnitContentInterface } from './course-unit-content';
-import CourseWWTopicQuestion from './course-ww-topic-question';
+import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface } from './course-ww-topic-question';
 import TopicAssessmentInfo from './topic-assessment-info';
 import StudentTopicOverride, { StudentTopicOverrideOveridesInterface } from './student-topic-override';
 import StudentTopicAssessmentInfo from './student-topic-assessment-info';

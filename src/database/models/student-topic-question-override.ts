@@ -12,6 +12,9 @@ export interface StudentTopicQuestionOverrideInterface extends StudentTopicQuest
     courseTopicQuestionId: number;
     userId: number;
     active: boolean;
+
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export default class StudentTopicQuestionOverride extends Model implements StudentTopicQuestionOverrideInterface {

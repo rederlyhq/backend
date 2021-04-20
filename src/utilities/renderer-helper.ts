@@ -360,7 +360,7 @@ class RendererHelper {
      */
     readProblemSource = async ({
         sourceFilePath
-    }: ReadProblemSourceOptions): Promise<unknown> => {
+    }: ReadProblemSourceOptions): Promise<string> => {
         const resultFormData = formHelper.objectToFormData({ 
             object: { sourceFilePath: sourceFilePath}, 
         });

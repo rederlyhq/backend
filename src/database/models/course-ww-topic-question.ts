@@ -26,6 +26,8 @@ export interface CourseWWTopicQuestionInterface {
     errors: CourseTopicQuestionErrors | null;
     description: unknown;
     topic?: CourseTopicContent;
+    grades?: StudentGradeInterface[];
+    studentTopicQuestionOverride?: StudentTopicQuestionOverrideInterface[];
 }
 
 export default class CourseWWTopicQuestion extends Model implements CourseWWTopicQuestionInterface {
@@ -216,9 +218,9 @@ CourseWWTopicQuestion.init({
 });
 
 import CourseTopicContent from './course-topic-content';
-import StudentGrade from './student-grade';
+import StudentGrade, { StudentGradeInterface } from './student-grade';
 import CurriculumWWTopicQuestion from './curriculum-ww-topic-question';
 import CourseQuestionAssessmentInfo from './course-question-assessment-info';
-import StudentTopicQuestionOverride, { StudentTopicQuestionOverrideOverridesInterface } from './student-topic-question-override';
+import StudentTopicQuestionOverride, { StudentTopicQuestionOverrideOverridesInterface, StudentTopicQuestionOverrideInterface } from './student-topic-question-override';
 import StudentGradeInstance, { StudentGradeInstanceInterface } from './student-grade-instance';
 import StudentWorkbook from './student-workbook';

@@ -20,19 +20,22 @@ export interface StudentGradeInstanceGradeOverridesInterface {
 export interface StudentGradeInstanceInterface extends StudentGradeInstanceQuestionOverridesInterface, StudentGradeInstanceGradeOverridesInterface {
     id: number;
     studentGradeId: number;
-    // userId: number;
+    userId: number;
     studentTopicAssessmentInfoId: number;
     scoreForBestVersion: number; // the score from the highest-scoring exam submission
     overallBestScore: number; // the best score on this problem alone
     active: boolean;
     bestIndividualAttemptId: number;
     bestVersionAttemptId: number;
+
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export default class StudentGradeInstance extends Model implements StudentGradeInstanceInterface {
     public id!: number;
     public studentGradeId!: number;
-    // public userId!: number;
+    public userId!: number;
     public studentTopicAssessmentInfoId!: number;
     public randomSeed!: number;
     public webworkQuestionPath!: string;

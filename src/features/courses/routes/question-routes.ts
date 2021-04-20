@@ -28,25 +28,7 @@ import { PostQuestionMeta } from '../course-types';
 import proxy = require('express-http-proxy');
 import configurations from '../../../configurations';
 import qs = require('qs');
-
-import { RederlyExpressRequest, EmptyExpressParams, EmptyExpressQuery } from '../../../extensions/rederly-express-request';
-// TODO temporary, for development so the backend will still build
-export interface RederlyRequestHandler<P extends {} = {}, ResBody = unknown, ReqBody = unknown, ReqQuery extends {} = {}, MetaType = never> {
-    // tslint:disable-next-line callable-types (This is extended from and can't extend from a type alias in ts<2.2)
-    // temporary
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (req: RederlyExpressRequest<P, ResBody, ReqBody, ReqQuery, MetaType>, res: express.Response<ResBody>, next: (arg?: any) => void): void;
-}
-
-export const asyncHandler = <P extends {} = {}, ResBody = unknown, ReqBody = unknown, ReqQuery extends {} = {}, MetaType = never>(requestHandler: RederlyRequestHandler<P, ResBody, ReqBody, ReqQuery, MetaType>): express.RequestHandler => async (req, res, next): Promise<void> => {
-    try {
-        // temporary
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await requestHandler(req as any, res, next);
-    } catch (e) {
-        next(e);
-    }
-};
+import { asyncHandler, EmptyExpressParams, EmptyExpressQuery, RederlyExpressRequest } from '../../../extensions/rederly-express-request';
 
 export const router = express.Router();
 
@@ -205,7 +187,9 @@ router.get('/questions',
             if (_.isNil(topic)){
                 throw new IllegalArgumentException(message);
             } else {
-                next(httpResponse.Ok(message, {topic}));
+                next(httpResponse.Ok(message, {
+                    topic: topic.get({plain: true}) as CourseTopicContentInterface
+                }));
             }
             return;
         }
@@ -217,7 +201,10 @@ router.get('/questions',
         });
 
         const resp = httpResponse.Ok('Got questions', {
-            questions: questions.map(question => question.get({plain: true}) as CourseWWTopicQuestionInterface),
+            questions: questions.map(question => question.get({plain: true}) as Omit<CourseWWTopicQuestionInterface, ''> & {
+                grades: StudentGradeInterface[];
+                studentTopicQuestionOverride: StudentTopicQuestionOverrideInterface[];
+            }),
             topic: topic?.get({plain: true}) as CourseTopicContentInterface
         });
         next(resp as DeepAddIndexSignature<typeof resp>);
@@ -259,7 +246,10 @@ router.put('/question/grade/:id',
             },
             initiatingUserId: req.session.userId
         });
-        const resp = httpResponse.Ok('Updated grade successfully', stripSequelizeFromUpdateResult<StudentGradeInterface>(updatedRecords));
+        const resp = httpResponse.Ok('Updated grade successfully', stripSequelizeFromUpdateResult<StudentGradeInterface & {
+            // TODO fix this
+            user_id: number;
+        }>(updatedRecords));
         next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
@@ -377,7 +367,11 @@ router.get('/question/:id/grade',
             includeWorkbooks
         });
 
-        const resp = httpResponse.Ok('Fetched question grade successfully', (grade?.get({plain: true}) as StudentGradeInterface) ?? null);
+        const resp = httpResponse.Ok('Fetched question grade successfully', (grade?.get({plain: true}) as Omit<StudentGradeInterface, 'gradeInstances | user_id'> & {
+            gradeInstances: StudentGradeInstanceInterface[];
+            user_id: number;
+        }) ?? null);
+
         next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
@@ -421,7 +415,10 @@ router.get('/question/:id/sma',
             const resp = httpResponse.Ok('No new versions of this problem could be found.', null);
             next(resp as DeepAddIndexSignature<typeof resp>);
         } else {
-            const resp = httpResponse.Ok('New version found!', updatedGrade.get({plain: true}) as StudentGradeInterface);
+            const resp = httpResponse.Ok('New version found!', updatedGrade.get({plain: true}) as StudentGradeInterface & {
+            // TODO fix this
+            user_id: number;
+        });
             next(resp as DeepAddIndexSignature<typeof resp>);
         }
     }));
@@ -486,7 +483,7 @@ router.post('/question/:id',
     bodyParser.raw({
         type: '*/*'
     }),
-    asyncHandler<courseQuestionPostQuestionById.IParams, courseQuestionPostQuestionById.IResponse, courseQuestionPostQuestionById.IBody, courseQuestionPostQuestionById.IQuery, PostQuestionMeta>(async (req, _res, next) => {
+    asyncHandler<courseQuestionPostQuestionById.IParams, undefined, courseQuestionPostQuestionById.IBody, courseQuestionPostQuestionById.IQuery, PostQuestionMeta>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }

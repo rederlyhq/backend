@@ -71,6 +71,12 @@ const Sequelize = require('sequelize');
 
 const ABSOLUTE_RENDERER_PATH_REGEX = /^(:?private\/|Contrib\/|webwork-open-problem-library\/|Library\/)/;
 
+export enum TOPIC_TYPE_FILTERS {
+    ALL,
+    HOMEWORK = TopicTypeLookup.HOMEWORK,
+    EXAMS = TopicTypeLookup.EXAM,
+}
+
 class CourseController {
     getCourseById(id: number, userId?: number): Promise<Course> {
         return Course.findOne({
@@ -2944,6 +2950,7 @@ class CourseController {
             courseId,
             userId,
             userRole,
+            topicTypeFilter
         } = options.where;
 
         const { followQuestionRules } = options;
@@ -2988,6 +2995,10 @@ class CourseController {
             topicWhere[`$topics.topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`] = {
                 [sequelize.Op.or]: [true, null]
             };
+        }
+
+        if (topicTypeFilter !== TOPIC_TYPE_FILTERS.ALL && topicTypeFilter !== undefined) {
+            topicWhere['topicTypeId'] = topicTypeFilter;
         }
 
         return CourseUnitContent.findAll({

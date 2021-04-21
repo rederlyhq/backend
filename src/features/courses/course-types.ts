@@ -19,6 +19,7 @@ import ProblemAttachment from '../../database/models/problem-attachment';
 import { BucketDefFileResult, FindFilesDefFileResult } from '../../utilities/webwork-utilities/importer';
 import WebWorkDef from '@rederly/webwork-def-parser';
 import StudentEnrollment from '../../database/models/student-enrollment';
+import { TOPIC_TYPE_FILTERS } from './course-controller';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -273,6 +274,7 @@ export interface GetGradeForQuestionOptions {
     questionId: number;
     userId: number;
     includeWorkbooks?: boolean;
+    topicTypeFilter? : TOPIC_TYPE_FILTERS;
 }
 
 export interface GetStatisticsOnUnitsOptions {
@@ -280,6 +282,7 @@ export interface GetStatisticsOnUnitsOptions {
         courseId?: number;
         userId?: number;
         userRole: Role;
+        topicTypeFilter? : TOPIC_TYPE_FILTERS;
     };
     followQuestionRules: boolean;
 }
@@ -290,6 +293,7 @@ export interface GetStatisticsOnTopicsOptions {
         courseId?: number;
         userId?: number;
         userRole: Role;
+        topicTypeFilter? : TOPIC_TYPE_FILTERS;
     };
     followQuestionRules: boolean;
 }
@@ -300,6 +304,7 @@ export interface GetStatisticsOnQuestionsOptions {
         courseId?: number;
         userId?: number;
         userRole: Role;
+        topicTypeFilter? : TOPIC_TYPE_FILTERS;
     };
     followQuestionRules: boolean;
 }

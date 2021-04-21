@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import courseController from './course-controller';
+import courseController, { TOPIC_TYPE_FILTERS } from './course-controller';
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator';
 import { authenticationMiddleware, paidMiddleware } from '../../middleware/auth';
@@ -73,24 +73,21 @@ router.get('/statistics/units',
     authenticationMiddleware,
     validate(getStatisticsOnUnitsValidation),
     asyncHandler(async (req: RederlyExpressRequest<GetStatisticsOnUnitsRequest.params, unknown, GetStatisticsOnUnitsRequest.body, GetStatisticsOnUnitsRequest.query>, _res: Response, next: NextFunction) => {
-        try {
-            const stats = await courseController.getStatisticsOnUnits({
-                where: {
-                    courseId: req.query.courseId,
-                    userId: req.query.userId,
-                    userRole: req.rederlyUserRole ?? Role.STUDENT,
-                },
-                followQuestionRules: !_.isNil(req.query.userId)
-            });
+        const stats = await courseController.getStatisticsOnUnits({
+            where: {
+                courseId: req.query.courseId,
+                userId: req.query.userId,
+                userRole: req.rederlyUserRole ?? Role.STUDENT,
+                topicTypeFilter: req.query.topicTypeFilter as TOPIC_TYPE_FILTERS
+            },
+            followQuestionRules: !_.isNil(req.query.userId)
+        });
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            next(httpResponse.Ok('Fetched successfully', {
-                data: stats,
-                ...getAveragesFromStatistics(stats),
-            }));
-        } catch (e) {
-            next(e);
-        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        next(httpResponse.Ok('Fetched successfully', {
+            data: stats,
+            ...getAveragesFromStatistics(stats),
+        }));
     }));
 
 router.get('/statistics/topics',

@@ -14,3 +14,7 @@ export const countNil = (arr: Array<unknown>): number => {
 export const countNotNil = (arr: Array<unknown>): number => {
     return countIf(arr, _.negate(_.isNil));    
 };
+
+export const getEnumValues = <T extends string | number>(e: unknown): T[] => {
+    return (typeof e === 'object' && !_.isNil(e) && !_.isEmpty(e)) ? Object.values(e) : [];
+};

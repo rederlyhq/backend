@@ -1,4 +1,6 @@
 import * as Joi from '@hapi/joi';
+import { TOPIC_TYPE_FILTERS } from './course-controller';
+import { getEnumValues } from '../../utilities/utilities';
 
 export const createCourseValidation = {
     params: {},
@@ -482,6 +484,7 @@ export const getStatisticsOnUnitsValidation = {
     query: {
         courseId: Joi.number().optional(),
         userId: Joi.number().optional(),
+        topicTypeFilter: Joi.number().valid(...getEnumValues(TOPIC_TYPE_FILTERS)).optional().default(TOPIC_TYPE_FILTERS.ALL),
     },
     body: {},
 };

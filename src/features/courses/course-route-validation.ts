@@ -1,4 +1,6 @@
 import * as Joi from '@hapi/joi';
+import { AttachmentType } from '../../utilities/attachments-helper';
+import { getEnumValues } from '../../utilities/utilities';
 
 export const createCourseValidation = {
     params: {},
@@ -551,7 +553,8 @@ export const gradeAssessmentValidation = {
 export const getAttachmentPresignedURLValidation = {
     params: {},
     query: {
-        cacheBuster: Joi.any().optional()
+        cacheBuster: Joi.any().optional(),
+        type: Joi.string().valid(...getEnumValues(AttachmentType))
     },
     body: {},
 };
@@ -668,6 +671,57 @@ export const postFeedbackValidation = {
     },
     query: {
     },
+    body: {
+        content: Joi.object().optional().allow(null),
+    },
+};
+
+export const postUploadWorkbookFeedbackValidation = {
+    params: {
+        workbookId: Joi.number().required(),
+    },
+    query: {},
+    body: {
+        attachment: Joi.object({
+            cloudFilename: Joi.string().required(),
+            userLocalFilename: Joi.string().required(),    
+        }). required(),
+    },
+};
+
+export const postUploadTopicFeedbackValidation = {
+    params: {
+        topicId: Joi.number().required(),
+    },
+    query: {},
+    body: {
+        attachment: Joi.object({
+            cloudFilename: Joi.string().required(),
+            userLocalFilename: Joi.string().required(),    
+        }). required(),
+        userId: Joi.number().required(),
+    },
+};
+
+export const postUploadTopicDescriptionValidation = {
+    params: {
+        topicId: Joi.number().required(),
+    },
+    query: {},
+    body: {
+        attachment: Joi.object({
+            cloudFilename: Joi.string().required(),
+            userLocalFilename: Joi.string().required(),    
+        }). required(),
+    },
+};
+
+export const postTopicFeedbackValidation = {
+    params: {
+        topicId: Joi.number().required(),
+        userId: Joi.number().required(),
+    },
+    query: {},
     body: {
         content: Joi.object().optional().allow(null),
     },

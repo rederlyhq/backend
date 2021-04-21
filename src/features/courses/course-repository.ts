@@ -31,6 +31,10 @@ import StudentGradeInstanceProblemAttachment from '../../database/models/student
 import StudentWorkbookProblemAttachment from '../../database/models/student-workbook-problem-attachment';
 import rendererHelper from '../../utilities/renderer-helper';
 import sequelize = require('sequelize');
+import WorkbookFeedbackProblemAttachment from '../../database/models/workbook-feedback-problem-attachment';
+import TopicFeedbackProblemAttachment from '../../database/models/topic-feedback-problem-attachment';
+import TopicDescriptionProblemAttachment from '../../database/models/topic-description-problem-attachment';
+import TopicFeedback from '../../database/models/topic-feedback';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -725,7 +729,7 @@ class CourseRepository {
         const topic = await CourseTopicContent.findOne({where: {id: topicId}});
 
         if (_.isNil(topic)) {
-            console.error('Tried to increment for a topic ID that doesn\'t exist.');
+            logger.error('Tried to increment for a topic ID that doesn\'t exist.');
             return;
         }
 
@@ -1035,6 +1039,65 @@ class CourseRepository {
     createStudentWorkbookProblemAttachment(obj: Partial<StudentWorkbookProblemAttachment>): Promise<StudentWorkbookProblemAttachment> {
         return StudentWorkbookProblemAttachment.create(obj);
     }
+
+    async createWorkbookFeedbackAttachment(obj: Partial<ProblemAttachment>, workbookId: number): Promise<ProblemAttachment> {
+        const attachment = await ProblemAttachment.create(obj);
+        await WorkbookFeedbackProblemAttachment.create({
+            workbookId,
+            problemAttachmentId: attachment.id,
+        });
+        return attachment;
+    }
+
+    // TODO: If something is attached, it should create a TopicFeedback that will be used.
+    async createTopicFeedbackAttachment(obj: Partial<ProblemAttachment>, topicId: number, userId: number): Promise<ProblemAttachment> {
+        const attachment = await ProblemAttachment.create(obj);
+        const topicFeedback = await TopicFeedback.findOrCreate({
+            where: {
+                topicId,
+                userId: userId
+            }
+        });
+        await TopicFeedbackProblemAttachment.create({
+            topicFeedbackId: topicFeedback[0].id,
+            problemAttachmentId: attachment.id,
+        });
+        return attachment;
+    }
+
+    async createTopicDescriptionAttachment(obj: Partial<ProblemAttachment>, topicId: number): Promise<ProblemAttachment> {
+        const attachment = await ProblemAttachment.create(obj);
+        await TopicDescriptionProblemAttachment.create({
+            topicId,
+            problemAttachmentId: attachment.id,
+        });
+        return attachment;
+    }
+
+    async getTopicFeedback(obj: {topicId: number; userId: number}): Promise<TopicFeedback | null> {
+        return TopicFeedback.findOne({
+            where: {
+                ...obj
+            }
+        });
+    }
+
+    async createTopicFeedback(obj: Partial<TopicFeedback>): Promise<TopicFeedback> {
+        if (!obj.topicId || !obj.userId) throw new Error('Missing values required to create topic feedback.');
+
+        const [topicFeedback] = await TopicFeedback.findOrCreate({
+            where: {
+                topicId: obj.topicId,
+                userId: obj.userId
+            }
+        });
+
+        topicFeedback.feedback = obj.feedback;
+
+        topicFeedback.save();
+        return topicFeedback;
+    }
+
 }
 
 const courseRepository = new CourseRepository();

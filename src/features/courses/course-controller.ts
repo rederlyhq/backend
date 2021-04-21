@@ -5094,7 +5094,13 @@ You can contact your student at ${options.student.email} or by replying to this 
         courseId
     }: {
         courseId: number;
-    }): Promise<unknown> {
+    }): Promise<({
+        name: string;
+        totalProblemWeight: string;
+        requiredProblemWeight: string;
+    } & {
+        [studentName: string]: number;
+    })[]> {
         const result = await  appSequelize.query(`
         SELECT
         topics.course_topic_content_name as name,
@@ -5163,6 +5169,10 @@ You can contact your student at ${options.student.email} or by replying to this 
         const typedResult = result[0] as Array<{
             // Defined fields
             students?: Array<Student>;
+        } & {
+            name: string;
+            totalProblemWeight: string;
+            requiredProblemWeight: string;
         } & {
             // dictionary fields
             [userName: string]: number;

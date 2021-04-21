@@ -5,6 +5,31 @@ import CourseWWTopicQuestion from '../../database/models/course-ww-topic-questio
 import StudentGrade from '../../database/models/student-grade';
 import StudentTopicOverride from '../../database/models/student-topic-override';
 
+export interface StatisticsData {
+    averageAttemptedCount: string;
+    averageScore: number;
+    completedCount: string;
+    completionPercent: number;
+    id: number;
+    name: string;
+    systemScore: number;
+    totalGrades: string;
+}
+
+export interface GradingData {
+    average: number;
+    deadAverage: number;
+    inProgressProblemCount: string;
+    masteredProblemCount: string;
+    openAverage: number;
+    pendingProblemCount: string;
+    user: {
+        firstName: string;
+        lastName: string;
+        id: number;
+    };
+}
+
 export enum TOPIC_SQL_NAME {
     // Should be the same as CourseTopicContent.name
     ROOT_OF_QUERY = 'CourseTopicContent',

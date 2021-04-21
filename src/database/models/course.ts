@@ -13,6 +13,11 @@ export interface CourseInterface {
     end: Date;
     sectionCode: string;
     semesterCode: string;
+
+    textbooks: string;
+    
+    updatedAt: Date;
+    createdAt: Date;
 }
 export default class Course extends Model implements CourseInterface {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
@@ -26,6 +31,7 @@ export default class Course extends Model implements CourseInterface {
     public end!: Date;
     public sectionCode!: string;
     public semesterCode!: string;
+    public textbooks!: string;
 
     public units?: CourseUnitContent[];
     public enrolledStudents?: StudentEnrollment[];

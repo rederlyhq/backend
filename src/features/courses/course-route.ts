@@ -9,7 +9,7 @@ import * as qs from 'qs';
 import * as _ from 'lodash';
 import configurations from '../../configurations';
 import WrappedError from '../../exceptions/wrapped-error';
-import { RederlyExpressRequest, EmptyExpressParams, EmptyExpressQuery, /*asyncHandler*/ } from '../../extensions/rederly-express-request';
+import { RederlyExpressRequest, EmptyExpressParams, EmptyExpressQuery, asyncHandler } from '../../extensions/rederly-express-request';
 import Boom = require('boom');
 import { Constants } from '../../constants';
 import Role from '../permissions/roles';
@@ -20,7 +20,7 @@ import bodyParser = require('body-parser');
 import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
 import ForbiddenError from '../../exceptions/forbidden-error';
 import RederlyError from '../../exceptions/rederly-error';
-import { getAveragesFromStatistics } from './statistics-helper';
+import { getAveragesFromStatistics, StatisticsData, GradingData } from './statistics-helper';
 import { rederlyTempFileWrapper } from '../../middleware/rederly-temp-file-wrapper';
 import { CourseTopicContentInterface } from '../../database/models/course-topic-content';
 import { canUserViewCourse } from '../../middleware/permissions/course-permissions';
@@ -32,24 +32,6 @@ import { CourseInterface } from '../../database/models/course';
 import { stripSequelizeFromUpdateResult } from '../../generic-interfaces/sequelize-generic-interfaces';
 import { StudentWorkbookInterface } from '../../database/models/student-workbook';
 import { StudentEnrollmentInterface } from '../../database/models/student-enrollment';
-
-// TODO temporary, for development so the backend will still build
-export interface RederlyRequestHandler<P extends {} = {}, ResBody = unknown, ReqBody = unknown, ReqQuery extends {} = {}, MetaType = never> {
-    // tslint:disable-next-line callable-types (This is extended from and can't extend from a type alias in ts<2.2)
-    // temporary
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (req: RederlyExpressRequest<P, ResBody, ReqBody, ReqQuery, MetaType>, res: express.Response<ResBody>, next: (arg?: any) => void): void;
-}
-
-export const asyncHandler = <P extends {} = {}, ResBody = unknown, ReqBody = unknown, ReqQuery extends {} = {}, MetaType = never>(requestHandler: RederlyRequestHandler<P, ResBody, ReqBody, ReqQuery, MetaType>): express.RequestHandler => async (req, res, next): Promise<void> => {
-    try {
-        // temporary
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await requestHandler(req as any, res, next);
-    } catch (e) {
-        next(e);
-    }
-};
 
 export const router = express.Router();
 
@@ -101,7 +83,7 @@ router.get('/statistics/units',
             });
 
             const resp = httpResponse.Ok('Fetched successfully', {
-                data: stats.map(stat => stat.get({plain: true}) as CourseUnitContentInterface),
+                data: stats.map(stat => stat.get({plain: true}) as StatisticsData),
                 ...getAveragesFromStatistics(stats),
             });
             next(resp as DeepAddIndexSignature<typeof resp>);
@@ -127,7 +109,7 @@ router.get('/statistics/topics',
             });
 
             const resp = httpResponse.Ok('Fetched successfully', {
-                data: stats.map(stat => stat.get({plain: true}) as CourseTopicContentInterface),
+                data: stats.map(stat => stat.get({plain: true}) as StatisticsData),
                 ...getAveragesFromStatistics(stats),
             });
             next(resp as DeepAddIndexSignature<typeof resp>);
@@ -153,7 +135,7 @@ router.get('/statistics/questions',
             });
 
             const resp = httpResponse.Ok('Fetched successfully', {
-                data: stats.map(stat => stat.get({plain: true}) as CourseWWTopicQuestionInterface),
+                data: stats.map(stat => stat.get({plain: true}) as StatisticsData),
                 ...getAveragesFromStatistics(stats),
             });
             next(resp as DeepAddIndexSignature<typeof resp>);
@@ -176,8 +158,8 @@ router.post('/def',
 
         // Sequelize does not give the subobjects that are added after the fact so getting it here
         const adjustedResults = results.map(result => ({
-            courseQuestionAssessmentInfo: result.courseQuestionAssessmentInfo?.get({plain: true}),
-            ...result.get({plain:true})
+            courseQuestionAssessmentInfo: result.courseQuestionAssessmentInfo?.get({plain: true}) as CourseQuestionAssessmentInfoInterface | undefined,
+            ...result.get({plain:true}) as CourseWWTopicQuestionInterface
         }));
         const resp = httpResponse.Created('Course Topic from DEF file created successfully', {
             newQuestions: adjustedResults
@@ -255,7 +237,7 @@ router.get('/grades',
                     userId: req.query.userId,
                 }
             });
-            const resp = httpResponse.Ok('Fetched successfully', grades.map(grade => grade.get({plain: true}) as StudentGradeInterface));
+            const resp = httpResponse.Ok('Fetched successfully', grades.map(grade => grade.get({plain: true}) as GradingData));
             next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             next(e);
@@ -294,8 +276,12 @@ router.delete('/unit/:id',
                 id: req.params.id
             });
             // TODO handle not found case
-            const resp = httpResponse.Ok('Deleted units and subobjects successfully', stripSequelizeFromUpdateResult<CourseUnitContentInterface>(updatesResult));
-            
+            const resp = httpResponse.Ok('Deleted units and subobjects successfully', stripSequelizeFromUpdateResult<Omit<CourseUnitContentInterface, 'topics'> & {
+                topics: (Omit<CourseTopicContentInterface, 'questions' | 'studentTopicOverride'> & {
+                    questions: CourseWWTopicQuestionInterface[];
+                    studentTopicOverride: StudentTopicOverrideInterface[];
+                })[];
+            }>(updatesResult));
             next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             next(e);
@@ -369,7 +355,7 @@ router.post('/preview',
     validationMiddleware(coursesPostPreview),
     // Before this wasn't being strongly typed, it is based on the other one but uses dummy data
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler<coursesPostPreview.IParams, coursesPostPreview.IResponse, coursesPostPreview.IBody, coursesPostPreview.IQuery, any>(async (req, _res, next) => {
+    asyncHandler<coursesPostPreview.IParams, coursesPostPreview.IResponse | undefined, coursesPostPreview.IBody, coursesPostPreview.IQuery, any>(async (req, _res, next) => {
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -529,7 +515,7 @@ import { coursesGetCoursesById } from '@rederly/backend-validation';
 router.get('/:id',
     authenticationMiddleware,
     validationMiddleware(coursesGetCoursesById),
-    asyncHandler<coursesGetCoursesById.IParams, coursesGetCoursesById.IResponse, coursesGetCoursesById.IBody, coursesGetCoursesById.IQuery>(async (req, _res, next) => {
+    asyncHandler<coursesGetCoursesById.IParams, undefined, coursesGetCoursesById.IBody, coursesGetCoursesById.IQuery>(async (req, _res, next) => {
         try {
             const userIdForExtensions = req.rederlyUserRole === Role.STUDENT ? req.session?.userId : undefined;
             req.course = await courseController.getCourseById(req.params.id, userIdForExtensions);
@@ -551,7 +537,11 @@ router.get('/:id',
         });
         const canAskForHelp = university?.universityName === 'CityTech' ?? false;
         const resp = httpResponse.Ok('Fetched successfully', {
-            ...req.course.get({plain: true}),
+            ...req.course.get({plain: true}) as Omit<CourseInterface, 'units'> & {
+                units: (Omit<CourseUnitContentInterface, 'topics'> & {
+                    topics: CourseTopicContentInterface[];
+                })[];
+            },
             canAskForHelp,
         });
         next(resp as DeepAddIndexSignature<typeof resp>);
@@ -585,7 +575,8 @@ router.post('/enroll',
             }
         } catch (e) {
             if (e instanceof NotFoundError) {
-                const resp = Boom.notFound(e.message);
+                // const resp = Boom.notFound(e.message);
+                const resp = httpResponse.BadRequest(e.message, null);
                 // next(resp as DeepAddIndexSignature<typeof resp>);
                 next(resp);
             } else {
@@ -614,7 +605,7 @@ router.post('/enroll/:code',
             next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             if (e instanceof NotFoundError) {
-                const resp = Boom.notFound(e.message);
+                const resp = httpResponse.BadRequest(e.message, null);
                 next(resp);    
             } else {
                 next(e);
@@ -636,7 +627,7 @@ router.delete('/enroll',
             next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
             if (e instanceof NotFoundError) {
-                const resp = Boom.notFound(e.message);
+                const resp = httpResponse.BadRequest(e.message, null);
                 next(resp);    
             } else {
                 next(e);
@@ -653,6 +644,8 @@ import { router as questionRouter } from './routes/question-routes';
 router.use('/', questionRouter);
 
 import { coursesPostFeedback } from '@rederly/backend-validation';
+import { CourseQuestionAssessmentInfoInterface } from '../../database/models/course-question-assessment-info';
+import { StudentTopicOverrideInterface } from '../../database/models/student-topic-override';
 router.post('/feedback', 
     authenticationMiddleware,
     validationMiddleware(coursesPostFeedback),

@@ -48,7 +48,8 @@ const checkAccessible = ({ name, url, crawl }: CheckAccessibleOptions): Promise<
     return axios.get(url, {
         params: {
             crawl: crawl
-        }
+        },
+        timeout: 10000
     })
         // We don't know what this response might be, we only try to crawl in but null coalesce out
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

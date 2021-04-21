@@ -2733,6 +2733,12 @@ class CourseController {
             [`$user.${User.rawAttributes.id.field}$`]: userId,
             active: true
         }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
+        
+        if (options.userRole === Role.STUDENT) {
+            (where as sequelize.WhereAttributeHash)[`$question->topic->topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`] = {
+                [sequelize.Op.or]: [true, null]
+            };
+        }
 
         const totalProblemCountCalculationString = `COUNT(question.${CourseWWTopicQuestion.rawAttributes.id.field})`;
         const pendingProblemCountCalculationString = `COUNT(CASE WHEN ${StudentGrade.rawAttributes.numAttempts.field} = 0 THEN ${StudentGrade.rawAttributes.numAttempts.field} END)`;
@@ -2790,7 +2796,15 @@ class CourseController {
                 where: {
                     active: true
                 },
-                include: topicInclude || [],
+                include: [
+                    ...(topicInclude ?? []),
+                    {
+                        model: TopicAssessmentInfo,
+                        as: 'topicAssessmentInfo',
+                        attributes: [],
+                        required: false,
+                    }
+                ],
             }];
         }
 
@@ -2953,33 +2967,130 @@ class CourseController {
         const {
             questionId,
             userId,
-            includeWorkbooks
+            includeWorkbooks,
+            userRole,
         } = options;
-        const include: sequelize.IncludeOptions[] = [{
-            model: StudentGradeInstance,
-            as: 'gradeInstances',
-            required: false,
+
+        const where: sequelize.WhereOptions = {
+            courseWWTopicQuestionId: questionId,
+            userId,
+            active: true,
+        };
+
+        const topicAssessmentInfo = await TopicAssessmentInfo.findOne({
+            attributes: [ 'showItemizedResults', 'showTotalGradeImmediately' ],
             where: {
                 active: true,
+            },
+            include: [
+                {
+                    model: CourseTopicContent,
+                    as: 'courseTopicContent',
+                    attributes: [ 'id' ],
+                    required: true,
+                    where: {
+                        active: true,
+                    },
+                    include: [
+                        {
+                            model:  CourseWWTopicQuestion,
+                            as: 'questions',
+                            attributes: [],
+                            required: true,
+                            where: {
+                                active: true,
+                                id: questionId,
+                            }
+                        }
+                    ]
+                }
+            ]
+        });
+
+        let attributes;
+        let gradeInstanceAttributes;
+        let workbookAttributes;
+        if (userRole === Role.STUDENT && (topicAssessmentInfo?.showTotalGradeImmediately === false || topicAssessmentInfo?.showItemizedResults === false)) {
+            attributes = ['id',
+                'lastInfluencingLegalAttemptId',
+                'lastInfluencingCreditedAttemptId',
+                'lastInfluencingAttemptId',
+                'courseWWTopicQuestionId',
+                'active',
+                'createdAt',
+                'updatedAt',
+            ];
+            
+            gradeInstanceAttributes = [
+                'id',
+                'studentGradeId',
+                'userId',
+                'studentTopicAssessmentInfoId',
+                'bestVersionAttemptId',
+                'problemNumber',
+                'active',
+                'createdAt',
+                'updatedAt',
+            ];
+
+            workbookAttributes = [
+                'id',
+                'active',
+                'studentGradeId',
+                'userId',
+                'courseWWTopicQuestionId',
+                'studentGradeInstanceId',
+                // 'submitted',
+                'time',
+                'wasLate',
+                'wasExpired',
+                'wasAfterAttemptLimit',
+                'wasAutoSubmitted',
+                'wasLocked',
+                'feedback',
+                'createdAt',
+                'updatedAt',
+            ];
+        }
+
+        const include: sequelize.IncludeOptions[] = [
+            {
+                model: StudentGradeInstance,
+                as: 'gradeInstances',
+                required: false,
+                attributes: gradeInstanceAttributes,
+                where: {
+                    active: true,
+                },
+                include: [
+                    {
+                        model: ProblemAttachment,
+                        as: 'problemAttachments',
+                        required: false,
+                        where: {
+                            active: true,
+                        }
+                    }
+                ]
             }
-        }];
+        ];
+
         if (includeWorkbooks) {
             include.push({
                 model: StudentWorkbook,
                 as: 'workbooks',
                 required: false,
+                attributes: workbookAttributes,
                 where: {
                     active: true
                 }
             });
         }
+
         try {
-            return StudentGrade.findOne({
-                where: {
-                    courseWWTopicQuestionId: questionId,
-                    userId,
-                    active: true,
-                },
+            return await StudentGrade.findOne({
+                attributes,
+                where,
                 include
             });
         } catch (e) {
@@ -3963,7 +4074,7 @@ class CourseController {
     async canUserViewQuestionId(options: CanUserViewQuestionIdOptions): Promise<CanUserViewQuestionIdResult> {
         const { user, questionId, studentTopicAssessmentInfoId } = options;
         let message = '';
-        if (options.role === Role.PROFESSOR || options.role === Role.ADMIN) return {userCanViewQuestion: true, message};
+        if (options.role === Role.PROFESSOR || options.role === Role.ADMIN) return {userCanViewQuestion: true, userCanViewSolution: true, message};
         const question = await courseRepository.getQuestion({ id: questionId });
         const dbTopic = await question.getTopic();
         const topicOverride = await courseRepository.getStudentTopicOverride({userId: user.id, topicId: dbTopic.id});
@@ -3972,9 +4083,11 @@ class CourseController {
         // applies to all topics - not just homeworks...
         if (topic.startDate.toMoment().isAfter(moment())) {
             message = `${topic.name} hasn't started yet.`;
-            return { userCanViewQuestion: false, message };
-        } else {
-            if (topic.topicTypeId === 1) return { userCanViewQuestion: true, message };
+            return { userCanViewQuestion: false, userCanViewSolution: false, message };
+        }
+            
+        if (topic.topicTypeId === 1) {
+            return { userCanViewQuestion: true, userCanViewSolution: true, message };
         }
 
         if (topic.topicTypeId === 2) {
@@ -3990,19 +4103,21 @@ class CourseController {
             }
             const topicInfo = await dbTopic.getTopicAssessmentInfo();
             if (topicIsLive) {
-                return { userCanViewQuestion: true, message };
+                return { userCanViewQuestion: true, userCanViewSolution: false, message };
             } else {
                 if (topicInfo.hideProblemsAfterFinish) {
                     message = `${topic.name} does not allow problems to be viewed after completion`;
-                    return { userCanViewQuestion: false, message };
+                    return { userCanViewQuestion: false, userCanViewSolution: false, message };
+                } else if (topicInfo.showItemizedResults === false) {
+                    return { userCanViewQuestion: true, userCanViewSolution: false, message };
                 } else {
-                    return { userCanViewQuestion: true, message };
+                    return { userCanViewQuestion: true, userCanViewSolution: true, message };
                 }
             }
         }
         // we *should* never get here - but if we do, then the answer is NO
         logger.error(`User #${user.id} asked to view question #${questionId} and the answer was undetermined.`);
-        return { userCanViewQuestion: false, message};
+        return { userCanViewQuestion: false, userCanViewSolution: false, message};
     };
 
     /*

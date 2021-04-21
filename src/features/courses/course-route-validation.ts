@@ -1,6 +1,7 @@
 import * as Joi from '@hapi/joi';
-import { getEnumValues } from '../../utilities/utilities';
 import { ListCoursesFilters } from './course-controller';
+import { AttachmentType } from '../../utilities/attachments-helper';
+import { getEnumValues } from '../../utilities/utilities';
 
 export const createCourseValidation = {
     params: {},
@@ -289,7 +290,7 @@ export const getQuestionGradeValidation = {
         id: Joi.number().required(),
     },
     query: {
-        userId: Joi.number().required(),
+        userId: Joi.alternatives(Joi.number(), Joi.string().valid('me')).required(),
         topicAssessmentInfoId: Joi.number().optional(),
         includeWorkbooks: Joi.boolean().optional(),
     },
@@ -466,7 +467,7 @@ export const getGradesValidation = {
         unitId: Joi.number().optional(),
         topicId: Joi.number().optional(),
         questionId: Joi.number().optional(),
-        userId: Joi.number().optional(),
+        userId: Joi.alternatives(Joi.number(), Joi.string().valid('me')).optional(),
     },
     body: {},
 };
@@ -553,7 +554,8 @@ export const gradeAssessmentValidation = {
 export const getAttachmentPresignedURLValidation = {
     params: {},
     query: {
-        cacheBuster: Joi.any().optional()
+        cacheBuster: Joi.any().optional(),
+        type: Joi.string().valid(...getEnumValues(AttachmentType))
     },
     body: {},
 };
@@ -666,11 +668,62 @@ export const endBulkExportValidation = {
 
 export const postFeedbackValidation = {
     params: {
-    },
-    query: {
         workbookId: Joi.number().required(),
     },
+    query: {
+    },
     body: {
-        content: Joi.string().required(),
+        content: Joi.object().optional().allow(null),
+    },
+};
+
+export const postUploadWorkbookFeedbackValidation = {
+    params: {
+        workbookId: Joi.number().required(),
+    },
+    query: {},
+    body: {
+        attachment: Joi.object({
+            cloudFilename: Joi.string().required(),
+            userLocalFilename: Joi.string().required(),    
+        }). required(),
+    },
+};
+
+export const postUploadTopicFeedbackValidation = {
+    params: {
+        topicId: Joi.number().required(),
+    },
+    query: {},
+    body: {
+        attachment: Joi.object({
+            cloudFilename: Joi.string().required(),
+            userLocalFilename: Joi.string().required(),    
+        }). required(),
+        userId: Joi.number().required(),
+    },
+};
+
+export const postUploadTopicDescriptionValidation = {
+    params: {
+        topicId: Joi.number().required(),
+    },
+    query: {},
+    body: {
+        attachment: Joi.object({
+            cloudFilename: Joi.string().required(),
+            userLocalFilename: Joi.string().required(),    
+        }). required(),
+    },
+};
+
+export const postTopicFeedbackValidation = {
+    params: {
+        topicId: Joi.number().required(),
+        userId: Joi.number().required(),
+    },
+    query: {},
+    body: {
+        content: Joi.object().optional().allow(null),
     },
 };

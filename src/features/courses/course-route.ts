@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import courseController from './course-controller';
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator';
-import { authenticationMiddleware, paidMiddleware } from '../../middleware/auth';
+import { authenticationMiddleware, paidMiddleware, userIdMeMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
 import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation, deleteEnrollmentValidation, createAssessmentVersionValidation, extendCourseTopicForUserValidation, extendCourseTopicQuestionValidation, getTopicValidation, submitAssessmentVersionValidation, endAssessmentVersionValidation, previewQuestionValidation, gradeAssessmentValidation, getAttachmentPresignedURLValidation, postAttachmentValidation, listAttachmentsValidation, deleteAttachmentValidation, emailProfValidation, readQuestionValidation, saveQuestionValidation, catalogValidation, getVersionValidation, getQuestionRawValidation, getQuestionGradeValidation, getQuestionOpenLabValidation, postImportCourseArchiveValidation, uploadAssetValidation, getQuestionShowMeAnotherValidation, browseProblemsCourseListValidation, browseProblemsSearchValidation, browseProblemsTopicListValidation, browseProblemsUnitListValidation, bulkExportValidation, endBulkExportValidation, getGradesForTopicsByCourseValidation, postFeedbackValidation } from './course-route-validation';
@@ -230,21 +230,23 @@ router.post('/topic',
 router.get('/grades',
     authenticationMiddleware,
     validate(getGradesValidation),
+    userIdMeMiddleware('query.userId'),
     asyncHandler(async (req: RederlyExpressRequest<GetGradesRequest.params, unknown, GetGradesRequest.body, GetGradesRequest.query>, _res: Response, next: NextFunction) => {
-        try {
-            const grades = await courseController.getGrades({
-                where: {
-                    courseId: req.query.courseId,
-                    questionId: req.query.questionId,
-                    topicId: req.query.topicId,
-                    unitId: req.query.unitId,
-                    userId: req.query.userId,
-                }
-            });
-            next(httpResponse.Ok('Fetched successfully', grades));
-        } catch (e) {
-            next(e);
+        if (_.isNil(req.rederlyUser)) {
+            throw new ForbiddenError('You must be logged in to access grades.');
         }
+
+        const grades = await courseController.getGrades({
+            where: {
+                courseId: req.query.courseId,
+                questionId: req.query.questionId,
+                topicId: req.query.topicId,
+                unitId: req.query.unitId,
+                userId: req.query.userId === 'me' ? req.rederlyUser.id : req.query.userId,
+            },
+            userRole: req.rederlyUserRole ?? Role.STUDENT,
+        });
+        next(httpResponse.Ok('Fetched successfully', grades));
     }));
 
 router.get('/:courseId/topic-grades',
@@ -796,23 +798,25 @@ router.get('/question/:id/raw',
 router.get('/question/:id/grade',
     authenticationMiddleware,
     validate(getQuestionGradeValidation),
+    userIdMeMiddleware('query.userId'),
     // This is a typescript workaround since it tries to use the type extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetQuestionGradeRequest.body, unknown>, _res: Response, next: NextFunction) => {
-        if (_.isNil(req.session)) {
-            throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
-        }
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetQuestionGradeRequest.body, unknown>, _res: Response, next: NextFunction) => {        
         const { userId, includeWorkbooks } = req.query as GetQuestionGradeRequest.query;
         const { id: questionId } = req.params as GetQuestionGradeRequest.params;
 
+        if (_.isNil(req.rederlyUser)) {
+            throw new ForbiddenError('You must be logged in to access grades.');
+        }
+
         const grade = await courseController.getGradeForQuestion({
             questionId,
-            userId,
-            includeWorkbooks
+            userId: userId === 'me' ? req.rederlyUser.id : userId,
+            includeWorkbooks,
+            userRole: req.rederlyUserRole ?? Role.STUDENT,
         });
 
         next(httpResponse.Ok('Fetched question grade successfully', grade));
-
     }));
 
 router.get('/question/:id/openlab',
@@ -874,40 +878,39 @@ router.get('/question/:id',
 
         const { id: questionId } = req.params as GetQuestionRequest.params;
         const { readonly, workbookId, userId: requestedUserId, studentTopicAssessmentInfoId, showCorrectAnswers } = req.query;
-        try {
-            // check to see if we should allow this question to be viewed
-            const {
-                userCanViewQuestion,
-                message
-            } = await courseController.canUserViewQuestionId({
-                user: requestingUser,
-                questionId,
-                studentTopicAssessmentInfoId,
-                role: rederlyUserRole
-            });
+        // check to see if we should allow this question to be viewed
+        const {
+            userCanViewQuestion,
+            userCanViewSolution,
+            message
+        } = await courseController.canUserViewQuestionId({
+            user: requestingUser,
+            questionId,
+            studentTopicAssessmentInfoId,
+            role: rederlyUserRole
+        });
 
-            if (userCanViewQuestion === false) throw new IllegalArgumentException(message);
+        if (userCanViewQuestion === false) throw new IllegalArgumentException(message);
 
-            const question = await courseController.getQuestion({
-                questionId,
-                userId: requestedUserId ?? requestingUser.id,
-                formURL: req.originalUrl,
-                role: rederlyUserRole,
-                readonly,
-                workbookId,
-                studentTopicAssessmentInfoId,
-                showCorrectAnswers,
-            });
-            next(httpResponse.Ok('Fetched question successfully', question));
+        logger.debug(`Getting question and showCorrectAnswers is ${userCanViewSolution && showCorrectAnswers} UCVS ${userCanViewSolution} SCA ${showCorrectAnswers}`);
 
-            // If testing renderer integration from the browser without the front end simply return the rendered html
-            // To do so first uncomment the below res.send and comment out the above next
-            // Also when in the browser console add your auth token (`document.cookie = "sessionToken=UUID;`)
-            // Don't forget to do this in post as well
-            // res.send(question.rendererData.renderedHTML);
-        } catch (e) {
-            next(e);
-        }
+        const question = await courseController.getQuestion({
+            questionId,
+            userId: requestedUserId ?? requestingUser.id,
+            formURL: req.originalUrl,
+            role: rederlyUserRole,
+            readonly,
+            workbookId,
+            studentTopicAssessmentInfoId,
+            showCorrectAnswers: userCanViewSolution && showCorrectAnswers,
+        });
+        next(httpResponse.Ok('Fetched question successfully', question));
+
+        // If testing renderer integration from the browser without the front end simply return the rendered html
+        // To do so first uncomment the below res.send and comment out the above next
+        // Also when in the browser console add your auth token (`document.cookie = "sessionToken=UUID;`)
+        // Don't forget to do this in post as well
+        // res.send(question.rendererData.renderedHTML);
     }));
 
 router.post('/assessment/topic/:id/submit/:version/auto',
@@ -1652,16 +1655,18 @@ router.post('/question/editor/catalog',
         }));
     }));
 
-router.post('/feedback', 
+router.post('/workbook/:workbookId/feedback', 
     authenticationMiddleware,
     validate(postFeedbackValidation),
-    asyncHandler(async (req: RederlyExpressRequest<PostFeedbackRequest.params, unknown, PostFeedbackRequest.body, unknown>, _res: Response, next: NextFunction) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, PostFeedbackRequest.body, unknown>, _res: Response, next: NextFunction) => {
+
         const res = await courseController.addFeedback({
             content: req.body.content,
-            workbookId: (req.query as PostFeedbackRequest.query).workbookId,
+            workbookId: (req.params as PostFeedbackRequest.params).workbookId,
         });
 
-        next(httpResponse.Ok('Attachment record created', res));
+        next(httpResponse.Ok('Feedback saved', res));
     })
 );
 

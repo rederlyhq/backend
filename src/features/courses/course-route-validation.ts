@@ -288,7 +288,7 @@ export const getQuestionGradeValidation = {
         id: Joi.number().required(),
     },
     query: {
-        userId: Joi.number().required(),
+        userId: Joi.alternatives(Joi.number(), Joi.string().valid('me')).required(),
         topicAssessmentInfoId: Joi.number().optional(),
         includeWorkbooks: Joi.boolean().optional(),
     },
@@ -464,7 +464,7 @@ export const getGradesValidation = {
         unitId: Joi.number().optional(),
         topicId: Joi.number().optional(),
         questionId: Joi.number().optional(),
-        userId: Joi.number().optional(),
+        userId: Joi.alternatives(Joi.number(), Joi.string().valid('me')).optional(),
     },
     body: {},
 };
@@ -664,11 +664,11 @@ export const endBulkExportValidation = {
 
 export const postFeedbackValidation = {
     params: {
-    },
-    query: {
         workbookId: Joi.number().required(),
     },
+    query: {
+    },
     body: {
-        content: Joi.string().required(),
+        content: Joi.object().optional().allow(null),
     },
 };

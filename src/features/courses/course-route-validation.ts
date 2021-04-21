@@ -1,14 +1,14 @@
 import * as Joi from '@hapi/joi';
+import { ListCoursesFilters } from './course-controller';
 import { AttachmentType } from '../../utilities/attachments-helper';
 import { getEnumValues } from '../../utilities/utilities';
 
 export const createCourseValidation = {
     params: {},
-    query: {
-        useCurriculum: Joi.boolean().optional().default(false)
-    },
+    query: {},
     body: {
         curriculumId: Joi.number().optional(),
+        originatingCourseId: Joi.number().optional(),
         name: Joi.string().required(),
         code: Joi.string().required(),
         start: Joi.date().required(),
@@ -420,6 +420,7 @@ export const listCoursesValidation = {
     query: {
         instructorId: Joi.number().optional(),
         enrolledUserId: Joi.number().optional(),
+        filterOptions: Joi.string().valid(...getEnumValues(ListCoursesFilters)).optional().default(ListCoursesFilters.ALL),
     },
     body: {},
 };

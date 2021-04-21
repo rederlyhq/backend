@@ -8,6 +8,7 @@ export interface CourseQuestionAssessmentInfoInterface {
     randomSeedSet: Array<number>;
     additionalProblemPaths: Array<string>;
     active: boolean;
+    originatingQuestionAssessmentInfo: number;
 }
 export default class CourseQuestionAssessmentInfo extends Model implements CourseQuestionAssessmentInfoInterface {
 
@@ -18,6 +19,7 @@ export default class CourseQuestionAssessmentInfo extends Model implements Cours
     public additionalProblemPaths!: Array<string>;
     public active!: boolean;
     public errors!: CourseTopicQuestionErrors | null;
+    public originatingQuestionAssessmentInfo!: number;
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -79,7 +81,13 @@ CourseQuestionAssessmentInfo.init({
         type: DataTypes.JSONB,
         allowNull: true,
         defaultValue: null,
-    }
+    },
+    originatingQuestionAssessmentInfo: {
+        field: 'originating_question_assessment_info_id',
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: null,
+    },
 }, {
     tableName: 'course_question_assessment_info',
     sequelize: appSequelize, // this bit is important

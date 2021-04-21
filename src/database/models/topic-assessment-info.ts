@@ -18,6 +18,7 @@ export interface TopicAssessmentInfoInterface extends TopicAssessmentInfoOverrid
     showTotalGradeImmediately: boolean;
     hideProblemsAfterFinish: boolean;
     randomizeOrder: boolean;
+    originatingTopicAssessmentInfoId: number;
 }
 
 export default class TopicAssessmentInfo extends Model implements TopicAssessmentInfoInterface {
@@ -35,6 +36,7 @@ export default class TopicAssessmentInfo extends Model implements TopicAssessmen
     public hideProblemsAfterFinish!: boolean;
     public randomizeOrder!: boolean;
     public active!: boolean;
+    public originatingTopicAssessmentInfoId!: number;
 
     // public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
 
@@ -168,6 +170,12 @@ TopicAssessmentInfo.init({
         allowNull: false,
         defaultValue: true
     },
+    originatingTopicAssessmentInfoId: {
+        field: 'originating_topic_assessment_info_id',
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: null,
+    }
 }, {
     tableName: 'topic_assessment_info',
     sequelize: appSequelize, // this bit is important

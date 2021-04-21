@@ -19,6 +19,7 @@ import ProblemAttachment from '../../database/models/problem-attachment';
 import { BucketDefFileResult, FindFilesDefFileResult } from '../../utilities/webwork-utilities/importer';
 import WebWorkDef from '@rederly/webwork-def-parser';
 import StudentEnrollment from '../../database/models/student-enrollment';
+import { ListCoursesFilters } from './course-controller';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -42,6 +43,7 @@ export interface CourseListOptions {
     filter: {
         instructorId?: number;
         enrolledUserId?: number;
+        filterOptions?: ListCoursesFilters;
     };
 }
 
@@ -247,9 +249,6 @@ export interface UpdateQuestionsOptions {
 
 export interface CreateCourseOptions {
     object: Partial<Course>;
-    options: {
-        useCurriculum: boolean;
-    };
 }
 
 export interface UpdateCourseOptions {

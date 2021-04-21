@@ -143,14 +143,15 @@ router.post('/question',
 router.get('/',
     authenticationMiddleware,
     validate(listCurriculumValidation),
-    asyncHandler(async (req: RederlyExpressRequest<ListCurriculumRequest.params, unknown, ListCurriculumRequest.body, ListCurriculumRequest.query>, res: Response, next: NextFunction) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<ListCurriculumRequest.params, unknown, ListCurriculumRequest.body, ListCurriculumRequest.query | any>, res: Response, next: NextFunction) => {
         try {
             if (_.isNil(req.session)) {
                 throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
             }
 
             const user = await req.session.getUser();
-            const curriculums = await curriculumController.getCurriculums({user});
+            const curriculums = await curriculumController.getCurriculums({user, filterOptions: req.query.filterOptions});
             next(httpResponse.Ok('Fetched successfully', curriculums));
         } catch (e) {
             next(e);

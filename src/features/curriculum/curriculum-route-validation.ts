@@ -1,4 +1,6 @@
 import * as Joi from '@hapi/joi';
+import { getEnumValues } from '../../utilities/utilities';
+import { ListCurriculumFilters } from './curriculum-controller';
 
 export const createCurriculumValidation = {
     params: {},
@@ -83,5 +85,7 @@ export const getCurriculumValidation = {
 export const listCurriculumValidation = {
     params: {},
     body: {},
-    query: {}
+    query: {
+        filterOptions: Joi.string().valid(...getEnumValues(ListCurriculumFilters)).optional().default(ListCurriculumFilters.ALL),
+    }
 };

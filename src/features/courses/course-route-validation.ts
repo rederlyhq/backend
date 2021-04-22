@@ -727,3 +727,12 @@ export const postTopicFeedbackValidation = {
         content: Joi.object().optional().allow(null),
     },
 };
+
+export const getTopicFeedbackValidation = {
+    params: {
+        topicId: Joi.number().required(),
+        userId: Joi.number().required(),
+    },
+    query: {},
+    body: {},
+};

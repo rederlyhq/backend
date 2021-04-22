@@ -82,16 +82,6 @@ TopicFeedback.init({
         allowNull: false,
         defaultValue: true
     },
-    updatedAt: {
-        field: 'updated_at',
-        type: DataTypes.DATE,
-        allowNull: false,
-    },
-    createdAt: {
-        field: 'created_at',
-        type: DataTypes.DATE,
-        allowNull: false,
-    },
 }, {
     tableName: 'topic_feedback',
     sequelize: appSequelize, // this bit is important

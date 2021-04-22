@@ -21,6 +21,7 @@ module.exports = {
                 'max': 99
             }
         ],
+        'no-console': 'warn',
         'semi': 1,
         'quotes': [
             1, 'single', 'avoid-escape'

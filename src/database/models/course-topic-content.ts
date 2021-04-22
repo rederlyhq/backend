@@ -16,6 +16,7 @@ export interface CourseTopicContentInterface {
     partialExtend: boolean;
     createdAt: Date;
     updatedAt: Date;
+    originatingTopicId: number;
 }
 
 export default class CourseTopicContent extends Model implements CourseTopicContentInterface {
@@ -40,6 +41,8 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
 
     // This is the count of errors in problems associated with this topic.
     public errors!: number;
+
+    public originatingTopicId!: number;
 
     public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
     public getUnit!: BelongsToGetAssociationMixin<CourseUnitContent>;
@@ -216,6 +219,12 @@ CourseTopicContent.init({
     description: {
         field: 'course_topic_content_description',
         type: DataTypes.JSONB,
+        allowNull: true,
+        defaultValue: null,
+    },
+    originatingTopicId: {
+        field: 'originating_topic_id',
+        type: DataTypes.INTEGER,
         allowNull: true,
         defaultValue: null,
     },

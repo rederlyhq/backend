@@ -207,12 +207,17 @@ const configurations = {
         presignedUrlBasePath: readStringValue('ATTACHMENTS_PRESIGNED_URL_BASE_PATH', ''),
         baseUrl: readStringValue('ATTACHMENTS_BASE_URL', ''),
         presignedUrlTimeout: readIntValue('ATTACHMENTS_PRESIGNED_URL_TIMEOUT', 60000),
+        // Uploads use the same Base URL as attachments.
+        uploadsPresignedUrlBasePath: readStringValue('UPLOADS_PRESIGNED_URL_BASE_PATH', ''),
     },
     importer: {
         missingFileThreshold: readIntValue('IMPORTER_MISSING_FILE_THRESHOLD', 10),
     },
     bulkPdfExport: {
         baseUrl: readStringValue('BULK_PDF_EXPORT_URL', 'http://localhost:3005'),
+    },
+    libraryBrowser: {
+        baseUrl: readStringValue('LIBRARY_BROWSER_BASE_URL', 'http://localhost:3004')
     },
     loadPromise: new Promise<void>((resolve, reject) => {
         // Avoid cyclic dependency by deferring the logging until after all the imports are done

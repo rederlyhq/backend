@@ -467,6 +467,7 @@ export const getGradesValidation = {
         topicId: Joi.number().optional(),
         questionId: Joi.number().optional(),
         userId: Joi.number().optional(),
+        topicTypeFilter: Joi.number().valid(...getEnumValues(TOPIC_TYPE_FILTERS)).optional().default(TOPIC_TYPE_FILTERS.ALL),
     },
     body: {},
 };
@@ -495,6 +496,7 @@ export const getStatisticsOnTopicsValidation = {
         courseUnitContentId: Joi.number().optional(),
         courseId: Joi.number().optional(),
         userId: Joi.number().optional(),
+        topicTypeFilter: Joi.number().valid(...getEnumValues(TOPIC_TYPE_FILTERS)).optional().default(TOPIC_TYPE_FILTERS.ALL),
     },
     body: {},
 };

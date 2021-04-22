@@ -267,6 +267,7 @@ export interface GetGradesOptions {
         topicId?: number;
         questionId?: number;
         userId?: number;
+        topicTypeFilter?: TOPIC_TYPE_FILTERS;
     };
 }
 
@@ -304,7 +305,6 @@ export interface GetStatisticsOnQuestionsOptions {
         courseId?: number;
         userId?: number;
         userRole: Role;
-        topicTypeFilter? : TOPIC_TYPE_FILTERS;
     };
     followQuestionRules: boolean;
 }

@@ -2669,6 +2669,7 @@ class CourseController {
             topicId,
             unitId,
             userId,
+            topicTypeFilter
         } = options.where;
 
         const setFilterCount = utilities.countNotNil([
@@ -2739,6 +2740,11 @@ class CourseController {
         }
 
         let questionInclude;
+        let topicWhere;
+        if (topicTypeFilter !== TOPIC_TYPE_FILTERS.ALL && topicTypeFilter !== undefined) {
+            topicWhere = {topicTypeId: topicTypeFilter};
+        }
+
         if (includeOthers || _.isNil(topicId) === false) {
             includeOthers = true;
             questionInclude = [{
@@ -2746,7 +2752,8 @@ class CourseController {
                 as: 'topic',
                 attributes: [],
                 where: {
-                    active: true
+                    active: true,
+                    ...topicWhere
                 },
                 include: topicInclude || [],
             }];
@@ -3073,6 +3080,7 @@ class CourseController {
             courseId,
             userId,
             userRole,
+            topicTypeFilter
         } = options.where;
 
         const { followQuestionRules } = options;
@@ -3177,6 +3185,10 @@ class CourseController {
         const systemScoreGroup: sequelize.ProjectionAlias = followQuestionRules ? 
             getSystemScoreWithWeights(QUESTION_SQL_NAME.INCLUDED_AS_QUESTIONS) : 
             [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'];
+
+        if (topicTypeFilter !== TOPIC_TYPE_FILTERS.ALL && topicTypeFilter !== undefined) {
+            (where as sequelize.WhereAttributeHash)['topicTypeId'] = topicTypeFilter;
+        }
 
         return CourseTopicContent.findAll({
             where,

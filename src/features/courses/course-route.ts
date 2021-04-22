@@ -101,6 +101,7 @@ router.get('/statistics/topics',
                     courseId: req.query.courseId,
                     userId: req.query.userId,
                     userRole: req.rederlyUserRole ?? Role.STUDENT,
+                    topicTypeFilter: req.query.topicTypeFilter as TOPIC_TYPE_FILTERS
                 },
                 followQuestionRules: !_.isNil(req.query.userId)
             });
@@ -236,6 +237,7 @@ router.get('/grades',
                     topicId: req.query.topicId,
                     unitId: req.query.unitId,
                     userId: req.query.userId,
+                    topicTypeFilter: req.query.topicTypeFilter as TOPIC_TYPE_FILTERS
                 }
             });
             next(httpResponse.Ok('Fetched successfully', grades));

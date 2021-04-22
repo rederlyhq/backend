@@ -71,7 +71,7 @@ const Sequelize = require('sequelize');
 
 const ABSOLUTE_RENDERER_PATH_REGEX = /^(:?private\/|Contrib\/|webwork-open-problem-library\/|Library\/)/;
 
-export enum TOPIC_TYPE_FILTERS {
+export enum TopicTypeFilters {
     ALL,
     HOMEWORK = TopicTypeLookup.HOMEWORK,
     EXAMS = TopicTypeLookup.EXAM,
@@ -2795,7 +2795,7 @@ class CourseController {
 
         let questionInclude;
         let topicWhere;
-        if (topicTypeFilter !== TOPIC_TYPE_FILTERS.ALL && topicTypeFilter !== undefined) {
+        if (topicTypeFilter !== TopicTypeFilters.ALL && topicTypeFilter !== undefined) {
             topicWhere = {topicTypeId: topicTypeFilter};
         }
 
@@ -3163,7 +3163,7 @@ class CourseController {
             };
         }
 
-        if (topicTypeFilter !== TOPIC_TYPE_FILTERS.ALL && topicTypeFilter !== undefined) {
+        if (topicTypeFilter !== TopicTypeFilters.ALL && topicTypeFilter !== undefined) {
             topicWhere['topicTypeId'] = topicTypeFilter;
         }
 
@@ -3345,7 +3345,7 @@ class CourseController {
             getSystemScoreWithWeights(QUESTION_SQL_NAME.INCLUDED_AS_QUESTIONS) : 
             [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'];
 
-        if (topicTypeFilter !== TOPIC_TYPE_FILTERS.ALL && topicTypeFilter !== undefined) {
+        if (topicTypeFilter !== TopicTypeFilters.ALL && topicTypeFilter !== undefined) {
             (where as sequelize.WhereAttributeHash)['topicTypeId'] = topicTypeFilter;
         }
 

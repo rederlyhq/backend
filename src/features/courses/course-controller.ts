@@ -71,6 +71,13 @@ const Sequelize = require('sequelize');
 
 const ABSOLUTE_RENDERER_PATH_REGEX = /^(:?private\/|Contrib\/|webwork-open-problem-library\/|Library\/)/;
 
+export enum TopicTypeFilters {
+    // This was zero by not being specified, being explisive
+    ALL = 0,
+    HOMEWORK = TopicTypeLookup.HOMEWORK,
+    EXAMS = TopicTypeLookup.EXAM,
+}
+
 export enum ListCoursesFilters {
     ALL = 'ALL',
     ACTIVE = 'ACTIVE',
@@ -538,42 +545,40 @@ class CourseController {
             }
 
             return useDatabaseTransaction(async () => {
-                
-                // const curriculum = await curriculumRepository.getCurriculumById(options.object.curriculumId);
-                const curriculum = options.object.originatingCourseId ? 
+                const originatingCourse = options.object.originatingCourseId ? 
                     await this.getCourseById(options.object.originatingCourseId) : 
                     await curriculumRepository.getCurriculumById(options.object.curriculumId ?? -1);
 
                 const createdCourse = await courseRepository.createCourse(options.object);
-                await curriculum.units?.asyncForEach(async (curriculumUnit: CurriculumUnitContent | CourseUnitContent) => {
-                    if (curriculumUnit.active === false) {
-                        logger.debug(`Inactive curriculum unit was fetched in query for create course ID#${curriculumUnit.id}`);
+                await originatingCourse.units?.asyncForEach(async (originatingUnit: CurriculumUnitContent | CourseUnitContent) => {
+                    if (originatingUnit.active === false) {
+                        logger.debug(`Inactive curriculum unit was fetched in query for create course ID#${originatingUnit.id}`);
                         return;
                     }
 
                     const createdCourseUnit = await courseRepository.createUnit({
                         // active: curriculumUnit.active,
-                        contentOrder: curriculumUnit.contentOrder,
+                        contentOrder: originatingUnit.contentOrder,
                         courseId: createdCourse.id,
-                        curriculumUnitId: (curriculumUnit instanceof CourseUnitContent) ? curriculumUnit.curriculumUnitId : curriculumUnit.id,
-                        originatingUnitId: (curriculumUnit instanceof CourseUnitContent) ? curriculumUnit.id : undefined,
-                        name: curriculumUnit.name,
+                        curriculumUnitId: (originatingUnit instanceof CourseUnitContent) ? originatingUnit.curriculumUnitId : originatingUnit.id,
+                        originatingUnitId: (originatingUnit instanceof CourseUnitContent) ? originatingUnit.id : undefined,
+                        name: originatingUnit.name,
                     });
 
-                    await curriculumUnit.topics?.asyncForEach(async (curriculumTopic: CurriculumTopicContent | CourseTopicContent) => {
-                        if (curriculumTopic.active === false) {
-                            logger.debug(`Inactive curriculum topic was fetched in query for create course ID#${curriculumTopic.id}`);
+                    await originatingUnit.topics?.asyncForEach(async (originatingTopic: CurriculumTopicContent | CourseTopicContent) => {
+                        if (originatingTopic.active === false) {
+                            logger.debug(`Inactive curriculum topic was fetched in query for create course ID#${originatingTopic.id}`);
                             return;
                         }
 
                         const createdCourseTopic: CourseTopicContent = await courseRepository.createCourseTopic({
                             // active: curriculumTopic.active,
-                            curriculumTopicContentId: (curriculumTopic instanceof CourseTopicContent) ? curriculumTopic.curriculumTopicContentId : curriculumTopic.id,
-                            originatingTopicId: (curriculumTopic instanceof CourseTopicContent) ? curriculumTopic.id : undefined,
+                            curriculumTopicContentId: (originatingTopic instanceof CourseTopicContent) ? originatingTopic.curriculumTopicContentId : originatingTopic.id,
+                            originatingTopicContentId: (originatingTopic instanceof CourseTopicContent) ? originatingTopic.id : undefined,
                             courseUnitContentId: createdCourseUnit.id,
-                            topicTypeId: curriculumTopic.topicTypeId,
-                            name: curriculumTopic.name,
-                            contentOrder: curriculumTopic.contentOrder,
+                            topicTypeId: originatingTopic.topicTypeId,
+                            name: originatingTopic.name,
+                            contentOrder: originatingTopic.contentOrder,
 
                             startDate: createdCourse.end,
                             endDate: createdCourse.end,
@@ -581,51 +586,51 @@ class CourseController {
                             partialExtend: false
                         });
 
-                        const topicAssessmentInfo = (curriculumTopic instanceof CourseTopicContent) ? 
-                            await curriculumTopic.getTopicAssessmentInfo() :
-                            await curriculumTopic.getCurriculumTopicAssessmentInfo();
+                        const createdTopicAssessmentInfo = (originatingTopic instanceof CourseTopicContent) ? 
+                            await originatingTopic.getTopicAssessmentInfo() :
+                            await originatingTopic.getCurriculumTopicAssessmentInfo();
 
-                        if (!_.isNil(topicAssessmentInfo)) {
+                        if (!_.isNil(createdTopicAssessmentInfo)) {
                             await TopicAssessmentInfo.create({
-                                ..._.omit(topicAssessmentInfo.get({plain: true}), ['id']),
+                                ..._.omit(createdTopicAssessmentInfo.get({plain: true}), ['id']),
                                 courseTopicContentId: createdCourseTopic.id,
-                                curriculumTopicAssessmentInfoId: (topicAssessmentInfo instanceof TopicAssessmentInfo) ? topicAssessmentInfo.curriculumTopicAssessmentInfoId : topicAssessmentInfo.id,
-                                originatingTopicAssessmentId: (topicAssessmentInfo instanceof TopicAssessmentInfo) ? topicAssessmentInfo.id : undefined,
+                                curriculumTopicAssessmentInfoId: (createdTopicAssessmentInfo instanceof TopicAssessmentInfo) ? createdTopicAssessmentInfo.curriculumTopicAssessmentInfoId : createdTopicAssessmentInfo.id,
+                                originatingTopicAssessmentId: (createdTopicAssessmentInfo instanceof TopicAssessmentInfo) ? createdTopicAssessmentInfo.id : undefined,
                             });
                         }
 
-                        await curriculumTopic.questions?.asyncForEach(async (curriculumQuestion: CurriculumWWTopicQuestion | CourseWWTopicQuestion) => {
-                            if (curriculumQuestion.active === false) {
-                                logger.debug(`Inactive curriculum question was fetched in query for create course ID#${curriculumQuestion.id}`);
+                        await originatingTopic.questions?.asyncForEach(async (originatingQuestion: CurriculumWWTopicQuestion | CourseWWTopicQuestion) => {
+                            if (originatingQuestion.active === false) {
+                                logger.debug(`Inactive curriculum question was fetched in query for create course ID#${originatingQuestion.id}`);
                                 return;
                             }
 
                             const createdCourseQuestion = await courseRepository.createQuestion({
                                 // active: curriculumQuestion.active,
                                 courseTopicContentId: createdCourseTopic.id,
-                                problemNumber: curriculumQuestion.problemNumber,
-                                webworkQuestionPath: curriculumQuestion.webworkQuestionPath,
-                                weight: curriculumQuestion.weight,
-                                maxAttempts: curriculumQuestion.maxAttempts,
-                                hidden: curriculumQuestion.hidden,
-                                optional: curriculumQuestion.optional,
-                                curriculumQuestionId: (curriculumQuestion instanceof CourseWWTopicQuestion) ? curriculumQuestion.curriculumQuestionId : curriculumQuestion.id,
-                                originatingQuestionId: (curriculumQuestion instanceof CourseWWTopicQuestion) ? curriculumQuestion.id : undefined,
+                                problemNumber: originatingQuestion.problemNumber,
+                                webworkQuestionPath: originatingQuestion.webworkQuestionPath,
+                                weight: originatingQuestion.weight,
+                                maxAttempts: originatingQuestion.maxAttempts,
+                                hidden: originatingQuestion.hidden,
+                                optional: originatingQuestion.optional,
+                                curriculumQuestionId: (originatingQuestion instanceof CourseWWTopicQuestion) ? originatingQuestion.curriculumQuestionId : originatingQuestion.id,
+                                originatingTopicQuestionId: (originatingQuestion instanceof CourseWWTopicQuestion) ? originatingQuestion.id : undefined,
                             });
 
-                            const questionAssessmentInfo = (curriculumQuestion instanceof CourseWWTopicQuestion) ? 
-                                await curriculumQuestion.getCourseQuestionAssessmentInfo() :
-                                await curriculumQuestion.getCurriculumQuestionAssessmentInfo();
+                            const createdQuestionAssessmentInfo = (originatingQuestion instanceof CourseWWTopicQuestion) ? 
+                                await originatingQuestion.getCourseQuestionAssessmentInfo() :
+                                await originatingQuestion.getCurriculumQuestionAssessmentInfo();
 
-                            if (!_.isNil(questionAssessmentInfo)) {
-                                const createFromCurriculum = {
-                                    ..._.omit(questionAssessmentInfo.get({plain: true}), ['id']),
+                            if (!_.isNil(createdQuestionAssessmentInfo)) {
+                                const createFromOriginatingQuestionAssessmentInfo = {
+                                    ..._.omit(createdQuestionAssessmentInfo.get({plain: true}), ['id']),
                                     courseWWTopicQuestionId: createdCourseQuestion.id,
-                                    curriculumQuestionAssessmentInfoId: (questionAssessmentInfo instanceof CourseQuestionAssessmentInfo) ? questionAssessmentInfo.curriculumQuestionAssessmentInfoId : questionAssessmentInfo.id,
-                                    originatingQuestionAssessmentInfoId: (questionAssessmentInfo instanceof CourseQuestionAssessmentInfo) ? questionAssessmentInfo.id : undefined,
+                                    curriculumQuestionAssessmentInfoId: (createdQuestionAssessmentInfo instanceof CourseQuestionAssessmentInfo) ? createdQuestionAssessmentInfo.curriculumQuestionAssessmentInfoId : createdQuestionAssessmentInfo.id,
+                                    originatingQuestionAssessmentInfoId: (createdQuestionAssessmentInfo instanceof CourseQuestionAssessmentInfo) ? createdQuestionAssessmentInfo.id : undefined,
                                 };
 
-                                await CourseQuestionAssessmentInfo.create(createFromCurriculum);
+                                await CourseQuestionAssessmentInfo.create(createFromOriginatingQuestionAssessmentInfo);
                             }
                         });
                     });
@@ -2711,6 +2716,7 @@ class CourseController {
             topicId,
             unitId,
             userId,
+            topicTypeFilter
         } = options.where;
 
         const setFilterCount = utilities.countNotNil([
@@ -2787,6 +2793,11 @@ class CourseController {
         }
 
         let questionInclude;
+        let topicWhere;
+        if (topicTypeFilter !== TopicTypeFilters.ALL && topicTypeFilter !== undefined) {
+            topicWhere = {topicTypeId: topicTypeFilter};
+        }
+
         if (includeOthers || _.isNil(topicId) === false) {
             includeOthers = true;
             questionInclude = [{
@@ -2794,7 +2805,8 @@ class CourseController {
                 as: 'topic',
                 attributes: [],
                 where: {
-                    active: true
+                    active: true,
+                    ...topicWhere
                 },
                 include: [
                     ...(topicInclude ?? []),
@@ -3103,6 +3115,7 @@ class CourseController {
             courseId,
             userId,
             userRole,
+            topicTypeFilter
         } = options.where;
 
         const { followQuestionRules } = options;
@@ -3147,6 +3160,10 @@ class CourseController {
             topicWhere[`$topics.topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`] = {
                 [sequelize.Op.or]: [true, null]
             };
+        }
+
+        if (topicTypeFilter !== TopicTypeFilters.ALL && topicTypeFilter !== undefined) {
+            topicWhere['topicTypeId'] = topicTypeFilter;
         }
 
         return CourseUnitContent.findAll({
@@ -3221,6 +3238,7 @@ class CourseController {
             courseId,
             userId,
             userRole,
+            topicTypeFilter
         } = options.where;
 
         const { followQuestionRules } = options;
@@ -3325,6 +3343,10 @@ class CourseController {
         const systemScoreGroup: sequelize.ProjectionAlias = followQuestionRules ? 
             getSystemScoreWithWeights(QUESTION_SQL_NAME.INCLUDED_AS_QUESTIONS) : 
             [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'];
+
+        if (topicTypeFilter !== TopicTypeFilters.ALL && topicTypeFilter !== undefined) {
+            (where as sequelize.WhereAttributeHash)['topicTypeId'] = topicTypeFilter;
+        }
 
         return CourseTopicContent.findAll({
             where,

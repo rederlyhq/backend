@@ -75,6 +75,12 @@ export default class Course extends Model implements CourseInterface {
             as: 'curriculum'
         });
 
+        Course.belongsTo(Course, {
+            foreignKey: 'originatingCourseId',
+            targetKey: 'id',
+            as: 'originatingCourse'
+        });
+
         Course.hasMany(StudentEnrollment, {
             foreignKey: 'courseId',
             sourceKey: 'id',

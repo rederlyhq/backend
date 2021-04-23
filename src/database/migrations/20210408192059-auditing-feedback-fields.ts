@@ -1,5 +1,3 @@
-// TODO remove from actual migrations, DataTypes will be used
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { QueryInterface, DataTypes } from 'sequelize';
 
 export default {
@@ -32,13 +30,13 @@ export default {
             type: DataTypes.INTEGER
         },
         feedback: {
-            field: 'feedback',
+            field: 'topic_feedback_feedback',
             type: DataTypes.JSONB,
             allowNull: true,
             defaultValue: null,
         },
         active: {
-            field: 'active',
+            field: 'topic_feedback_active',
             type: DataTypes.BOOLEAN,
             allowNull: false,
             defaultValue: true

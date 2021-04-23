@@ -1,5 +1,5 @@
 import * as express from 'express';
-import courseController, { ListCoursesFilters } from './course-controller';
+import courseController, { ListCoursesFilters, TopicTypeFilters } from './course-controller';
 import { authenticationMiddleware, paidMiddleware, userIdMeMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
 import NotFoundError from '../../exceptions/not-found-error';
@@ -79,6 +79,7 @@ router.get('/statistics/units',
                     courseId: req.query.courseId,
                     userId: req.query.userId,
                     userRole: req.rederlyUserRole ?? Role.STUDENT,
+                    topicTypeFilter: req.query.topicTypeFilter as TopicTypeFilters,
                 },
                 followQuestionRules: !_.isNil(req.query.userId)
             });
@@ -105,6 +106,7 @@ router.get('/statistics/topics',
                     courseId: req.query.courseId,
                     userId: req.query.userId,
                     userRole: req.rederlyUserRole ?? Role.STUDENT,
+                    topicTypeFilter: req.query.topicTypeFilter as TopicTypeFilters
                 },
                 followQuestionRules: !_.isNil(req.query.userId)
             });
@@ -233,6 +235,7 @@ router.get('/grades',
                 questionId: req.query.questionId,
                 topicId: req.query.topicId,
                 unitId: req.query.unitId,
+                topicTypeFilter: req.query.topicTypeFilter as TopicTypeFilters | undefined,
                 userId: req.query.userId === 'me' ? req.rederlyUser.id : req.query.userId,
             },
             userRole: req.rederlyUserRole ?? Role.STUDENT,

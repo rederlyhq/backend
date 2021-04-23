@@ -56,6 +56,12 @@ export default class CourseUnitContent extends Model implements CourseUnitConten
             as: 'curriculumUnit'
         });
 
+        CourseUnitContent.belongsTo(CourseUnitContent, {
+            foreignKey: 'originatingUnitId',
+            targetKey: 'id',
+            as: 'originatingUnit'
+        });
+
         CourseUnitContent.hasMany(CourseTopicContent, {
             foreignKey: 'courseUnitContentId',
             sourceKey: 'id',
@@ -99,7 +105,7 @@ CourseUnitContent.init({
         allowNull: true
     },
     originatingUnitId: {
-        field: 'originating_unit_id',
+        field: 'originating_unit_content_id',
         type: DataTypes.INTEGER,
         allowNull: true,
         defaultValue: null,

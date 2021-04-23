@@ -28,7 +28,7 @@ export interface CourseWWTopicQuestionInterface {
     topic?: CourseTopicContent;
     grades?: StudentGradeInterface[];
     studentTopicQuestionOverride?: StudentTopicQuestionOverrideInterface[];
-    originatingQuestionId: number;
+    originatingTopicQuestionId: number;
 }
 
 export default class CourseWWTopicQuestion extends Model implements CourseWWTopicQuestionInterface {
@@ -44,7 +44,7 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
     public curriculumQuestionId!: number;
     public smaEnabled!: boolean;
     public description!: unknown;
-    public originatingQuestionId!: number;
+    public originatingTopicQuestionId!: number;
 
     // These are errors in the webworkQuestionPath, but might expand in the future to include more errors.
     public errors!: CourseTopicQuestionErrors | null;
@@ -104,6 +104,12 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
             foreignKey: 'curriculumQuestionId',
             targetKey: 'id',
             as: 'curriculumQuestion'
+        });
+
+        CourseWWTopicQuestion.belongsTo(CourseWWTopicQuestion, {
+            foreignKey: 'originatingTopicQuestionId',
+            targetKey: 'id',
+            as: 'originatingQuestion'
         });
 
         CourseWWTopicQuestion.hasOne(CourseQuestionAssessmentInfo, {
@@ -204,8 +210,8 @@ CourseWWTopicQuestion.init({
         allowNull: true,
         defaultValue: null,
     },
-    originatingQuestionId: {
-        field: 'originating_question_id',
+    originatingTopicQuestionId: {
+        field: 'originating_topic_question_id',
         type: DataTypes.INTEGER,
         allowNull: true,
         defaultValue: null,

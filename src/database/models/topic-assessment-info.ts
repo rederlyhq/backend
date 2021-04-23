@@ -83,6 +83,18 @@ export default class TopicAssessmentInfo extends Model implements TopicAssessmen
             as: 'studentTopicAssessmentInfo'
         });
 
+        TopicAssessmentInfo.belongsTo(CurriculumTopicAssessmentInfo, {
+            foreignKey: 'curriculumTopicAssessmentInfoId',
+            targetKey: 'id',
+            as: 'curriculumTopicAssessmentInfo'
+        });
+
+        TopicAssessmentInfo.belongsTo(TopicAssessmentInfo, {
+            foreignKey: 'originatingTopicAssessmentInfoId',
+            targetKey: 'id',
+            as: 'originatingTopicAssessmentInfo'
+        });
+
         /* eslint-enable @typescript-eslint/no-use-before-define */
     }
 }
@@ -184,3 +196,4 @@ TopicAssessmentInfo.init({
 import CourseTopicContent from './course-topic-content';
 import StudentTopicAssessmentInfo from './student-topic-assessment-info';
 import StudentTopicAssessmentOverride, { StudentTopicAssessmentOverrideOverridesInterface } from './student-topic-assessment-override';
+import CurriculumTopicAssessmentInfo from './curriculum-topic-assessment-info';

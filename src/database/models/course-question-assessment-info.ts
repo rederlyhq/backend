@@ -8,7 +8,7 @@ export interface CourseQuestionAssessmentInfoInterface {
     randomSeedSet: Array<number>;
     additionalProblemPaths: Array<string>;
     active: boolean;
-    originatingQuestionAssessmentInfo: number;
+    originatingQuestionAssessmentInfoId: number;
 }
 export default class CourseQuestionAssessmentInfo extends Model implements CourseQuestionAssessmentInfoInterface {
 
@@ -19,7 +19,7 @@ export default class CourseQuestionAssessmentInfo extends Model implements Cours
     public additionalProblemPaths!: Array<string>;
     public active!: boolean;
     public errors!: CourseTopicQuestionErrors | null;
-    public originatingQuestionAssessmentInfo!: number;
+    public originatingQuestionAssessmentInfoId!: number;
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -35,6 +35,18 @@ export default class CourseQuestionAssessmentInfo extends Model implements Cours
             foreignKey: 'courseWWTopicQuestionId',
             targetKey: 'id',
             as: 'courseTopicQuestion'
+        });
+
+        CourseQuestionAssessmentInfo.belongsTo(CurriculumQuestionAssessmentInfo, {
+            foreignKey: 'curriculumQuestionAssessmentInfoId',
+            targetKey: 'id',
+            as: 'curriculumQuestionAssessmentInfo'
+        });
+
+        CourseQuestionAssessmentInfo.belongsTo(CourseQuestionAssessmentInfo, {
+            foreignKey: 'originatingQuestionAssessmentInfoId',
+            targetKey: 'id',
+            as: 'originatingQuestionAssessmentInfo'
         });
 
         /* eslint-enable @typescript-eslint/no-use-before-define */
@@ -82,7 +94,7 @@ CourseQuestionAssessmentInfo.init({
         allowNull: true,
         defaultValue: null,
     },
-    originatingQuestionAssessmentInfo: {
+    originatingQuestionAssessmentInfoId: {
         field: 'originating_question_assessment_info_id',
         type: DataTypes.INTEGER,
         allowNull: true,
@@ -94,3 +106,4 @@ CourseQuestionAssessmentInfo.init({
 });
 
 import CourseWWTopicQuestion, { CourseTopicQuestionErrors } from './course-ww-topic-question';
+import CurriculumQuestionAssessmentInfo from './curriculum-question-assessment-info';

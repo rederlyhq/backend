@@ -1,5 +1,5 @@
 import * as Joi from '@hapi/joi';
-import { ListCoursesFilters } from './course-controller';
+import { TopicTypeFilters, ListCoursesFilters } from './course-controller';
 import { AttachmentType } from '../../utilities/attachments-helper';
 import { getEnumValues } from '../../utilities/utilities';
 
@@ -467,6 +467,7 @@ export const getGradesValidation = {
         unitId: Joi.number().optional(),
         topicId: Joi.number().optional(),
         questionId: Joi.number().optional(),
+        topicTypeFilter: Joi.number().valid(...getEnumValues(TopicTypeFilters)).optional().default(TopicTypeFilters.ALL),
         userId: Joi.alternatives(Joi.number(), Joi.string().valid('me')).optional(),
     },
     body: {},
@@ -485,6 +486,7 @@ export const getStatisticsOnUnitsValidation = {
     query: {
         courseId: Joi.number().optional(),
         userId: Joi.number().optional(),
+        topicTypeFilter: Joi.number().valid(...getEnumValues(TopicTypeFilters)).optional().default(TopicTypeFilters.ALL),
     },
     body: {},
 };
@@ -495,6 +497,7 @@ export const getStatisticsOnTopicsValidation = {
         courseUnitContentId: Joi.number().optional(),
         courseId: Joi.number().optional(),
         userId: Joi.number().optional(),
+        topicTypeFilter: Joi.number().valid(...getEnumValues(TopicTypeFilters)).optional().default(TopicTypeFilters.ALL),
     },
     body: {},
 };

@@ -71,6 +71,12 @@ const Sequelize = require('sequelize');
 
 const ABSOLUTE_RENDERER_PATH_REGEX = /^(:?private\/|Contrib\/|webwork-open-problem-library\/|Library\/)/;
 
+export enum TopicTypeFilters {
+    ALL,
+    HOMEWORK = TopicTypeLookup.HOMEWORK,
+    EXAMS = TopicTypeLookup.EXAM,
+}
+
 export enum ListCoursesFilters {
     ALL = 'ALL',
     ACTIVE = 'ACTIVE',
@@ -2711,6 +2717,7 @@ class CourseController {
             topicId,
             unitId,
             userId,
+            topicTypeFilter
         } = options.where;
 
         const setFilterCount = utilities.countNotNil([
@@ -2787,6 +2794,11 @@ class CourseController {
         }
 
         let questionInclude;
+        let topicWhere;
+        if (topicTypeFilter !== TopicTypeFilters.ALL && topicTypeFilter !== undefined) {
+            topicWhere = {topicTypeId: topicTypeFilter};
+        }
+
         if (includeOthers || _.isNil(topicId) === false) {
             includeOthers = true;
             questionInclude = [{
@@ -2794,7 +2806,8 @@ class CourseController {
                 as: 'topic',
                 attributes: [],
                 where: {
-                    active: true
+                    active: true,
+                    ...topicWhere
                 },
                 include: [
                     ...(topicInclude ?? []),
@@ -3103,6 +3116,7 @@ class CourseController {
             courseId,
             userId,
             userRole,
+            topicTypeFilter
         } = options.where;
 
         const { followQuestionRules } = options;
@@ -3147,6 +3161,10 @@ class CourseController {
             topicWhere[`$topics.topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`] = {
                 [sequelize.Op.or]: [true, null]
             };
+        }
+
+        if (topicTypeFilter !== TopicTypeFilters.ALL && topicTypeFilter !== undefined) {
+            topicWhere['topicTypeId'] = topicTypeFilter;
         }
 
         return CourseUnitContent.findAll({
@@ -3221,6 +3239,7 @@ class CourseController {
             courseId,
             userId,
             userRole,
+            topicTypeFilter
         } = options.where;
 
         const { followQuestionRules } = options;
@@ -3325,6 +3344,10 @@ class CourseController {
         const systemScoreGroup: sequelize.ProjectionAlias = followQuestionRules ? 
             getSystemScoreWithWeights(QUESTION_SQL_NAME.INCLUDED_AS_QUESTIONS) : 
             [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'];
+
+        if (topicTypeFilter !== TopicTypeFilters.ALL && topicTypeFilter !== undefined) {
+            (where as sequelize.WhereAttributeHash)['topicTypeId'] = topicTypeFilter;
+        }
 
         return CourseTopicContent.findAll({
             where,

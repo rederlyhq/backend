@@ -14,7 +14,7 @@ const defaultQuestionUnusedFields = {
     id: -1,
     courseTopicContentId: -1,
     curriculumQuestionId: -1,
-    originatingQuestionId: -1,
+    originatingTopicQuestionId: -1,
     // Fields
     weight: 1,
     problemNumber: 1,
@@ -45,7 +45,7 @@ const defaultTopicUnusedFields = {
     topicTypeId: -1,
     courseUnitContentId: -1,
     curriculumTopicContentId: -1,
-    originatingTopicId: -1,
+    originatingTopicContentId: -1,
     // Fields
     contentOrder: 0,
     name: 'Topic Name',

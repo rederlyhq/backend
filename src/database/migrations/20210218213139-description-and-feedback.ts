@@ -1,5 +1,3 @@
-// TODO remove from actual migrations, DataTypes will be used
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { QueryInterface, DataTypes } from 'sequelize';
 
 export default {

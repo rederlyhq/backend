@@ -63,16 +63,6 @@ WorkbookFeedbackProblemAttachment.init({
         allowNull: false,
         defaultValue: true
     },
-    updatedAt: {
-        field: 'updated_at',
-        type: DataTypes.DATE,
-        allowNull: false,
-    },
-    createdAt: {
-        field: 'created_at',
-        type: DataTypes.DATE,
-        allowNull: false,
-    },
 }, {
     tableName: 'workbook_feedback_problem_attachment',
     sequelize: appSequelize, // this bit is important

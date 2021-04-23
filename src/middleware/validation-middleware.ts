@@ -33,7 +33,6 @@ export const validationMiddleware = ({ bodySchema, querySchema, paramsSchema }: 
                 // don't return so it will continue to test (could return false)
             } catch (e) {
                 if (RederlyValidationError.isRederlyValidationError(e)) {
-                    console.log(e.validate.errors);
                     const firstError = e.validate.errors?.[0];
                     next(Boom.badRequest(`Backend validation failed for "${firstError?.dataPath}" ${firstError?.message ?? 'unknown'}`, {
                         key: key,

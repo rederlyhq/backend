@@ -1,4 +1,3 @@
-import Bluebird = require('bluebird');
 import Curriculum from '../../database/models/curriculum';
 import UniversityCurriculumPermission from '../../database/models/university-curriculum-permission';
 import CurriculumUnitContent from '../../database/models/curriculum-unit-content';

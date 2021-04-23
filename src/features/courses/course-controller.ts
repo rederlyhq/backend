@@ -3523,8 +3523,6 @@ class CourseController {
         let topic: CourseTopicContent | null = null;
         let version: StudentTopicAssessmentInfo | null = null;
 
-        const user = await userController.getUserById(userId);
-
         if (_.isNil(courseTopicContentId)) {
             message = 'Sure, why not?';
             return {message, userCanGetQuestions: true, topic, version};

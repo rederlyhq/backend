@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize';
 

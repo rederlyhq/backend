@@ -60,6 +60,8 @@ export interface RederlyRequestHandler<P extends {} = {}, ResBody = unknown, Req
 
 export const asyncHandler = <P extends {} = {}, ResBody = unknown, ReqBody = unknown, ReqQuery extends {} = {}, MetaType = never>(requestHandler: RederlyRequestHandler<P, ResBody, ReqBody, ReqQuery, MetaType>): RequestHandler => async (req, res, next): Promise<void> => {
     try {
+        // This is a work around for expresses restrictions on params and query
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await requestHandler(req as any, res, next);
     } catch (e) {
         next(e);

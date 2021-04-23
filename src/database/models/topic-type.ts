@@ -1,9 +1,9 @@
 import { Model, DataTypes } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
-export enum TopicTypeEnum {
+export enum TopicTypeLookup {
     HOMEWORK = 1,
-    ASSESSMENT = 2
+    EXAM = 2,
 }
 
 export default class TopicType extends Model {

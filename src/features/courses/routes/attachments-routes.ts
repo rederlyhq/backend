@@ -4,7 +4,7 @@ import { authenticationMiddleware } from '../../../middleware/auth';
 import httpResponse from '../../../utilities/http-response';
 import { validationMiddleware } from '../../../middleware/validation-middleware';
 import { DeepAddIndexSignature } from '../../../extensions/typescript-utility-extensions';
-import attachmentHelper from '../../../utilities/attachments-helper';
+import attachmentHelper, { AttachmentType } from '../../../utilities/attachments-helper';
 import { ProblemAttachmentInterface } from '../../../database/models/problem-attachment';
 import configurations from '../../../configurations';
 import { stripSequelizeFromUpdateResult } from '../../../generic-interfaces/sequelize-generic-interfaces';
@@ -16,7 +16,7 @@ router.post('/attachments/upload-url',
     authenticationMiddleware,
     validationMiddleware(coursesPostUploadUrl),
     asyncHandler<coursesPostUploadUrl.IParams, coursesPostUploadUrl.IResponse, coursesPostUploadUrl.IBody, coursesPostUploadUrl.IQuery>(async (req, _res, next) => {
-        const result = await attachmentHelper.getNewPresignedURL();
+        const result = await attachmentHelper.getNewPresignedURL(req.query.type as AttachmentType | undefined);
         const resp = httpResponse.Ok('Get new presigned url success', result);
         next(resp as DeepAddIndexSignature<typeof resp>);
     }));

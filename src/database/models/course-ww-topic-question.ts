@@ -28,6 +28,7 @@ export interface CourseWWTopicQuestionInterface {
     topic?: CourseTopicContent;
     grades?: StudentGradeInterface[];
     studentTopicQuestionOverride?: StudentTopicQuestionOverrideInterface[];
+    originatingQuestionId: number;
 }
 
 export default class CourseWWTopicQuestion extends Model implements CourseWWTopicQuestionInterface {
@@ -43,6 +44,7 @@ export default class CourseWWTopicQuestion extends Model implements CourseWWTopi
     public curriculumQuestionId!: number;
     public smaEnabled!: boolean;
     public description!: unknown;
+    public originatingQuestionId!: number;
 
     // These are errors in the webworkQuestionPath, but might expand in the future to include more errors.
     public errors!: CourseTopicQuestionErrors | null;
@@ -202,6 +204,12 @@ CourseWWTopicQuestion.init({
         allowNull: true,
         defaultValue: null,
     },
+    originatingQuestionId: {
+        field: 'originating_question_id',
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: null,
+    }
 }, {
     tableName: 'course_topic_question',
     sequelize: appSequelize, // this bit is important

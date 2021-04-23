@@ -1,6 +1,6 @@
 import * as express from 'express';
-import courseController from './course-controller';
-import { authenticationMiddleware, paidMiddleware } from '../../middleware/auth';
+import courseController, { ListCoursesFilters } from './course-controller';
+import { authenticationMiddleware, paidMiddleware, userIdMeMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
 import NotFoundError from '../../exceptions/not-found-error';
 import multer = require('multer');
@@ -10,12 +10,10 @@ import * as _ from 'lodash';
 import configurations from '../../configurations';
 import WrappedError from '../../exceptions/wrapped-error';
 import { RederlyExpressRequest, EmptyExpressParams, EmptyExpressQuery, asyncHandler } from '../../extensions/rederly-express-request';
-import Boom = require('boom');
 import { Constants } from '../../constants';
 import Role from '../permissions/roles';
 import { PostQuestionMeta, stripSequelizeFromManualEnrollmentResult } from './course-types';
 import rendererHelper, { RENDERER_ENDPOINT, GetProblemParameters, RendererResponse } from '../../utilities/renderer-helper';
-import { StudentGradeInterface } from '../../database/models/student-grade';
 import bodyParser = require('body-parser');
 import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
 import ForbiddenError from '../../exceptions/forbidden-error';
@@ -32,6 +30,9 @@ import { CourseInterface } from '../../database/models/course';
 import { stripSequelizeFromUpdateResult } from '../../generic-interfaces/sequelize-generic-interfaces';
 import { StudentWorkbookInterface } from '../../database/models/student-workbook';
 import { StudentEnrollmentInterface } from '../../database/models/student-enrollment';
+import courseRepository from './course-repository';
+import { CourseQuestionAssessmentInfoInterface } from '../../database/models/course-question-assessment-info';
+import { StudentTopicOverrideInterface } from '../../database/models/student-topic-override';
 
 export const router = express.Router();
 
@@ -177,24 +178,18 @@ router.post('/',
             if (_.isNil(req.session)) {
                 throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
             }
-
-            if (_.isNil(req.query.useCurriculum)) {
-                throw new Error('useCurriculum has a default value and therefore is not possible to be nil');
-            }
             const session = req.session;
             const user = await session.getUser();
             const university = await user.getUniversity();
-
+    
             const newCourse = await courseController.createCourse({
                 object: {
                     instructorId: user.id,
                     universityId: university.id,
                     ...req.body
-                },
-                options: {
-                    useCurriculum: req.query.useCurriculum
                 }
             });
+    
             const resp = httpResponse.Created('Course created successfully', newCourse.get({plain: true}) as CourseInterface);
             next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {
@@ -220,28 +215,30 @@ router.post('/unit',
         }
     }));
 
-// TOMTOM
+// TOMTOM, router
 
 import { coursesGetGrades } from '@rederly/backend-validation';
 router.get('/grades',
     authenticationMiddleware,
     validationMiddleware(coursesGetGrades),
+    userIdMeMiddleware('query.userId'),
     asyncHandler<coursesGetGrades.IParams, coursesGetGrades.IResponse, coursesGetGrades.IBody, coursesGetGrades.IQuery>(async (req, _res, next) => {
-        try {
-            const grades = await courseController.getGrades({
-                where: {
-                    courseId: req.query.courseId,
-                    questionId: req.query.questionId,
-                    topicId: req.query.topicId,
-                    unitId: req.query.unitId,
-                    userId: req.query.userId,
-                }
-            });
-            const resp = httpResponse.Ok('Fetched successfully', grades.map(grade => grade.get({plain: true}) as GradingData));
-            next(resp as DeepAddIndexSignature<typeof resp>);
-        } catch (e) {
-            next(e);
+        if (_.isNil(req.rederlyUser)) {
+            throw new ForbiddenError('You must be logged in to access grades.');
         }
+
+        const grades = await courseController.getGrades({
+            where: {
+                courseId: req.query.courseId,
+                questionId: req.query.questionId,
+                topicId: req.query.topicId,
+                unitId: req.query.unitId,
+                userId: req.query.userId === 'me' ? req.rederlyUser.id : req.query.userId,
+            },
+            userRole: req.rederlyUserRole ?? Role.STUDENT,
+        });
+        const resp = httpResponse.Ok('Fetched successfully', grades.map(grade => grade.get({plain: true}) as GradingData));
+        next(resp as DeepAddIndexSignature<typeof resp>);
     }));
 
 import { coursesGetTopicGrades } from '@rederly/backend-validation';
@@ -341,7 +338,6 @@ router.put('/:id',
             next(e);
         }
     }));
-
 
 import { coursesPostPreview } from '@rederly/backend-validation';
 //TODO: Probably move this up?
@@ -471,6 +467,7 @@ router.get('/',
             filter: {
                 instructorId: req.query.instructorId,
                 enrolledUserId: req.query.enrolledUserId,
+                filterOptions: req.query.filterOptions as ListCoursesFilters,
             }
         });
         const resp = httpResponse.Ok('Fetched successfully', courses.map(course => course.get({plain: true}) as CourseInterface));
@@ -596,6 +593,16 @@ router.post('/enroll/:code',
 
 
         const session = req.session;
+
+        // TODO remove once we have elevated permissions
+        if (_.isNil(req.rederlyUser)) {
+            throw new Error('Enroll by code: Rederly user is missing');
+        }
+        
+        if (req.rederlyUser.roleId === Role.PROFESSOR) {
+            throw new IllegalArgumentException('Professors can not enroll by code');
+        }
+
         try {
             const enrollment = await courseController.enrollByCode({
                 code: req.params.code,
@@ -643,19 +650,75 @@ router.use('/', attachmentRouter);
 import { router as questionRouter } from './routes/question-routes';
 router.use('/', questionRouter);
 
-import { coursesPostFeedback } from '@rederly/backend-validation';
-import { CourseQuestionAssessmentInfoInterface } from '../../database/models/course-question-assessment-info';
-import { StudentTopicOverrideInterface } from '../../database/models/student-topic-override';
-router.post('/feedback', 
+import { courseWorkbookPostFeedback } from '@rederly/backend-validation';
+router.post('/workbook/:workbookId/feedback', 
     authenticationMiddleware,
-    validationMiddleware(coursesPostFeedback),
-    asyncHandler<coursesPostFeedback.IParams, coursesPostFeedback.IResponse, coursesPostFeedback.IBody, coursesPostFeedback.IQuery>(async (req, _res, next) => {
+    validationMiddleware(courseWorkbookPostFeedback),
+    asyncHandler<courseWorkbookPostFeedback.IParams, courseWorkbookPostFeedback.IResponse, courseWorkbookPostFeedback.IBody, courseWorkbookPostFeedback.IQuery>(async (req, _res, next) => {
         const res = await courseController.addFeedback({
             content: req.body.content,
-            workbookId: req.query.workbookId,
+            workbookId: req.params.workbookId,
         });
 
-        const resp = httpResponse.Ok('Attachment record created', stripSequelizeFromUpdateResult<StudentWorkbookInterface>(res));
+        const resp = httpResponse.Ok('Feedback saved', stripSequelizeFromUpdateResult<StudentWorkbookInterface>(res));
         next(resp as DeepAddIndexSignature<typeof resp>);
+    })
+);
+
+// TODO implement validations middleware below 
+import { courseWorkbookUploadPostFeedback } from '@rederly/backend-validation';
+router.post('/upload/workbook/:workbookId/feedback',
+    authenticationMiddleware,
+    validationMiddleware(courseWorkbookUploadPostFeedback),
+    asyncHandler<courseWorkbookUploadPostFeedback.IParams, courseWorkbookUploadPostFeedback.IResponse, courseWorkbookUploadPostFeedback.IBody, courseWorkbookUploadPostFeedback.IQuery>(async (req, _res, next) => {
+        // TODO permission to check if user has access to the provided grade or grade instance
+        const result = await courseRepository.createWorkbookFeedbackAttachment(req.body.attachment, req.params.workbookId);
+        next(httpResponse.Ok('Attachment record created', result));
+    }));
+
+import { courseTopicUploadPostFeedback } from '@rederly/backend-validation';
+router.post('/upload/topic/:topicId/feedback',
+    authenticationMiddleware,
+    validationMiddleware(courseTopicUploadPostFeedback),
+    asyncHandler<courseTopicUploadPostFeedback.IParams, courseTopicUploadPostFeedback.IResponse, courseTopicUploadPostFeedback.IBody, courseTopicUploadPostFeedback.IQuery>(async (req, _res, next) => {
+        // TODO permission to check if user has access to the provided grade or grade instance
+        const result = await courseRepository.createTopicFeedbackAttachment(req.body.attachment, req.params.topicId, req.body.userId);
+        next(httpResponse.Ok('Attachment record created', result));
+    }));
+
+import { courseTopicUploadPostDescription } from '@rederly/backend-validation';
+router.post('/upload/topic/:topicId/description',
+    authenticationMiddleware,
+    validationMiddleware(courseTopicUploadPostDescription),
+    asyncHandler<courseTopicUploadPostDescription.IParams, courseTopicUploadPostDescription.IResponse, courseTopicUploadPostDescription.IBody, courseTopicUploadPostDescription.IQuery>(async (req, _res, next) => {
+        // TODO permission to check if user has access to the provided grade or grade instance
+        const result = await courseRepository.createTopicDescriptionAttachment(req.body.attachment, req.params.topicId);
+        next(httpResponse.Ok('Attachment record created', result));
+    }));
+
+import { courseFeedbackGetUserByUserId } from '@rederly/backend-validation';
+router.get('/feedback/topic/:topicId/user/:userId',
+    authenticationMiddleware,
+    validationMiddleware(courseFeedbackGetUserByUserId),
+    asyncHandler<courseFeedbackGetUserByUserId.IParams, courseFeedbackGetUserByUserId.IResponse, courseFeedbackGetUserByUserId.IBody, courseFeedbackGetUserByUserId.IQuery>(async (req, _res, next) => {
+        const result = await courseRepository.getTopicFeedback({
+            topicId: req.params.topicId,
+            userId: req.params.userId,
+        });
+        next(httpResponse.Ok('Returning Topic Feedback', result));
+    })
+);
+
+import { courseFeedbackPostUserByUserId } from '@rederly/backend-validation';
+router.post('/feedback/topic/:topicId/user/:userId',
+    authenticationMiddleware,
+    validationMiddleware(courseFeedbackPostUserByUserId),
+    asyncHandler<courseFeedbackPostUserByUserId.IParams, courseFeedbackPostUserByUserId.IResponse, courseFeedbackPostUserByUserId.IBody, courseFeedbackPostUserByUserId.IQuery>(async (req, _res, next) => {
+        const result = await courseRepository.createTopicFeedback({
+            topicId: req.params.topicId,
+            userId: req.params.userId,
+            feedback: req.body.content,
+        });
+        next(httpResponse.Ok('Topic Feedback created', result));
     })
 );

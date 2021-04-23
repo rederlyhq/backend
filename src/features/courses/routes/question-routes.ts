@@ -29,6 +29,8 @@ import proxy = require('express-http-proxy');
 import configurations from '../../../configurations';
 import qs = require('qs');
 import { asyncHandler, EmptyExpressParams, EmptyExpressQuery, RederlyExpressRequest } from '../../../extensions/rederly-express-request';
+import ForbiddenError from '../../../exceptions/forbidden-error';
+import logger from '../../../utilities/logger';
 
 export const router = express.Router();
 
@@ -358,13 +360,19 @@ router.get('/question/:id/grade',
         if (_.isNil(req.session)) {
             throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
+
+        if (_.isNil(req.rederlyUser)) {
+            throw new ForbiddenError('You must be logged in to access grades.');
+        }
+        
         const { userId, includeWorkbooks } = req.query;
         const { id: questionId } = req.params;
 
         const grade = await courseController.getGradeForQuestion({
-            questionId,
-            userId,
-            includeWorkbooks
+            questionId: questionId,
+            userId: userId === 'me' ? req.rederlyUser.id : userId,
+            includeWorkbooks: includeWorkbooks,
+            userRole: req.rederlyUserRole ?? Role.STUDENT,
         });
 
         const resp = httpResponse.Ok('Fetched question grade successfully', (grade?.get({plain: true}) as Omit<StudentGradeInterface, 'gradeInstances | user_id'> & {
@@ -441,6 +449,7 @@ router.get('/question/:id',
             // check to see if we should allow this question to be viewed
             const {
                 userCanViewQuestion,
+                userCanViewSolution,
                 message
             } = await courseController.canUserViewQuestionId({
                 user: requestingUser,
@@ -451,6 +460,8 @@ router.get('/question/:id',
 
             if (userCanViewQuestion === false) throw new IllegalArgumentException(message);
 
+            logger.debug(`Getting question and showCorrectAnswers is ${userCanViewSolution && showCorrectAnswers} UCVS ${userCanViewSolution} SCA ${showCorrectAnswers}`);
+
             const question = await courseController.getQuestion({
                 questionId,
                 userId: requestedUserId ?? requestingUser.id,
@@ -459,7 +470,7 @@ router.get('/question/:id',
                 readonly,
                 workbookId,
                 studentTopicAssessmentInfoId,
-                showCorrectAnswers,
+                showCorrectAnswers: userCanViewSolution && showCorrectAnswers,
             });
             const resp = httpResponse.Ok('Fetched question successfully', question);
             next(resp as DeepAddIndexSignature<typeof resp>);
@@ -475,7 +486,7 @@ router.get('/question/:id',
     }));
 
 
-    import { courseQuestionPostQuestionById } from '@rederly/backend-validation';
+import { courseQuestionPostQuestionById } from '@rederly/backend-validation';
 router.post('/question/:id',
     authenticationMiddleware,
     // TODO investigate if this is a problem

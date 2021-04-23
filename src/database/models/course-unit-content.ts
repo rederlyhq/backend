@@ -8,12 +8,12 @@ export interface CourseUnitContentInterface {
     active: boolean;
     contentOrder: number;
     curriculumUnitId: number;
-
     createdAt: Date;
     updatedAt: Date;
     
     topics?: CourseTopicContentInterface[];
     course?: CourseInterface;
+    originatingUnitId: number;
 }
 
 export default class CourseUnitContent extends Model implements CourseUnitContentInterface {
@@ -23,6 +23,7 @@ export default class CourseUnitContent extends Model implements CourseUnitConten
     public active!: boolean;
     public contentOrder!: number;
     public curriculumUnitId!: number;
+    public originatingUnitId!: number;
 
     public getCourse!: BelongsToGetAssociationMixin<Course>;
 
@@ -96,6 +97,12 @@ CourseUnitContent.init({
         field: 'curriculum_unit_content_id',
         type: DataTypes.INTEGER,
         allowNull: true
+    },
+    originatingUnitId: {
+        field: 'originating_unit_id',
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: null,
     }
 }, {
     tableName: 'course_unit_content',

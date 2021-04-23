@@ -18,6 +18,8 @@ export interface CourseInterface {
     
     updatedAt: Date;
     createdAt: Date;
+
+    originatingCourseId: number;
 }
 export default class Course extends Model implements CourseInterface {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
@@ -32,6 +34,7 @@ export default class Course extends Model implements CourseInterface {
     public sectionCode!: string;
     public semesterCode!: string;
     public textbooks!: string;
+    public originatingCourseId!: number;
 
     public units?: CourseUnitContent[];
     public enrolledStudents?: StudentEnrollment[];
@@ -151,6 +154,12 @@ Course.init({
         type: DataTypes.TEXT,
         allowNull: false,
     },
+    originatingCourseId: {
+        field: 'originating_course_id',
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: null,
+    }
 }, {
     tableName: 'course',
     sequelize: appSequelize, // this bit is important

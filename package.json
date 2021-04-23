@@ -1,6 +1,6 @@
 {
   "name": "backend",
-  "version": "1.10.6",
+  "version": "1.10.11",
   "description": "",
   "main": "index.js",
   "dependencies": {
@@ -90,6 +90,8 @@
     "start:watch": "nodemon ./src/index.ts",
     "start:debug": "node --inspect=5858 -r ts-node/register ./src/index.ts",
     "start:debug:watch": "nodemon --inspect=5858 ./src/index.ts",
+    "start:docker": "docker run --add-host host.docker.internal:host-gateway -p 3001:3001 --name=dev-rederly-core-backend --rm -it $(docker build -q .)",
+    "start:docker:limited": "docker run --env NODE_OPTIONS='--max-old-space-size=2048' --cpus=1 --memory=2g --add-host host.docker.internal:host-gateway -p 3001:3001 --name=dev-rederly-core-backend --rm -it $(docker build -q .)",
     "cli": "ts-node ./src/cli.ts",
     "cli:built": "node ./ts-built/cli.js",
     "cli:debug": "node --inspect=5859 -r ts-node/register ./src/cli.ts",

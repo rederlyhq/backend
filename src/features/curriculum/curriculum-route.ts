@@ -159,7 +159,7 @@ router.get('/',
             }
 
             const user = await req.session.getUser();
-            const curriculums = await curriculumController.getCurriculums({user});
+            const curriculums = await curriculumController.getCurriculums({user, filterOptions: req.query.filterOptions});
             const resp = httpResponse.Ok('Fetched successfully', curriculums.map(curriculum => curriculum.get({plain: true}) as CurriculumInterface));
             next(resp as DeepAddIndexSignature<typeof resp>);
         } catch (e) {

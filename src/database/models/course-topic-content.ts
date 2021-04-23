@@ -6,7 +6,7 @@ export interface CourseTopicContentInterface {
     id: number;
     curriculumTopicContentId: number;
     courseUnitContentId: number;
-    topicTypeId: TopicTypeEnum;
+    topicTypeId: TopicTypeLookup;
     name: string;
     active: boolean;
     contentOrder: number;
@@ -28,13 +28,14 @@ export interface CourseTopicContentInterface {
     questions?: CourseWWTopicQuestionInterface[];
     studentTopicOverride?: StudentTopicOverrideInterface[];
     topicAssessmentInfo?: TopicAssessmentInfoInterface | null;
+    originatingTopicId: number;
 }
 
 export default class CourseTopicContent extends Model implements CourseTopicContentInterface {
     public id!: number; // Note that the `null assertion` `!` is required in strict mode.
     public curriculumTopicContentId!: number;
     public courseUnitContentId!: number;
-    public topicTypeId!: TopicTypeEnum;
+    public topicTypeId!: TopicTypeLookup;
     public name!: string;
     public active!: boolean;
     public contentOrder!: number;
@@ -52,6 +53,8 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
 
     // This is the count of errors in problems associated with this topic.
     public errors!: number;
+
+    public originatingTopicId!: number;
 
     public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
     public getUnit!: BelongsToGetAssociationMixin<CourseUnitContent>;
@@ -231,6 +234,12 @@ CourseTopicContent.init({
         allowNull: true,
         defaultValue: null,
     },
+    originatingTopicId: {
+        field: 'originating_topic_id',
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: null,
+    },
     workbookCount: {
         type: DataTypes.VIRTUAL,
         allowNull: true,
@@ -263,7 +272,7 @@ CourseTopicContent.init({
 });
 
 import CurriculumTopicContent from './curriculum-topic-content';
-import TopicType, { TopicTypeEnum } from './topic-type';
+import TopicType, { TopicTypeLookup } from './topic-type';
 import CourseUnitContent, { CourseUnitContentInterface } from './course-unit-content';
 import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface } from './course-ww-topic-question';
 import TopicAssessmentInfo, { TopicAssessmentInfoInterface } from './topic-assessment-info';

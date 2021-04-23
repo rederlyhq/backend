@@ -19,6 +19,7 @@ import ProblemAttachment from '../../database/models/problem-attachment';
 import { BucketDefFileResult, FindFilesDefFileResult } from '../../utilities/webwork-utilities/importer';
 import WebWorkDef from '@rederly/webwork-def-parser';
 import StudentEnrollment, { StudentEnrollmentInterface } from '../../database/models/student-enrollment';
+import { ListCoursesFilters } from './course-controller';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -51,6 +52,7 @@ export interface CourseListOptions {
     filter: {
         instructorId?: number;
         enrolledUserId?: number;
+        filterOptions?: ListCoursesFilters;
     };
 }
 
@@ -90,8 +92,6 @@ export interface GetCourseTopicRepositoryOptions {
     id: number;
     // For overrides
     userId?: number;
-    // to check if the topic has been 'used'
-    checkUsed?: boolean;
 }
 
 export interface GetTopicAssessmentInfoByTopicIdOptions {
@@ -258,9 +258,6 @@ export interface UpdateQuestionsOptions {
 
 export interface CreateCourseOptions {
     object: Partial<Course>;
-    options: {
-        useCurriculum: boolean;
-    };
 }
 
 export interface UpdateCourseOptions {
@@ -278,12 +275,14 @@ export interface GetGradesOptions {
         questionId?: number;
         userId?: number;
     };
+    userRole: Role;
 }
 
 export interface GetGradeForQuestionOptions {
     questionId: number;
     userId: number;
     includeWorkbooks?: boolean;
+    userRole?: Role;
 }
 
 export interface GetStatisticsOnUnitsOptions {
@@ -373,7 +372,10 @@ export interface CanUserViewQuestionIdOptions {
 }
 
 export interface CanUserViewQuestionIdResult {
+    // This essentially checks hideProblemsAfterFinish.
     userCanViewQuestion: boolean;
+    // This essentially checks showItemizedResults.
+    userCanViewSolution?: boolean;
     message: string;
 }
 
@@ -717,5 +719,5 @@ export interface RequestNewProblemVersionOptions {
 
 export interface AddFeedbackOptions {
     workbookId: number;
-    content: string;
+    content: unknown;
 }

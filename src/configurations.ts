@@ -122,6 +122,14 @@ const configurations = {
         configSalt: readStringValue('CONFIG_SALT', ''),
         autoDeleteTemp: readBooleanValue('AUTO_DELETE_TEMP_FILES', true),
     },
+    monitoring: {
+        memory: {
+            debugThreshold: readIntValue('MONITORING_MEMORY_DEBUG_THRESHOLD', 40),
+            warningThreshold: readIntValue('MONITORING_MEMORY_WARNING_THRESHOLD', 60),
+            errorThreshold: readIntValue('MONITORING_MEMORY_ERROR_THRESHOLD', 80),
+            interval: readIntValue('MONITORING_MEMORY_INTERVAL', 10000)
+        }
+    },
     server: {
         port: readStringValue('SERVER_PORT', '3001'),
         basePath: readStringValue('SERVER_BASE_PATH', '/backend-api'),
@@ -142,6 +150,7 @@ const configurations = {
         password: readStringValue('DB_PASSWORD', 'password'),
         logging: readBooleanValue('DB_LOGGING', false),
         sync: readBooleanValue('DB_SYNC', false),
+        statementTimeout: readIntValue('DB_STATEMENT_TIMEOUT', 60000),
     },
     email: {
         enabled: readBooleanValue('EMAIL_ENABLED', false),
@@ -198,12 +207,17 @@ const configurations = {
         presignedUrlBasePath: readStringValue('ATTACHMENTS_PRESIGNED_URL_BASE_PATH', ''),
         baseUrl: readStringValue('ATTACHMENTS_BASE_URL', ''),
         presignedUrlTimeout: readIntValue('ATTACHMENTS_PRESIGNED_URL_TIMEOUT', 60000),
+        // Uploads use the same Base URL as attachments.
+        uploadsPresignedUrlBasePath: readStringValue('UPLOADS_PRESIGNED_URL_BASE_PATH', ''),
     },
     importer: {
         missingFileThreshold: readIntValue('IMPORTER_MISSING_FILE_THRESHOLD', 10),
     },
     bulkPdfExport: {
         baseUrl: readStringValue('BULK_PDF_EXPORT_URL', 'http://localhost:3005'),
+    },
+    libraryBrowser: {
+        baseUrl: readStringValue('LIBRARY_BROWSER_BASE_URL', 'http://localhost:3004')
     },
     loadPromise: new Promise<void>((resolve, reject) => {
         // Avoid cyclic dependency by deferring the logging until after all the imports are done

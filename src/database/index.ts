@@ -1,4 +1,3 @@
-import logger from '../utilities/logger';
 import appSequelize from './app-sequelize';
 
 import User from './models/user';
@@ -82,9 +81,7 @@ models.forEach((model: any) => {
     }
 });
 
-const database = {
-    ...models,
+export {
+    models,
     appSequelize
 };
-
-export default database;

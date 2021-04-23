@@ -16,6 +16,7 @@ export interface CourseTopicContentInterface {
     partialExtend: boolean;
     createdAt: Date;
     updatedAt: Date;
+    originatingTopicContentId: number;
 }
 
 export default class CourseTopicContent extends Model implements CourseTopicContentInterface {
@@ -35,8 +36,13 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
     public lastExported!: Date | null;
     public exportUrl!: string | null;
 
+    // This is a Quill Delta object, which we don't need to manipulate here.
+    public description!: unknown;
+
     // This is the count of errors in problems associated with this topic.
     public errors!: number;
+
+    public originatingTopicContentId!: number;
 
     public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
     public getUnit!: BelongsToGetAssociationMixin<CourseUnitContent>;
@@ -96,6 +102,12 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
             foreignKey: 'curriculumTopicContentId',
             targetKey: 'id',
             as: 'curriculumTopicContent'
+        });
+
+        CourseTopicContent.belongsTo(CourseTopicContent, {
+            foreignKey: 'originatingTopicContentId',
+            targetKey: 'id',
+            as: 'originatingTopicContent'
         });
 
         CourseTopicContent.belongsTo(CourseUnitContent, {
@@ -207,6 +219,18 @@ CourseTopicContent.init({
     exportUrl: {
         field: 'course_topic_content_export_url',
         type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null,
+    },
+    description: {
+        field: 'course_topic_content_description',
+        type: DataTypes.JSONB,
+        allowNull: true,
+        defaultValue: null,
+    },
+    originatingTopicContentId: {
+        field: 'originating_topic_content_id',
+        type: DataTypes.INTEGER,
         allowNull: true,
         defaultValue: null,
     },

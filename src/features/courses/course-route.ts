@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import courseController from './course-controller';
+import courseController, { TopicTypeFilters, ListCoursesFilters } from './course-controller';
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator';
-import { authenticationMiddleware, paidMiddleware } from '../../middleware/auth';
+import { authenticationMiddleware, paidMiddleware, userIdMeMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
-import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation, deleteEnrollmentValidation, createAssessmentVersionValidation, extendCourseTopicForUserValidation, extendCourseTopicQuestionValidation, getTopicValidation, submitAssessmentVersionValidation, endAssessmentVersionValidation, previewQuestionValidation, gradeAssessmentValidation, getAttachmentPresignedURLValidation, postAttachmentValidation, listAttachmentsValidation, deleteAttachmentValidation, emailProfValidation, readQuestionValidation, saveQuestionValidation, catalogValidation, getVersionValidation, getQuestionRawValidation, getQuestionGradeValidation, getQuestionOpenLabValidation, postImportCourseArchiveValidation, uploadAssetValidation, getQuestionShowMeAnotherValidation, browseProblemsCourseListValidation, browseProblemsSearchValidation, browseProblemsTopicListValidation, browseProblemsUnitListValidation, bulkExportValidation, endBulkExportValidation, getGradesForTopicsByCourseValidation } from './course-route-validation';
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation, deleteEnrollmentValidation, createAssessmentVersionValidation, extendCourseTopicForUserValidation, extendCourseTopicQuestionValidation, getTopicValidation, submitAssessmentVersionValidation, endAssessmentVersionValidation, previewQuestionValidation, gradeAssessmentValidation, getAttachmentPresignedURLValidation, postAttachmentValidation, listAttachmentsValidation, deleteAttachmentValidation, emailProfValidation, readQuestionValidation, saveQuestionValidation, catalogValidation, getVersionValidation, getQuestionRawValidation, getQuestionGradeValidation, getQuestionOpenLabValidation, postImportCourseArchiveValidation, uploadAssetValidation, getQuestionShowMeAnotherValidation, browseProblemsCourseListValidation, browseProblemsSearchValidation, browseProblemsTopicListValidation, browseProblemsUnitListValidation, bulkExportValidation, endBulkExportValidation, getGradesForTopicsByCourseValidation, postFeedbackValidation, postUploadWorkbookFeedbackValidation, postUploadTopicDescriptionValidation, postUploadTopicFeedbackValidation, postTopicFeedbackValidation, getTopicFeedbackValidation } from './course-route-validation';
 import NotFoundError from '../../exceptions/not-found-error';
 import multer = require('multer');
 import * as proxy from 'express-http-proxy';
@@ -14,7 +14,7 @@ import * as _ from 'lodash';
 import configurations from '../../configurations';
 import WrappedError from '../../exceptions/wrapped-error';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
-import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest, ExtendCourseTopicQuestionRequest, CreateAssessmentVersionRequest, SubmitAssessmentVersionRequest, UpdateGradeInstanceRequest, EndAssessmentVersionRequest, PreviewQuestionRequest, GradeAssessmentRequest, GetAttachmentPresignedURLRequest, PostAttachmentRequest, ListAttachmentsRequest, DeleteAttachmentRequest, EmailProfRequest, ReadQuestionRequest, SaveQuestionRequest, CatalogRequest, GetVersionRequest, GetQuestionRawRequest, GetQuestionGradeRequest, PostImportCourseArchiveRequest, GetQuestionOpenLabRequest, UploadAssetRequest, GetQuestionShowMeAnotherRequest, BrowseProblemsCourseListRequest, BrowseProblemsSearchRequest, BrowseProblemsTopicListRequest, BrowseProblemsUnitListRequest, BulkExportRequest, EndBulkExportRequest, GetGradesForTopicsByCourseRequest } from './course-route-request-types';
+import { GetStatisticsOnUnitsRequest, GetStatisticsOnTopicsRequest, GetStatisticsOnQuestionsRequest, CreateCourseRequest, CreateCourseUnitRequest, GetGradesRequest, GetQuestionsRequest, UpdateCourseTopicRequest, UpdateCourseUnitRequest, CreateCourseTopicQuestionRequest, GetQuestionRequest, ListCoursesRequest, GetTopicsRequest, GetCourseRequest, EnrollInCourseRequest, EnrollInCourseByCodeRequest, UpdateCourseRequest, UpdateCourseTopicQuestionRequest, CreateQuestionsForTopicFromDefFileRequest, DeleteCourseUnitRequest, DeleteCourseTopicRequest, DeleteCourseQuestionRequest, UpdateGradeRequest, DeleteEnrollmentRequest, ExtendCourseTopicForUserRequest, GetTopicRequest, ExtendCourseTopicQuestionRequest, CreateAssessmentVersionRequest, SubmitAssessmentVersionRequest, UpdateGradeInstanceRequest, EndAssessmentVersionRequest, PreviewQuestionRequest, GradeAssessmentRequest, GetAttachmentPresignedURLRequest, PostAttachmentRequest, ListAttachmentsRequest, DeleteAttachmentRequest, EmailProfRequest, ReadQuestionRequest, SaveQuestionRequest, CatalogRequest, GetVersionRequest, GetQuestionRawRequest, GetQuestionGradeRequest, PostImportCourseArchiveRequest, GetQuestionOpenLabRequest, UploadAssetRequest, GetQuestionShowMeAnotherRequest, BrowseProblemsCourseListRequest, BrowseProblemsSearchRequest, BrowseProblemsTopicListRequest, BrowseProblemsUnitListRequest, BulkExportRequest, EndBulkExportRequest, GetGradesForTopicsByCourseRequest, PostFeedbackRequest, PostUploadWorkbookFeedbackRequest, PostUploadTopicDescriptionRequest, PostUploadTopicFeedbackRequest, PostTopicFeedbackRequest } from './course-route-request-types';
 import Boom = require('boom');
 import { Constants } from '../../constants';
 import Role from '../permissions/roles';
@@ -26,7 +26,7 @@ import IllegalArgumentException from '../../exceptions/illegal-argument-exceptio
 import logger from '../../utilities/logger';
 import ForbiddenError from '../../exceptions/forbidden-error';
 import AttemptsExceededException from '../../exceptions/attempts-exceeded-exception';
-import attachmentHelper from '../../utilities/attachments-helper';
+import attachmentHelper, { AttachmentType } from '../../utilities/attachments-helper';
 import urljoin = require('url-join');
 import RederlyError from '../../exceptions/rederly-error';
 import openLabHelper from '../../utilities/openlab-helper';
@@ -35,6 +35,7 @@ import { rederlyTempFileWrapper } from '../../middleware/rederly-temp-file-wrapp
 import ExportPDFHelper from '../../utilities/export-pdf-helper';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import { canUserViewCourse } from '../../middleware/permissions/course-permissions';
+import courseRepository from './course-repository';
 
 const fileUpload = multer();
 
@@ -73,23 +74,21 @@ router.get('/statistics/units',
     authenticationMiddleware,
     validate(getStatisticsOnUnitsValidation),
     asyncHandler(async (req: RederlyExpressRequest<GetStatisticsOnUnitsRequest.params, unknown, GetStatisticsOnUnitsRequest.body, GetStatisticsOnUnitsRequest.query>, _res: Response, next: NextFunction) => {
-        try {
-            const stats = await courseController.getStatisticsOnUnits({
-                where: {
-                    courseId: req.query.courseId,
-                    userId: req.query.userId,
-                },
-                followQuestionRules: !_.isNil(req.query.userId)
-            });
+        const stats = await courseController.getStatisticsOnUnits({
+            where: {
+                courseId: req.query.courseId,
+                userId: req.query.userId,
+                userRole: req.rederlyUserRole ?? Role.STUDENT,
+                topicTypeFilter: req.query.topicTypeFilter as TopicTypeFilters
+            },
+            followQuestionRules: !_.isNil(req.query.userId)
+        });
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            next(httpResponse.Ok('Fetched successfully', {
-                data: stats,
-                ...getAveragesFromStatistics(stats),
-            }));
-        } catch (e) {
-            next(e);
-        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        next(httpResponse.Ok('Fetched successfully', {
+            data: stats,
+            ...getAveragesFromStatistics(stats),
+        }));
     }));
 
 router.get('/statistics/topics',
@@ -102,6 +101,8 @@ router.get('/statistics/topics',
                     courseUnitContentId: req.query.courseUnitContentId,
                     courseId: req.query.courseId,
                     userId: req.query.userId,
+                    userRole: req.rederlyUserRole ?? Role.STUDENT,
+                    topicTypeFilter: req.query.topicTypeFilter as TopicTypeFilters
                 },
                 followQuestionRules: !_.isNil(req.query.userId)
             });
@@ -126,6 +127,7 @@ router.get('/statistics/questions',
                     courseTopicContentId: req.query.courseTopicContentId,
                     courseId: req.query.courseId,
                     userId: req.query.userId,
+                    userRole: req.rederlyUserRole ?? Role.STUDENT,
                 },
                 followQuestionRules: !_.isNil(req.query.userId)
             });
@@ -168,32 +170,22 @@ router.post('/',
     paidMiddleware('Creating a new course'),
     asyncHandler(async (req: RederlyExpressRequest<CreateCourseRequest.params, unknown, CreateCourseRequest.body, unknown>, _res: Response, next: NextFunction) => {
         const query = req.query as CreateCourseRequest.query;
-        try {
-            if (_.isNil(req.session)) {
-                throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
-            }
-
-            if (_.isNil(query.useCurriculum)) {
-                throw new Error('useCurriculum has a default value and therefore is not possible to be nil');
-            }
-            const session = req.session;
-            const user = await session.getUser();
-            const university = await user.getUniversity();
-
-            const newCourse = await courseController.createCourse({
-                object: {
-                    instructorId: user.id,
-                    universityId: university.id,
-                    ...req.body
-                },
-                options: {
-                    useCurriculum: query.useCurriculum
-                }
-            });
-            next(httpResponse.Created('Course created successfully', newCourse));
-        } catch (e) {
-            next(e);
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
+
+        const session = req.session;
+        const user = await session.getUser();
+        const university = await user.getUniversity();
+
+        const newCourse = await courseController.createCourse({
+            object: {
+                instructorId: user.id,
+                universityId: university.id,
+                ...req.body
+            }
+        });
+        next(httpResponse.Created('Course created successfully', newCourse));
     }));
 
 router.post('/unit',
@@ -227,21 +219,24 @@ router.post('/topic',
 router.get('/grades',
     authenticationMiddleware,
     validate(getGradesValidation),
+    userIdMeMiddleware('query.userId'),
     asyncHandler(async (req: RederlyExpressRequest<GetGradesRequest.params, unknown, GetGradesRequest.body, GetGradesRequest.query>, _res: Response, next: NextFunction) => {
-        try {
-            const grades = await courseController.getGrades({
-                where: {
-                    courseId: req.query.courseId,
-                    questionId: req.query.questionId,
-                    topicId: req.query.topicId,
-                    unitId: req.query.unitId,
-                    userId: req.query.userId,
-                }
-            });
-            next(httpResponse.Ok('Fetched successfully', grades));
-        } catch (e) {
-            next(e);
+        if (_.isNil(req.rederlyUser)) {
+            throw new ForbiddenError('You must be logged in to access grades.');
         }
+
+        const grades = await courseController.getGrades({
+            where: {
+                courseId: req.query.courseId,
+                questionId: req.query.questionId,
+                topicId: req.query.topicId,
+                unitId: req.query.unitId,
+                topicTypeFilter: req.query.topicTypeFilter as TopicTypeFilters,
+                userId: req.query.userId === 'me' ? req.rederlyUser.id : req.query.userId,
+            },
+            userRole: req.rederlyUserRole ?? Role.STUDENT,
+        });
+        next(httpResponse.Ok('Fetched successfully', grades));
     }));
 
 router.get('/:courseId/topic-grades',
@@ -353,6 +348,7 @@ router.put('/topic/:topicId/endExport',
         }
 
         if (_.isNil(req.body.exportUrl)) {
+            logger.error('The Exporter failed to successfully export a topic.');
             topic.exportUrl = null;
             topic.lastExported = null;
         } else {
@@ -792,23 +788,25 @@ router.get('/question/:id/raw',
 router.get('/question/:id/grade',
     authenticationMiddleware,
     validate(getQuestionGradeValidation),
+    userIdMeMiddleware('query.userId'),
     // This is a typescript workaround since it tries to use the type extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetQuestionGradeRequest.body, unknown>, _res: Response, next: NextFunction) => {
-        if (_.isNil(req.session)) {
-            throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
-        }
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetQuestionGradeRequest.body, unknown>, _res: Response, next: NextFunction) => {        
         const { userId, includeWorkbooks } = req.query as GetQuestionGradeRequest.query;
         const { id: questionId } = req.params as GetQuestionGradeRequest.params;
 
+        if (_.isNil(req.rederlyUser)) {
+            throw new ForbiddenError('You must be logged in to access grades.');
+        }
+
         const grade = await courseController.getGradeForQuestion({
             questionId,
-            userId,
-            includeWorkbooks
+            userId: userId === 'me' ? req.rederlyUser.id : userId,
+            includeWorkbooks,
+            userRole: req.rederlyUserRole ?? Role.STUDENT,
         });
 
         next(httpResponse.Ok('Fetched question grade successfully', grade));
-
     }));
 
 router.get('/question/:id/openlab',
@@ -870,40 +868,39 @@ router.get('/question/:id',
 
         const { id: questionId } = req.params as GetQuestionRequest.params;
         const { readonly, workbookId, userId: requestedUserId, studentTopicAssessmentInfoId, showCorrectAnswers } = req.query;
-        try {
-            // check to see if we should allow this question to be viewed
-            const {
-                userCanViewQuestion,
-                message
-            } = await courseController.canUserViewQuestionId({
-                user: requestingUser,
-                questionId,
-                studentTopicAssessmentInfoId,
-                role: rederlyUserRole
-            });
+        // check to see if we should allow this question to be viewed
+        const {
+            userCanViewQuestion,
+            userCanViewSolution,
+            message
+        } = await courseController.canUserViewQuestionId({
+            user: requestingUser,
+            questionId,
+            studentTopicAssessmentInfoId,
+            role: rederlyUserRole
+        });
 
-            if (userCanViewQuestion === false) throw new IllegalArgumentException(message);
+        if (userCanViewQuestion === false) throw new IllegalArgumentException(message);
 
-            const question = await courseController.getQuestion({
-                questionId,
-                userId: requestedUserId ?? requestingUser.id,
-                formURL: req.originalUrl,
-                role: rederlyUserRole,
-                readonly,
-                workbookId,
-                studentTopicAssessmentInfoId,
-                showCorrectAnswers,
-            });
-            next(httpResponse.Ok('Fetched question successfully', question));
+        logger.debug(`Getting question and showCorrectAnswers is ${userCanViewSolution && showCorrectAnswers} UCVS ${userCanViewSolution} SCA ${showCorrectAnswers}`);
 
-            // If testing renderer integration from the browser without the front end simply return the rendered html
-            // To do so first uncomment the below res.send and comment out the above next
-            // Also when in the browser console add your auth token (`document.cookie = "sessionToken=UUID;`)
-            // Don't forget to do this in post as well
-            // res.send(question.rendererData.renderedHTML);
-        } catch (e) {
-            next(e);
-        }
+        const question = await courseController.getQuestion({
+            questionId,
+            userId: requestedUserId ?? requestingUser.id,
+            formURL: req.originalUrl,
+            role: rederlyUserRole,
+            readonly,
+            workbookId,
+            studentTopicAssessmentInfoId,
+            showCorrectAnswers: userCanViewSolution && showCorrectAnswers,
+        });
+        next(httpResponse.Ok('Fetched question successfully', question));
+
+        // If testing renderer integration from the browser without the front end simply return the rendered html
+        // To do so first uncomment the below res.send and comment out the above next
+        // Also when in the browser console add your auth token (`document.cookie = "sessionToken=UUID;`)
+        // Don't forget to do this in post as well
+        // res.send(question.rendererData.renderedHTML);
     }));
 
 router.post('/assessment/topic/:id/submit/:version/auto',
@@ -1197,6 +1194,7 @@ router.get('/',
             filter: {
                 instructorId: req.query.instructorId,
                 enrolledUserId: req.query.enrolledUserId,
+                filterOptions: req.query.filterOptions as ListCoursesFilters,
             }
         });
         next(httpResponse.Ok('Fetched successfully', courses));
@@ -1439,6 +1437,16 @@ router.post('/enroll/:code',
         }
 
         const session = req.session;
+
+        // TODO remove once we have elevated permissions
+        if (_.isNil(req.rederlyUser)) {
+            throw new Error('Enroll by code: Rederly user is missing');
+        }
+        
+        if (req.rederlyUser.roleId === Role.PROFESSOR) {
+            throw new IllegalArgumentException('Professors can not enroll by code');
+        }
+
         try {
             const enrollment = await courseController.enrollByCode({
                 code: req.params.code,
@@ -1475,11 +1483,11 @@ router.delete('/enroll',
 
 // TODO: Switch to POST in next release to match Frontend API.
 // This was to avoid API failures from one release to another.
-router.all('/attachments/upload-url',
+router.post('/attachments/upload-url',
     authenticationMiddleware,
     validate(getAttachmentPresignedURLValidation),
     asyncHandler(async (req: RederlyExpressRequest<GetAttachmentPresignedURLRequest.params, unknown, GetAttachmentPresignedURLRequest.body, GetAttachmentPresignedURLRequest.query>, _res: Response, next: NextFunction) => {
-        const result = await attachmentHelper.getNewPresignedURL();
+        const result = await attachmentHelper.getNewPresignedURL(req.query.type as AttachmentType | undefined);
         next(httpResponse.Ok('Get new presigned url success', result));
     }));
 
@@ -1637,4 +1645,77 @@ router.post('/question/editor/catalog',
             problems: Object.keys(result).filter(elm => elm.endsWith('.pg'))
         }));
     }));
+
+router.post('/workbook/:workbookId/feedback', 
+    authenticationMiddleware,
+    validate(postFeedbackValidation),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, PostFeedbackRequest.body, unknown>, _res: Response, next: NextFunction) => {
+
+        const res = await courseController.addFeedback({
+            content: req.body.content,
+            workbookId: (req.params as PostFeedbackRequest.params).workbookId,
+        });
+
+        next(httpResponse.Ok('Feedback saved', res));
+    })
+);
+
+router.post('/upload/workbook/:workbookId/feedback',
+    authenticationMiddleware,
+    validate(postUploadWorkbookFeedbackValidation),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, PostUploadWorkbookFeedbackRequest.body, PostUploadWorkbookFeedbackRequest.query>, _res: Response, next: NextFunction) => {
+        // TODO permission to check if user has access to the provided grade or grade instance
+        const result = await courseRepository.createWorkbookFeedbackAttachment(req.body.attachment, (req.params as PostUploadWorkbookFeedbackRequest.params).workbookId);
+        next(httpResponse.Ok('Attachment record created', result));
+    }));
+
+router.post('/upload/topic/:topicId/feedback',
+    authenticationMiddleware,
+    validate(postUploadTopicFeedbackValidation),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, PostUploadTopicFeedbackRequest.body, PostUploadTopicFeedbackRequest.query>, _res: Response, next: NextFunction) => {
+        // TODO permission to check if user has access to the provided grade or grade instance
+        const result = await courseRepository.createTopicFeedbackAttachment(req.body.attachment, (req.params as PostUploadTopicFeedbackRequest.params).topicId, req.body.userId);
+        next(httpResponse.Ok('Attachment record created', result));
+    }));
+
+router.post('/upload/topic/:topicId/description',
+    authenticationMiddleware,
+    validate(postUploadTopicDescriptionValidation),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, PostUploadTopicDescriptionRequest.body, PostUploadTopicDescriptionRequest.query>, _res: Response, next: NextFunction) => {
+        // TODO permission to check if user has access to the provided grade or grade instance
+        const result = await courseRepository.createTopicDescriptionAttachment(req.body.attachment, (req.params as PostUploadTopicDescriptionRequest.params).topicId);
+        next(httpResponse.Ok('Attachment record created', result));
+    }));
+
+router.get('/feedback/topic/:topicId/user/:userId',
+    authenticationMiddleware,
+    validate(getTopicFeedbackValidation),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, PostUploadTopicDescriptionRequest.body, PostUploadTopicDescriptionRequest.query>, _res: Response, next: NextFunction) => {
+        const result = await courseRepository.getTopicFeedback({
+            topicId: req.params.topicId,
+            userId: req.params.userId,
+        });
+        next(httpResponse.Ok('Returning Topic Feedback', result));
+    })
+);
+
+router.post('/feedback/topic/:topicId/user/:userId',
+    authenticationMiddleware,
+    validate(postTopicFeedbackValidation),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, PostTopicFeedbackRequest.body, PostTopicFeedbackRequest.query>, _res: Response, next: NextFunction) => {
+        const result = await courseRepository.createTopicFeedback({
+            topicId: req.params.topicId,
+            userId: req.params.userId,
+            feedback: req.body.content,
+        });
+        next(httpResponse.Ok('Topic Feedback created', result));
+    })
+);
+
 module.exports = router;

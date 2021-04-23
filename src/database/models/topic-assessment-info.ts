@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { Model, DataTypes } from 'sequelize';
+import { Model, DataTypes, HasManyGetAssociationsMixin } from 'sequelize';
 import appSequelize from '../app-sequelize';
 
 interface TopicAssessmentInfoOverridesInterface {
@@ -18,6 +18,7 @@ export interface TopicAssessmentInfoInterface extends TopicAssessmentInfoOverrid
     showTotalGradeImmediately: boolean;
     hideProblemsAfterFinish: boolean;
     randomizeOrder: boolean;
+    originatingTopicAssessmentInfoId: number;
 }
 
 export default class TopicAssessmentInfo extends Model implements TopicAssessmentInfoInterface {
@@ -35,11 +36,14 @@ export default class TopicAssessmentInfo extends Model implements TopicAssessmen
     public hideProblemsAfterFinish!: boolean;
     public randomizeOrder!: boolean;
     public active!: boolean;
+    public originatingTopicAssessmentInfoId!: number;
 
     // public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
 
     public readonly studentTopicAssessmentOverride?: StudentTopicAssessmentOverride[];
     public readonly studentTopicAssessmentInfo?: StudentTopicAssessmentInfo[];
+
+    public readonly getStudentTopicAssessmentInfo!: HasManyGetAssociationsMixin<StudentTopicAssessmentInfo>;
 
     // timestamps!
     public readonly createdAt!: Date;
@@ -77,6 +81,18 @@ export default class TopicAssessmentInfo extends Model implements TopicAssessmen
             foreignKey: 'topicAssessmentInfoId',
             sourceKey: 'id',
             as: 'studentTopicAssessmentInfo'
+        });
+
+        TopicAssessmentInfo.belongsTo(CurriculumTopicAssessmentInfo, {
+            foreignKey: 'curriculumTopicAssessmentInfoId',
+            targetKey: 'id',
+            as: 'curriculumTopicAssessmentInfo'
+        });
+
+        TopicAssessmentInfo.belongsTo(TopicAssessmentInfo, {
+            foreignKey: 'originatingTopicAssessmentInfoId',
+            targetKey: 'id',
+            as: 'originatingTopicAssessmentInfo'
         });
 
         /* eslint-enable @typescript-eslint/no-use-before-define */
@@ -166,6 +182,12 @@ TopicAssessmentInfo.init({
         allowNull: false,
         defaultValue: true
     },
+    originatingTopicAssessmentInfoId: {
+        field: 'originating_topic_assessment_info_id',
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: null,
+    }
 }, {
     tableName: 'topic_assessment_info',
     sequelize: appSequelize, // this bit is important
@@ -174,3 +196,4 @@ TopicAssessmentInfo.init({
 import CourseTopicContent from './course-topic-content';
 import StudentTopicAssessmentInfo from './student-topic-assessment-info';
 import StudentTopicAssessmentOverride, { StudentTopicAssessmentOverrideOverridesInterface } from './student-topic-assessment-override';
+import CurriculumTopicAssessmentInfo from './curriculum-topic-assessment-info';

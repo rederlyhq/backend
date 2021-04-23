@@ -1,12 +1,14 @@
 import * as Joi from '@hapi/joi';
+import { TopicTypeFilters, ListCoursesFilters } from './course-controller';
+import { AttachmentType } from '../../utilities/attachments-helper';
+import { getEnumValues } from '../../utilities/utilities';
 
 export const createCourseValidation = {
     params: {},
-    query: {
-        useCurriculum: Joi.boolean().optional().default(false)
-    },
+    query: {},
     body: {
         curriculumId: Joi.number().optional(),
+        originatingCourseId: Joi.number().optional(),
         name: Joi.string().required(),
         code: Joi.string().required(),
         start: Joi.date().required(),
@@ -70,6 +72,8 @@ export const createCourseTopicValidation = {
         contentOrder: Joi.number().optional(),
         // Deletes are one directional and soft
         // active: Joi.boolean().optional().default(true),
+        // Defaults to null
+        description: Joi.object().optional().allow(null),
     },
     query: {}
 };
@@ -87,6 +91,7 @@ export const updateCourseTopicValidation = {
         contentOrder: Joi.number().optional(),
         courseUnitContentId: Joi.number().optional(),
         topicTypeId: Joi.number().optional(),
+        description: Joi.object().optional().allow(null),
         // Deletes cannot be undone, use delete endpoint
         // active: Joi.boolean().optional(),
         // Cannot change which curriculum topic it was created from
@@ -285,7 +290,7 @@ export const getQuestionGradeValidation = {
         id: Joi.number().required(),
     },
     query: {
-        userId: Joi.number().required(),
+        userId: Joi.alternatives(Joi.number(), Joi.string().valid('me')).required(),
         topicAssessmentInfoId: Joi.number().optional(),
         includeWorkbooks: Joi.boolean().optional(),
     },
@@ -415,6 +420,7 @@ export const listCoursesValidation = {
     query: {
         instructorId: Joi.number().optional(),
         enrolledUserId: Joi.number().optional(),
+        filterOptions: Joi.string().valid(...getEnumValues(ListCoursesFilters)).optional().default(ListCoursesFilters.ALL),
     },
     body: {},
 };
@@ -461,7 +467,8 @@ export const getGradesValidation = {
         unitId: Joi.number().optional(),
         topicId: Joi.number().optional(),
         questionId: Joi.number().optional(),
-        userId: Joi.number().optional(),
+        topicTypeFilter: Joi.number().valid(...getEnumValues(TopicTypeFilters)).optional().default(TopicTypeFilters.ALL),
+        userId: Joi.alternatives(Joi.number(), Joi.string().valid('me')).optional(),
     },
     body: {},
 };
@@ -479,6 +486,7 @@ export const getStatisticsOnUnitsValidation = {
     query: {
         courseId: Joi.number().optional(),
         userId: Joi.number().optional(),
+        topicTypeFilter: Joi.number().valid(...getEnumValues(TopicTypeFilters)).optional().default(TopicTypeFilters.ALL),
     },
     body: {},
 };
@@ -489,6 +497,7 @@ export const getStatisticsOnTopicsValidation = {
         courseUnitContentId: Joi.number().optional(),
         courseId: Joi.number().optional(),
         userId: Joi.number().optional(),
+        topicTypeFilter: Joi.number().valid(...getEnumValues(TopicTypeFilters)).optional().default(TopicTypeFilters.ALL),
     },
     body: {},
 };
@@ -548,7 +557,8 @@ export const gradeAssessmentValidation = {
 export const getAttachmentPresignedURLValidation = {
     params: {},
     query: {
-        cacheBuster: Joi.any().optional()
+        cacheBuster: Joi.any().optional(),
+        type: Joi.string().valid(...getEnumValues(AttachmentType))
     },
     body: {},
 };
@@ -657,4 +667,75 @@ export const endBulkExportValidation = {
     body: {
         exportUrl: Joi.string().optional(),
     },
+};
+
+export const postFeedbackValidation = {
+    params: {
+        workbookId: Joi.number().required(),
+    },
+    query: {
+    },
+    body: {
+        content: Joi.object().optional().allow(null),
+    },
+};
+
+export const postUploadWorkbookFeedbackValidation = {
+    params: {
+        workbookId: Joi.number().required(),
+    },
+    query: {},
+    body: {
+        attachment: Joi.object({
+            cloudFilename: Joi.string().required(),
+            userLocalFilename: Joi.string().required(),    
+        }). required(),
+    },
+};
+
+export const postUploadTopicFeedbackValidation = {
+    params: {
+        topicId: Joi.number().required(),
+    },
+    query: {},
+    body: {
+        attachment: Joi.object({
+            cloudFilename: Joi.string().required(),
+            userLocalFilename: Joi.string().required(),    
+        }). required(),
+        userId: Joi.number().required(),
+    },
+};
+
+export const postUploadTopicDescriptionValidation = {
+    params: {
+        topicId: Joi.number().required(),
+    },
+    query: {},
+    body: {
+        attachment: Joi.object({
+            cloudFilename: Joi.string().required(),
+            userLocalFilename: Joi.string().required(),    
+        }). required(),
+    },
+};
+
+export const postTopicFeedbackValidation = {
+    params: {
+        topicId: Joi.number().required(),
+        userId: Joi.number().required(),
+    },
+    query: {},
+    body: {
+        content: Joi.object().optional().allow(null),
+    },
+};
+
+export const getTopicFeedbackValidation = {
+    params: {
+        topicId: Joi.number().required(),
+        userId: Joi.number().required(),
+    },
+    query: {},
+    body: {},
 };

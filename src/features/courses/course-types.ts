@@ -19,6 +19,7 @@ import ProblemAttachment from '../../database/models/problem-attachment';
 import { BucketDefFileResult, FindFilesDefFileResult } from '../../utilities/webwork-utilities/importer';
 import WebWorkDef from '@rederly/webwork-def-parser';
 import StudentEnrollment from '../../database/models/student-enrollment';
+import { TopicTypeFilters, ListCoursesFilters } from './course-controller';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -42,6 +43,7 @@ export interface CourseListOptions {
     filter: {
         instructorId?: number;
         enrolledUserId?: number;
+        filterOptions?: ListCoursesFilters;
     };
 }
 
@@ -81,8 +83,6 @@ export interface GetCourseTopicRepositoryOptions {
     id: number;
     // For overrides
     userId?: number;
-    // to check if the topic has been 'used'
-    checkUsed?: boolean;
 }
 
 export interface GetTopicAssessmentInfoByTopicIdOptions {
@@ -249,9 +249,6 @@ export interface UpdateQuestionsOptions {
 
 export interface CreateCourseOptions {
     object: Partial<Course>;
-    options: {
-        useCurriculum: boolean;
-    };
 }
 
 export interface UpdateCourseOptions {
@@ -268,19 +265,25 @@ export interface GetGradesOptions {
         topicId?: number;
         questionId?: number;
         userId?: number;
+        topicTypeFilter?: TopicTypeFilters;
     };
+    userRole: Role;
 }
 
 export interface GetGradeForQuestionOptions {
     questionId: number;
     userId: number;
     includeWorkbooks?: boolean;
+    topicTypeFilter? : TopicTypeFilters;
+    userRole?: Role;
 }
 
 export interface GetStatisticsOnUnitsOptions {
     where: {
         courseId?: number;
         userId?: number;
+        userRole: Role;
+        topicTypeFilter? : TopicTypeFilters;
     };
     followQuestionRules: boolean;
 }
@@ -290,6 +293,8 @@ export interface GetStatisticsOnTopicsOptions {
         courseUnitContentId?: number;
         courseId?: number;
         userId?: number;
+        userRole: Role;
+        topicTypeFilter? : TopicTypeFilters;
     };
     followQuestionRules: boolean;
 }
@@ -299,6 +304,7 @@ export interface GetStatisticsOnQuestionsOptions {
         courseTopicContentId?: number;
         courseId?: number;
         userId?: number;
+        userRole: Role;
     };
     followQuestionRules: boolean;
 }
@@ -361,7 +367,10 @@ export interface CanUserViewQuestionIdOptions {
 }
 
 export interface CanUserViewQuestionIdResult {
+    // This essentially checks hideProblemsAfterFinish.
     userCanViewQuestion: boolean;
+    // This essentially checks showItemizedResults.
+    userCanViewSolution?: boolean;
     message: string;
 }
 
@@ -391,12 +400,14 @@ export interface SubmittedAssessmentResultContext {
 
 export interface ScoreAssessmentResult {
     problemScores: { [key: string]: number };
+    problemWeights: { [key: string]: number };
     bestVersionScore: number;
     bestOverallVersion: number;
 }
 
 export interface SubmitAssessmentAnswerResult {
     problemScores?: { [key: string]: number };
+    problemWeights?: { [key: string]: number };
     bestVersionScore?: number;
     bestOverallVersion?: number;
 }
@@ -699,4 +710,9 @@ export interface AddQuestionOptions {
 export interface RequestNewProblemVersionOptions {
     userId: number;
     questionId: number;
+}
+
+export interface AddFeedbackOptions {
+    workbookId: number;
+    content: unknown;
 }

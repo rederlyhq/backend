@@ -17,7 +17,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, ImportCourseTarballResult, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions, AddQuestionOptions, RequestNewProblemVersionOptions, BrowseProblemsCourseListOptions, GetSearchProblemResultsOptions, BrowseProblemsTopicListOptions, BrowseProblemsUnitListOptions, EnrollManuallyOptions, ManualEnrollmentResult } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, ImportCourseTarballResult, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions, AddQuestionOptions, RequestNewProblemVersionOptions, BrowseProblemsCourseListOptions, GetSearchProblemResultsOptions, BrowseProblemsTopicListOptions, BrowseProblemsUnitListOptions, EnrollManuallyOptions, ManualEnrollmentResult, AddFeedbackOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -63,12 +63,25 @@ import { getAverageGroupsBeforeDate, QUESTION_SQL_NAME, STUDENTTOPICOVERRIDE_SQL
 import qs = require('qs');
 import ForbiddenError from '../../exceptions/forbidden-error';
 import appSequelize from '../../database/app-sequelize';
+import { TopicTypeLookup } from '../../database/models/topic-type';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Sequelize = require('sequelize');
 
 const ABSOLUTE_RENDERER_PATH_REGEX = /^(:?private\/|Contrib\/|webwork-open-problem-library\/|Library\/)/;
+
+export enum TopicTypeFilters {
+    ALL,
+    HOMEWORK = TopicTypeLookup.HOMEWORK,
+    EXAMS = TopicTypeLookup.EXAM,
+}
+
+export enum ListCoursesFilters {
+    ALL = 'ALL',
+    ACTIVE = 'ACTIVE',
+    PAST = 'PAST'
+}
 
 class CourseController {
     getCourseById(id: number, userId?: number): Promise<Course> {
@@ -101,6 +114,17 @@ class CourseController {
                                 ...(userId && {userId: userId}),
                             },
                             required: false,
+                        },
+                        {
+                            model: TopicAssessmentInfo,
+                            as: 'topicAssessmentInfo',
+                            required: false,
+                            where: {
+                                active: true,
+                                // This restriction works and is used in the grades call.
+                                // It can be added later so the frontend doesn't have to double-check the Topic Type.
+                                ['$"units->topics"."topic_type_id"$']: 2,
+                            }
                         }
                     ],
                     required: false,
@@ -196,6 +220,7 @@ class CourseController {
             where: {
                 active: true,
                 // courseTopicContentId: id,
+                [`$${CourseTopicContent.name}.${CourseTopicContent.rawAttributes.topicTypeId.field}$`]: 2,
             },
             include: subInclude
         });
@@ -320,7 +345,10 @@ class CourseController {
     }
 
     getCourses(options: CourseListOptions): Bluebird<Course[]> {
-        const where: sequelize.WhereOptions = {};
+        let where: sequelize.WhereOptions = {
+            active: true,
+        };
+
         const include: sequelize.IncludeOptions[] = [];
         if (options.filter.instructorId !== null && options.filter.instructorId !== undefined) {
             where.instructorId = options.filter.instructorId;
@@ -339,13 +367,40 @@ class CourseController {
             });
         }
 
-        if (!_.has(where, 'active')) {
-            where.active = true;
+        if (!_.isNil(options.filter.filterOptions)) {
+            switch (options.filter.filterOptions) {
+                case ListCoursesFilters.ACTIVE:
+                    where = {
+                        ...where,
+                        start: {
+                            [sequelize.Op.lte]: sequelize.literal('NOW()'),
+                        },
+                        end: {
+                            [sequelize.Op.gte]: sequelize.literal('NOW()'),
+                        }
+                    };
+                    break;
+                case ListCoursesFilters.PAST:
+                    where = {
+                        ...where,
+                        end: {
+                            [sequelize.Op.lt]: sequelize.literal('NOW()'),
+                        }
+                    };
+                    break;
+                default:
+                    // No work to be done for all.
+                    break;
+            }
         }
 
         return Course.findAll({
             where,
             include,
+            order: [
+                ['end', 'DESC'],
+                ['start', 'DESC'],
+            ]
         });
     }
 
@@ -483,42 +538,46 @@ class CourseController {
     };
     
     async createCourse(options: CreateCourseOptions): Promise<Course> {
-        if (options.options.useCurriculum) {
+        if (options.object.curriculumId || options.object.originatingCourseId) {
+            if (options.object.curriculumId && options.object.originatingCourseId) {
+                logger.warn(`Both a curriculum and an originating course were specified. ${options.object.curriculumId}, ${options.object.originatingCourseId}`);
+            }
+
             return useDatabaseTransaction(async () => {
-                // I didn't want this in the transaction, however use strict throws errors if not
-                if (_.isNil(options.object.curriculumId)) {
-                    throw new NotFoundError('Cannot useCurriculum if curriculumId is not given');
-                }
-                const curriculum = await curriculumRepository.getCurriculumById(options.object.curriculumId);
+                const originatingCourse = options.object.originatingCourseId ? 
+                    await this.getCourseById(options.object.originatingCourseId) : 
+                    await curriculumRepository.getCurriculumById(options.object.curriculumId ?? -1);
+
                 const createdCourse = await courseRepository.createCourse(options.object);
-                logger.debug('Created a course from a curriculum.');
-                await curriculum.units?.asyncForEach(async (curriculumUnit: CurriculumUnitContent) => {
-                    if (curriculumUnit.active === false) {
-                        logger.debug(`Inactive curriculum unit was fetched in query for create course ID#${curriculumUnit.id}`);
+                await originatingCourse.units?.asyncForEach(async (originatingUnit: CurriculumUnitContent | CourseUnitContent) => {
+                    if (originatingUnit.active === false) {
+                        logger.debug(`Inactive curriculum unit was fetched in query for create course ID#${originatingUnit.id}`);
                         return;
                     }
 
                     const createdCourseUnit = await courseRepository.createUnit({
                         // active: curriculumUnit.active,
-                        contentOrder: curriculumUnit.contentOrder,
+                        contentOrder: originatingUnit.contentOrder,
                         courseId: createdCourse.id,
-                        curriculumUnitId: curriculumUnit.id,
-                        name: curriculumUnit.name,
+                        curriculumUnitId: (originatingUnit instanceof CourseUnitContent) ? originatingUnit.curriculumUnitId : originatingUnit.id,
+                        originatingUnitId: (originatingUnit instanceof CourseUnitContent) ? originatingUnit.id : undefined,
+                        name: originatingUnit.name,
                     });
 
-                    await curriculumUnit.topics?.asyncForEach(async (curriculumTopic: CurriculumTopicContent) => {
-                        if (curriculumTopic.active === false) {
-                            logger.debug(`Inactive curriculum topic was fetched in query for create course ID#${curriculumTopic.id}`);
+                    await originatingUnit.topics?.asyncForEach(async (originatingTopic: CurriculumTopicContent | CourseTopicContent) => {
+                        if (originatingTopic.active === false) {
+                            logger.debug(`Inactive curriculum topic was fetched in query for create course ID#${originatingTopic.id}`);
                             return;
                         }
 
                         const createdCourseTopic: CourseTopicContent = await courseRepository.createCourseTopic({
                             // active: curriculumTopic.active,
-                            curriculumTopicContentId: curriculumTopic.id,
+                            curriculumTopicContentId: (originatingTopic instanceof CourseTopicContent) ? originatingTopic.curriculumTopicContentId : originatingTopic.id,
+                            originatingTopicContentId: (originatingTopic instanceof CourseTopicContent) ? originatingTopic.id : undefined,
                             courseUnitContentId: createdCourseUnit.id,
-                            topicTypeId: curriculumTopic.topicTypeId,
-                            name: curriculumTopic.name,
-                            contentOrder: curriculumTopic.contentOrder,
+                            topicTypeId: originatingTopic.topicTypeId,
+                            name: originatingTopic.name,
+                            contentOrder: originatingTopic.contentOrder,
 
                             startDate: createdCourse.end,
                             endDate: createdCourse.end,
@@ -526,46 +585,52 @@ class CourseController {
                             partialExtend: false
                         });
 
-                        const topicAssessmentInfo = await curriculumTopic.getCurriculumTopicAssessmentInfo();
+                        const createdTopicAssessmentInfo = (originatingTopic instanceof CourseTopicContent) ? 
+                            await originatingTopic.getTopicAssessmentInfo() :
+                            await originatingTopic.getCurriculumTopicAssessmentInfo();
 
-                        if (!_.isNil(topicAssessmentInfo)) {
+                        if (!_.isNil(createdTopicAssessmentInfo)) {
                             await TopicAssessmentInfo.create({
-                                ..._.omit(topicAssessmentInfo.get({plain: true}), ['id']),
+                                ..._.omit(createdTopicAssessmentInfo.get({plain: true}), ['id']),
                                 courseTopicContentId: createdCourseTopic.id,
-                                curriculumTopicAssessmentInfoId: topicAssessmentInfo.id,
+                                curriculumTopicAssessmentInfoId: (createdTopicAssessmentInfo instanceof TopicAssessmentInfo) ? createdTopicAssessmentInfo.curriculumTopicAssessmentInfoId : createdTopicAssessmentInfo.id,
+                                originatingTopicAssessmentId: (createdTopicAssessmentInfo instanceof TopicAssessmentInfo) ? createdTopicAssessmentInfo.id : undefined,
                             });
                         }
 
-                        await curriculumTopic.questions?.asyncForEach(async (curriculumQuestion: CurriculumWWTopicQuestion) => {
-                            if (curriculumQuestion.active === false) {
-                                logger.debug(`Inactive curriculum question was fetched in query for create course ID#${curriculumQuestion.id}`);
+                        await originatingTopic.questions?.asyncForEach(async (originatingQuestion: CurriculumWWTopicQuestion | CourseWWTopicQuestion) => {
+                            if (originatingQuestion.active === false) {
+                                logger.debug(`Inactive curriculum question was fetched in query for create course ID#${originatingQuestion.id}`);
                                 return;
                             }
 
                             const createdCourseQuestion = await courseRepository.createQuestion({
                                 // active: curriculumQuestion.active,
                                 courseTopicContentId: createdCourseTopic.id,
-                                problemNumber: curriculumQuestion.problemNumber,
-                                webworkQuestionPath: curriculumQuestion.webworkQuestionPath,
-                                weight: curriculumQuestion.weight,
-                                maxAttempts: curriculumQuestion.maxAttempts,
-                                hidden: curriculumQuestion.hidden,
-                                optional: curriculumQuestion.optional,
-                                curriculumQuestionId: curriculumQuestion.id
+                                problemNumber: originatingQuestion.problemNumber,
+                                webworkQuestionPath: originatingQuestion.webworkQuestionPath,
+                                weight: originatingQuestion.weight,
+                                maxAttempts: originatingQuestion.maxAttempts,
+                                hidden: originatingQuestion.hidden,
+                                optional: originatingQuestion.optional,
+                                curriculumQuestionId: (originatingQuestion instanceof CourseWWTopicQuestion) ? originatingQuestion.curriculumQuestionId : originatingQuestion.id,
+                                originatingTopicQuestionId: (originatingQuestion instanceof CourseWWTopicQuestion) ? originatingQuestion.id : undefined,
                             });
 
-                            const questionAssessmentInfo = await curriculumQuestion.getCurriculumQuestionAssessmentInfo();
+                            const createdQuestionAssessmentInfo = (originatingQuestion instanceof CourseWWTopicQuestion) ? 
+                                await originatingQuestion.getCourseQuestionAssessmentInfo() :
+                                await originatingQuestion.getCurriculumQuestionAssessmentInfo();
 
-                            if (!_.isNil(questionAssessmentInfo)) {
-                                const createFromCurriculum = {
-                                    ..._.omit(questionAssessmentInfo.get({plain: true}), ['id']),
+                            if (!_.isNil(createdQuestionAssessmentInfo)) {
+                                const createFromOriginatingQuestionAssessmentInfo = {
+                                    ..._.omit(createdQuestionAssessmentInfo.get({plain: true}), ['id']),
                                     courseWWTopicQuestionId: createdCourseQuestion.id,
-                                    curriculumQuestionAssessmentInfoId: questionAssessmentInfo.id,
+                                    curriculumQuestionAssessmentInfoId: (createdQuestionAssessmentInfo instanceof CourseQuestionAssessmentInfo) ? createdQuestionAssessmentInfo.curriculumQuestionAssessmentInfoId : createdQuestionAssessmentInfo.id,
+                                    originatingQuestionAssessmentInfoId: (createdQuestionAssessmentInfo instanceof CourseQuestionAssessmentInfo) ? createdQuestionAssessmentInfo.id : undefined,
                                 };
 
-                                await CourseQuestionAssessmentInfo.create(createFromCurriculum);
+                                await CourseQuestionAssessmentInfo.create(createFromOriginatingQuestionAssessmentInfo);
                             }
-
                         });
                     });
                 });
@@ -699,21 +764,56 @@ class CourseController {
         });
     }
 
+    async checkIfTopicIsUsed(topic: CourseTopicContent): Promise<boolean> {
+        if (topic.topicTypeId === TopicTypeLookup.EXAM) {
+            const studentTopicAssessmentInfo = await topic.topicAssessmentInfo?.getStudentTopicAssessmentInfo({
+                attributes: [],
+                limit: 1,
+                where: {
+                    active: true
+                }
+            });
+
+            if ((studentTopicAssessmentInfo?.length ?? 0) > 0) {
+                return true;
+            }
+        }
+
+        // Could wrap this in a generic homework check, but I like keeping it as a catchall
+        const singleTopicWorkbook = await StudentWorkbook.findOne({
+            attributes: [],
+            include: [{
+                model: CourseWWTopicQuestion,
+                as: 'courseWWTopicQuestion',
+                limit: 1,
+                separate: false,
+                attributes: [],
+                where: {
+                    active: true,
+                    courseTopicContentId: topic.id,
+                },
+                required: true
+            }],
+            limit: 1,
+            where: {
+                active: true,
+            }
+        });
+
+
+        if (_.isSomething(singleTopicWorkbook)) {
+                return true;
+        }
+        return false;
+    }
+
     async updateTopic(options: UpdateTopicOptions): Promise<CourseTopicContent[]> {
         const existingTopic = await courseRepository.getCourseTopic({
             id: options.where.id,
-            checkUsed: true,
         });
 
-        const workbookCount = existingTopic.calculateWorkbookCount();
-        const versionCount = existingTopic.calculateVersionCount();
         const topicIsChangingTypes = !_.isNil(options.updates.topicTypeId) && (existingTopic.topicTypeId !== options.updates.topicTypeId);
-
-        if ((
-                (workbookCount && workbookCount > 0) || 
-                (versionCount && versionCount > 0)
-            ) && topicIsChangingTypes
-        ) {
+        if (topicIsChangingTypes && await this.checkIfTopicIsUsed(existingTopic)) {
             throw new IllegalArgumentException('Topic type cannot be changed. Students have begun working on this topic.');
         }
 
@@ -2615,6 +2715,7 @@ class CourseController {
             topicId,
             unitId,
             userId,
+            topicTypeFilter
         } = options.where;
 
         const setFilterCount = utilities.countNotNil([
@@ -2637,6 +2738,12 @@ class CourseController {
             [`$user.${User.rawAttributes.id.field}$`]: userId,
             active: true
         }).omitBy(_.isUndefined).value() as sequelize.WhereOptions;
+        
+        if (options.userRole === Role.STUDENT) {
+            (where as sequelize.WhereAttributeHash)[`$question->topic->topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`] = {
+                [sequelize.Op.or]: [true, null]
+            };
+        }
 
         const totalProblemCountCalculationString = `COUNT(question.${CourseWWTopicQuestion.rawAttributes.id.field})`;
         const pendingProblemCountCalculationString = `COUNT(CASE WHEN ${StudentGrade.rawAttributes.numAttempts.field} = 0 THEN ${StudentGrade.rawAttributes.numAttempts.field} END)`;
@@ -2669,8 +2776,7 @@ class CourseController {
                     active: true
                 },
                 include: unitInclude || [],
-            },
-            {
+            }, {
                 model: StudentTopicOverride,
                 as: 'studentTopicOverride',
                 attributes: [],
@@ -2686,6 +2792,11 @@ class CourseController {
         }
 
         let questionInclude;
+        let topicWhere;
+        if (topicTypeFilter !== TopicTypeFilters.ALL && topicTypeFilter !== undefined) {
+            topicWhere = {topicTypeId: topicTypeFilter};
+        }
+
         if (includeOthers || _.isNil(topicId) === false) {
             includeOthers = true;
             questionInclude = [{
@@ -2693,9 +2804,18 @@ class CourseController {
                 as: 'topic',
                 attributes: [],
                 where: {
-                    active: true
+                    active: true,
+                    ...topicWhere
                 },
-                include: topicInclude || [],
+                include: [
+                    ...(topicInclude ?? []),
+                    {
+                        model: TopicAssessmentInfo,
+                        as: 'topicAssessmentInfo',
+                        attributes: [],
+                        required: false,
+                    }
+                ],
             }];
         }
 
@@ -2858,33 +2978,130 @@ class CourseController {
         const {
             questionId,
             userId,
-            includeWorkbooks
+            includeWorkbooks,
+            userRole,
         } = options;
-        const include: sequelize.IncludeOptions[] = [{
-            model: StudentGradeInstance,
-            as: 'gradeInstances',
-            required: false,
+
+        const where: sequelize.WhereOptions = {
+            courseWWTopicQuestionId: questionId,
+            userId,
+            active: true,
+        };
+
+        const topicAssessmentInfo = await TopicAssessmentInfo.findOne({
+            attributes: [ 'showItemizedResults', 'showTotalGradeImmediately' ],
             where: {
                 active: true,
+            },
+            include: [
+                {
+                    model: CourseTopicContent,
+                    as: 'courseTopicContent',
+                    attributes: [ 'id' ],
+                    required: true,
+                    where: {
+                        active: true,
+                    },
+                    include: [
+                        {
+                            model:  CourseWWTopicQuestion,
+                            as: 'questions',
+                            attributes: [],
+                            required: true,
+                            where: {
+                                active: true,
+                                id: questionId,
+                            }
+                        }
+                    ]
+                }
+            ]
+        });
+
+        let attributes;
+        let gradeInstanceAttributes;
+        let workbookAttributes;
+        if (userRole === Role.STUDENT && (topicAssessmentInfo?.showTotalGradeImmediately === false || topicAssessmentInfo?.showItemizedResults === false)) {
+            attributes = ['id',
+                'lastInfluencingLegalAttemptId',
+                'lastInfluencingCreditedAttemptId',
+                'lastInfluencingAttemptId',
+                'courseWWTopicQuestionId',
+                'active',
+                'createdAt',
+                'updatedAt',
+            ];
+            
+            gradeInstanceAttributes = [
+                'id',
+                'studentGradeId',
+                'userId',
+                'studentTopicAssessmentInfoId',
+                'bestVersionAttemptId',
+                'problemNumber',
+                'active',
+                'createdAt',
+                'updatedAt',
+            ];
+
+            workbookAttributes = [
+                'id',
+                'active',
+                'studentGradeId',
+                'userId',
+                'courseWWTopicQuestionId',
+                'studentGradeInstanceId',
+                // 'submitted',
+                'time',
+                'wasLate',
+                'wasExpired',
+                'wasAfterAttemptLimit',
+                'wasAutoSubmitted',
+                'wasLocked',
+                'feedback',
+                'createdAt',
+                'updatedAt',
+            ];
+        }
+
+        const include: sequelize.IncludeOptions[] = [
+            {
+                model: StudentGradeInstance,
+                as: 'gradeInstances',
+                required: false,
+                attributes: gradeInstanceAttributes,
+                where: {
+                    active: true,
+                },
+                include: [
+                    {
+                        model: ProblemAttachment,
+                        as: 'problemAttachments',
+                        required: false,
+                        where: {
+                            active: true,
+                        }
+                    }
+                ]
             }
-        }];
+        ];
+
         if (includeWorkbooks) {
             include.push({
                 model: StudentWorkbook,
                 as: 'workbooks',
                 required: false,
+                attributes: workbookAttributes,
                 where: {
                     active: true
                 }
             });
         }
+
         try {
-            return StudentGrade.findOne({
-                where: {
-                    courseWWTopicQuestionId: questionId,
-                    userId,
-                    active: true,
-                },
+            return await StudentGrade.findOne({
+                attributes,
+                where,
                 include
             });
         } catch (e) {
@@ -2896,6 +3113,8 @@ class CourseController {
         const {
             courseId,
             userId,
+            userRole,
+            topicTypeFilter
         } = options.where;
 
         const { followQuestionRules } = options;
@@ -2934,6 +3153,18 @@ class CourseController {
             ...getAverageGroupsBeforeDate('deadDate', TOPIC_SQL_NAME.INCLUDED_AS_TOPICS, QUESTION_SQL_NAME.CHILDREN_OF_INCLUDED_TOPICS, STUDENTTOPICOVERRIDE_SQL_NAME.CHILD_OF_INCLUDED_TOPICS),
         ] : [];
 
+        const topicWhere: sequelize.WhereOptions = { active: true };
+
+        if (userRole === Role.STUDENT) {
+            topicWhere[`$topics.topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`] = {
+                [sequelize.Op.or]: [true, null]
+            };
+        }
+
+        if (topicTypeFilter !== TopicTypeFilters.ALL && topicTypeFilter !== undefined) {
+            topicWhere['topicTypeId'] = topicTypeFilter;
+        }
+
         return CourseUnitContent.findAll({
             where,
             attributes: [
@@ -2951,9 +3182,8 @@ class CourseController {
                 model: CourseTopicContent,
                 as: 'topics',
                 attributes: [],
-                where: {
-                    active: true
-                },
+                required: false,
+                where: topicWhere,
                 include: [{
                     model: CourseWWTopicQuestion,
                     as: 'questions',
@@ -2982,6 +3212,15 @@ class CourseController {
                             [sequelize.Op.col]: `"topics->questions->grades".${StudentGrade.rawAttributes.userId.field}`,
                         },
                     }
+                },
+                {
+                    model: TopicAssessmentInfo,
+                    as: 'topicAssessmentInfo',
+                    attributes: [],
+                    required: false,
+                    where: {
+                        [`$topics.${CourseTopicContent.rawAttributes.topicTypeId.field}$`]: 2,
+                    }
                 }
             ]
             }],
@@ -2997,6 +3236,8 @@ class CourseController {
             courseUnitContentId,
             courseId,
             userId,
+            userRole,
+            topicTypeFilter
         } = options.where;
 
         const { followQuestionRules } = options;
@@ -3008,6 +3249,12 @@ class CourseController {
             [`$unit.${CourseUnitContent.rawAttributes.courseId.field}$`]: courseId,
             [`$questions.grades.${StudentGrade.rawAttributes.userId.field}$`]: userId,
         }).omitBy(_.isNil).value() as sequelize.WhereOptions;
+
+        if (userRole === Role.STUDENT) {
+            (where as sequelize.WhereAttributeHash)[`$topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`] = {
+                [sequelize.Op.or]: [true, null]
+            };
+        }
 
         const include: sequelize.IncludeOptions[] = [
             {
@@ -3052,6 +3299,16 @@ class CourseController {
             });
         }
 
+        include.push({
+            model: TopicAssessmentInfo,
+            as: 'topicAssessmentInfo',
+            attributes: [],
+            required: false,
+            where: {
+                [`$${CourseTopicContent.name}.${CourseTopicContent.rawAttributes.topicTypeId.field}$`]: 2,
+            }
+        });
+
         let averageScoreAttribute;
         // This is averageScoreAttribute, with points earned/available if applicable.
         let averageScoreGroup: Array<sequelize.ProjectionAlias>;
@@ -3086,6 +3343,10 @@ class CourseController {
             getSystemScoreWithWeights(QUESTION_SQL_NAME.INCLUDED_AS_QUESTIONS) : 
             [sequelize.fn('avg', sequelize.col(`questions.grades.${StudentGrade.rawAttributes.partialCreditBestScore.field}`)), 'systemScore'];
 
+        if (topicTypeFilter !== TopicTypeFilters.ALL && topicTypeFilter !== undefined) {
+            (where as sequelize.WhereAttributeHash)['topicTypeId'] = topicTypeFilter;
+        }
+
         return CourseTopicContent.findAll({
             where,
             attributes: [
@@ -3112,6 +3373,7 @@ class CourseController {
             courseTopicContentId,
             courseId,
             userId,
+            userRole,
         } = options.where;
 
         const { followQuestionRules } = options;
@@ -3124,6 +3386,16 @@ class CourseController {
             [`$grades.${StudentGrade.rawAttributes.userId.field}$`]: userId,
         }).omitBy(_.isNil).value() as sequelize.WhereOptions;
 
+        if (userRole === Role.STUDENT) {
+            // TODO: Fix this.
+            (where as sequelize.WhereAttributeHash)[`$topic.topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`] = {
+                [sequelize.Op.or]: [true, null]
+            };
+            (where as sequelize.WhereAttributeHash)[`$topic.topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showItemizedResults.field}$`] = {
+                [sequelize.Op.or]: [true, null]
+            };
+        }
+
         const include: sequelize.IncludeOptions[] = [{
             model: StudentGrade,
             as: 'grades',
@@ -3134,7 +3406,38 @@ class CourseController {
             }
         }];
 
+        const topicInclude: sequelize.IncludeOptions[] = [{
+            model: StudentTopicOverride,
+            as: 'studentTopicOverride',
+            attributes: [],
+            required: false,
+        }];
+
         if (!_.isNil(courseId)) {
+            topicInclude.push({
+                model: CourseUnitContent,
+                as: 'unit',
+                attributes: [],
+                where: {
+                    active: true
+                }
+            });
+        }
+
+        if (userRole === Role.STUDENT) {
+            topicInclude.push({
+                model: TopicAssessmentInfo,
+                as: 'topicAssessmentInfo',
+                attributes: [],
+                required: false,
+                where: {
+                    active: true,
+                    [`$topic.${CourseTopicContent.rawAttributes.topicTypeId.field}$`]: 2,
+                }
+            });
+        }
+
+        if (!_.isNil(courseId) || userRole === Role.STUDENT) {
             include.push({
                 model: CourseTopicContent,
                 as: 'topic',
@@ -3142,14 +3445,8 @@ class CourseController {
                 where: {
                     active: true
                 },
-                include: [{
-                    model: CourseUnitContent,
-                    as: 'unit',
-                    attributes: [],
-                    where: {
-                        active: true
-                    }
-                },
+                include: [
+                ...topicInclude,
                 {
                     model: StudentTopicOverride,
                     as: 'studentTopicOverride',
@@ -3798,7 +4095,7 @@ class CourseController {
     async canUserViewQuestionId(options: CanUserViewQuestionIdOptions): Promise<CanUserViewQuestionIdResult> {
         const { user, questionId, studentTopicAssessmentInfoId } = options;
         let message = '';
-        if (options.role === Role.PROFESSOR || options.role === Role.ADMIN) return {userCanViewQuestion: true, message};
+        if (options.role === Role.PROFESSOR || options.role === Role.ADMIN) return {userCanViewQuestion: true, userCanViewSolution: true, message};
         const question = await courseRepository.getQuestion({ id: questionId });
         const dbTopic = await question.getTopic();
         const topicOverride = await courseRepository.getStudentTopicOverride({userId: user.id, topicId: dbTopic.id});
@@ -3807,9 +4104,11 @@ class CourseController {
         // applies to all topics - not just homeworks...
         if (topic.startDate.toMoment().isAfter(moment())) {
             message = `${topic.name} hasn't started yet.`;
-            return { userCanViewQuestion: false, message };
-        } else {
-            if (topic.topicTypeId === 1) return { userCanViewQuestion: true, message };
+            return { userCanViewQuestion: false, userCanViewSolution: false, message };
+        }
+            
+        if (topic.topicTypeId === 1) {
+            return { userCanViewQuestion: true, userCanViewSolution: true, message };
         }
 
         if (topic.topicTypeId === 2) {
@@ -3825,19 +4124,21 @@ class CourseController {
             }
             const topicInfo = await dbTopic.getTopicAssessmentInfo();
             if (topicIsLive) {
-                return { userCanViewQuestion: true, message };
+                return { userCanViewQuestion: true, userCanViewSolution: false, message };
             } else {
                 if (topicInfo.hideProblemsAfterFinish) {
                     message = `${topic.name} does not allow problems to be viewed after completion`;
-                    return { userCanViewQuestion: false, message };
+                    return { userCanViewQuestion: false, userCanViewSolution: false, message };
+                } else if (topicInfo.showItemizedResults === false) {
+                    return { userCanViewQuestion: true, userCanViewSolution: false, message };
                 } else {
-                    return { userCanViewQuestion: true, message };
+                    return { userCanViewQuestion: true, userCanViewSolution: true, message };
                 }
             }
         }
         // we *should* never get here - but if we do, then the answer is NO
         logger.error(`User #${user.id} asked to view question #${questionId} and the answer was undetermined.`);
-        return { userCanViewQuestion: false, message};
+        return { userCanViewQuestion: false, userCanViewSolution: false, message};
     };
 
     /*
@@ -3942,6 +4243,7 @@ class CourseController {
         let bestVersionScore = 0;
         let bestOverallVersion = 0;
         const problemScores: { [key: string]: number } = {};
+        const problemWeights: { [key: string]: number } = {};
 
         results.forEach((result: SubmittedAssessmentResultContext) => {
             const { questionResponse, grade, instance, weight } = result;
@@ -3949,10 +4251,11 @@ class CourseController {
             bestVersionScore += weight * instance.scoreForBestVersion;
             bestOverallVersion += weight * grade.bestScore;
             problemScores[result.instance.problemNumber.toString(10)] = result.questionResponse.problem_result.score * result.weight;
+            problemWeights[result.instance.problemNumber.toString(10)] = result.weight;
         });
 
         problemScores['total'] = totalScore;
-        return {problemScores, bestVersionScore: bestVersionScore, bestOverallVersion};
+        return {problemScores, problemWeights, bestVersionScore: bestVersionScore, bestOverallVersion};
     }
 
     async submitAssessmentAnswers(studentTopicAssessmentInfoId: number, wasAutoSubmitted: boolean): Promise<SubmitAssessmentAnswerResult> {
@@ -3989,7 +4292,7 @@ class CourseController {
                 });
             });
 
-            const { problemScores, bestVersionScore, bestOverallVersion } = this.scoreAssessment(questionResponses);
+            const { problemScores, problemWeights, bestVersionScore, bestOverallVersion } = this.scoreAssessment(questionResponses);
             const isBestForThisVersion = problemScores.total >= bestVersionScore;
             const isBestOverallVersion = problemScores.total >= bestOverallVersion;
 
@@ -4109,6 +4412,7 @@ class CourseController {
 
             // use topic assessment info settings to decide what data is exposed to the frontend
             let problemScoresReturn: { [key: string]: number } | undefined;
+            let problemWeightsReturn: { [key: string]: number } | undefined;
             let bestVersionScoreReturn: number | undefined;
             let bestOverallVersionReturn: number | undefined;
             if (showTotalGradeImmediately){
@@ -4116,12 +4420,13 @@ class CourseController {
                 bestOverallVersionReturn = Math.max(bestOverallVersion, problemScores.total);
                 if (showItemizedResults) {
                     problemScoresReturn = problemScores;
+                    problemWeightsReturn = problemWeights;
                 } else {
                     problemScoresReturn = {total: problemScores.total};
                 }
             }
 
-            return { problemScores: problemScoresReturn, bestVersionScore: bestVersionScoreReturn, bestOverallVersion: bestOverallVersionReturn};
+            return { problemScores: problemScoresReturn, problemWeights: problemWeightsReturn, bestVersionScore: bestVersionScoreReturn, bestOverallVersion: bestOverallVersionReturn};
         });
     };
 
@@ -4157,12 +4462,14 @@ class CourseController {
                 where: {
                     id: topicId,
                     active: true,
+                    // Should this be limited by topicTypeId?
                 },
                 include: [{
                     model: TopicAssessmentInfo,
                     as: 'topicAssessmentInfo',
                     where: {
                         active: true,
+                        // Should this be limited by topicTypeId?
                     },
                     include: [{
                         model: StudentTopicAssessmentInfo,
@@ -5091,7 +5398,19 @@ You can contact your student at ${options.student.email} or by replying to this 
             return row;
         });
     }
-
+    
+    async addFeedback({
+        workbookId,
+        content
+    }: AddFeedbackOptions): Promise<[number, StudentWorkbook[]]> {
+        return await StudentWorkbook.update({
+            feedback: content
+        }, {
+            where: {
+                id: workbookId
+            }
+        });
+    }
 }
 
 export const courseController = new CourseController();

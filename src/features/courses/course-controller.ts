@@ -4202,6 +4202,10 @@ class CourseController {
                 message = `The topic "${topic.name}" has not started yet.`;
                 data.status = 'NOT_STARTED';
                 userCanStartNewVersion = false;
+            } else if (moment().isAfter(topic.endDate.toMoment())) {
+                message = `The topic "${topic.name}" has ended.`;
+                data.status = 'OVERDUE';
+                userCanStartNewVersion = false;
             } else if (topicInfo.maxVersions > 0 && versions.length >= topicInfo.maxVersions) {
             // check number of versions already used
                 if (versions[0].isClosed !== true) {

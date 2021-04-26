@@ -16,6 +16,7 @@ import { TopicAssessmentInfoInterface } from '../../../database/models/topic-ass
 import Role from '../../permissions/roles';
 import { asyncHandler } from '../../../extensions/rederly-express-request';
 import { StudentTopicAssessmentOverrideInterface } from '../../../database/models/student-topic-assessment-override';
+import ForbiddenError from '../../../exceptions/forbidden-error';
 
 export const router = express.Router();
 
@@ -130,10 +131,14 @@ router.post('/topic',
         paidMiddleware('Modifying topic settings'),
         asyncHandler<courseTopicPutExtend.IParams, courseTopicPutExtend.IResponse, courseTopicPutExtend.IBody, courseTopicPutExtend.IQuery>(
             async (req, _res, next) => {
+                if (_.isNil(req.rederlyUser)) {
+                    throw new ForbiddenError('You must be logged in to access grades.');
+                }
+        
                 const updatesResult = await courseController.extendTopicForUser({
                     where: {
                         courseTopicContentId: req.query.courseTopicContentId,
-                        userId: req.query.userId
+                        userId: req.query.userId === 'me' ? req.rederlyUser.id : req.query.userId,
                     },
                     assessmentWhere: {
                         topicAssessmentInfoId: req.query.topicAssessmentInfoId

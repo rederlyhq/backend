@@ -13,6 +13,7 @@ import { RederlyExpressRequest } from '../extensions/rederly-express-request';
 import Role from '../features/permissions/roles';
 import ForbiddenError from '../exceptions/forbidden-error';
 import { Constants } from '../constants';
+import httpResponse, { HttpResponse } from '../utilities/http-response';
 
 const LocalStrategy = require('passport-local').Strategy;
 
@@ -30,14 +31,14 @@ export const validateSession = async (token: string, req: RederlyExpressRequest,
         if (!session) {
             const response = 'Invalid session';
             logger.warn(response);
-            throw Boom.unauthorized(response);
+            throw httpResponse.Unauthorized(response, null);
         } else {
             const timeNow = moment();
             const expiresAt = moment(session.expiresAt);
             if (timeNow.isAfter(expiresAt)) {
                 const response = 'Session expired';
                 logger.warn(response);
-                throw Boom.unauthorized(response);
+                throw httpResponse.Unauthorized(response, null);
             } else {
                 // Convert to millis (since moment diff returns millis) and divide by 2
                 // This is so that we don't update the session on every request, it gets refreshed half way through the session period
@@ -88,7 +89,7 @@ export const validateSession = async (token: string, req: RederlyExpressRequest,
 
 export const authenticationMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     if (!req.cookies || !req.cookies.sessionToken) {
-        return next(Boom.unauthorized());
+        return next(httpResponse.Unauthorized('Session not found', null));
     }
     //authenticate cookie
     try {
@@ -160,7 +161,7 @@ passport.deserializeUser(async (id: number, done: (err?: Boom<null> | null, user
 });
 
 
-passport.use(new LocalStrategy({ usernameField: 'email' }, async (email: string, password: string, done: (err?: Boom<null> | null, user?: unknown) => void) => {
+passport.use(new LocalStrategy({ usernameField: 'email' }, async (email: string, password: string, done: (err?: HttpResponse<null, 401> | null, user?: unknown) => void) => {
     // TODO track ip?
     try {
         const session: Session | null = await userController.login(email, password);
@@ -168,7 +169,7 @@ passport.use(new LocalStrategy({ usernameField: 'email' }, async (email: string,
             done(null, session);
         } else {
             // This could be invalid credentials, not verified, or user not found
-            done(Boom.unauthorized('Invalid login'));
+            done(httpResponse.Unauthorized('Invalid login', null));
         }
     } catch (e) {
         done(e);

@@ -1,4 +1,4 @@
-interface HttpResponse<DataType, StatusCodeType extends number> {
+export interface HttpResponse<DataType, StatusCodeType extends number> {
     message: string;
     data: DataType;
     statusCode: StatusCodeType;
@@ -21,4 +21,5 @@ export default {
     Accepted: <DataType>(message: string, data: DataType): HttpResponse<DataType, 202> => createObject('Accepted', 202, message, data),
 
     BadRequest: <DataType>(message: string, data: DataType): HttpResponse<DataType, 400> => createObject('Bad Request', 400, message, data),
+    Unauthorized: <DataType>(message: string, data: DataType): HttpResponse<DataType, 401> => createObject('Unauthorized', 401, message, data),
 };

@@ -30,9 +30,10 @@ lti.setup('GIB_KEY',
         },
         devMode: true,
         dynReg: {
-            url: 'http://localhost:3001/backend-api/lti', // Tool Provider URL. Required field.
+            // This has to be a hoisted URL that handles a /login call from the Platform.
+            url: 'http://localhost:3002/backend-api/lti', // Tool Provider URL. Required field.
             name: 'Rederly Tool', // Tool Provider name. Required field.
-            logo: 'http://app.rederly.com/rederly-logo-offwhite.webp', // Tool Provider logo URL.
+            logo: 'https://app.rederly.com/rederly-favicon.ico', // Tool Provider logo URL.
             description: 'Rederly Description', // Tool Provider description.
             // redirectUris: [''], // Additional redirection URLs. The main URL is added by default.
             // customParameters: { key: 'value' }, // Custom parameters.
@@ -43,10 +44,10 @@ lti.setup('GIB_KEY',
 
 // Set lti launch callback
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-lti.onConnect((token: any, req: any, res: any) => {
-    console.log(token);
-    return res.send('It\'s alive!');
-});
+// lti.onConnect((token: any, req: any, res: any) => {
+//     console.log(token);
+//     return res.send('It\'s alive!');
+// });
 
 lti.deploy({serverless: true}).then(async ()=>{
     const platforms = await lti.getAllPlatforms()

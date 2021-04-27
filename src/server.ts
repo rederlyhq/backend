@@ -24,6 +24,10 @@ import { RederlyExpressRequest } from './extensions/rederly-express-request';
 import { v4 as uuidv4 } from 'uuid';
 import * as fse from 'fs-extra';
 import lti from './database/lti-init';
+import User from './database/models/user';
+import userController from './features/users/user-controller';
+import httpResponse from './utilities/http-response';
+import moment = require('moment');
 
 interface ErrorResponse {
     statusCode: number;
@@ -156,6 +160,52 @@ app.use((req, res, next) => {
     next();
 });
 
+
+app.use(basePath + '/lti', lti.app);
+
+logger.debug(basePath + '/lti');
+
+lti.onConnect(async (token: any, req: any, res: Response, next: any) => {
+    logger.debug(token);
+    if (_.isNil(token?.userInfo?.email)) {
+        return res.send('There is a problem with this LTI connect. No email found.');
+    }
+
+    // return res.send('User connected!');
+    const user = await User.findOne({
+        where: {
+            email: token.userInfo.email
+        }
+    });
+    if (_.isNil(user)) {
+        return res.send('You do not have a Rederly account.');
+    }
+    
+    const newSession = await userController.createSession(user.id);
+    const cookietoken = `${newSession.uuid}_${newSession.expiresAt.getTime()}`;
+    logger.info(`Setting cookie (${cookietoken}) that expires at ${moment(newSession.expiresAt).calendar()}`);
+    res.cookie('sessionToken', cookietoken, {
+        expires: newSession.expiresAt,
+        domain: 'localhost',
+        sameSite: 'none',
+    });
+    // next(httpResponse.Ok(null, {
+    //     roleId: user.roleId,
+    //     firstName: user.firstName,
+    //     lastName: user.lastName,
+    //     userId: user.id,
+    //     uuid: user.uuid
+    // }));
+    // return res.send('http://localhost:3002/');
+    return res.redirect('http://localhost:3002/common/courses');
+  }
+);
+
+// lti.onDeepLinking((token, req, res) => {
+//     // Call redirect function to deep linking view
+//     lti.redirect(res, '/courses/');
+//   })
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -166,14 +216,6 @@ app.use(rederlyRequestNamespaceMiddleware);
 app.use(passport.initialize());
 
 app.use(basePath, router);
-
-app.use(basePath + 'lti', lti.app);
-
-lti.onConnect(async (token: any, req: any, res: { send: (arg0: string) => any; }, next: any) => {
-    console.log(token)
-    return res.send('User connected!')
-  }
-)
 
 // This is a developer option, it will be logged as a warning if it is on in production
 if (configurations.app.autoDeleteTemp) {

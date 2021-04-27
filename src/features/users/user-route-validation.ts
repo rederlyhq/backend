@@ -48,6 +48,14 @@ export const registerValidation = {
     },
 };
 
+export const ltikValidation = {
+    params: {},
+    query: {},
+    body: {
+        ltik: Joi.string().required(),
+    },
+};
+
 export const loginValidation = {
     params: {},
     query: {},

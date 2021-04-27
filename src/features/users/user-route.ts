@@ -14,6 +14,8 @@ import IncludeGradeOptions from './include-grade-options';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
 import logger from '../../utilities/logger';
 import { Constants } from '../../constants';
+import User from '../../database/models/user';
+import Session from '../../database/models/session';
 
 router.all('/check-in',
     // No validation
@@ -40,6 +42,56 @@ router.post('/impersonate',
         res.cookie('sessionToken', token, cookieOptions);
         next(httpResponse.Ok());
     });
+
+router.post('/ltik',
+    asyncHandler(async (req: RederlyExpressRequest<any, any, any, any>, res: Response, next: NextFunction) => {
+        const ltik = req.body.ltik;
+        if (!ltik) {
+            logger.error('No LTIK was passed.');
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+
+        logger.info('Got LTIK.');
+        logger.info(ltik);
+
+        // const user = User.findOne({
+        //     where: {
+
+        //     }
+        // })
+        next(httpResponse.Ok(null));
+    }
+));
+
+router.get('/session',
+// TODO: Validate, authenticate
+asyncHandler(async (req: RederlyExpressRequest<any, unknown, any, any>, res: Response, next: NextFunction) => {
+    if (_.isNil(req.cookies.sessionToken)) {
+        throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+    }
+
+    const uuid = req.cookies.sessionToken.split('_')[0];
+    const newSession = await Session.findOne({
+        where: {
+            uuid: uuid
+        }
+    });
+
+    if (_.isNil(newSession)) {
+        throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+    }
+    
+    const user = await newSession.getUser();
+    const role = await user.getRole();
+    
+    next(httpResponse.Ok(null, {
+        roleId: role.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        userId: user.id,
+        uuid: user.uuid
+    }));
+}));
 
 router.post('/login',
     validate(loginValidation),

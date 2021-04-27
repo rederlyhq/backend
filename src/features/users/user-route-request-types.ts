@@ -41,6 +41,12 @@ export namespace RegisterRequest {
     export type body = Joi.extractType<typeof validations.registerValidation.body>;
 };
 
+export namespace LtikRequest {
+    export type params = Joi.extractType<typeof validations.ltikValidation.params>;
+    export type query = Joi.extractType<typeof validations.ltikValidation.query>;
+    export type body = Joi.extractType<typeof validations.ltikValidation.body>;
+};
+
 export namespace LoginRequest {
     export type params = Joi.extractType<typeof validations.loginValidation.params>;
     export type query = Joi.extractType<typeof validations.loginValidation.query>;

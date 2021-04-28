@@ -3,7 +3,7 @@ import { Response, NextFunction } from 'express';
 import userController from './user-controller';
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator';
-import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation, updatePasswordValidation, updateForgottonPasswordValidation, resendVerificationValidation, userStatusValidation, impersonateValidation } from './user-route-validation';
+import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation, updatePasswordValidation, updateForgottonPasswordValidation, resendVerificationValidation, userStatusValidation, impersonateValidation, getSessionValidation } from './user-route-validation';
 import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest, ForgotPasswordRequest, UpdatePasswordRequest, UpdateForgottonPasswordRequest, ResendVerificationRequest, UserStatusRequest, ImpersonateRequest } from './user-route-request-types';
 import Boom = require('boom');
 import passport = require('passport');
@@ -43,55 +43,37 @@ router.post('/impersonate',
         next(httpResponse.Ok());
     });
 
-router.post('/ltik',
-    asyncHandler(async (req: RederlyExpressRequest<any, any, any, any>, res: Response, next: NextFunction) => {
-        const ltik = req.body.ltik;
-        if (!ltik) {
-            logger.error('No LTIK was passed.');
+router.get('/session',
+    validate(getSessionValidation),
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, any, any>, res: Response, next: NextFunction) => {
+        if (_.isNil(req.cookies.sessionToken)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
 
-        logger.info('Got LTIK.');
-        logger.info(ltik);
+        const uuid = req.cookies.sessionToken.split('_')[0];
+        const newSession = await Session.findOne({
+            where: {
+                uuid: uuid,
+                ltik: req.query.ltik,
+            }
+        });
 
-        // const user = User.findOne({
-        //     where: {
+        if (_.isNil(newSession)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+        
+        const user = await newSession.getUser();
+        const role = await user.getRole();
 
-        //     }
-        // })
-        next(httpResponse.Ok(null));
+        next(httpResponse.Ok(null, {
+            roleId: role.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            userId: user.id,
+            uuid: user.uuid
+        }));
     }
 ));
-
-router.get('/session',
-// TODO: Validate, authenticate
-asyncHandler(async (req: RederlyExpressRequest<any, unknown, any, any>, res: Response, next: NextFunction) => {
-    if (_.isNil(req.cookies.sessionToken)) {
-        throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
-    }
-
-    const uuid = req.cookies.sessionToken.split('_')[0];
-    const newSession = await Session.findOne({
-        where: {
-            uuid: uuid
-        }
-    });
-
-    if (_.isNil(newSession)) {
-        throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
-    }
-    
-    const user = await newSession.getUser();
-    const role = await user.getRole();
-    
-    next(httpResponse.Ok(null, {
-        roleId: role.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        userId: user.id,
-        uuid: user.uuid
-    }));
-}));
 
 router.post('/login',
     validate(loginValidation),

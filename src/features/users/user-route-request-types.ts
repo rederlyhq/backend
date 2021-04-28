@@ -17,6 +17,18 @@ export namespace ImpersonateRequest {
     export type body = Joi.extractType<typeof validations.impersonateValidation.body>;
 };
 
+export namespace GetSessionValidationRequest {
+    export type params = Joi.extractType<typeof validations.getSessionValidation.params>;
+    export type query = Joi.extractType<typeof validations.getSessionValidation.query>;
+    export type body = Joi.extractType<typeof validations.getSessionValidation.body>;
+};
+
+export namespace GetSessionRequest {
+    export type params = Joi.extractType<typeof validations.getSessionValidation.params>;
+    export type query = Joi.extractType<typeof validations.getSessionValidation.query>;
+    export type body = Joi.extractType<typeof validations.getSessionValidation.body>;
+};
+
 export namespace ForgotPasswordRequest {
     export type params = Joi.extractType<typeof validations.forgotPasswordValidation.params>;
     export type query = Joi.extractType<typeof validations.forgotPasswordValidation.query>;

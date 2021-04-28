@@ -8,6 +8,7 @@ export default class Session extends Model {
     public uuid!: string;
     public expiresAt!: Date;
     public active!: boolean;
+    public ltik!: string | null;
 
     public getUser!: BelongsToGetAssociationMixin<User>;
 
@@ -44,6 +45,12 @@ Session.init({
         allowNull: false,
         defaultValue: true
     },
+    ltik: {
+        field: 'session_ltik',
+        type: DataTypes.TEXT,
+        allowNull: true,
+        defaultValue: null
+    }
 }, {
     tableName: 'session',
     sequelize: appSequelize, // this bit is important

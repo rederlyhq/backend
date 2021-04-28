@@ -166,7 +166,7 @@ app.use(basePath + '/lti', lti.app);
 logger.debug(basePath + '/lti');
 
 lti.onConnect(async (token: any, req: any, res: Response, next: any) => {
-    logger.debug(token);
+    console.log(token);
     if (_.isNil(token?.userInfo?.email)) {
         return res.send('There is a problem with this LTI connect. No email found.');
     }
@@ -181,7 +181,7 @@ lti.onConnect(async (token: any, req: any, res: Response, next: any) => {
         return res.send('You do not have a Rederly account.');
     }
     
-    const newSession = await userController.createSession(user.id);
+    const newSession = await userController.createSession(user.id, req.query.ltik);
     const cookietoken = `${newSession.uuid}_${newSession.expiresAt.getTime()}`;
     logger.info(`Setting cookie (${cookietoken}) that expires at ${moment(newSession.expiresAt).calendar()}`);
     res.cookie('sessionToken', cookietoken, {
@@ -189,15 +189,8 @@ lti.onConnect(async (token: any, req: any, res: Response, next: any) => {
         domain: 'localhost',
         sameSite: 'none',
     });
-    // next(httpResponse.Ok(null, {
-    //     roleId: user.roleId,
-    //     firstName: user.firstName,
-    //     lastName: user.lastName,
-    //     userId: user.id,
-    //     uuid: user.uuid
-    // }));
-    // return res.send('http://localhost:3002/');
-    return res.redirect('http://localhost:3002/common/courses');
+
+    return lti.redirect(res, 'http://localhost:3002/common/courses');
   }
 );
 

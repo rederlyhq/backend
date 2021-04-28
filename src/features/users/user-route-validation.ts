@@ -10,6 +10,14 @@ export const impersonateValidation = {
     },
 };
 
+export const getSessionValidation = {
+    params: {},
+    query: {
+        ltik: Joi.string().required(),
+    },
+    body: {},
+}
+
 export const forgotPasswordValidation = {
     params: {},
     query: {},

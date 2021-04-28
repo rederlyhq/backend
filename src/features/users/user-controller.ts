@@ -312,13 +312,14 @@ class UserController {
         });
     }
 
-    createSession(userId: number): Bluebird<Session> {
+    createSession(userId: number, ltik: string | null = null): Bluebird<Session> {
         const expiresAt: Date = moment().add(sessionLife, 'minute').toDate();
         return Session.create({
             userId,
             uuid: uuidv4(),
             expiresAt: expiresAt,
-            active: true
+            active: true,
+            ltik
         });
     }
 

@@ -49,6 +49,7 @@ class CurriculumController {
                     where = {
                         [Sequelize.Op.or]: [
                             {
+                                // TODO global curriculum are currently under rederly which is university 1, this may need to change in the future
                                 id: 1
                             },
                             {

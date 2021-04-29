@@ -172,7 +172,7 @@ export default {
                 // Different from sequelize model, on models I do this with associations so I can use types
                 references: {
                     model: 'topic_feedback',
-                    key: 'id',
+                    key: 'topic_feedback_id',
                 },
             },
             problemAttachmentId: {

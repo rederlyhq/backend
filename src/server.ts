@@ -193,7 +193,7 @@ lti.onConnect(async (token: any, req: any, res: Response, next: any) => {
         sameSite: 'none',
     });
 
-    return lti.redirect(res, `/${req.query.redir}` ?? token?.platformContext?.targetLinkUri);
+    return lti.redirect(res, token.platformContext?.custom?.redirect ?? token?.platformContext?.targetLinkUri);
   }
 );
 
@@ -237,8 +237,14 @@ lti.onDeepLinking(async (token: any, req: any, res: Response) => {
     const objs = topics.map((topic) => {
         return ({
             type: 'ltiResourceLink',
+            // The URL is supposed to be a fully qualified URL to the resource, but not every route we have is directly accessible via LTI.
+            // so instead, we use custom for redirecting.
             // url: `http://test.rederly.com:3002/common/courses/${topic.unit?.course?.id}/topic/${topic.id}`,
-            url: `http://test.rederly.com:3002/backend-api/lti?redir=${encodeURIComponent(`common/courses/${topic.unit?.course?.id}/topic/${topic.id}`)}`,
+            // url: `http://test.rederly.com:3002/backend-api/lti?redir=${encodeURIComponent(`common/courses/${topic.unit?.course?.id}/topic/${topic.id}`)}`,
+            url: `http://test.rederly.com:3002/backend-api/lti`,
+            custom: {
+                redirect: `http://test.rederly.com:3002/common/courses/${topic.unit?.course?.id}/topic/${topic.id}`
+            },
             title: topic.name,
             text: topic.description,
             lineItem: {

@@ -42,7 +42,7 @@ export default class WorkbookFeedbackProblemAttachment extends Model implements 
 
 WorkbookFeedbackProblemAttachment.init({
     id: {
-        field: 'id',
+        field: 'workbook_feedback_problem_attachment_id',
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
@@ -58,7 +58,7 @@ WorkbookFeedbackProblemAttachment.init({
         allowNull: false,
     },
     active: {
-        field: 'active',
+        field: 'workbook_feedback_problem_attachment_active',
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: true

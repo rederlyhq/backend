@@ -1094,7 +1094,7 @@ class CourseRepository {
 
         topicFeedback.feedback = obj.feedback;
 
-        topicFeedback.save();
+        await topicFeedback.save();
         return topicFeedback;
     }
 

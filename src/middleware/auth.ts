@@ -141,7 +141,7 @@ export const userIdMeMiddleware = (path: string) => async (req: RederlyExpressRe
     const userId: 'me' | number = _.get(req, path);
     
     if (req.rederlyUserRole === Role.STUDENT && userId !== 'me' && userId !== req.rederlyUser.id) {
-        throw new ForbiddenError('You may not retrieve grades by id.');
+        throw new ForbiddenError('You cannot access another user\'s content');
     }
 
     next();  

@@ -55,7 +55,7 @@ export default class TopicFeedback extends Model implements TopicFeedbackInterfa
 
 TopicFeedback.init({
     id: {
-        field: 'id',
+        field: 'topic_feedback_id',
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
@@ -71,13 +71,13 @@ TopicFeedback.init({
         allowNull: false,
     },
     feedback: {
-        field: 'feedback',
+        field: 'topic_feedback_feedback',
         type: DataTypes.JSONB,
         allowNull: true,
         defaultValue: null,
     },
     active: {
-        field: 'active',
+        field: 'topic_feedback_active',
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: true

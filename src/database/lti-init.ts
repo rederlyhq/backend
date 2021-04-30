@@ -37,7 +37,7 @@ lti.setup('GIB_KEY',
             description: 'Rederly Description', // Tool Provider description.
             // redirectUris: [''], // Additional redirection URLs. The main URL is added by default.
             // customParameters: { key: 'value' }, // Custom parameters.
-            autoActivate: false // Whether or not dynamically registered Platforms should be automatically activated. Defaults to false.
+            autoActivate: true // Whether or not dynamically registered Platforms should be automatically activated. Defaults to false.
         }
     }
 );

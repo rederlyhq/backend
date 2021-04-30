@@ -31,7 +31,7 @@ lti.setup('GIB_KEY',
         devMode: true,
         dynReg: {
             // This has to be a hoisted URL that handles a /login call from the Platform.
-            url: 'http://localhost:3002/backend-api/lti', // Tool Provider URL. Required field.
+            url: 'http://test.rederly.com:3002/backend-api/lti', // Tool Provider URL. Required field.
             name: 'Rederly Tool', // Tool Provider name. Required field.
             logo: 'https://app.rederly.com/rederly-favicon.ico', // Tool Provider logo URL.
             description: 'Rederly Description', // Tool Provider description.

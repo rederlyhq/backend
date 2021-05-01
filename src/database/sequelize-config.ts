@@ -25,6 +25,7 @@ function formatter(): winston.LeveledLogMethod | ((sql: string) => void) {
 
 const {
     host,
+    port,
     name,
     user,
     password,
@@ -36,7 +37,8 @@ const sequelizeConfig: SequelizeOptions = {
     username: user,
     password: password,
     database: name,
-    host,
+    host: host,
+    port: port,
     dialect: 'postgres',
     logging: logging && formatter(),
     dialectOptions: {

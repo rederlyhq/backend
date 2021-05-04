@@ -14,15 +14,55 @@ import { Constants } from '../../constants';
 import curriculumRepository from './curriculum-repository';
 import University from '../../database/models/university';
 import User from '../../database/models/user';
+import _ = require('lodash');
+import logger from '../../utilities/logger';
+
+
+export enum ListCurriculumFilters {
+    ALL = 'ALL',
+    INSTITUTIONAL = 'INSTITUTIONAL',
+    GLOBAL = 'GLOBAL'
+}
 
 class CurriculumController {
     getCurriculumById(id: number): Promise<Curriculum> {
         return curriculumRepository.getCurriculumById(id);
     }
 
-    async getCurriculums({user}: {user: User}): Promise<Curriculum[]> {
-
+    async getCurriculums({user, filterOptions}: {user: User; filterOptions: ListCurriculumFilters}): Promise<Curriculum[]> {
         const university = await user.getUniversity();
+
+        let where: Sequelize.WhereAttributeHash = {};
+        if (!_.isNil(filterOptions)) {
+            switch(filterOptions) {
+                case ListCurriculumFilters.INSTITUTIONAL:
+                    where = {
+                        id: university.id
+                    };
+                    break;
+                case ListCurriculumFilters.GLOBAL:
+                    where = {
+                        id: 1
+                    };
+                    break;
+                case ListCurriculumFilters.ALL:
+                    where = {
+                        [Sequelize.Op.or]: [
+                            {
+                                // TODO global curriculum are currently under rederly which is university 1, this may need to change in the future
+                                id: 1
+                            },
+                            {
+                                id: university.id
+                            }
+                        ]
+                    };
+                    break;
+                default:
+                    logger.warn('No filters were passed for Curricula.');
+                    break;
+            }
+        }
 
         return Curriculum.findAll(
             {
@@ -34,17 +74,11 @@ class CurriculumController {
                         model: University,
                         as: 'university',
                         attributes: [],
-                        where: {
-                            [Sequelize.Op.or]: [
-                                {
-                                    id: 1
-                                },
-                                {
-                                    id: university.id
-                                }
-                            ]
-                        }
+                        where,
                     }
+                ],
+                order: [
+                    ['name', 'DESC']
                 ]
             }
         );

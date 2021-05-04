@@ -207,6 +207,8 @@ const configurations = {
         presignedUrlBasePath: readStringValue('ATTACHMENTS_PRESIGNED_URL_BASE_PATH', ''),
         baseUrl: readStringValue('ATTACHMENTS_BASE_URL', ''),
         presignedUrlTimeout: readIntValue('ATTACHMENTS_PRESIGNED_URL_TIMEOUT', 60000),
+        // Uploads use the same Base URL as attachments.
+        uploadsPresignedUrlBasePath: readStringValue('UPLOADS_PRESIGNED_URL_BASE_PATH', ''),
     },
     importer: {
         missingFileThreshold: readIntValue('IMPORTER_MISSING_FILE_THRESHOLD', 10),

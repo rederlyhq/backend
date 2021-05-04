@@ -124,6 +124,29 @@ passport.serializeUser(async (session: Session, done) => {
     return done(null, session);
 });
 
+// This middleware enforces that students can only pass in 'me' or their own userId to a route.
+export const userIdMeMiddleware = (path: string) => async (req: RederlyExpressRequest, res: unknown, next: NextFunction): Promise<void> => {
+    if (_.isNil(req.session)) {
+        throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+    }
+
+    if (_.isNil(req.rederlyUser)) {
+        req.rederlyUser = await req.session.getUser();
+    }
+
+    if (_.isNil(req.rederlyUserRole)) {
+        req.rederlyUserRole = req.rederlyUser.roleId;
+    }
+
+    const userId: 'me' | number = _.get(req, path);
+    
+    if (req.rederlyUserRole === Role.STUDENT && userId !== 'me' && userId !== req.rederlyUser.id) {
+        throw new ForbiddenError('You cannot access another user\'s content');
+    }
+
+    next();  
+};
+
 passport.deserializeUser(async (id: number, done: (err?: Boom<null> | null, user?: unknown) => void): Promise<void> => {
     try {
         const user = userController.getUser({

@@ -19,6 +19,7 @@ import ProblemAttachment from '../../database/models/problem-attachment';
 import { BucketDefFileResult, FindFilesDefFileResult } from '../../utilities/webwork-utilities/importer';
 import WebWorkDef from '@rederly/webwork-def-parser';
 import StudentEnrollment from '../../database/models/student-enrollment';
+import { TopicTypeFilters, ListCoursesFilters } from './course-controller';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -42,6 +43,7 @@ export interface CourseListOptions {
     filter: {
         instructorId?: number;
         enrolledUserId?: number;
+        filterOptions?: ListCoursesFilters;
     };
 }
 
@@ -247,9 +249,6 @@ export interface UpdateQuestionsOptions {
 
 export interface CreateCourseOptions {
     object: Partial<Course>;
-    options: {
-        useCurriculum: boolean;
-    };
 }
 
 export interface UpdateCourseOptions {
@@ -266,13 +265,17 @@ export interface GetGradesOptions {
         topicId?: number;
         questionId?: number;
         userId?: number;
+        topicTypeFilter?: TopicTypeFilters;
     };
+    userRole: Role;
 }
 
 export interface GetGradeForQuestionOptions {
     questionId: number;
     userId: number;
     includeWorkbooks?: boolean;
+    topicTypeFilter? : TopicTypeFilters;
+    userRole?: Role;
 }
 
 export interface GetStatisticsOnUnitsOptions {
@@ -280,6 +283,7 @@ export interface GetStatisticsOnUnitsOptions {
         courseId?: number;
         userId?: number;
         userRole: Role;
+        topicTypeFilter? : TopicTypeFilters;
     };
     followQuestionRules: boolean;
 }
@@ -290,6 +294,7 @@ export interface GetStatisticsOnTopicsOptions {
         courseId?: number;
         userId?: number;
         userRole: Role;
+        topicTypeFilter? : TopicTypeFilters;
     };
     followQuestionRules: boolean;
 }
@@ -362,7 +367,10 @@ export interface CanUserViewQuestionIdOptions {
 }
 
 export interface CanUserViewQuestionIdResult {
+    // This essentially checks hideProblemsAfterFinish.
     userCanViewQuestion: boolean;
+    // This essentially checks showItemizedResults.
+    userCanViewSolution?: boolean;
     message: string;
 }
 
@@ -706,5 +714,5 @@ export interface RequestNewProblemVersionOptions {
 
 export interface AddFeedbackOptions {
     workbookId: number;
-    content: string;
+    content: unknown;
 }

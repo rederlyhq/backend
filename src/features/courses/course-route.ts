@@ -246,6 +246,17 @@ router.get('/:courseId/topic-grades',
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetGradesForTopicsByCourseRequest.body, GetGradesForTopicsByCourseRequest.query>, res: Response, next: NextFunction) => {
         const params = req.params as GetGradesForTopicsByCourseRequest.params;
+
+        if (_.isNil(req.session)) {
+            throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+        
+        const user = await req.session.getUser();
+
+        if (user.roleId === Role.STUDENT) {
+            throw new RederlyError('You do not have access to edit this course.');
+        }
+
         const topics = await courseController.getGradesForTopics({
             courseId: params.courseId,
         });
@@ -732,6 +743,16 @@ router.put('/:id',
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseRequest.body, UpdateCourseRequest.query>, _res: Response, next: NextFunction) => {
         try {
+            if (_.isNil(req.session)) {
+                throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+            }
+
+            const user = await req.session.getUser();
+
+            if (user.roleId === Role.STUDENT) {
+                throw new RederlyError('You do not have access to edit this course.');
+            }
+
             const params = req.params as UpdateCourseRequest.params;
             const updatesResult = await courseController.updateCourse({
                 where: {

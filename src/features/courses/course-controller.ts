@@ -83,6 +83,11 @@ export enum ListCoursesFilters {
     PAST = 'PAST'
 }
 
+interface ChangedValue<T> {
+    oldValue: T;
+    newValue: T;
+}
+
 class CourseController {
     getCourseById(id: number, userId?: number): Promise<Course> {
         return Course.findOne({
@@ -1554,7 +1559,7 @@ class CourseController {
                     // Currently, group imports are only supported by archive and fail completely if there are any bad paths.
                     // Thus, at this point, no errors are available to be set for courseQuestionAssessmentInfo.
 
-                    const question = await this.addQuestion({
+                    const { question } = await this.addQuestion({
                         question: {
                             // active: true,
                             courseTopicContentId: options.courseTopicId,
@@ -1603,7 +1608,7 @@ class CourseController {
                         await topic.increment('errors');
                     }
 
-                    const question = await this.addQuestion({
+                    const { question } = await this.addQuestion({
                         question: {
                             // active: true,
                             courseTopicContentId: options.courseTopicId,
@@ -1631,14 +1636,17 @@ class CourseController {
         });
     }
 
-    async addQuestion(options: AddQuestionOptions): Promise<CourseWWTopicQuestion> {
+    async addQuestion(options: AddQuestionOptions): Promise<{ question: CourseWWTopicQuestion; grades: StudentGrade[] }> {
         return await useDatabaseTransaction(async () => {
             const result = await this.createQuestion(options.question);
-            await this.createGradesForQuestion({
+            const grades = await this.createGradesForQuestion({
                 questionId: result.id,
                 userIds: options.userIds
             });
-            return result;
+            return {
+                question: result,
+                grades: grades
+            };
         });
     }
 
@@ -1901,7 +1909,8 @@ class CourseController {
         gradeResult,
         submitted,
         timeOfSubmission,
-        problemPath
+        problemPath,
+        saveGrade = true,
     }: SetGradeFromSubmissionOptions): Promise<StudentWorkbook | undefined> => {
         return useDatabaseTransaction(async (): Promise<StudentWorkbook | undefined> => {
             if (gradeResult.gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
@@ -1950,15 +1959,25 @@ class CourseController {
                         }
                     });
                 } else {
-                    _.assign(workbook, {
+                    const targetChanges = {
                         wasLate: gradeResult.gradingRationale.isLate,
                         wasExpired: gradeResult.gradingRationale.isExpired,
                         wasAfterAttemptLimit: !gradeResult.gradingRationale.isWithinAttemptLimit,
                         wasLocked: gradeResult.gradingRationale.isLocked,
                         active: true
-                    });
+                    };
 
-                    await workbook.save();
+                    _.assignEntries(
+                        workbook,
+                        _.diffObject(workbook.get({plain: true}), targetChanges)
+                    );
+
+                    if (workbook.changed()) {
+                        logger.info(`TOMTOM ${workbook.changed()}`);
+                        await workbook.save();
+                    } else {
+                        logger.info('TOMTOM skip saving');
+                    }
                 }
 
                 if (!_.isNil(gradeResult.gradeUpdates.overallBestScore)) {
@@ -1997,15 +2016,20 @@ class CourseController {
             } else {
                 if (!_.isNil(workbook)) {
                     if (gradeResult.gradingRationale.willTrackAttemptReason !== WillTrackAttemptReason.UNKNOWN) {
-                        logger.error(`${workbook.id} now meets critieria that is should not be kept, marking it as active false (as well as audit fields)`);
-                        _.assign(workbook, {
-                            wasLate: false,
-                            wasExpired: false,
-                            wasAfterAttemptLimit: false,
-                            wasLocked: false,
-                            active: false
-                        });
-                        await workbook.save();
+                        logger.info(`${workbook.id} now meets critieria that is should not be kept, marking it as active false (as well as audit fields)`);
+                        _.assignEntries(
+                            workbook,
+                            _.diffObject(workbook.get({plain: true}), {
+                                wasLate: false,
+                                wasExpired: false,
+                                wasAfterAttemptLimit: false,
+                                wasLocked: false,
+                                active: false
+                            })
+                        );
+                        if (workbook.changed()) {
+                            await workbook.save();
+                        }
                     } else {
                         logger.error(`Did not regrade submission ${workbook.id} because of an error that occured in coming up with grading rationale`);
                     }
@@ -2014,18 +2038,219 @@ class CourseController {
                 }
             }
 
-
-            if(workbook?.randomSeed === studentGrade.originalRandomSeed) {
-                await studentGrade.save();
-            } else {
-                if (_.isNil(workbook)) {
-                    logger.debug('Workbook not kept, did not update grade');
+            if (saveGrade) {
+                if(workbook?.randomSeed === studentGrade.originalRandomSeed) {
+                    await studentGrade.save();
                 } else {
-                    logger.debug('Random seed was different, not saving due to SMA');
+                    if (_.isNil(workbook)) {
+                        logger.debug('Workbook not kept, did not update grade');
+                    } else {
+                        logger.debug('Random seed was different, not saving due to SMA');
+                    }
                 }
             }
             // If nil coming in and the attempt was tracked this will result in the new workbook
             return workbook;
+        });
+    }
+
+    regradeNeededGradesOnTopic = async ({
+        topicId
+    }: {
+        topicId: number;
+    }): Promise<{
+        topic: CourseTopicContent;
+        questions: { [questionId: number]: CourseWWTopicQuestion };
+    }> => {
+        return useDatabaseTransaction(async () => {
+            const topic = await CourseTopicContent.findOne({
+                where: {
+                    id: topicId,
+                    active: true
+                }
+            });
+    
+            if (_.isNil(topic)) {
+                throw new IllegalArgumentException('Cound not find topic to regrade');
+            }
+    
+            const questions = _.keyBy(await topic.getQuestions({
+                where: {
+                    active: true
+                }
+            }), 'id');
+    
+            // gradesIdsThatNeedRetro
+            console.time('grade');
+            const grades = await StudentGrade.findAll({
+                where: {
+                    id: {
+                        [Sequelize.Op.in]: topic.gradeIdsThatNeedRetro
+                    }
+                }
+            });
+            console.timeEnd('grade');
+    
+            if (grades.length !== topic.gradeIdsThatNeedRetro.length) {
+                throw new RederlyError('Grades count mismatch');
+            }
+    
+            console.time('workbook');
+            const workbooks = _.keyByWithArrays(await StudentWorkbook.findAll({
+                where: {
+                    studentGradeId: {
+                        [Sequelize.Op.in]: topic.gradeIdsThatNeedRetro
+                    }
+                }
+            }), 'studentGradeId');
+            console.timeEnd('workbook');
+    
+            console.time('regrade');
+            await grades.asyncForEach(async (grade, index) => {
+                if (index % 10 === 0) {
+                    console.log(`TOMTOM GRADE ${index}/${grades.length}`);
+                }
+                await this.reGradeStudentGrade({
+                    studentGrade: grade,
+                    workbooks: workbooks[grade.id],
+                    question: questions[grade.courseWWTopicQuestionId],
+                    topic: topic
+                });
+            });
+            console.timeEnd('regrade');
+            return {
+                topic: topic,
+                questions: questions,
+                grades: grades,
+                workbooks: workbooks
+            } as any;
+        });
+    }
+
+    getGradesThatNeedRegrade = async({
+        topicOptions,
+        questionOptions,
+        userId
+    }: {
+        topicOptions?: {
+            dates?: {
+                startDate?: ChangedValue<Date>;
+                endDate?: ChangedValue<Date>;
+                deadDate?: ChangedValue<Date>;    
+            };
+            topicId: number;
+        };
+        questionOptions?: {
+            numAttempts?: ChangedValue<number>;
+            questionId: number;
+        };
+        userId?: number;
+    }): Promise<StudentGrade[]> => {
+        if (_.isNil(topicOptions?.topicId) && _.isNil(questionOptions?.questionId)) {
+            throw new IllegalArgumentException('Cannot figure out which grades need regrading without a topic id or question id');
+        }
+
+        // Wanted to put limits on the includes but it forces sequelize to do seperate quieries
+        // and for 900 grades w/ 9k submissions it increased the time from 2 seconds to 42 seconds (which is the opposite of what we wanted)
+        const dateRangeConditions: sequelize.WhereAttributeHash[] = [];
+        const gradeWhere: sequelize.WhereOptions = {};
+        const workbookWhere: sequelize.WhereAttributeHash = {
+            [Sequelize.Op.and]: dateRangeConditions
+        };
+
+        const includes: sequelize.IncludeOptions[] = [{
+            model: StudentWorkbook,
+            as: 'workbooks',
+            required: true,
+            attributes: [],
+            where: workbookWhere,
+        }];
+
+        if (_.isSomething(questionOptions)) {
+            gradeWhere['courseWWTopicQuestionId' as keyof typeof StudentGrade] = questionOptions.questionId;
+        }
+
+        if (_.isSomething(topicOptions) && _.isSomething(topicOptions.dates) && !_.isEmpty(topicOptions.dates)) {
+            Object.values(topicOptions.dates).forEach(value => {
+                if(!value) {
+                    return;
+                }
+
+                const { oldValue, newValue } = value;
+                const moments = [oldValue.toMoment(), newValue.toMoment()];
+                const maxMoment = moment.max(moments);
+                const minMoment = moment.min(moments);
+                const condition = {
+                    ['time' as keyof typeof StudentWorkbook]: {
+                        [Sequelize.Op.between]: [minMoment.toDate(), maxMoment.toDate()]
+                    }
+                };
+                dateRangeConditions.push(condition);
+            });
+        }
+
+        if (_.isSomething(questionOptions) && _.isSomething(questionOptions.numAttempts)) {
+            const attemptsArray = [questionOptions.numAttempts.newValue, questionOptions.numAttempts.oldValue];
+            const maxMaxAttempt = Math.max(...attemptsArray);
+            const minMaxAttempts = Math.min(...attemptsArray);
+            gradeWhere['numAttempts' as keyof typeof StudentGrade] = {
+                [Sequelize.Op.between]: [maxMaxAttempt, minMaxAttempts]
+            };
+        }
+
+        const questionWhere: sequelize.WhereOptions = {};
+        // this may or may not get used
+        const questionIncludes: sequelize.IncludeOptions = {
+            model: CourseWWTopicQuestion,
+            as: 'question',
+            required: true,
+            attributes: [],
+            // limit: 1,
+            where: questionWhere
+        };
+
+        if (_.isSomething(topicOptions)) {
+            questionWhere['courseTopicContentId' as keyof typeof CourseWWTopicQuestion] = topicOptions.topicId;
+        }
+
+        if (_.isSomething(userId)) {
+            // If a userId is specified they have an extension and we already have all the info we need
+            gradeWhere.userId = userId;
+        } else {
+            gradeWhere[`$question->topic->studentTopicOverride.${StudentTopicOverride.rawAttributes.id.field}$`] = null;
+            // If userId wasn't present we are regrading an entire topic so we need to avoid  student's with extensions
+            gradeWhere[`$question->studentTopicQuestionOverride.${StudentTopicQuestionOverride.rawAttributes.id.field}$`] = null;
+            questionIncludes.include = [{
+                model: StudentTopicQuestionOverride,
+                as: 'studentTopicQuestionOverride',
+                required: false,
+                // limit: 1,
+                attributes: []
+            }, {
+                model: CourseTopicContent,
+                as: 'topic',
+                required: true,
+                // limit: 1,
+                attributes: [],
+                include: [{
+                    model: StudentTopicOverride,
+                    as: 'studentTopicOverride',
+                    required: false,
+                    // limit:1,
+                    attributes: []
+                }]
+            }];
+        }
+
+        if (_.isSomething(topicOptions) || _.isNil(userId)) {
+            includes.push(questionIncludes);
+        }
+
+        return StudentGrade.findAll({
+            // attributes: ['id', 'courseWWTopicQuestionId', 'userId', 'locked'] as (keyof StudentGrade)[],
+            attributes: ['id'] as (keyof StudentGrade)[],
+            where: gradeWhere,
+            include: includes
         });
     }
 
@@ -2088,7 +2313,8 @@ class CourseController {
                     active: true
                 }
             });
-            await questions.asyncForEach(async (question: CourseWWTopicQuestion) => {
+            // sequentialAsyncForEach
+            await questions.sequentialAsyncForEach(async (question: CourseWWTopicQuestion) => {
                 await this.reGradeQuestion({
                     topic,
                     question,
@@ -2135,11 +2361,12 @@ class CourseController {
             } else {
                 const lowestMaxAttempts = Math.min(...maxAttemptsArray);
                 grades = await question.getGrades({
+                    attributes: ['id', 'courseWWTopicQuestionId', 'userId', 'locked'],
                     where: _({
                         numAttempts: {
                             [Sequelize.Op.gt]: lowestMaxAttempts
                         },
-                        userId
+                        userId: userId
                     }).omitBy(_.isUndefined).value() as sequelize.WhereOptions, // Adding this suppresses the error of userId could be undefined, sequelize disregards undefined so that is a bad sequelize type
                 });
                 canSkip = _.isEmpty(grades);
@@ -2155,8 +2382,9 @@ class CourseController {
         return useDatabaseTransaction(async () => {
             // Validation that passed in values match up (fk) are done deeper
             grades = grades ?? await question.getGrades({
+                attributes: ['id', 'courseWWTopicQuestionId', 'userId', 'locked'] as (keyof StudentGrade)[],
                 where: _({
-                    userId,
+                    userId: userId,
                     active: true
                 }).omitBy(_.isUndefined).value() as sequelize.WhereOptions
             });
@@ -2168,7 +2396,8 @@ class CourseController {
 
             logger.debug(`Regrading ${grades.length} grades`);
 
-            await grades.asyncForEach(async (studentGrade: StudentGrade) => {
+            // sequentialAsyncForEach
+            await grades.sequentialAsyncForEach(async (studentGrade: StudentGrade) => {
                 await this.reGradeStudentGrade({
                     studentGrade,
                     question,
@@ -2205,6 +2434,7 @@ class CourseController {
             //     }
             // };
             workbooks = workbooks ?? await studentGrade.getWorkbooks({
+                attributes: ['id', 'wasLocked', 'result', 'time', 'studentGradeId', 'active', 'wasLate', 'wasExpired', 'wasAfterAttemptLimit', 'wasLocked', 'active'] as (keyof StudentWorkbook)[],
                 order: ['id'],
                 // I was thinking of using the active flag for the case where the solutions date would be available
                 // That shouldn't be possible, but this way we have a catch
@@ -2318,17 +2548,18 @@ class CourseController {
                         newScore: workbook.result,
                         question,
                         solutionDate,
-                        studentGrade,
+                        studentGrade: studentGrade,
                         topic,
 
                         timeOfSubmission: workbook.time.toMoment(),
                         submitted: null,
-                        workbook,
+                        workbook: workbook,
                         override: {
                             useOverride: true,
                             questionOverride: questionOverride,
                             topicOverride: topicOverride
-                        }
+                        },
+                        saveGrade: false,
                     });
                 } else if (workbookOrOverride instanceof StudentGradeOverride) {
                     // redundant but makes it easier to read
@@ -2339,7 +2570,7 @@ class CourseController {
                 }
             }
 
-            // Needs to be here in case grade was updated from override
+            // Needs to be here since we are not saving in loop
             await studentGrade.save();
         });
     }
@@ -2357,12 +2588,14 @@ class CourseController {
         submitted,
         timeOfSubmission,
         workbook,
+        saveGrade = true,
         override: {
             useOverride = true,
             questionOverride,
             topicOverride
         } = {}
     }: GradeOptions): Promise<StudentWorkbook | undefined> => {
+        logger.debug('Regrading submission');
         let topic: CourseTopicContentInterface = passedTopic;
         let question: CourseWWTopicQuestionInterface = passedQuestion;
         let realSolutionDate: moment.Moment = solutionDate;
@@ -2412,8 +2645,9 @@ class CourseController {
             studentGrade,
             submitted,
             timeOfSubmission,
-            workbook,
+            workbook: workbook,
             problemPath: question.webworkQuestionPath,
+            saveGrade: saveGrade,
         });
     };
 
@@ -3810,8 +4044,9 @@ class CourseController {
         });
     }
 
-    async createGradesForQuestion(options: CreateGradesForQuestionOptions): Promise<number> {
-        return useDatabaseTransaction(async (): Promise<number> => {
+    async createGradesForQuestion(options: CreateGradesForQuestionOptions): Promise<StudentGrade[]> {
+        const results: StudentGrade[] = [];
+        return useDatabaseTransaction(async (): Promise<StudentGrade[]> => {
             const { questionId } = options;
             let userIds: Array<number> | undefined = options.userIds;
             if (_.isNil(userIds)) {
@@ -3821,12 +4056,14 @@ class CourseController {
                 userIds = results.map(result => result.userId);    
             }
             await userIds.asyncForEach(async (userId: number) => {
-                await this.createNewStudentGrade({
+                const newStudentGrade = await this.createNewStudentGrade({
                     courseTopicQuestionId: questionId,
                     userId: userId
                 });
+                results.push(newStudentGrade);
             });
-            return userIds.length;
+            return results;
+            // return userIds.length;
         });
     }
 

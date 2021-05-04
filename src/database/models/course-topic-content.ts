@@ -17,6 +17,7 @@ export interface CourseTopicContentInterface {
     createdAt: Date;
     updatedAt: Date;
     originatingTopicContentId: number;
+    gradeIdsThatNeedRetro: number[];
 }
 
 export default class CourseTopicContent extends Model implements CourseTopicContentInterface {
@@ -27,6 +28,7 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
     public name!: string;
     public active!: boolean;
     public contentOrder!: number;
+    public gradeIdsThatNeedRetro!: number[];
 
     public startDate!: Date;
     public endDate!: Date;
@@ -241,6 +243,12 @@ CourseTopicContent.init({
     versionCount: {
         type: DataTypes.VIRTUAL,
         allowNull: true,
+    },
+    gradeIdsThatNeedRetro: {
+        field: 'course_topic_content_grade_ids_that_need_retro',
+        type: DataTypes.ARRAY(DataTypes.INTEGER),
+        allowNull: false,
+        defaultValue: [],
     },
 }, {
     tableName: 'course_topic_content',

@@ -3,7 +3,7 @@ import { Response, NextFunction } from 'express';
 import userController from './user-controller';
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator';
-import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation, updatePasswordValidation, updateForgottonPasswordValidation, resendVerificationValidation, userStatusValidation, impersonateValidation, getSessionValidation } from './user-route-validation';
+import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation, updatePasswordValidation, updateForgottonPasswordValidation, resendVerificationValidation, userStatusValidation, impersonateValidation, getSessionValidation, updateNilPasswordValidation } from './user-route-validation';
 import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest, ForgotPasswordRequest, UpdatePasswordRequest, UpdateForgottonPasswordRequest, ResendVerificationRequest, UserStatusRequest, ImpersonateRequest } from './user-route-request-types';
 import Boom = require('boom');
 import passport = require('passport');
@@ -55,6 +55,7 @@ router.get('/session',
             where: {
                 uuid: uuid,
                 ltik: req.query.ltik,
+                active: true,
             }
         });
 
@@ -70,7 +71,8 @@ router.get('/session',
             firstName: user.firstName,
             lastName: user.lastName,
             userId: user.id,
-            uuid: user.uuid
+            uuid: user.uuid,
+            hasPassword: !_.isEmpty(user.password),
         }));
     }
 ));
@@ -86,11 +88,12 @@ router.post('/login',
         const user = await newSession.getUser();
         const role = await user.getRole();
         if (newSession) {
-            const cookieOptions = {
-                expires: newSession.expiresAt
-            };
             const token = `${newSession.uuid}_${newSession.expiresAt.getTime()}`;
-            res.cookie('sessionToken', token, cookieOptions);
+            res.cookie('sessionToken', token, {
+                expires: newSession.expiresAt,
+                domain: 'test.rederly.com',
+                sameSite: 'none',
+            });
             next(httpResponse.Ok(null, {
                 roleId: role.id,
                 firstName: user.firstName,
@@ -203,7 +206,10 @@ router.post('/logout',
             throw new Error('Session is nil even after authentication middleware');
         }
         await userController.logout(req.session.dataValues.uuid);
-        res.clearCookie('sessionToken');
+        res.clearCookie('sessionToken', {
+            domain: 'test.rederly.com',
+            sameSite: 'none',
+        });
         next(httpResponse.Ok('Logged out'));
     }));
 

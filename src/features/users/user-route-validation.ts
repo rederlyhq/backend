@@ -35,6 +35,15 @@ export const updatePasswordValidation = {
     },
 };
 
+export const updateNilPasswordValidation = {
+    params: {},
+    query: {},
+    body: {
+        newPassword: Joi.string().min(Constants.Application.MIN_PASSWORD_LENGTH).max(Constants.Application.MAX_PASSWORD_LENGTH).required(),
+        ltik: Joi.string().required(),
+    },
+};
+
 export const updateForgottonPasswordValidation = {
     params: {},
     query: {},

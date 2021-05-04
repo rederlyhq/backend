@@ -9,6 +9,16 @@ import Course from '../../database/models/course';
 import lti from '../../database/lti-init';
 import logger from '../../utilities/logger';
 import _ = require('lodash');
+import universityController from '../universities/university-controller';
+import { authenticationMiddleware } from '../../middleware/auth';
+import { updatePasswordValidation, updateNilPasswordValidation } from '../users/user-route-validation';
+import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
+import { UpdatePasswordRequest } from '../users/user-route-request-types';
+import * as asyncHandler from 'express-async-handler';
+import validate from '../../middleware/joi-validator';
+import userRepository from '../users/user-repository';
+import { hashPassword } from '../../utilities/encryption-helper';
+const router = require('express').Router();
 
 lti.onConnect(async (token: any, req: any, res: Response, next: NextFunction) => {
     console.log(token);
@@ -17,13 +27,28 @@ lti.onConnect(async (token: any, req: any, res: Response, next: NextFunction) =>
     }
 
     // return res.send('User connected!');
-    const user = await User.findOne({
+    let user = await User.findOne({
         where: {
             email: token.userInfo.email
         }
     });
+
     if (_.isNil(user)) {
-        return res.send('You do not have a Rederly account.');
+        const universityFromEmail = await universityController.getUniversitiesAssociatedWithEmail({ emailDomain: token.userInfo.email.split('@')[1] });
+
+        user = await User.create({
+            active!: true,
+            universityId!: universityFromEmail.first?.id,
+            roleId!: 0,
+            firstName!: token.userInfo.given_name,
+            lastName!: token.userInfo.family_name,
+            email!: token.userInfo.email,
+            password!: '',
+            hasPassword: false,
+            verified!: true,
+            actuallyVerified!: false,
+        });
+        // return res.send('You do not have a Rederly account.');
     }
     
     const newSession = await userController.createSession(user.id, req.query.ltik);
@@ -191,5 +216,22 @@ lti.app.post('/platform/new', async (req: Request, res: Response, next: any) => 
 
      res.json(registration);
 });
+
+
+lti.app.put('/update-nil-password',
+validate(updateNilPasswordValidation),
+asyncHandler(async (req: RederlyExpressRequest<UpdatePasswordRequest.params, unknown, UpdatePasswordRequest.body, UpdatePasswordRequest.query>, res: Response, next: NextFunction) => {
+    console.log('Got new password ', (req.body as any).newPassword);
+    const hashedPassword = await hashPassword((req.body as any).newPassword);
+    await userRepository.updateUser({
+        updates: {
+            password: hashedPassword
+        },
+        where: {
+            email: res.locals.token.userInfo.email
+        }
+    });
+    next(httpResponse.Ok('Password updated!'));
+}));
 
 export default lti;

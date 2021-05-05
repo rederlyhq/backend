@@ -578,6 +578,7 @@ class CourseController {
                             topicTypeId: originatingTopic.topicTypeId,
                             name: originatingTopic.name,
                             contentOrder: originatingTopic.contentOrder,
+                            description: originatingTopic.description,
 
                             startDate: createdCourse.end,
                             endDate: createdCourse.end,

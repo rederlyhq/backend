@@ -443,7 +443,8 @@ router.put('/topic/:id/regrade',
     asyncHandler(async (req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
         const topicId = req.params.id as unknown as number;
         const topic = await courseController.regradeNeededGradesOnTopic({
-            topicId: topicId
+            topicId: topicId,
+            questionId: req.query.questionId as number | undefined
         });
         next(httpResponse.Ok('Regrading', topic));
     }));
@@ -1319,6 +1320,7 @@ router.get('/topic/:id',
             userId: req.query.userId, 
             includeQuestions: req.query.includeQuestions,
             includeWorkbookCount: req.query.includeWorkbookCount,
+            includeGradeIdsThatNeedRegrade: req.query.includeGradeIdsThatNeedRegrade,
         });
 
         if (req.query.includeWorkbookCount) {

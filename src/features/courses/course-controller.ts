@@ -150,7 +150,7 @@ class CourseController {
         });
     }
 
-    getTopicById({id, userId, includeQuestions, includeWorkbookCount}: {id: number; userId?: number; includeQuestions?: boolean; includeWorkbookCount?: boolean}): Promise<CourseTopicContent> {
+    getTopicById({id, userId, includeQuestions, includeWorkbookCount, includeGradeIdsThatNeedRegrade}: {id: number; userId?: number; includeQuestions?: boolean; includeWorkbookCount?: boolean; includeGradeIdsThatNeedRegrade?: boolean}): Promise<CourseTopicContent> {
         const include = [];
         const subInclude = [];
         const questionSubInclude = [];
@@ -202,6 +202,21 @@ class CourseController {
                     as: 'workbooks',
                     required: false,
                     where: {
+                        active: true,
+                    },
+                });
+            }
+
+            if (includeGradeIdsThatNeedRegrade) {
+                questionSubInclude.push({
+                    model: StudentGrade,
+                    as: 'grades',
+                    required: false,
+                    attributes: ['id'],
+                    where: {
+                        [sequelize.Op.and]: [
+                            sequelize.literal(`"questions->grades"."${StudentGrade.rawAttributes[nameof<StudentGrade>('id')].field ?? ''}"= ANY("${CourseTopicContent.rawAttributes[nameof<CourseTopicContent>('gradeIdsThatNeedRetro')].field ?? ''}")`)
+                        ],
                         active: true,
                     },
                 });
@@ -1381,8 +1396,16 @@ class CourseController {
                         newValue: newQuestion.maxAttempts
                     }
                 })).map(grade => grade.id);
-                topic.gradeIdsThatNeedRetro = [...new Set([...topic.gradeIdsThatNeedRetro, ...gradesThatNeedRegrade])];
-                await topic.save();
+                _.assignEntries(
+                    topic,
+                    _.diffObject(topic.get({plain: true}), {
+                        gradeIdsThatNeedRetro: [...new Set([...topic.gradeIdsThatNeedRetro, ...gradesThatNeedRegrade])]
+                    })
+                );
+
+                if (topic.changed()) {
+                    await topic.save();
+                }
             }
             return resultantUpdates;
         });
@@ -2090,9 +2113,11 @@ class CourseController {
     }
 
     regradeNeededGradesOnTopic = async ({
-        topicId
+        topicId,
+        questionId
     }: {
         topicId: number;
+        questionId?: number;
     }): Promise<CourseTopicContent> => {
         const topic = await CourseTopicContent.findOne({
             where: {
@@ -2111,6 +2136,10 @@ class CourseController {
         topic.retroStartedTime = new Date();
         await topic.save();
 
+        let gradeIdsThatNeedRetro = topic.gradeIdsThatNeedRetro;
+        if (_.isEmpty(gradeIdsThatNeedRetro)) {
+            throw new IllegalArgumentException('This topic does not need a retro.');
+        }
         // orphan for pseudo job
         useDatabaseTransaction(async () => {
             const questions = _.keyBy(await topic.getQuestions({
@@ -2121,31 +2150,47 @@ class CourseController {
     
             // gradesIdsThatNeedRetro
             console.time('grade');
-            const grades = await StudentGrade.findAll({
-                where: {
-                    id: {
-                        [Sequelize.Op.in]: topic.gradeIdsThatNeedRetro
-                    }
+            const gradesWhere: sequelize.WhereAttributeHash = {
+                id: {
+                    [Sequelize.Op.in]: gradeIdsThatNeedRetro
                 }
+            };
+
+            if (_.isSomething(questionId)) {
+                gradesWhere.courseWWTopicQuestionId = questionId;
+            }
+            const grades = await StudentGrade.findAll({
+                where: gradesWhere
             });
             console.timeEnd('grade');
-    
-            if (grades.length !== topic.gradeIdsThatNeedRetro.length) {
-                throw new RederlyError('Grades count mismatch');
+
+            if (_.isSomething(questionId)) {
+                if (grades.length > topic.gradeIdsThatNeedRetro.length) {
+                    throw new RederlyError('Grades count mismatch with question id');
+                }
+            } else {
+                if (grades.length !== topic.gradeIdsThatNeedRetro.length) {
+                    throw new RederlyError('Grades count mismatch');
+                }
+            }
+
+            gradeIdsThatNeedRetro = grades.map(grade => grade.id);
+            if (_.isEmpty(gradeIdsThatNeedRetro)) {
+                throw new IllegalArgumentException('This topic\' question does not need a retro.');
             }
     
             console.time('workbook');
             const workbooks = _.keyByWithArrays(await StudentWorkbook.findAll({
                 where: {
                     studentGradeId: {
-                        [Sequelize.Op.in]: topic.gradeIdsThatNeedRetro
+                        [Sequelize.Op.in]: gradeIdsThatNeedRetro
                     }
                 }
             }), 'studentGradeId');
             console.timeEnd('workbook');
     
             console.time('regrade');
-            await grades.asyncForEach(async (grade) => {
+            await grades.sequentialAsyncForEach(async (grade) => {
                 await this.reGradeStudentGrade({
                     studentGrade: grade,
                     workbooks: workbooks[grade.id],
@@ -2157,7 +2202,7 @@ class CourseController {
         })
         .catch(err => logger.error('Unable to complete grade retro', err))
         .finally(() => {
-            topic.gradeIdsThatNeedRetro = [];
+            topic.gradeIdsThatNeedRetro = _.difference(topic.gradeIdsThatNeedRetro, gradeIdsThatNeedRetro);;
             topic.retroStartedTime = null;
             return topic.save();
         })
@@ -2184,7 +2229,7 @@ class CourseController {
         };
 
         gradeWhere['numAttempts' as keyof typeof StudentGrade] = {
-            [Sequelize.Op.between]: [numAttempts.oldValue, numAttempts.newValue]
+            [Sequelize.Op.gte]: Math.min(numAttempts.oldValue, numAttempts.newValue)
         };
 
         const includes: sequelize.IncludeOptions[] = [];

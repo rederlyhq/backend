@@ -119,7 +119,9 @@ export const regradeCourseTopicValidation = {
         id: Joi.number().required()
     },
     body: {},
-    query: {},
+    query: {
+        questionId: Joi.number().optional()
+    },
 };
 
 export const extendCourseTopicForUserValidation = {
@@ -382,6 +384,7 @@ export const getTopicValidation = {
         userId: Joi.number().optional(),
         includeQuestions: Joi.boolean().optional(),
         includeWorkbookCount: Joi.boolean().optional(),
+        includeGradeIdsThatNeedRegrade: Joi.boolean().optional(),
     },
     body: {},
 };

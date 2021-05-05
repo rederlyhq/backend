@@ -2,7 +2,7 @@
 
 import fs = require('fs');
 import path = require('path');
-import '../src/extensions/array-extension';
+import '../src/extensions';
 import '../src/global-error-handlers';
 import * as _ from 'lodash';
 import { recursiveListFilesInDirectory, listFilters } from '../src/utilities/file-helper';

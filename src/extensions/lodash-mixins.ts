@@ -72,7 +72,9 @@ _.mixin({
         return result;
     },
     diffObject: <BaseObjectType, ObjectToCompareType>(baseObject: BaseObjectType, objectToCompare: ObjectToCompareType): [keyof ObjectToCompareType, unknown][] => {
-        return _.differenceWith(Object.entries(objectToCompare), Object.entries(baseObject), (a, b) => a[0] === b[0] && a[1] === b[1]) as [keyof ObjectToCompareType, unknown][];
+        return _.differenceWith(Object.entries(objectToCompare), Object.entries(baseObject), (a, b) => {
+            return a[0] === b[0] && _.isEqual(a[1], b[1])
+        }) as [keyof ObjectToCompareType, unknown][];
     },
     assignEntries: <ObjectType>(obj: ObjectType, changes: [string | number | symbol, unknown][]): ObjectType => {
         changes.forEach(change => {

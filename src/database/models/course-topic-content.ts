@@ -18,6 +18,7 @@ export interface CourseTopicContentInterface {
     updatedAt: Date;
     originatingTopicContentId: number;
     gradeIdsThatNeedRetro: number[];
+    retroStartedTime: Date | null;
 }
 
 export default class CourseTopicContent extends Model implements CourseTopicContentInterface {
@@ -29,6 +30,7 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
     public active!: boolean;
     public contentOrder!: number;
     public gradeIdsThatNeedRetro!: number[];
+    public retroStartedTime!: Date | null;
 
     public startDate!: Date;
     public endDate!: Date;
@@ -249,6 +251,12 @@ CourseTopicContent.init({
         type: DataTypes.ARRAY(DataTypes.INTEGER),
         allowNull: false,
         defaultValue: [],
+    },
+    retroStartedTime: {
+        field: 'course_topic_content_retro_started_time',
+        type: DataTypes.DATE,
+        allowNull: true,
+        defaultValue: null,
     },
 }, {
     tableName: 'course_topic_content',

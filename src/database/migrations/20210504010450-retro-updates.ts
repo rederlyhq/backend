@@ -11,6 +11,22 @@ export default {
         allowNull: false,
         defaultValue: [],
       });
+
+      await queryInterface.addColumn('course_topic_content', 'course_topic_content_retro_started_time', {
+        field: 'course_topic_content_retro_started_time',
+        type: DataTypes.DATE,
+        allowNull: true,
+        defaultValue: null,
+      });
+
+      await queryInterface.addColumn('student_workbook', 'student_workbook_credited', {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+      });
+
+      // This takes too long to run and should be run manually
+      // await queryInterface.sequelize.query('UPDATE student_workbook SET student_workbook_credited = student_workbook_active, student_workbook_active = true');
     });
   },
   down: async (queryInterface: QueryInterface): Promise<void> => {

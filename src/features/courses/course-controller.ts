@@ -863,17 +863,30 @@ class CourseController {
 
             if (updateCourseTopicResult.updatedCount > 0) {
                 const topic = updateCourseTopicResult.updatedRecords[0];
-                await this.reGradeTopic({
-                    topic: topic,
-                    // We will need to fetch these on a per user basis
-                    topicOverride: undefined,
-                    userId: undefined,
-                    skipContext: {
-                        originalTopic: originalTopic,
-                        newTopic: topic,
-                        skipIfPossible: true,
-                    }
-                });
+                // Skip exams
+                if (topic.topicTypeId === TopicTypeLookup.EXAM) {
+                    return resultantUpdates;
+                }
+
+                const gradesThatNeedRegrade = (await this.getGradesThatNeedRegradeForTopicChange({
+                    topicId: topic.id,
+                    dates: {
+                        startDate: {
+                            oldValue: originalTopic.startDate,
+                            newValue: topic.startDate,
+                        },
+                        endDate: {
+                            oldValue: originalTopic.endDate,
+                            newValue: topic.endDate,
+                        },
+                        deadDate: {
+                            oldValue: originalTopic.deadDate,
+                            newValue: topic.deadDate,
+                        },
+                    },
+                })).map(grade => grade.id);
+                topic.gradeIdsThatNeedRetro = [...new Set([...topic.gradeIdsThatNeedRetro, ...gradesThatNeedRegrade])];
+                await topic.save();
             }
             return resultantUpdates;
         });
@@ -893,17 +906,29 @@ class CourseController {
                 const originalTopic: CourseTopicContentInterface = topic.getWithOverrides(originalOverride);
                 const newTopic: CourseTopicContentInterface = topic.getWithOverrides(newOverride);
 
-                await this.reGradeTopic({
-                    topic,
-                    topicOverride: newOverride,
-                    // We are only overriding for one user so filter the results by that
-                    userId: newOverride.userId,
-                    skipContext: {
-                        skipIfPossible: true,
-                        originalTopic,
-                        newTopic,
-                    }
-                });
+                // Skip exams
+                if (topic.topicTypeId !== TopicTypeLookup.EXAM) {
+                    const gradesThatNeedRegrade = (await this.getGradesThatNeedRegradeForTopicChange({
+                        topicId: topic.id,
+                        dates: {
+                            startDate: {
+                                oldValue: originalTopic.startDate,
+                                newValue: newTopic.startDate,
+                            },
+                            endDate: {
+                                oldValue: originalTopic.endDate,
+                                newValue: newTopic.endDate,
+                            },
+                            deadDate: {
+                                oldValue: originalTopic.deadDate,
+                                newValue: newTopic.deadDate,
+                            },
+                        },
+                        userId: options.where.userId,
+                    })).map(grade => grade.id);
+                    topic.gradeIdsThatNeedRetro = [...new Set([...topic.gradeIdsThatNeedRetro, ...gradesThatNeedRegrade])];
+                    await topic.save();
+                }
             }
             return {
                 extendTopicResult,
@@ -1343,14 +1368,21 @@ class CourseController {
             if (updateQuestionResult.updatedCount > 0) {
                 const question = updateQuestionResult.updatedRecords[0];
                 const newQuestion = question.get({ plain: true }) as CourseWWTopicQuestionInterface;
-                await this.reGradeQuestion({
-                    question,
-                    skipContext: {
-                        skipIfPossible: true,
-                        originalQuestion,
-                        newQuestion,
+                const topic = await question.getTopic();
+                // Skip exams
+                if (topic.topicTypeId === TopicTypeLookup.EXAM) {
+                    return resultantUpdates;
+                }
+
+                const gradesThatNeedRegrade = (await this.getGradesThatNeedRegradeForQuestionChange({
+                    questionId: question.id,
+                    numAttempts: {
+                        oldValue: originalQuestion.maxAttempts,
+                        newValue: newQuestion.maxAttempts
                     }
-                });
+                })).map(grade => grade.id);
+                topic.gradeIdsThatNeedRetro = [...new Set([...topic.gradeIdsThatNeedRetro, ...gradesThatNeedRegrade])];
+                await topic.save();
             }
             return resultantUpdates;
         });
@@ -1713,17 +1745,20 @@ class CourseController {
                 // Since only the override is changing the question would be the same except the overrides
                 const originalQuestion: CourseWWTopicQuestionInterface  = question.getWithOverrides(originalOverride);
                 const newQuestion: CourseWWTopicQuestionInterface  = question.getWithOverrides(newOverride);
-                await this.reGradeQuestion({
-                    question,
-                    // We are only overriding for one user so filter the results by that
-                    userId: newOverride.userId,
-                    questionOverride: newOverride,
-                    skipContext: {
-                        skipIfPossible: true,
-                        originalQuestion,
-                        newQuestion,
-                    }
-                });
+                const topic = await question.getTopic();
+                // Skip exams
+                if (topic.topicTypeId !== TopicTypeLookup.EXAM) {
+                    const gradesThatNeedRegrade = (await this.getGradesThatNeedRegradeForQuestionChange({
+                        questionId: question.id,
+                        numAttempts: {
+                            oldValue: originalQuestion.maxAttempts,
+                            newValue: newQuestion.maxAttempts
+                        },
+                        userId: options.where.userId
+                    })).map(grade => grade.id);
+                    topic.gradeIdsThatNeedRetro = [...new Set([...topic.gradeIdsThatNeedRetro, ...gradesThatNeedRegrade])];
+                    await topic.save();
+                }
             }
             return result;
         });
@@ -2024,7 +2059,7 @@ class CourseController {
                                 wasExpired: false,
                                 wasAfterAttemptLimit: false,
                                 wasLocked: false,
-                                active: false
+                                credited: false
                             })
                         );
                         if (workbook.changed()) {
@@ -2058,22 +2093,26 @@ class CourseController {
         topicId
     }: {
         topicId: number;
-    }): Promise<{
-        topic: CourseTopicContent;
-        questions: { [questionId: number]: CourseWWTopicQuestion };
-    }> => {
-        return useDatabaseTransaction(async () => {
-            const topic = await CourseTopicContent.findOne({
-                where: {
-                    id: topicId,
-                    active: true
-                }
-            });
-    
-            if (_.isNil(topic)) {
-                throw new IllegalArgumentException('Cound not find topic to regrade');
+    }): Promise<CourseTopicContent> => {
+        const topic = await CourseTopicContent.findOne({
+            where: {
+                id: topicId,
+                active: true
             }
-    
+        });
+
+        if (_.isNil(topic)) {
+            throw new IllegalArgumentException('Cound not find topic to regrade');
+        }
+
+        if (!_.isNil(topic.retroStartedTime)) {
+            throw new IllegalArgumentException('Retro already started');
+        }
+        topic.retroStartedTime = new Date();
+        await topic.save();
+
+        // orphan for pseudo job
+        useDatabaseTransaction(async () => {
             const questions = _.keyBy(await topic.getQuestions({
                 where: {
                     active: true
@@ -2106,10 +2145,7 @@ class CourseController {
             console.timeEnd('workbook');
     
             console.time('regrade');
-            await grades.asyncForEach(async (grade, index) => {
-                if (index % 10 === 0) {
-                    console.log(`TOMTOM GRADE ${index}/${grades.length}`);
-                }
+            await grades.asyncForEach(async (grade) => {
                 await this.reGradeStudentGrade({
                     studentGrade: grade,
                     workbooks: workbooks[grade.id],
@@ -2118,36 +2154,102 @@ class CourseController {
                 });
             });
             console.timeEnd('regrade');
-            return {
-                topic: topic,
-                questions: questions,
-                grades: grades,
-                workbooks: workbooks
-            } as any;
-        });
+        })
+        .catch(err => logger.error('Unable to complete grade retro', err))
+        .finally(() => {
+            topic.gradeIdsThatNeedRetro = [];
+            topic.retroStartedTime = null;
+            return topic.save();
+        })
+        .catch(err => logger.error('Unable to nullify topic.retroStartedTime', err));
+
+        return topic;
     }
 
-    getGradesThatNeedRegrade = async({
-        topicOptions,
-        questionOptions,
+    getGradesThatNeedRegradeForQuestionChange = async({
+        numAttempts,
+        questionId,
         userId
     }: {
-        topicOptions?: {
-            dates?: {
-                startDate?: ChangedValue<Date>;
-                endDate?: ChangedValue<Date>;
-                deadDate?: ChangedValue<Date>;    
-            };
-            topicId: number;
-        };
-        questionOptions?: {
-            numAttempts?: ChangedValue<number>;
-            questionId: number;
-        };
+        numAttempts?: ChangedValue<number>;
+        questionId: number;
         userId?: number;
     }): Promise<StudentGrade[]> => {
-        if (_.isNil(topicOptions?.topicId) && _.isNil(questionOptions?.questionId)) {
-            throw new IllegalArgumentException('Cannot figure out which grades need regrading without a topic id or question id');
+        if (_.isNil(numAttempts) || numAttempts.oldValue === numAttempts.newValue) {
+            logger.debug('Num attempts undefined or unchanged');
+            return [];
+        }
+        const gradeWhere: sequelize.WhereOptions = {
+            ['courseWWTopicQuestionId' as keyof typeof StudentGrade]: questionId
+        };
+
+        gradeWhere['numAttempts' as keyof typeof StudentGrade] = {
+            [Sequelize.Op.between]: [numAttempts.oldValue, numAttempts.newValue]
+        };
+
+        const includes: sequelize.IncludeOptions[] = [];
+
+        if (_.isSomething(userId)) {
+            // If a userId is specified they have an extension and we already have all the info we need
+            gradeWhere.userId = userId;
+        } else {
+            // this may or may not get used
+            const questionIncludes: sequelize.IncludeOptions = {
+                model: CourseWWTopicQuestion,
+                as: 'question',
+                required: true,
+                attributes: [],
+                // limit: 1,
+               include: [{
+                    model: StudentTopicQuestionOverride,
+                    as: 'studentTopicQuestionOverride',
+                    required: false,
+                    // limit: 1,
+                    attributes: []
+                }]
+            };
+            includes.push(questionIncludes);
+            // If userId wasn't present we are regrading an entire topic so we need to avoid  student's with extensions
+            gradeWhere[`$question->studentTopicQuestionOverride.${StudentTopicQuestionOverride.rawAttributes.id.field}$`] = null;
+        }
+
+        return StudentGrade.findAll({
+            // attributes: ['id', 'courseWWTopicQuestionId', 'userId', 'locked'] as (keyof StudentGrade)[],
+            attributes: ['id'] as (keyof StudentGrade)[],
+            where: gradeWhere,
+            include: includes
+        });
+    };
+
+    getGradesThatNeedRegradeForTopicChange = async({
+        dates,
+        topicId,
+        userId
+    }: {
+        dates: {
+            startDate?: ChangedValue<Date>;
+            endDate?: ChangedValue<Date>;
+            deadDate?: ChangedValue<Date>;    
+        };
+        topicId: number;
+        userId?: number;
+    }): Promise<StudentGrade[]> => {
+        if (_.isEmpty(_.compact(_.values(dates)))) {
+            logger.debug('No dates so no need to regrade');
+            return [];
+        }
+
+        const canSkip = moment.min(
+            _.compact(
+                _.flatten(
+                    _.values(dates).map(value => value?.oldValue.getTime() !== value?.newValue.getTime() ? [value?.oldValue, value?.newValue] : [])
+                )
+            ).map(date => date.toMoment())
+        ).isSameOrAfter(moment());
+
+        if (canSkip) {
+            logger.debug('None of the dates are in the past');
+            return [];
         }
 
         // Wanted to put limits on the includes but it forces sequelize to do seperate quieries
@@ -2158,6 +2260,31 @@ class CourseController {
             [Sequelize.Op.and]: dateRangeConditions
         };
 
+        Object.values(dates).forEach(value => {
+            if(!value) {
+                return;
+            }
+
+            const { oldValue, newValue } = value;
+            if(oldValue.getTime() === newValue.getTime()) {
+                logger.debug('Dates are equal skipping');
+                return;
+            }
+
+            const moments = [oldValue.toMoment(), newValue.toMoment()];
+            const condition = {
+                ['time' as keyof typeof StudentWorkbook]: {
+                    [Sequelize.Op.between]: [moment.min(moments).toDate(), moment.max(moments).toDate()]
+                }
+            };
+            dateRangeConditions.push(condition);
+        });
+
+        if (dateRangeConditions.length === 0) {
+            logger.debug('All dates are the same, this should have been caught in the can skip above');
+            return [];
+        }
+
         const includes: sequelize.IncludeOptions[] = [{
             model: StudentWorkbook,
             as: 'workbooks',
@@ -2166,84 +2293,38 @@ class CourseController {
             where: workbookWhere,
         }];
 
-        if (_.isSomething(questionOptions)) {
-            gradeWhere['courseWWTopicQuestionId' as keyof typeof StudentGrade] = questionOptions.questionId;
-        }
-
-        if (_.isSomething(topicOptions) && _.isSomething(topicOptions.dates) && !_.isEmpty(topicOptions.dates)) {
-            Object.values(topicOptions.dates).forEach(value => {
-                if(!value) {
-                    return;
-                }
-
-                const { oldValue, newValue } = value;
-                const moments = [oldValue.toMoment(), newValue.toMoment()];
-                const maxMoment = moment.max(moments);
-                const minMoment = moment.min(moments);
-                const condition = {
-                    ['time' as keyof typeof StudentWorkbook]: {
-                        [Sequelize.Op.between]: [minMoment.toDate(), maxMoment.toDate()]
-                    }
-                };
-                dateRangeConditions.push(condition);
-            });
-        }
-
-        if (_.isSomething(questionOptions) && _.isSomething(questionOptions.numAttempts)) {
-            const attemptsArray = [questionOptions.numAttempts.newValue, questionOptions.numAttempts.oldValue];
-            const maxMaxAttempt = Math.max(...attemptsArray);
-            const minMaxAttempts = Math.min(...attemptsArray);
-            gradeWhere['numAttempts' as keyof typeof StudentGrade] = {
-                [Sequelize.Op.between]: [maxMaxAttempt, minMaxAttempts]
-            };
-        }
-
-        const questionWhere: sequelize.WhereOptions = {};
-        // this may or may not get used
-        const questionIncludes: sequelize.IncludeOptions = {
-            model: CourseWWTopicQuestion,
-            as: 'question',
-            required: true,
-            attributes: [],
-            // limit: 1,
-            where: questionWhere
-        };
-
-        if (_.isSomething(topicOptions)) {
-            questionWhere['courseTopicContentId' as keyof typeof CourseWWTopicQuestion] = topicOptions.topicId;
-        }
-
         if (_.isSomething(userId)) {
             // If a userId is specified they have an extension and we already have all the info we need
             gradeWhere.userId = userId;
         } else {
-            gradeWhere[`$question->topic->studentTopicOverride.${StudentTopicOverride.rawAttributes.id.field}$`] = null;
-            // If userId wasn't present we are regrading an entire topic so we need to avoid  student's with extensions
-            gradeWhere[`$question->studentTopicQuestionOverride.${StudentTopicQuestionOverride.rawAttributes.id.field}$`] = null;
-            questionIncludes.include = [{
-                model: StudentTopicQuestionOverride,
-                as: 'studentTopicQuestionOverride',
-                required: false,
-                // limit: 1,
-                attributes: []
-            }, {
-                model: CourseTopicContent,
-                as: 'topic',
+            // this may or may not get used
+            const questionIncludes: sequelize.IncludeOptions = {
+                model: CourseWWTopicQuestion,
+                as: 'question',
                 required: true,
-                // limit: 1,
                 attributes: [],
+                // limit: 1,
+                where: {
+                    ['courseTopicContentId' as keyof typeof CourseWWTopicQuestion]: topicId
+                },
                 include: [{
-                    model: StudentTopicOverride,
-                    as: 'studentTopicOverride',
-                    required: false,
-                    // limit:1,
-                    attributes: []
+                    model: CourseTopicContent,
+                    as: 'topic',
+                    required: true,
+                    // limit: 1,
+                    attributes: [],
+                    include: [{
+                        model: StudentTopicOverride,
+                        as: 'studentTopicOverride',
+                        required: false,
+                        // limit:1,
+                        attributes: []
+                    }]
                 }]
-            }];
-        }
-
-        if (_.isSomething(topicOptions) || _.isNil(userId)) {
+            };
             includes.push(questionIncludes);
+            // If a userId is not specified then we don't want extension users
+            gradeWhere[`$question->topic->studentTopicOverride.${StudentTopicOverride.rawAttributes.id.field}$`] = null;
         }
 
         return StudentGrade.findAll({

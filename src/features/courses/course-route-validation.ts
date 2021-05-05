@@ -114,6 +114,14 @@ export const updateCourseTopicValidation = {
     query: {},
 };
 
+export const regradeCourseTopicValidation = {
+    params: {
+        id: Joi.number().required()
+    },
+    body: {},
+    query: {},
+};
+
 export const extendCourseTopicForUserValidation = {
     params: {},
     body: {

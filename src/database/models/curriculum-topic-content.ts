@@ -8,6 +8,7 @@ export default class CurriculumTopicContent extends Model {
     public active!: boolean;
     public contentOrder!: number;
     public topicTypeId!: number;
+    public description!: unknown;
 
     // Foreign key objects, only exists if included
     public questions?: CurriculumWWTopicQuestion[];
@@ -82,6 +83,12 @@ CurriculumTopicContent.init({
         field: 'curriculum_topic_content_order',
         type: DataTypes.INTEGER,
         allowNull: false,
+    },
+    description: {
+        field: 'curriculum_topic_content_description',
+        type: DataTypes.JSONB,
+        allowNull: true,
+        defaultValue: null,
     },
 }, {
     tableName: 'curriculum_topic_content',

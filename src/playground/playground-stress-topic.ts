@@ -11,6 +11,7 @@ import logger from '../utilities/logger';
 import CourseTopicContent from '../database/models/course-topic-content';
 import StudentGrade from '../database/models/student-grade';
 import CourseUnitContent from '../database/models/course-unit-content';
+import * as moment from 'moment';
 
 interface EnrollOptions {
     courseId: number;
@@ -39,6 +40,7 @@ interface CreateTopicWithProblemsOptions {
     courseId: number;
     questionCount: number;
     userIds: number[];
+    partialTopic?: Partial<CourseTopicContent>;
 }
 
 interface CreateTopicWithProblemsResult {
@@ -46,7 +48,7 @@ interface CreateTopicWithProblemsResult {
     topic: CourseTopicContent;
     unit: CourseUnitContent;
 }
-export const createUnitAndTopicWithProblems = async ({ courseId, questionCount, userIds }: CreateTopicWithProblemsOptions): Promise<CreateTopicWithProblemsResult> => {
+export const createUnitAndTopicWithProblems = async ({ courseId, questionCount, userIds, partialTopic }: CreateTopicWithProblemsOptions): Promise<CreateTopicWithProblemsResult> => {
     logger.info('Creating content');
     logger.info('Creating unit');
     const unit = await courseController.createUnit({
@@ -66,6 +68,7 @@ export const createUnitAndTopicWithProblems = async ({ courseId, questionCount, 
         startDate: new Date('1/1/2021'),
         endDate: new Date('1/1/2022'),
         deadDate: new Date('1/1/2025'),
+        ...partialTopic
         // partialExtend
         // createdAt
         // updatedAt
@@ -100,8 +103,20 @@ interface CreateSubmissionsOptions {
     submissionsPerQuestion: number;
     grades: StudentGrade[];
     topicId: number;
+    startTime?: Date;
+    timeDiffInHours?: number;
+    startingScore?: number;
+    scoreDiff?: number;
 };
-export const createSubmissions = async ({ grades, submissionsPerQuestion, topicId }: CreateSubmissionsOptions): Promise<void> => {
+export const createSubmissions = async ({
+    grades,
+    submissionsPerQuestion,
+    topicId,
+    startTime = new Date(),
+    timeDiffInHours = 1,
+    startingScore = 0,
+    scoreDiff = 0.035
+}: CreateSubmissionsOptions): Promise<void> => {
     logger.info('Creating submissions');
     const totalSubmissions = grades.length * submissionsPerQuestion;
     await grades.sequentialAsyncForEach(async (grade, index) => {
@@ -112,6 +127,8 @@ export const createSubmissions = async ({ grades, submissionsPerQuestion, topicI
             if (submissionNumber % 100 === 0) {
                 logger.info(`Creating submission ${submissionNumber} / ${totalSubmissions}`);
             }
+
+            
             // const workbook =
             await StudentWorkbook.create({
                 studentGradeId: grade.id,
@@ -120,8 +137,8 @@ export const createSubmissions = async ({ grades, submissionsPerQuestion, topicI
                 randomSeed: grade.randomSeed,
                 problemPath: 'private/templates/barebones.pg',
                 submitted: {},
-                result: 1,
-                time: new Date(),
+                result: Math.min(startingScore + (scoreDiff * Math.floor(index / submissionsPerQuestion)), 1),
+                time: startTime.toMoment().add(timeDiffInHours * Math.floor(index / submissionsPerQuestion), 'hours'),
                 wasLate: false,
                 wasExpired: false,
                 wasAfterAttemptLimit: false,
@@ -151,19 +168,30 @@ export const run = async ({
         userCount: userCount
     });
 
+    const startDate = moment('4/1/2021').toDate();
+    const endDate = startDate.toMoment().add(30, 'days').toDate();
+    const deadDate = endDate.toMoment().add(30, 'days').toDate();
+
     const {
         grades,
         topic
     } = await createUnitAndTopicWithProblems({
         questionCount: questionCount,
         courseId: courseId,
-        userIds: userIds
+        userIds: userIds,
+        partialTopic: {
+            startDate: startDate,
+            endDate: endDate,
+            deadDate: deadDate,
+        }
     });
 
     await createSubmissions({
         grades: grades,
         submissionsPerQuestion: submissionsPerQuestion,
-        topicId: topic.id
+        topicId: topic.id,
+        startTime: moment('4/1/2021').toDate(),
+        timeDiffInHours: 24,
     });
 };
 
@@ -233,4 +261,14 @@ export const trial1 = async (): Promise<void> => {
         console.timeEnd('TOMTOM');
         logger.info(result.length);
         logger.info(result.first?.workbooks?.length);
+};
+
+
+export const trial2 = async (): Promise<void> => {
+    await run({
+        courseId: 302,
+        questionCount: 30,
+        submissionsPerQuestion: 10,
+        userCount: 30,
+    });
 };

@@ -2343,7 +2343,6 @@ class CourseController {
         // Wanted to put limits on the includes but it forces sequelize to do seperate quieries
         // and for 900 grades w/ 9k submissions it increased the time from 2 seconds to 42 seconds (which is the opposite of what we wanted)
         const dateRangeConditions: sequelize.WhereAttributeHash[] = [];
-        const gradeWhere: sequelize.WhereOptions = {};
 
         Object.values(dates).forEach(value => {
             if(!value) {
@@ -2381,13 +2380,12 @@ class CourseController {
             include: [{
                 model: StudentGrade,
                 as: 'grades',
-                required: true,
-                attributes: ['id'],
-                where: gradeWhere,
+                required: false,
+                attributes: ['id', 'userId'],
                 include: [{
                     model: StudentWorkbook,
                     as: 'workbooks',
-                    required: true,
+                    required: false,
                     attributes: [],
                     where: {
                         [Sequelize.Op.and]: dateRangeConditions
@@ -2400,20 +2398,6 @@ class CourseController {
             id: topicId
         };
 
-        if (_.isSomething(userId)) {
-            // If a userId is specified they have an extension and we already have all the info we need
-            gradeWhere.userId = userId;
-        } else {
-            includes.push({
-                model: StudentTopicOverride,
-                as: 'studentTopicOverride',
-                required: false,
-                // limit:1,
-                attributes: []
-            });
-            where[`$studentTopicOverride.${StudentTopicOverride.rawAttributes.id.field}$`] = null;
-        }
-
         const topic = await CourseTopicContent.findOne({
             attributes: [],
             include: includes,
@@ -2421,9 +2405,23 @@ class CourseController {
         });
 
         if (_.isNil(topic)) {
-            throw new IllegalArgumentException('TOMTOM');
+            throw new IllegalArgumentException('Could not calculate regrade information');
         }
-        const grades = _.flatten(topic.questions?.map(question => question.grades ?? []) ?? []);
+
+        let predicate: (grade: StudentGrade) => boolean;
+        if (_.isSomething(userId)) {
+            predicate = (grade): boolean => grade.userId === userId;
+        } else {
+            const userIdsWithExtensions: number[] = (await StudentTopicOverride.findAll({
+                where: {
+                    courseTopicContentId: topicId,
+                },
+                attributes: ['userId']
+            })).map(extension => extension.userId);
+            predicate = (grade): boolean => !userIdsWithExtensions.includes(grade.userId);
+        }
+
+        const grades = _.flatten(topic.questions?.map(question => question.grades?.filter(predicate) ?? []) ?? []);
         return grades;
     }
 

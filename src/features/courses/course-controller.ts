@@ -1613,7 +1613,7 @@ class CourseController {
                     
                     // Currently, group imports are only supported by archive and fail completely if there are any bad paths.
                     // Thus, at this point, no errors are available to be set for courseQuestionAssessmentInfo.
-                    
+
                     // Required for stress playground, given timing holding off on small refactor
                     // const { question } = 
                     const question = await this.addQuestion({
@@ -2040,10 +2040,7 @@ class CourseController {
                     );
 
                     if (workbook.changed()) {
-                        logger.info(`TOMTOM ${workbook.changed()}`);
                         await workbook.save();
-                    } else {
-                        logger.info('TOMTOM skip saving');
                     }
                 }
 
@@ -2157,8 +2154,6 @@ class CourseController {
                 }
             }), 'id');
     
-            // gradesIdsThatNeedRetro
-            console.time('grade');
             const gradesWhere: sequelize.WhereAttributeHash = {
                 id: {
                     [Sequelize.Op.in]: gradeIdsThatNeedRetro
@@ -2171,7 +2166,6 @@ class CourseController {
             const grades = await StudentGrade.findAll({
                 where: gradesWhere
             });
-            console.timeEnd('grade');
 
             if (_.isSomething(questionId)) {
                 if (grades.length > topic.gradeIdsThatNeedRetro.length) {
@@ -2188,7 +2182,6 @@ class CourseController {
                 throw new IllegalArgumentException('This topic\' question does not need a retro.');
             }
     
-            console.time('workbook');
             const workbooks = _.keyByWithArrays(await StudentWorkbook.findAll({
                 where: {
                     studentGradeId: {
@@ -2196,9 +2189,7 @@ class CourseController {
                     }
                 }
             }), 'studentGradeId');
-            console.timeEnd('workbook');
     
-            console.time('regrade');
             await grades.sequentialAsyncForEach(async (grade) => {
                 await this.reGradeStudentGrade({
                     studentGrade: grade,
@@ -2207,7 +2198,6 @@ class CourseController {
                     topic: topic
                 });
             });
-            console.timeEnd('regrade');
         })
         .catch(err => logger.error('Unable to complete grade retro', err))
         .finally(() => {

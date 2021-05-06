@@ -2074,7 +2074,7 @@ class CourseController {
             } else {
                 if (!_.isNil(workbook)) {
                     if (gradeResult.gradingRationale.willTrackAttemptReason !== WillTrackAttemptReason.UNKNOWN) {
-                        logger.info(`${workbook.id} now meets critieria that is should not be kept, marking it as active false (as well as audit fields)`);
+                        logger.info(`${workbook.id} now meets critieria that is should not be kept (${gradeResult.gradingRationale.willTrackAttemptReason}), marking it as credited false (as well as audit fields)`);
                         _.assignEntries(
                             workbook,
                             _.diffObject(workbook.get({plain: true}), {
@@ -2229,7 +2229,7 @@ class CourseController {
         };
 
         gradeWhere['numAttempts' as keyof typeof StudentGrade] = {
-            [Sequelize.Op.gte]: Math.min(numAttempts.oldValue, numAttempts.newValue)
+            [Sequelize.Op.gt]: Math.min(numAttempts.oldValue, numAttempts.newValue)
         };
 
         const includes: sequelize.IncludeOptions[] = [];

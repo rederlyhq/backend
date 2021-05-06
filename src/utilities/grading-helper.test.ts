@@ -50,6 +50,11 @@ const defaultTopicUnusedFields = {
     contentOrder: 0,
     name: 'Topic Name',
     partialExtend: false,
+
+    // retro fields
+    gradeIdsThatNeedRetro: [],
+    retroStartedTime: null,
+    
     ...defaultUnusedFields
 };
 

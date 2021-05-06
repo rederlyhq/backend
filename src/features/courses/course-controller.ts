@@ -1613,8 +1613,10 @@ class CourseController {
                     
                     // Currently, group imports are only supported by archive and fail completely if there are any bad paths.
                     // Thus, at this point, no errors are available to be set for courseQuestionAssessmentInfo.
-
-                    const { question } = await this.addQuestion({
+                    
+                    // Required for stress playground, given timing holding off on small refactor
+                    // const { question } = 
+                    const question = await this.addQuestion({
                         question: {
                             // active: true,
                             courseTopicContentId: options.courseTopicId,
@@ -1663,7 +1665,9 @@ class CourseController {
                         await topic.increment('errors');
                     }
 
-                    const { question } = await this.addQuestion({
+                    // Required for stress playground, given timing holding off on small refactor
+                    // const { question } = 
+                    const question = await this.addQuestion({
                         question: {
                             // active: true,
                             courseTopicContentId: options.courseTopicId,
@@ -1690,18 +1694,23 @@ class CourseController {
             });
         });
     }
-
-    async addQuestion(options: AddQuestionOptions): Promise<{ question: CourseWWTopicQuestion; grades: StudentGrade[] }> {
+    
+    // Required for stress playground, given timing holding off on small refactor
+    // async addQuestion(options: AddQuestionOptions): Promise<{ question: CourseWWTopicQuestion; grades: StudentGrade[] }> {
+    async addQuestion(options: AddQuestionOptions): Promise<CourseWWTopicQuestion> {
         return await useDatabaseTransaction(async () => {
             const result = await this.createQuestion(options.question);
-            const grades = await this.createGradesForQuestion({
+            // const grades = 
+            await this.createGradesForQuestion({
                 questionId: result.id,
                 userIds: options.userIds
             });
-            return {
-                question: result,
-                grades: grades
-            };
+            // Required for stress playground, given timing holding off on small refactor
+            // return {
+            //     question: result,
+            //     grades: grades
+            // };
+            return result;
         });
     }
 

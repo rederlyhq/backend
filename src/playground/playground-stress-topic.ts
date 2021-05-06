@@ -1,3 +1,7 @@
+/**
+ * Search for `// Required for stress playground, given timing holding off on small refactor` to fix the code base for this playground
+ * Right now this refactor would cause other problems but in the future we probably want to fix this completely
+ */
 import '../extensions';
 import StudentWorkbook from '../database/models/student-workbook';
 import User from '../database/models/user';

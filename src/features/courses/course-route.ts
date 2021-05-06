@@ -250,11 +250,10 @@ router.get('/:courseId/topic-grades',
         if (_.isNil(req.session)) {
             throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
-        
-        const user = await req.session.getUser();
 
-        if (user.roleId === Role.STUDENT) {
-            throw new RederlyError('You do not have access to edit this course.');
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role === Role.STUDENT) {
+            throw new ForbiddenError('You do not have access to edit this course.');
         }
 
         const topics = await courseController.getGradesForTopics({
@@ -761,12 +760,11 @@ router.put('/:id',
                 throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
             }
 
-            const user = await req.session.getUser();
-
-            if (user.roleId === Role.STUDENT) {
-                throw new RederlyError('You do not have access to edit this course.');
+            const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+            if (role === Role.STUDENT) {
+                throw new ForbiddenError('You do not have access to edit this course.');
             }
-
+    
             const params = req.params as UpdateCourseRequest.params;
             const updatesResult = await courseController.updateCourse({
                 where: {

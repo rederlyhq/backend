@@ -73,11 +73,13 @@ _.mixin({
     },
     diffObject: <BaseObjectType, ObjectToCompareType>(baseObject: BaseObjectType, objectToCompare: ObjectToCompareType): [keyof ObjectToCompareType, unknown][] => {
         return _.differenceWith(Object.entries(objectToCompare), Object.entries(baseObject), (a, b) => {
-            return a[0] === b[0] && _.isEqual(a[1], b[1])
+            return a[0] === b[0] && _.isEqual(a[1], b[1]);
         }) as [keyof ObjectToCompareType, unknown][];
     },
     assignEntries: <ObjectType>(obj: ObjectType, changes: [string | number | symbol, unknown][]): ObjectType => {
         changes.forEach(change => {
+            // For assign it becomes difficult to be type safe
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (obj as any)[change[0]] = change[1];
         });
         return obj;
@@ -109,10 +111,11 @@ _.mixin({
     },
     keyByWithArrays: <ItemType extends object>(arr: Array<ItemType>, key: keyof ItemType): _.Dictionary<ItemType[]> => {
         return _.reduce(arr, (agg: _.Dictionary<ItemType[]>, n: ItemType): _.Dictionary<ItemType[]> => {
-            if (_.isNil(agg[n[key] as any])) {
-                agg[n[key] as any] = [n];
+            const aggKey = n[key] as unknown as string | number;
+            if (_.isNil(agg[aggKey])) {
+                agg[aggKey] = [n];
             } else {
-                agg[n[key] as any].push(n);
+                agg[aggKey].push(n);
             }
             return agg;
         }, {});

@@ -37,6 +37,9 @@ const defaultStudentGradeUnusedFields = {
     ...defaultUnusedFields,
     numExtendedAttempts: 0,
     numLegalAttempts: 0,
+    lastInfluencingAttemptId: null,
+    lastInfluencingLegalAttemptId: null,
+    lastInfluencingCreditedAttemptId: null,
 };
 
 const defaultTopicUnusedFields = {

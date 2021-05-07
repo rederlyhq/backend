@@ -2278,8 +2278,13 @@ class CourseController {
             await grades.sequentialAsyncForEach(async (grade, index) => {
                 gradeIndex = index;
                 const question = questions[grade.courseWWTopicQuestionId];
+                const workbooksForGrade = workbooks[grade.id];
                 if (_.isNil(question)) {
                     throw new RederlyError('Nil question');
+                }
+
+                if (_.isNil(workbooksForGrade)) {
+                    throw new RederlyError('Nil workbooks');
                 }
 
                 if (question.active === false) {
@@ -2288,8 +2293,8 @@ class CourseController {
                 }
                 await this.reGradeStudentGrade({
                     studentGrade: grade,
-                    workbooks: workbooks[grade.id],
-                    question: questions[grade.courseWWTopicQuestionId],
+                    workbooks: workbooksForGrade,
+                    question: question,
                     topic: topic
                 });
             });

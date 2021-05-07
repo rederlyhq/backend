@@ -834,6 +834,11 @@ class CourseController {
             id: options.where.id,
         });
 
+        if (_.isSomething(existingTopic.retroStartedTime)) {
+            // Really should just be bad request :shrug:
+            throw new IllegalArgumentException('This topic is currently being regraded. Please try again later.');
+        }
+
         const topicIsChangingTypes = !_.isNil(options.updates.topicTypeId) && (existingTopic.topicTypeId !== options.updates.topicTypeId);
         if (topicIsChangingTypes && await this.checkIfTopicIsUsed(existingTopic)) {
             throw new IllegalArgumentException('Topic type cannot be changed. Students have begun working on this topic.');
@@ -911,12 +916,18 @@ class CourseController {
 
     async extendTopicForUser(options: ExtendTopicForUserOptions): Promise<{extendTopicResult: UpsertResult<StudentTopicOverride>; extendTopicAssessmentResult: UpsertResult<StudentTopicAssessmentOverride>}> {
         return useDatabaseTransaction(async () =>  {
+            const topic = await courseRepository.getCourseTopic({
+                id: options.where.courseTopicContentId
+            });
+
+            if (_.isSomething(topic.retroStartedTime)) {
+                // Really should just be bad request :shrug:
+                throw new IllegalArgumentException('This topic is currently being regraded. Please try again later.');
+            }
+            
             const extendTopicResult = await courseRepository.extendTopicByUser(options);
             const extendTopicAssessmentResult = await courseRepository.extendTopicAssessmentByUser(options);
             if (extendTopicResult.updatedRecords.length > 0) {
-                const topic = await courseRepository.getCourseTopic({
-                    id: options.where.courseTopicContentId
-                });
                 const newOverride = extendTopicResult.updatedRecords[0];
                 const originalOverride: StudentTopicOverrideInterface = extendTopicResult.original as StudentTopicOverrideInterface;
 
@@ -1352,6 +1363,12 @@ class CourseController {
             });
             const originalQuestion = existingQuestion.get({ plain: true }) as CourseWWTopicQuestionInterface;
 
+            const topic = await existingQuestion.getTopic();
+            if (_.isSomething(topic.retroStartedTime)) {
+                // Really should just be bad request :shrug:
+                throw new IllegalArgumentException('This topic is currently being regraded. Please try again later.');
+            }            
+
             // This is a set of all update results as they come in, since there are 5 updates that occur this will have 5 elements
             let updatesResults: UpdateResult<CourseWWTopicQuestion>[] = [];
             if (!_.isNil(options.updates.problemNumber)) {
@@ -1385,7 +1402,6 @@ class CourseController {
             if (updateQuestionResult.updatedCount > 0) {
                 const question = updateQuestionResult.updatedRecords[0];
                 const newQuestion = question.get({ plain: true }) as CourseWWTopicQuestionInterface;
-                const topic = await question.getTopic();
                 // Skip exams
                 if (topic.topicTypeId === TopicTypeLookup.EXAM) {
                     return resultantUpdates;
@@ -1769,17 +1785,21 @@ class CourseController {
 
     async extendQuestionForUser(options: ExtendTopicQuestionForUserOptions): Promise<UpsertResult<StudentTopicQuestionOverride>> {
         return useDatabaseTransaction(async () =>  {
+            const question = await courseRepository.getQuestion({
+                id: options.where.courseTopicQuestionId
+            });
+            const topic = await question.getTopic();
+            if (_.isSomething(topic.retroStartedTime)) {
+                // Really should just be bad request :shrug:
+                throw new IllegalArgumentException('This topic is currently being regraded. Please try again later.');
+            }            
             const result = await courseRepository.extendTopicQuestionByUser(options);
             if (result.updatedRecords.length > 0) {
-                const question = await courseRepository.getQuestion({
-                    id: options.where.courseTopicQuestionId
-                });
                 const originalOverride: StudentTopicQuestionOverrideInterface = result.original as StudentTopicQuestionOverrideInterface;
                 const newOverride = result.updatedRecords[0];
                 // Since only the override is changing the question would be the same except the overrides
                 const originalQuestion: CourseWWTopicQuestionInterface  = question.getWithOverrides(originalOverride);
                 const newQuestion: CourseWWTopicQuestionInterface  = question.getWithOverrides(newOverride);
-                const topic = await question.getTopic();
                 // Skip exams
                 if (topic.topicTypeId !== TopicTypeLookup.EXAM) {
                     const gradesThatNeedRegrade = (await this.getGradesThatNeedRegradeForQuestionChange({
@@ -2964,6 +2984,11 @@ class CourseController {
                 }
             }]
         });
+
+        if (_.isSomething(topic.retroStartedTime)) {
+            // Really should just be bad request :shrug:
+            throw new IllegalArgumentException('This topic is currently being regraded. Please try again later.');
+        }
 
         const solutionDate = moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days');
 

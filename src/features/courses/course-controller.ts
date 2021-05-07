@@ -2120,15 +2120,71 @@ class CourseController {
         });
     }
 
+    checkForRegrade = async ({
+        topicId,
+        userId,
+        questionId,
+    }: {
+        topicId: number;
+        userId?: number;
+        questionId?: number;
+    }): Promise<{
+        retroStartedTime: Date | null;
+        needsRegrade: boolean;
+        gradeIdsThatNeedRetro: number[];
+    }> => {
+        const topic = await CourseTopicContent.findOne({
+            attributes: ['id', 'gradeIdsThatNeedRetro', 'retroStartedTime'] as (keyof CourseTopicContentInterface)[],
+            where: {
+                id: topicId
+            },
+        });
+
+        if (_.isNil(topic)) {
+            throw new NotFoundError('Could not find the topic');
+        }
+
+        let needsRegrade = topic.gradeIdsThatNeedRetro.length > 0;
+        if (_.isSomething(questionId) || _.isSomething(userId)) {
+            const questions = await topic.getQuestions({
+                attributes: ['id'],
+                where: _.omitBy({
+                    id: questionId
+                }, _.isUndefined) as sequelize.WhereAttributeHash,
+                include: [{
+                    model: StudentGrade,
+                    as: 'grades',
+                    attributes: ['id'],
+                    required: true,
+                    where: _.omitBy({
+                        userId: userId,
+                        id: {
+                            [Sequelize.Op.in]: topic.gradeIdsThatNeedRetro
+                        },
+                    }, _.isUndefined) as sequelize.WhereAttributeHash,
+                }]
+            });
+            needsRegrade = questions.length > 0;
+        }
+
+        return {
+            retroStartedTime: topic.retroStartedTime,
+            needsRegrade: needsRegrade,
+            gradeIdsThatNeedRetro: topic.gradeIdsThatNeedRetro,
+        };
+    }
+
     regradeNeededGradesOnTopic = async ({
         topicId,
-        questionId
+        questionId,
+        userId
     }: {
         topicId: number;
         questionId?: number;
+        userId?: number;
     }): Promise<CourseTopicContent> => {
         const startNow = performance.now();
-        const baseMessage = (): string => `Retro: Topic: ${topicId};${_.isNil(questionId) ? '' : `Question: ${questionId};`} Time: ${performance.now() - startNow}ms;`;
+        const baseMessage = (): string => `Retro: Topic: ${topicId};${_.isNil(questionId) ? '' : ` Question: ${questionId};`}${_.isNil(userId) ? '' : ` User: ${userId};`} Time: ${performance.now() - startNow}ms;`;
 
         const topic = await CourseTopicContent.findOne({
             where: {
@@ -2159,11 +2215,7 @@ class CourseController {
 
         // orphan for pseudo job
         useDatabaseTransaction(async () => {
-            const questions = _.keyBy(await topic.getQuestions({
-                where: {
-                    active: true
-                }
-            }), 'id');
+            const questions = _.keyBy(await topic.getQuestions(), 'id');
             logger.info(`${baseMessage()} finished getting questions`);
 
             const gradesWhere: sequelize.WhereAttributeHash = {
@@ -2175,12 +2227,17 @@ class CourseController {
             if (_.isSomething(questionId)) {
                 gradesWhere.courseWWTopicQuestionId = questionId;
             }
+
+            if (_.isSomething(userId)) {
+                gradesWhere.userId = userId;
+            }
             const grades = await StudentGrade.findAll({
+                attributes: ['id', 'courseWWTopicQuestionId', 'userId', 'locked'] as (keyof StudentGrade)[],
                 where: gradesWhere
             });
             logger.info(`${baseMessage()} finished getting grades`);
 
-            if (_.isSomething(questionId)) {
+            if (_.isSomething(questionId) || _.isSomething(userId)) {
                 if (grades.length > topic.gradeIdsThatNeedRetro.length) {
                     throw new RederlyError(`${baseMessage()} Grades count mismatch with question id`);
                 }
@@ -2192,10 +2249,12 @@ class CourseController {
 
             gradeIdsThatNeedRetro = grades.map(grade => grade.id);
             if (_.isEmpty(gradeIdsThatNeedRetro)) {
-                throw new IllegalArgumentException('This topic\' question does not need a retro.');
+                throw new IllegalArgumentException('This topic\'s question does not need a retro.');
             }
     
             const workbooks = _.keyByWithArrays(await StudentWorkbook.findAll({
+                attributes: ['id', 'wasLocked', 'result', 'time', 'studentGradeId', 'active', 'wasLate', 'wasExpired', 'wasAfterAttemptLimit', 'wasLocked', 'active'] as (keyof StudentWorkbook)[],
+                order: ['id'],
                 where: {
                     studentGradeId: {
                         [Sequelize.Op.in]: gradeIdsThatNeedRetro
@@ -2218,6 +2277,15 @@ class CourseController {
     
             await grades.sequentialAsyncForEach(async (grade, index) => {
                 gradeIndex = index;
+                const question = questions[grade.courseWWTopicQuestionId];
+                if (_.isNil(question)) {
+                    throw new RederlyError('Nil question');
+                }
+
+                if (question.active === false) {
+                    // skip deleted questions
+                    return;
+                }
                 await this.reGradeStudentGrade({
                     studentGrade: grade,
                     workbooks: workbooks[grade.id],
@@ -2226,12 +2294,15 @@ class CourseController {
                 });
             });
         })
+        .then(() => {
+            topic.gradeIdsThatNeedRetro = _.difference(topic.gradeIdsThatNeedRetro, gradeIdsThatNeedRetro);
+            // save occurs later so it can handler global finally as well
+        })
         .catch(err => logger.error(`${baseMessage()} was unable to complete grade retro`, err))
         .finally(() => {
             if (progressTimeoutHandle !== null) {
                 clearTimeout(progressTimeoutHandle);
             }
-            topic.gradeIdsThatNeedRetro = _.difference(topic.gradeIdsThatNeedRetro, gradeIdsThatNeedRetro);;
             topic.retroStartedTime = null;
             logger.info(`Retro: completed at ${performance.now() - startNow}ms`);
             return topic.save();
@@ -2268,11 +2339,11 @@ class CourseController {
             return [];
         }
         const gradeWhere: sequelize.WhereOptions = {
-            ['courseWWTopicQuestionId' as keyof typeof StudentGrade]: questionId
-        };
-
-        gradeWhere['numAttempts' as keyof typeof StudentGrade] = {
-            [Sequelize.Op.gt]: Math.min(numAttempts.oldValue, numAttempts.newValue)
+            active: true,
+            ['courseWWTopicQuestionId' as keyof typeof StudentGrade]: questionId,
+            ['numAttempts' as keyof typeof StudentGrade]: {
+                [Sequelize.Op.gt]: Math.min(numAttempts.oldValue, numAttempts.newValue)
+            }
         };
 
         const includes: sequelize.IncludeOptions[] = [];
@@ -2288,12 +2359,18 @@ class CourseController {
                 required: true,
                 attributes: [],
                 // limit: 1,
+                where: {
+                    active: true
+                },
                include: [{
                     model: StudentTopicQuestionOverride,
                     as: 'studentTopicQuestionOverride',
                     required: false,
                     // limit: 1,
-                    attributes: []
+                    attributes: [],
+                    where: {
+                        active: true
+                    },
                 }]
             };
             includes.push(questionIncludes);
@@ -2375,6 +2452,7 @@ class CourseController {
             required: false,
             attributes: ['id'],
             where: {
+                active: true,
                 ['courseTopicContentId' as keyof typeof CourseWWTopicQuestion]: topicId
             },
             include: [{
@@ -2382,26 +2460,30 @@ class CourseController {
                 as: 'grades',
                 required: false,
                 attributes: ['id', 'userId'],
+                where: {
+                    active: true
+                },
                 include: [{
                     model: StudentWorkbook,
                     as: 'workbooks',
                     required: false,
                     attributes: [],
                     where: {
+                        // Active is different in prod leaving this out for now
+                        // active: true,
                         [Sequelize.Op.and]: dateRangeConditions
                     },
                 }]    
             }]
         }];
 
-        const where: sequelize.WhereAttributeHash = {
-            id: topicId
-        };
-
         const topic = await CourseTopicContent.findOne({
             attributes: [],
             include: includes,
-            where: where
+            where: {
+                id: topicId,
+                active: true
+            }
         });
 
         if (_.isNil(topic)) {

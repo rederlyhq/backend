@@ -120,7 +120,8 @@ export const regradeCourseTopicValidation = {
     },
     body: {},
     query: {
-        questionId: Joi.number().optional()
+        questionId: Joi.number().optional(),
+        userId: Joi.number().optional()
     },
 };
 

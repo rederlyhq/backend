@@ -454,11 +454,27 @@ router.put('/topic/:id/regrade',
         const topicId = req.params.id as unknown as number;
         const topic = await courseController.regradeNeededGradesOnTopic({
             topicId: topicId,
-            questionId: req.query.questionId as number | undefined
+            questionId: req.query.questionId as number | undefined,
+            userId: req.query.userId as unknown as number | undefined
         });
         next(httpResponse.Ok('Regrading', topic));
     }));
-
+    
+router.get('/topic/:id/regrade',
+    authenticationMiddleware,
+    validate(regradeCourseTopicValidation),
+    paidMiddleware('Regrading topic check'),
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
+        const regradeCheckResult = await courseController.checkForRegrade({
+            topicId: req.params.id as unknown as number,
+            questionId: req.query.questionId as unknown as number | undefined,
+            userId: req.query.userId as unknown as number | undefined
+        });
+        next(httpResponse.Ok('Updated topic successfully', regradeCheckResult));
+    }));
+    
     router.put('/topic/:id',
     authenticationMiddleware,
     validate(updateCourseTopicValidation),
@@ -484,6 +500,7 @@ router.put('/topic/:id/regrade',
             updatesCount: updatesResult.length
         }));
     }));
+
 router.get('/assessment/topic/grade/:id',
     authenticationMiddleware,
     validate(gradeAssessmentValidation),

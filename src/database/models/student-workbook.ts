@@ -21,6 +21,7 @@ export interface StudentWorkbookInterface {
     result: number;
     time: Date;
     wasLate: boolean;
+    wasEarly: boolean;
     wasExpired: boolean;
     wasAfterAttemptLimit: boolean;
     wasLocked: boolean;
@@ -50,6 +51,7 @@ export default class StudentWorkbook extends Model implements StudentWorkbookInt
     public result!: number
     public time!: Date;
     public wasLate!: boolean;
+    public wasEarly!: boolean;
     public wasExpired!: boolean;
     public wasAfterAttemptLimit!: boolean;
     public wasLocked!: boolean;
@@ -162,6 +164,12 @@ StudentWorkbook.init({
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false
+    },
+    wasEarly: {
+        field: 'student_workbook_was_early',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
     },
     feedback: {
         field: 'student_workbook_feedback',

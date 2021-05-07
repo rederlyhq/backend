@@ -10,7 +10,7 @@ import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface, CourseTopicQuest
 import rendererHelper, { GetProblemParameters, OutputFormat, RendererResponse } from '../../utilities/renderer-helper';
 import { stripTarGZExtension } from '../../utilities/file-helper';
 import StudentWorkbook from '../../database/models/student-workbook';
-import StudentGrade from '../../database/models/student-grade';
+import StudentGrade, { StudentGradeInterface } from '../../database/models/student-grade';
 import StudentGradeInstance from '../../database/models/student-grade-instance';
 import User from '../../database/models/user';
 import logger from '../../utilities/logger';
@@ -32,7 +32,7 @@ import Role from '../permissions/roles';
 import moment = require('moment');
 import RederlyExtendedError from '../../exceptions/rederly-extended-error';
 import { calculateGrade, WillGetCreditReason, WillTrackAttemptReason } from '../../utilities/grading-helper';
-import { useDatabaseTransaction } from '../../utilities/database-helper';
+import { assignModelChanges, useDatabaseTransaction } from '../../utilities/database-helper';
 import StudentTopicOverride, { StudentTopicOverrideInterface } from '../../database/models/student-topic-override';
 import StudentTopicQuestionOverride, { StudentTopicQuestionOverrideInterface } from '../../database/models/student-topic-question-override';
 import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
@@ -1414,12 +1414,10 @@ class CourseController {
                         newValue: newQuestion.maxAttempts
                     }
                 })).map(grade => grade.id);
-                _.assignEntries(
-                    topic,
-                    _.diffObject(topic.get({plain: true}), {
-                        gradeIdsThatNeedRetro: [...new Set([...topic.gradeIdsThatNeedRetro, ...gradesThatNeedRegrade])]
-                    })
-                );
+
+                assignModelChanges(topic, {
+                    gradeIdsThatNeedRetro: [...new Set([...topic.gradeIdsThatNeedRetro, ...gradesThatNeedRegrade])]
+                });
 
                 if (topic.changed()) {
                     await topic.save();
@@ -2002,30 +2000,32 @@ class CourseController {
         saveGrade = true,
     }: SetGradeFromSubmissionOptions): Promise<StudentWorkbook | undefined> => {
         return useDatabaseTransaction(async (): Promise<StudentWorkbook | undefined> => {
+            const studentGradeData = _.cloneDeep(studentGrade.get()) as StudentGradeInterface;
             if (gradeResult.gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
-                if(studentGrade.numAttempts === 0) {
-                    studentGrade.firstAttempts = gradeResult.score;
+                if(studentGradeData.numAttempts === 0) {
+                    studentGradeData.firstAttempts = gradeResult.score;
                 }
-                studentGrade.latestAttempts = gradeResult.score;
-                studentGrade.numAttempts++;
+                studentGradeData.latestAttempts = gradeResult.score;
+                studentGradeData.numAttempts++;
                 if (gradeResult.gradingRationale.isOnTime && !gradeResult.gradingRationale.isLocked && gradeResult.gradingRationale.isWithinAttemptLimit) {
-                    studentGrade.numLegalAttempts++;
+                    studentGradeData.numLegalAttempts++;
                 }
                 if (!gradeResult.gradingRationale.isExpired && !gradeResult.gradingRationale.isLocked && gradeResult.gradingRationale.isWithinAttemptLimit) {
-                    studentGrade.numExtendedAttempts++;
+                    studentGradeData.numExtendedAttempts++;
                 }
 
                 if (_.isNil(workbook)) {
                     workbook = await StudentWorkbook.create({
-                        studentGradeId: studentGrade.id,
-                        userId: studentGrade.userId,
-                        courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
+                        studentGradeId: studentGradeData.id,
+                        userId: studentGradeData.userId,
+                        courseWWTopicQuestionId: studentGradeData.courseWWTopicQuestionId,
                         problemPath: problemPath,
-                        randomSeed: studentGrade.randomSeed,
+                        randomSeed: studentGradeData.randomSeed,
                         submitted: rendererHelper.cleanRendererResponseForTheDatabase(submitted as RendererResponse),
                         result: gradeResult.score,
                         time: timeOfSubmission ?? new Date(),
                         wasLate: gradeResult.gradingRationale.isLate,
+                        wasEarly: gradeResult.gradingRationale.isEarly,
                         wasExpired: gradeResult.gradingRationale.isExpired,
                         wasAfterAttemptLimit: !gradeResult.gradingRationale.isWithinAttemptLimit,
                         wasLocked: gradeResult.gradingRationale.isLocked,
@@ -2033,7 +2033,7 @@ class CourseController {
                     });
 
                     const attachments = await this.listAttachments({
-                        studentGradeId: studentGrade.id
+                        studentGradeId: studentGradeData.id
                     });
 
                     await attachments.asyncForEach(async (attachment: ProblemAttachment) => {
@@ -2050,16 +2050,14 @@ class CourseController {
                 } else {
                     const targetChanges = {
                         wasLate: gradeResult.gradingRationale.isLate,
+                        wasEarly: gradeResult.gradingRationale.isEarly,
                         wasExpired: gradeResult.gradingRationale.isExpired,
                         wasAfterAttemptLimit: !gradeResult.gradingRationale.isWithinAttemptLimit,
                         wasLocked: gradeResult.gradingRationale.isLocked,
-                        active: true
+                        credited: true
                     };
 
-                    _.assignEntries(
-                        workbook,
-                        _.diffObject(workbook.get({plain: true}), targetChanges)
-                    );
+                    assignModelChanges(workbook, targetChanges);
 
                     if (workbook.changed()) {
                         await workbook.save();
@@ -2067,52 +2065,50 @@ class CourseController {
                 }
 
                 if (!_.isNil(gradeResult.gradeUpdates.overallBestScore)) {
-                    studentGrade.overallBestScore = gradeResult.gradeUpdates.overallBestScore;
-                    studentGrade.lastInfluencingAttemptId = workbook.id;
-                } else if (_.isNil(studentGrade.lastInfluencingAttemptId) && gradeResult.gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
-                    studentGrade.lastInfluencingAttemptId = workbook.id;
+                    studentGradeData.overallBestScore = gradeResult.gradeUpdates.overallBestScore;
+                    studentGradeData.lastInfluencingAttemptId = workbook.id;
+                } else if (_.isNil(studentGradeData.lastInfluencingAttemptId) && gradeResult.gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
+                    studentGradeData.lastInfluencingAttemptId = workbook.id;
                 }
 
                 // TODO do we need to track "best score"
                 if (!_.isNil(gradeResult.gradeUpdates.bestScore)) {
-                    studentGrade.bestScore = gradeResult.gradeUpdates.bestScore;
-                    studentGrade.lastInfluencingAttemptId = workbook.id;
-                } else if (_.isNil(studentGrade.lastInfluencingAttemptId) && gradeResult.gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
-                    studentGrade.lastInfluencingAttemptId = workbook.id;
+                    studentGradeData.bestScore = gradeResult.gradeUpdates.bestScore;
+                    studentGradeData.lastInfluencingAttemptId = workbook.id;
+                } else if (_.isNil(studentGradeData.lastInfluencingAttemptId) && gradeResult.gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
+                    studentGradeData.lastInfluencingAttemptId = workbook.id;
                 }
 
                 if (!_.isNil(gradeResult.gradeUpdates.legalScore)) {
-                    studentGrade.legalScore = gradeResult.gradeUpdates.legalScore;
-                    studentGrade.lastInfluencingLegalAttemptId = workbook.id;
-                } else if (_.isNil(studentGrade.lastInfluencingLegalAttemptId) && gradeResult.gradingRationale.willGetCreditReason === WillGetCreditReason.YES) {
-                    studentGrade.lastInfluencingLegalAttemptId = workbook.id;
+                    studentGradeData.legalScore = gradeResult.gradeUpdates.legalScore;
+                    studentGradeData.lastInfluencingLegalAttemptId = workbook.id;
+                } else if (_.isNil(studentGradeData.lastInfluencingLegalAttemptId) && gradeResult.gradingRationale.willGetCreditReason === WillGetCreditReason.YES) {
+                    studentGradeData.lastInfluencingLegalAttemptId = workbook.id;
                 }
 
                 if (!_.isNil(gradeResult.gradeUpdates.partialCreditBestScore)) {
-                    studentGrade.partialCreditBestScore = gradeResult.gradeUpdates.partialCreditBestScore;
-                    studentGrade.lastInfluencingCreditedAttemptId = workbook.id;
-                } else if (_.isNil(studentGrade.lastInfluencingCreditedAttemptId) && (gradeResult.gradingRationale.willGetCreditReason === WillGetCreditReason.YES || gradeResult.gradingRationale.willGetCreditReason === WillGetCreditReason.YES_BUT_PARTIAL_CREDIT)) {
-                    studentGrade.lastInfluencingCreditedAttemptId = workbook.id;
+                    studentGradeData.partialCreditBestScore = gradeResult.gradeUpdates.partialCreditBestScore;
+                    studentGradeData.lastInfluencingCreditedAttemptId = workbook.id;
+                } else if (_.isNil(studentGradeData.lastInfluencingCreditedAttemptId) && (gradeResult.gradingRationale.willGetCreditReason === WillGetCreditReason.YES || gradeResult.gradingRationale.willGetCreditReason === WillGetCreditReason.YES_BUT_PARTIAL_CREDIT)) {
+                    studentGradeData.lastInfluencingCreditedAttemptId = workbook.id;
                 }
 
                 if (!_.isNil(gradeResult.gradeUpdates.effectiveScore)) {
-                    studentGrade.effectiveScore = gradeResult.gradeUpdates.effectiveScore;
+                    studentGradeData.effectiveScore = gradeResult.gradeUpdates.effectiveScore;
                     // We don't track the effective grade that altered the effective score, in part because it could be updated externally
                 }
             } else {
                 if (!_.isNil(workbook)) {
                     if (gradeResult.gradingRationale.willTrackAttemptReason !== WillTrackAttemptReason.UNKNOWN) {
                         logger.info(`${workbook.id} now meets critieria that is should not be kept (${gradeResult.gradingRationale.willTrackAttemptReason}), marking it as credited false (as well as audit fields)`);
-                        _.assignEntries(
-                            workbook,
-                            _.diffObject(workbook.get({plain: true}), {
-                                wasLate: false,
-                                wasExpired: false,
-                                wasAfterAttemptLimit: false,
-                                wasLocked: false,
-                                credited: false
-                            })
-                        );
+                        assignModelChanges(workbook, {
+                            wasLate: false,
+                            wasEarly: false,
+                            wasExpired: false,
+                            wasAfterAttemptLimit: false,
+                            wasLocked: false,
+                            credited: false
+                        });
                         if (workbook.changed()) {
                             await workbook.save();
                         }
@@ -2124,17 +2120,22 @@ class CourseController {
                 }
             }
 
-            if (saveGrade) {
-                if(workbook?.randomSeed === studentGrade.originalRandomSeed) {
-                    await studentGrade.save();
-                } else {
-                    if (_.isNil(workbook)) {
-                        logger.debug('Workbook not kept, did not update grade');
-                    } else {
-                        logger.debug('Random seed was different, not saving due to SMA');
+            // since none of the changes are made on the model directly we can check the random seed here
+            if(workbook?.randomSeed === studentGradeData.originalRandomSeed) {
+                assignModelChanges(studentGrade, studentGradeData);
+                if (saveGrade) {
+                    if (studentGrade.changed()) {
+                        await studentGrade.save();
                     }
                 }
+            } else {
+                if (_.isNil(workbook)) {
+                    logger.debug('Workbook not kept, did not update grade');
+                } else {
+                    logger.debug('Random seed was different, not saving due to SMA');
+                }
             }
+
             // If nil coming in and the attempt was tracked this will result in the new workbook
             return workbook;
         });
@@ -2273,7 +2274,7 @@ class CourseController {
             }
     
             const workbooks = _.keyByWithArrays(await StudentWorkbook.findAll({
-                attributes: ['id', 'wasLocked', 'result', 'time', 'studentGradeId', 'active', 'wasLate', 'wasExpired', 'wasAfterAttemptLimit', 'wasLocked', 'active'] as (keyof StudentWorkbook)[],
+                attributes: ['id', 'wasLocked', 'result', 'time', 'studentGradeId', 'active', 'wasLate', 'wasEarly', 'wasExpired', 'wasAfterAttemptLimit', 'wasLocked', 'active'] as (keyof StudentWorkbook)[],
                 order: ['id'],
                 where: {
                     studentGradeId: {
@@ -2712,7 +2713,7 @@ class CourseController {
             //     }
             // };
             workbooks = workbooks ?? await studentGrade.getWorkbooks({
-                attributes: ['id', 'wasLocked', 'result', 'time', 'studentGradeId', 'active', 'wasLate', 'wasExpired', 'wasAfterAttemptLimit', 'wasLocked', 'active'] as (keyof StudentWorkbook)[],
+                attributes: ['id', 'wasLocked', 'result', 'time', 'studentGradeId', 'active', 'wasLate', 'wasEarly', 'wasExpired', 'wasAfterAttemptLimit', 'wasLocked', 'active'] as (keyof StudentWorkbook)[],
                 order: ['id'],
                 // I was thinking of using the active flag for the case where the solutions date would be available
                 // That shouldn't be possible, but this way we have a catch
@@ -2849,7 +2850,9 @@ class CourseController {
             }
 
             // Needs to be here since we are not saving in loop
-            await studentGrade.save();
+            if (studentGrade.changed()) {
+                await studentGrade.save();
+            }
         });
     }
 
@@ -3571,6 +3574,7 @@ class CourseController {
                 // 'submitted',
                 'time',
                 'wasLate',
+                'wasEarly',
                 'wasExpired',
                 'wasAfterAttemptLimit',
                 'wasAutoSubmitted',
@@ -4871,6 +4875,7 @@ class CourseController {
                     result: result.questionResponse.problem_result.score,
                     time,
                     wasLate: false,
+                    wasEarly: false,
                     wasExpired: false,
                     wasAfterAttemptLimit: false,
                     wasLocked: false,

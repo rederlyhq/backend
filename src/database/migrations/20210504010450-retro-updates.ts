@@ -25,6 +25,12 @@ export default {
         defaultValue: true,
       });
 
+      await queryInterface.addColumn('student_workbook', 'student_workbook_was_early', {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      });
+
       await queryInterface.sequelize.query('UPDATE student_workbook SET student_workbook_credited = student_workbook_active, student_workbook_active = true WHERE student_workbook_active = false');
     });
   },
@@ -34,6 +40,7 @@ export default {
       await queryInterface.removeColumn('course_topic_content', 'course_topic_content_grade_ids_that_need_retro');
       await queryInterface.removeColumn('course_topic_content', 'course_topic_content_retro_started_time');
       await queryInterface.removeColumn('student_workbook', 'student_workbook_credited');
+      await queryInterface.removeColumn('student_workbook', 'student_workbook_was_early');
     });
   }
 };

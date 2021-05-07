@@ -140,6 +140,7 @@ export const createSubmissions = async ({
                 result: Math.min(startingScore + (scoreDiff * Math.floor(index / submissionsPerQuestion)), 1),
                 time: startTime.toMoment().add(timeDiffInHours * Math.floor(index / submissionsPerQuestion), 'hours'),
                 wasLate: false,
+                wasEarly: false,
                 wasExpired: false,
                 wasAfterAttemptLimit: false,
                 wasLocked: false,

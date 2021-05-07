@@ -2130,7 +2130,7 @@ class CourseController {
         questionId?: number;
     }): Promise<{
         retroStartedTime: Date | null;
-        needsRegrade: boolean;
+        regradeCount: number;
         gradeIdsThatNeedRetro: number[];
     }> => {
         const topic = await CourseTopicContent.findOne({
@@ -2144,7 +2144,7 @@ class CourseController {
             throw new NotFoundError('Could not find the topic');
         }
 
-        let needsRegrade = topic.gradeIdsThatNeedRetro.length > 0;
+        let regradeCount = topic.gradeIdsThatNeedRetro.length;
         if (_.isSomething(questionId) || _.isSomething(userId)) {
             const questions = await topic.getQuestions({
                 attributes: ['id'],
@@ -2164,12 +2164,12 @@ class CourseController {
                     }, _.isUndefined) as sequelize.WhereAttributeHash,
                 }]
             });
-            needsRegrade = questions.length > 0;
+            regradeCount = _.sum(questions.map(question => (question.grades ?? []).length));
         }
 
         return {
             retroStartedTime: topic.retroStartedTime,
-            needsRegrade: needsRegrade,
+            regradeCount: regradeCount,
             gradeIdsThatNeedRetro: topic.gradeIdsThatNeedRetro,
         };
     }
@@ -2463,7 +2463,7 @@ class CourseController {
             include: [{
                 model: StudentGrade,
                 as: 'grades',
-                required: false,
+                required: true,
                 attributes: ['id', 'userId'],
                 where: {
                     active: true
@@ -2471,7 +2471,7 @@ class CourseController {
                 include: [{
                     model: StudentWorkbook,
                     as: 'workbooks',
-                    required: false,
+                    required: true,
                     attributes: [],
                     where: {
                         // Active is different in prod leaving this out for now

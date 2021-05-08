@@ -16,7 +16,7 @@ function formatter(): winston.LeveledLogMethod | ((sql: string) => void) {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { format } = require('sql-formatter');
 
-    // This is for development
+    // The console log below is for development so this is an acceptable eslint exception
     // eslint-disable-next-line no-console
     return ((sqlString: string): void => console.log(format(sqlString, {
         language: 'postgresql', // Defaults to "sql" (see the above list of supported dialects)

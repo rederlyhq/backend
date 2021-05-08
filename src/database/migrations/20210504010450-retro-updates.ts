@@ -1,5 +1,3 @@
-// TODO remove from actual migrations, DataTypes will be used
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { QueryInterface, DataTypes } from 'sequelize';
 
 export default {
@@ -13,7 +11,6 @@ export default {
       });
 
       await queryInterface.addColumn('course_topic_content', 'course_topic_content_retro_started_time', {
-        field: 'course_topic_content_retro_started_time',
         type: DataTypes.DATE,
         allowNull: true,
         defaultValue: null,

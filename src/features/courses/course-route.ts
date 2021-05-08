@@ -448,8 +448,6 @@ router.put('/topic/:id/regrade',
     authenticationMiddleware,
     validate(regradeCourseTopicValidation),
     paidMiddleware('Regrading topic'),
-    // This is due to a typescript issue where the type mismatches extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
         const topicId = req.params.id as unknown as number;
         const topic = await courseController.regradeNeededGradesOnTopic({
@@ -464,8 +462,6 @@ router.get('/topic/:id/regrade',
     authenticationMiddleware,
     validate(regradeCourseTopicValidation),
     paidMiddleware('Regrading topic check'),
-    // This is due to a typescript issue where the type mismatches extractMap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
         const regradeCheckResult = await courseController.checkForRegrade({
             topicId: req.params.id as unknown as number,

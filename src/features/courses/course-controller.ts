@@ -2497,7 +2497,7 @@ class CourseController {
                     where: {
                         // Active is different in prod leaving this out for now
                         // active: true,
-                        [Sequelize.Op.and]: dateRangeConditions
+                        [Sequelize.Op.or]: dateRangeConditions
                     },
                 }]    
             }]

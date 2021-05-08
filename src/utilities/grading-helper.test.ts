@@ -37,6 +37,9 @@ const defaultStudentGradeUnusedFields = {
     ...defaultUnusedFields,
     numExtendedAttempts: 0,
     numLegalAttempts: 0,
+    lastInfluencingAttemptId: null,
+    lastInfluencingLegalAttemptId: null,
+    lastInfluencingCreditedAttemptId: null,
 };
 
 const defaultTopicUnusedFields = {
@@ -50,9 +53,15 @@ const defaultTopicUnusedFields = {
     contentOrder: 0,
     name: 'Topic Name',
     partialExtend: false,
+
+    // retro fields
+    gradeIdsThatNeedRetro: [],
+    retroStartedTime: null,
+    
     ...defaultUnusedFields
 };
 
+const resultIsEarly = false;
 describe('Grading Helper Tests', () => {
     const timeOfSubmission = moment();
     describe('calculateGrade', () => {
@@ -126,6 +135,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -174,6 +184,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -230,6 +241,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -289,6 +301,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -337,6 +350,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -389,6 +403,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -454,6 +469,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -502,6 +518,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -553,6 +570,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -612,6 +630,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -660,6 +679,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -711,6 +731,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -779,6 +800,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -827,6 +849,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -878,6 +901,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -932,6 +956,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -980,6 +1005,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -1031,6 +1057,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -1104,6 +1131,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -1152,6 +1180,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -1204,6 +1233,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -1259,6 +1289,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -1307,6 +1338,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -1359,6 +1391,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -1423,6 +1456,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -1471,6 +1505,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -1522,6 +1557,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -1577,6 +1613,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -1625,6 +1662,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -1676,6 +1714,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -1744,6 +1783,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -1792,6 +1832,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -1843,6 +1884,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -1897,6 +1939,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -1945,6 +1988,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -1996,6 +2040,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -2069,6 +2114,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -2117,6 +2163,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -2169,6 +2216,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -2224,6 +2272,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -2272,6 +2321,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -2324,6 +2374,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -2388,6 +2439,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -2436,6 +2488,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -2487,6 +2540,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -2542,6 +2596,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -2590,6 +2645,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -2641,6 +2697,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -2709,6 +2766,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -2757,6 +2815,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -2808,6 +2867,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -2862,6 +2922,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -2910,6 +2971,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -2961,6 +3023,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -3046,6 +3109,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -3094,6 +3158,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -3149,6 +3214,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -3207,6 +3273,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -3255,6 +3322,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -3307,6 +3375,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -3372,6 +3441,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -3420,6 +3490,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -3471,6 +3542,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -3529,6 +3601,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -3577,6 +3650,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -3628,6 +3702,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -3696,6 +3771,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -3744,6 +3820,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -3795,6 +3872,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -3849,6 +3927,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -3897,6 +3976,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -3948,6 +4028,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -4021,6 +4102,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -4069,6 +4151,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -4121,6 +4204,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -4176,6 +4260,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -4224,6 +4309,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -4276,6 +4362,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -4340,6 +4427,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -4388,6 +4476,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -4439,6 +4528,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -4494,6 +4584,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -4542,6 +4633,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -4593,6 +4685,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -4661,6 +4754,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -4709,6 +4803,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -4760,6 +4855,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -4814,6 +4910,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -4862,6 +4959,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -4913,6 +5011,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -4986,6 +5085,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -5034,6 +5134,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -5086,6 +5187,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -5141,6 +5243,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -5189,6 +5292,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -5241,6 +5345,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -5305,6 +5410,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -5353,6 +5459,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -5404,6 +5511,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -5459,6 +5567,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -5507,6 +5616,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -5558,6 +5668,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -5626,6 +5737,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -5674,6 +5786,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -5725,6 +5838,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -5779,6 +5893,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -5827,6 +5942,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -5878,6 +5994,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -5962,6 +6079,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -6010,6 +6128,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -6062,6 +6181,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -6117,6 +6237,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -6165,6 +6286,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -6217,6 +6339,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -6281,6 +6404,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -6329,6 +6453,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -6380,6 +6505,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -6435,6 +6561,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -6483,6 +6610,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -6534,6 +6662,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -6602,6 +6731,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -6650,6 +6780,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -6701,6 +6832,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -6755,6 +6887,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -6803,6 +6936,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -6854,6 +6988,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -6927,6 +7062,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -6975,6 +7111,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -7027,6 +7164,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -7082,6 +7220,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -7130,6 +7269,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -7182,6 +7322,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -7246,6 +7387,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -7294,6 +7436,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -7345,6 +7488,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -7400,6 +7544,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -7448,6 +7593,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -7499,6 +7645,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -7567,6 +7714,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -7615,6 +7763,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -7666,6 +7815,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -7720,6 +7870,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -7768,6 +7919,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -7819,6 +7971,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -7892,6 +8045,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -7940,6 +8094,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -7992,6 +8147,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -8047,6 +8203,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -8095,6 +8252,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -8147,6 +8305,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -8211,6 +8370,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -8259,6 +8419,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -8310,6 +8471,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -8365,6 +8527,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -8413,6 +8576,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -8464,6 +8628,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -8532,6 +8697,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -8580,6 +8746,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -8631,6 +8798,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -8685,6 +8853,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -8733,6 +8902,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -8784,6 +8954,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -8868,6 +9039,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -8916,6 +9088,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -8966,6 +9139,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -9018,6 +9192,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -9066,6 +9241,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -9116,6 +9292,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -9178,6 +9355,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -9226,6 +9404,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -9277,6 +9456,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -9329,6 +9509,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -9377,6 +9558,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -9428,6 +9610,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -9494,6 +9677,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -9542,6 +9726,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -9593,6 +9778,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -9647,6 +9833,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -9695,6 +9882,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -9746,6 +9934,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -9816,6 +10005,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -9864,6 +10054,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -9914,6 +10105,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -9966,6 +10158,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -10014,6 +10207,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -10064,6 +10258,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -10126,6 +10321,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -10174,6 +10370,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -10225,6 +10422,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -10277,6 +10475,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -10325,6 +10524,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -10376,6 +10576,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -10442,6 +10643,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -10490,6 +10692,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -10541,6 +10744,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -10595,6 +10799,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -10643,6 +10848,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -10694,6 +10900,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -10764,6 +10971,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -10812,6 +11020,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -10862,6 +11071,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -10914,6 +11124,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -10962,6 +11173,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -11012,6 +11224,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -11074,6 +11287,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -11122,6 +11336,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -11173,6 +11388,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -11225,6 +11441,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -11273,6 +11490,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -11324,6 +11542,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -11390,6 +11609,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -11438,6 +11658,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -11489,6 +11710,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -11543,6 +11765,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -11591,6 +11814,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -11642,6 +11866,7 @@ describe('Grading Helper Tests', () => {
                                     isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                     isOnTime: resultIsOnTime,
                                     isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                     willTrackAttemptReason: resultWillTrackAttemptReason,
                                     willGetCreditReason: resultWillGetCreditReason
                                 },
@@ -11668,7 +11893,7 @@ describe('Grading Helper Tests', () => {
                 const solutionDate = moment().add(3, 'days');
 
                 const resultIsLate = false;
-                const resultIsExpired = false;
+                    const resultIsExpired = false;
                 const resultIsOnTime = true;
 
                 describe('Within attempt limit', () => {
@@ -11729,6 +11954,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -11777,6 +12003,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -11832,6 +12059,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -11890,6 +12118,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -11938,6 +12167,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -11990,6 +12220,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -12054,6 +12285,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -12102,6 +12334,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -12153,6 +12386,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -12211,6 +12445,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -12259,6 +12494,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -12310,6 +12546,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -12377,6 +12614,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -12425,6 +12663,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -12476,6 +12715,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -12530,6 +12770,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -12578,6 +12819,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -12629,6 +12871,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -12701,6 +12944,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -12749,6 +12993,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -12801,6 +13046,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -12856,6 +13102,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -12904,6 +13151,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -12956,6 +13204,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -13019,6 +13268,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -13067,6 +13317,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -13118,6 +13369,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -13173,6 +13425,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -13221,6 +13474,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -13272,6 +13526,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -13339,6 +13594,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -13387,6 +13643,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -13438,6 +13695,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -13492,6 +13750,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -13540,6 +13799,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -13591,6 +13851,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -13663,6 +13924,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -13711,6 +13973,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -13763,6 +14026,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -13818,6 +14082,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -13866,6 +14131,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -13918,6 +14184,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -13981,6 +14248,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -14029,6 +14297,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -14080,6 +14349,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -14135,6 +14405,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -14183,6 +14454,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -14234,6 +14506,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -14301,6 +14574,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -14349,6 +14623,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -14400,6 +14675,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -14454,6 +14730,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -14502,6 +14779,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -14553,6 +14831,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -14637,6 +14916,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -14685,6 +14965,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -14739,6 +15020,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -14796,6 +15078,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -14844,6 +15127,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -14896,6 +15180,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -14960,6 +15245,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -15008,6 +15294,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -15059,6 +15346,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -15116,6 +15404,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -15164,6 +15453,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -15215,6 +15505,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -15282,6 +15573,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -15330,6 +15622,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -15381,6 +15674,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -15435,6 +15729,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -15483,6 +15778,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -15534,6 +15830,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -15606,6 +15903,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -15654,6 +15952,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -15706,6 +16005,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -15761,6 +16061,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -15809,6 +16110,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -15861,6 +16163,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -15924,6 +16227,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -15972,6 +16276,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -16023,6 +16328,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -16078,6 +16384,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -16126,6 +16433,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -16177,6 +16485,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -16244,6 +16553,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -16292,6 +16602,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -16343,6 +16654,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -16397,6 +16709,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -16445,6 +16758,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -16496,6 +16810,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -16568,6 +16883,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -16616,6 +16932,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -16668,6 +16985,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -16723,6 +17041,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -16771,6 +17090,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -16823,6 +17143,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -16886,6 +17207,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -16934,6 +17256,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -16985,6 +17308,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -17040,6 +17364,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -17088,6 +17413,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -17139,6 +17465,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -17206,6 +17533,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -17254,6 +17582,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -17305,6 +17634,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -17359,6 +17689,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -17407,6 +17738,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -17458,6 +17790,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -17479,7 +17812,7 @@ describe('Grading Helper Tests', () => {
                 const solutionDate = moment().add(1, 'days');
 
                 const resultIsLate = false;
-                const resultIsExpired = true;
+                    const resultIsExpired = true;
                 const resultIsOnTime = false;
 
                 const resultWillGetCreditReason = 'NO_EXPIRED';
@@ -17541,6 +17874,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -17589,6 +17923,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -17641,6 +17976,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -17696,6 +18032,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -17744,6 +18081,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -17796,6 +18134,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -17859,6 +18198,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -17907,6 +18247,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -17958,6 +18299,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -18013,6 +18355,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -18061,6 +18404,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -18112,6 +18456,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -18179,6 +18524,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -18227,6 +18573,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -18278,6 +18625,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -18332,6 +18680,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -18380,6 +18729,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -18431,6 +18781,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -18503,6 +18854,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -18551,6 +18903,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -18603,6 +18956,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -18658,6 +19012,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -18706,6 +19061,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -18758,6 +19114,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -18821,6 +19178,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -18869,6 +19227,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -18920,6 +19279,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -18975,6 +19335,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -19023,6 +19384,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -19074,6 +19436,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -19141,6 +19504,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -19189,6 +19553,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -19240,6 +19605,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -19294,6 +19660,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -19342,6 +19709,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -19393,6 +19761,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -19465,6 +19834,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -19513,6 +19883,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -19565,6 +19936,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -19620,6 +19992,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -19668,6 +20041,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -19720,6 +20094,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -19783,6 +20158,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -19831,6 +20207,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -19882,6 +20259,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -19937,6 +20315,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -19985,6 +20364,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -20036,6 +20416,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -20103,6 +20484,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -20151,6 +20533,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -20202,6 +20585,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -20256,6 +20640,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -20304,6 +20689,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -20355,6 +20741,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -20376,7 +20763,7 @@ describe('Grading Helper Tests', () => {
                 const solutionDate = moment().subtract(1, 'days');
 
                 const resultIsLate = false;
-                const resultIsExpired = false;
+                    const resultIsExpired = false;
                 const resultIsOnTime = false;
 
                 const resultWillGetCreditReason = 'NO_ATTEMPT_NOT_RECORDED';
@@ -20438,6 +20825,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -20486,6 +20874,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -20536,6 +20925,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -20588,6 +20978,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -20636,6 +21027,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -20686,6 +21078,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -20747,6 +21140,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -20795,6 +21189,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -20846,6 +21241,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -20898,6 +21294,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -20946,6 +21343,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -20997,6 +21395,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -21062,6 +21461,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -21110,6 +21510,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -21161,6 +21562,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -21215,6 +21617,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -21263,6 +21666,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -21314,6 +21718,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -21383,6 +21788,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -21431,6 +21837,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -21481,6 +21888,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -21533,6 +21941,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -21581,6 +21990,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -21631,6 +22041,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -21692,6 +22103,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -21740,6 +22152,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -21791,6 +22204,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -21843,6 +22257,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -21891,6 +22306,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -21942,6 +22358,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -22007,6 +22424,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -22055,6 +22473,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -22106,6 +22525,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -22160,6 +22580,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -22208,6 +22629,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -22259,6 +22681,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -22328,6 +22751,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -22376,6 +22800,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -22426,6 +22851,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -22478,6 +22904,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -22526,6 +22953,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -22576,6 +23004,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -22637,6 +23066,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -22685,6 +23115,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -22736,6 +23167,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -22788,6 +23220,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -22836,6 +23269,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -22887,6 +23321,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -22952,6 +23387,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -23000,6 +23436,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -23051,6 +23488,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -23105,6 +23543,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -23153,6 +23592,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },
@@ -23204,6 +23644,7 @@ describe('Grading Helper Tests', () => {
                                         isWithinAttemptLimit: resultIsWithinAttemptLimit,
                                         isOnTime: resultIsOnTime,
                                         isLate: resultIsLate,
+                                        isEarly: resultIsEarly,
                                         willTrackAttemptReason: resultWillTrackAttemptReason,
                                         willGetCreditReason: resultWillGetCreditReason
                                     },

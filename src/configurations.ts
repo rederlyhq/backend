@@ -145,6 +145,7 @@ const configurations = {
     },
     db: {
         host: readStringValue('DB_HOST', 'localhost'),
+        port: readIntValue('DB_PORT', 5432),
         name: readStringValue('DB_NAME', 'rederly'),
         user: readStringValue('DB_USER', 'postgres'),
         password: readStringValue('DB_PASSWORD', 'password'),

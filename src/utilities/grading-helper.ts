@@ -10,7 +10,7 @@ export enum WillTrackAttemptReason {
     NO_IS_AFTER_SOLUTIONS_DATE='NO_IS_AFTER_SOLUTIONS_DATE',
     NO_ALREADY_COMPLETED='NO_ALREADY_COMPLETED',
     YES='YES',
-    UNKNOWN='UNKNOWN'
+    UNKNOWN='UNKNOWN',
 };
 
 export enum WillGetCreditReason {
@@ -19,12 +19,14 @@ export enum WillGetCreditReason {
     NO_ATTEMPT_NOT_RECORDED='NO_ATTEMPT_NOT_RECORDED',
     NO_EXPIRED='NO_EXPIRED',
     NO_SOLUTIONS_AVAILABLE='NO_SOLUTIONS_AVAILABLE',
+    NO_EARLY_SUBMISSION='NO_EARLY_SUBMISSION',
     YES_BUT_PARTIAL_CREDIT='YES_BUT_PARTIAL_CREDIT',
     YES='YES',
-    UNKNOWN='UNKNOWN'
+    UNKNOWN='UNKNOWN',
 };
 
 interface DetermineGradingRationaleOptions {
+    startDate: moment.Moment;
     endDate: moment.Moment;
     deadDate: moment.Moment;
     locked: boolean;
@@ -46,6 +48,7 @@ export interface DetermineGradingRationaleResult {
     isWithinAttemptLimit: boolean;
     isOnTime: boolean;
     isLate: boolean;
+    isEarly: boolean;
 
     willTrackAttemptReason: WillTrackAttemptReason;
     willGetCreditReason: WillGetCreditReason;
@@ -74,6 +77,7 @@ export const willBeGraded = (reason: WillGetCreditReason): boolean => {
 };
 
 export const determineGradingRationale = ({
+    startDate,
     endDate,
     deadDate,
     locked,
@@ -102,6 +106,7 @@ export const determineGradingRationale = ({
 
     const isOnTime = theMoment.isBefore(moment(endDate));
     const isLate = theMoment.isBefore(moment(deadDate)) && theMoment.isSameOrAfter(moment(endDate));
+    const isEarly = theMoment.isBefore(moment(startDate));
 
     let willTrackAttemptReason: WillTrackAttemptReason = WillTrackAttemptReason.UNKNOWN;
     if (isCompleted) {
@@ -123,8 +128,9 @@ export const determineGradingRationale = ({
         willGetCreditReason = WillGetCreditReason.UNKNOWN;
     } else if (willTrackAttemptReason !== WillTrackAttemptReason.YES) {
         willGetCreditReason = WillGetCreditReason.NO_ATTEMPT_NOT_RECORDED;
-    }
-    else if (isLocked) {
+    } else if (isEarly) {
+        willGetCreditReason = WillGetCreditReason.NO_EARLY_SUBMISSION;
+    } else if (isLocked) {
         willGetCreditReason = WillGetCreditReason.NO_GRADE_LOCKED;
     } else if (!isWithinAttemptLimit) {
         willGetCreditReason = WillGetCreditReason.NO_ATTEMPTS_EXCEEDED;
@@ -150,14 +156,15 @@ export const determineGradingRationale = ({
     }
 
     return {
-        isCompleted,
-        isExpired,
-        isLocked,
-        isWithinAttemptLimit,
-        isOnTime,
-        isLate,
-        willTrackAttemptReason,
-        willGetCreditReason,
+        isCompleted: isCompleted,
+        isExpired: isExpired,
+        isLocked: isLocked,
+        isWithinAttemptLimit: isWithinAttemptLimit,
+        isOnTime: isOnTime,
+        isLate: isLate,
+        isEarly: isEarly,
+        willTrackAttemptReason: willTrackAttemptReason,
+        willGetCreditReason: willGetCreditReason,
 
     };
 };
@@ -178,6 +185,7 @@ export const calculateGrade = ({
     timeOfSubmission
 }: CalculateGradeOptions): CalculateGradeResult => {
     const gradingRationale: DetermineGradingRationaleResult = determineGradingRationale({
+        startDate: topic.startDate.toMoment(),
         deadDate: topic.deadDate.toMoment(),
         endDate: topic.endDate.toMoment(),
 

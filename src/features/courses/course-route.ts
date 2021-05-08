@@ -5,7 +5,7 @@ import validate from '../../middleware/joi-validator';
 import { authenticationMiddleware, paidMiddleware, userIdMeMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
 import * as asyncHandler from 'express-async-handler';
-import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation, deleteEnrollmentValidation, createAssessmentVersionValidation, extendCourseTopicForUserValidation, extendCourseTopicQuestionValidation, getTopicValidation, submitAssessmentVersionValidation, endAssessmentVersionValidation, previewQuestionValidation, gradeAssessmentValidation, getAttachmentPresignedURLValidation, postAttachmentValidation, listAttachmentsValidation, deleteAttachmentValidation, emailProfValidation, readQuestionValidation, saveQuestionValidation, catalogValidation, getVersionValidation, getQuestionRawValidation, getQuestionGradeValidation, getQuestionOpenLabValidation, postImportCourseArchiveValidation, uploadAssetValidation, getQuestionShowMeAnotherValidation, browseProblemsCourseListValidation, browseProblemsSearchValidation, browseProblemsTopicListValidation, browseProblemsUnitListValidation, bulkExportValidation, endBulkExportValidation, getGradesForTopicsByCourseValidation, postFeedbackValidation, postUploadWorkbookFeedbackValidation, postUploadTopicDescriptionValidation, postUploadTopicFeedbackValidation, postTopicFeedbackValidation, getTopicFeedbackValidation } from './course-route-validation';
+import { createCourseValidation, getCourseValidation, enrollInCourseValidation, listCoursesValidation, createCourseUnitValidation, createCourseTopicValidation, createCourseTopicQuestionValidation, getQuestionValidation, updateCourseTopicValidation, getGradesValidation, updateCourseUnitValidation, getStatisticsOnUnitsValidation, getStatisticsOnTopicsValidation, getStatisticsOnQuestionsValidation, getTopicsValidation, getQuestionsValidation, enrollInCourseByCodeValidation, updateCourseTopicQuestionValidation, updateCourseValidation, createQuestionsForTopicFromDefFileValidation, deleteCourseTopicValidation, deleteCourseQuestionValidation, deleteCourseUnitValidation, updateGradeValidation, deleteEnrollmentValidation, createAssessmentVersionValidation, extendCourseTopicForUserValidation, extendCourseTopicQuestionValidation, getTopicValidation, submitAssessmentVersionValidation, endAssessmentVersionValidation, previewQuestionValidation, gradeAssessmentValidation, getAttachmentPresignedURLValidation, postAttachmentValidation, listAttachmentsValidation, deleteAttachmentValidation, emailProfValidation, readQuestionValidation, saveQuestionValidation, catalogValidation, getVersionValidation, getQuestionRawValidation, getQuestionGradeValidation, getQuestionOpenLabValidation, postImportCourseArchiveValidation, uploadAssetValidation, getQuestionShowMeAnotherValidation, browseProblemsCourseListValidation, browseProblemsSearchValidation, browseProblemsTopicListValidation, browseProblemsUnitListValidation, bulkExportValidation, endBulkExportValidation, getGradesForTopicsByCourseValidation, postFeedbackValidation, postUploadWorkbookFeedbackValidation, postUploadTopicDescriptionValidation, postUploadTopicFeedbackValidation, postTopicFeedbackValidation, getTopicFeedbackValidation, regradeCourseTopicValidation } from './course-route-validation';
 import NotFoundError from '../../exceptions/not-found-error';
 import multer = require('multer');
 import * as proxy from 'express-http-proxy';
@@ -250,11 +250,10 @@ router.get('/:courseId/topic-grades',
         if (_.isNil(req.session)) {
             throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
-        
-        const user = await req.session.getUser();
 
-        if (user.roleId === Role.STUDENT) {
-            throw new RederlyError('You do not have access to edit this course.');
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role === Role.STUDENT) {
+            throw new ForbiddenError('You do not have access to edit this course.');
         }
 
         const topics = await courseController.getGradesForTopics({
@@ -445,7 +444,38 @@ router.put('/topic/extend',
             next(httpResponse.Ok('Extended topic successfully', updatesResult));
         }));
 
-router.put('/topic/:id',
+router.put('/topic/:id/regrade',
+    authenticationMiddleware,
+    validate(regradeCourseTopicValidation),
+    paidMiddleware('Regrading topic'),
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
+        const topicId = req.params.id as unknown as number;
+        const topic = await courseController.regradeNeededGradesOnTopic({
+            topicId: topicId,
+            questionId: req.query.questionId as number | undefined,
+            userId: req.query.userId as unknown as number | undefined
+        });
+        next(httpResponse.Ok('Regrading', topic));
+    }));
+    
+router.get('/topic/:id/regrade',
+    authenticationMiddleware,
+    validate(regradeCourseTopicValidation),
+    paidMiddleware('Regrading topic check'),
+    // This is due to a typescript issue where the type mismatches extractMap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
+        const regradeCheckResult = await courseController.checkForRegrade({
+            topicId: req.params.id as unknown as number,
+            questionId: req.query.questionId as unknown as number | undefined,
+            userId: req.query.userId as unknown as number | undefined
+        });
+        next(httpResponse.Ok('Updated topic successfully', regradeCheckResult));
+    }));
+    
+    router.put('/topic/:id',
     authenticationMiddleware,
     validate(updateCourseTopicValidation),
     paidMiddleware('Modifying topic settings'),
@@ -747,12 +777,11 @@ router.put('/:id',
                 throw new RederlyError(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
             }
 
-            const user = await req.session.getUser();
-
-            if (user.roleId === Role.STUDENT) {
-                throw new RederlyError('You do not have access to edit this course.');
+            const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+            if (role === Role.STUDENT) {
+                throw new ForbiddenError('You do not have access to edit this course.');
             }
-
+    
             const params = req.params as UpdateCourseRequest.params;
             const updatesResult = await courseController.updateCourse({
                 where: {
@@ -1327,6 +1356,7 @@ router.get('/topic/:id',
             userId: req.query.userId, 
             includeQuestions: req.query.includeQuestions,
             includeWorkbookCount: req.query.includeWorkbookCount,
+            includeGradeIdsThatNeedRegrade: req.query.includeGradeIdsThatNeedRegrade,
         });
 
         if (req.query.includeWorkbookCount) {

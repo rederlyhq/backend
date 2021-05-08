@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { Transaction } from 'sequelize/types';
+import { Model, Transaction } from 'sequelize/types';
 import appSequelize from '../database/app-sequelize';
 import logger from './logger';
 import cls = require('cls-hooked');
@@ -38,4 +38,18 @@ export const useDatabaseTransaction = <T = unknown>(fn: (t?: Transaction) => Pro
         logger.debug('Use existing transaction');
         return Promise.resolve(fn());
     }
+};
+
+/**
+ * Sequelize models hide the values behind datavalues
+ * Changing a value makes it a changed value
+ * To optimize you can use this to assign changes and then check model.changed() before model.saved()
+ * @param model is the sequelize model
+ * @param changes is the fields of the model to update
+ */
+export const assignModelChanges = <T extends Model = Model>(model: T, changes: Partial<T>): void => {
+    _.assignEntries(
+        model,
+        _.diffObject(model.get(), changes)
+    );
 };

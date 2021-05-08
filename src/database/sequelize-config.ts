@@ -16,6 +16,8 @@ function formatter(): winston.LeveledLogMethod | ((sql: string) => void) {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { format } = require('sql-formatter');
 
+    // This is for development
+    // eslint-disable-next-line no-console
     return ((sqlString: string): void => console.log(format(sqlString, {
         language: 'postgresql', // Defaults to "sql" (see the above list of supported dialects)
         indent: '    ', // Defaults to two spaces
@@ -25,6 +27,7 @@ function formatter(): winston.LeveledLogMethod | ((sql: string) => void) {
 
 const {
     host,
+    port,
     name,
     user,
     password,
@@ -36,7 +39,8 @@ const sequelizeConfig: SequelizeOptions = {
     username: user,
     password: password,
     database: name,
-    host,
+    host: host,
+    port: port,
     dialect: 'postgres',
     logging: logging && formatter(),
     dialectOptions: {

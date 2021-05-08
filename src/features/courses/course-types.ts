@@ -556,6 +556,7 @@ export interface GradeOptions {
         topicOverride?: StudentTopicOverride | null;
         questionOverride?: StudentTopicQuestionOverride | null;
     };
+    saveGrade?: boolean;
 }
 
 export interface GradeResult {
@@ -577,6 +578,7 @@ export interface SetGradeFromSubmissionOptions {
     submitted: unknown;
     timeOfSubmission? : Moment;
     problemPath: string;
+    saveGrade?: boolean;
 }
 
 export interface ReGradeTopicOptions {

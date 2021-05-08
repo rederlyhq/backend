@@ -65,6 +65,7 @@
 | Environment variable | Description | Default value |
 | --- | --- | --- |
 | DB_HOST | The host url for the database | localhost |
+| DB_PORT | The connection port for the database | 5432 |
 | DB_NAME | The name of the database | rederly |
 | DB_USER | The user the login to the database | postgres |
 | DB_PASSWORD | The password for the user to login to the database | password |

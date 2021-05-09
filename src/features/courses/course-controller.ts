@@ -2225,8 +2225,6 @@ class CourseController {
         if (!_.isNil(topic.retroStartedTime)) {
             throw new IllegalArgumentException('Retro already started');
         }
-        topic.retroStartedTime = new Date();
-        await topic.save();
 
         let gradeIdsThatNeedRetro = topic.gradeIdsThatNeedRetro;
         if (_.isEmpty(gradeIdsThatNeedRetro)) {
@@ -2238,6 +2236,9 @@ class CourseController {
         // This is for logs
         let progressTimeoutHandle: NodeJS.Timeout | null = null;
 
+        topic.retroStartedTime = new Date();
+        await topic.save();
+        
         // orphan for pseudo job
         useDatabaseTransaction(async () => {
             const questionsFetch = await topic.getQuestions();

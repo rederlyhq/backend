@@ -1,5 +1,10 @@
 import * as _ from 'lodash';
 
+interface AnyKeyDictionary<ItemType> {
+    [key: string]: ItemType[];
+    [key: number]: ItemType[];
+};
+
 // https://stackoverflow.com/a/49942988
 declare module 'lodash' {
     interface LoDashStatic {
@@ -11,7 +16,7 @@ declare module 'lodash' {
         diffObject<BaseObjectType, ObjectToCompareType>(baseObject: BaseObjectType, objectToCompare: ObjectToCompareType): [keyof ObjectToCompareType, unknown][];
         assignEntries <ObjectType>(obj: ObjectType, changes: [string | number | symbol, unknown][]): ObjectType;
         assignChanges <ObjectType, ChangesType>(obj: ObjectType, changes: ChangesType): ObjectType;
-        keyByWithArrays <ItemType extends object>(arr: Array<ItemType>, key: keyof ItemType): _.Dictionary<ItemType[]>;
+        keyByWithArrays <ItemType extends object>(arr: Array<ItemType>, key: keyof ItemType): AnyKeyDictionary<ItemType>;
     }
 }
 
@@ -109,8 +114,8 @@ _.mixin({
         const actualChanges = _.diffObject(obj, changes);
         return _.assignEntries(obj, actualChanges);
     },
-    keyByWithArrays: <ItemType extends object>(arr: Array<ItemType>, key: keyof ItemType): _.Dictionary<ItemType[]> => {
-        return _.reduce(arr, (agg: _.Dictionary<ItemType[]>, n: ItemType): _.Dictionary<ItemType[]> => {
+    keyByWithArrays: <ItemType extends object>(arr: Array<ItemType>, key: keyof ItemType): AnyKeyDictionary<ItemType> => {
+        return _.reduce(arr, (agg: AnyKeyDictionary<ItemType>, n: ItemType): AnyKeyDictionary<ItemType> => {
             const aggKey = n[key] as unknown as string | number;
             if (_.isNil(agg[aggKey])) {
                 agg[aggKey] = [n];

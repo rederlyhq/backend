@@ -2218,11 +2218,13 @@ class CourseController {
             throw new IllegalArgumentException('Cound not find topic to regrade');
         }
 
+        if (topic.topicTypeId === TopicTypeLookup.EXAM) {
+            throw new IllegalArgumentException('Cannot retro exams');
+        }
+
         if (!_.isNil(topic.retroStartedTime)) {
             throw new IllegalArgumentException('Retro already started');
         }
-        topic.retroStartedTime = new Date();
-        await topic.save();
 
         let gradeIdsThatNeedRetro = topic.gradeIdsThatNeedRetro;
         if (_.isEmpty(gradeIdsThatNeedRetro)) {
@@ -2234,9 +2236,16 @@ class CourseController {
         // This is for logs
         let progressTimeoutHandle: NodeJS.Timeout | null = null;
 
+        topic.retroStartedTime = new Date();
+        await topic.save();
+        
         // orphan for pseudo job
         useDatabaseTransaction(async () => {
-            const questions = _.keyBy(await topic.getQuestions(), 'id');
+            const questionsFetch = await topic.getQuestions();
+            if (questionsFetch.length === 0) {
+                throw new IllegalArgumentException('This topic cannot be regraded because it does not have any questions');
+            }
+            const questions = _.keyBy(questionsFetch, 'id');
             logger.info(`${baseMessage()} finished getting questions`);
 
             const gradesWhere: sequelize.WhereAttributeHash = {
@@ -2284,6 +2293,54 @@ class CourseController {
             }), 'studentGradeId');
             logger.info(`Retro: Finished getting workbooks at ${performance.now() - startNow}ms`);
 
+            const userIds = grades.map(grade => grade.userId);
+            const topicOverrides = _.keyBy(await StudentTopicOverride.findAll({
+                where: {
+                    active: true,
+                    userId: {
+                        [sequelize.Op.in]: userIds
+                    },
+                    courseTopicContentId: topicId
+                }
+            }), 'userId');
+            logger.info(`${baseMessage()} Finished getting topic overrides`);
+
+            const questionOverridesFetch = await StudentTopicQuestionOverride.findAll({
+                where: {
+                    active: true,
+                    userId: {
+                        [sequelize.Op.in]: userIds
+                    },
+                    courseTopicQuestionId: {
+                        [sequelize.Op.in]: questionsFetch.map(question => question.id)
+                    },
+                }
+            });
+            logger.info(`${baseMessage()} Finished getting question overrides`);
+
+            const questionOverrides = questionOverridesFetch.reduce<{
+                [userId: number]: {
+                    [questionId: number]: StudentTopicQuestionOverride;
+                };
+            }>((previousValue, currentValue) => {
+                const questionId = currentValue.courseTopicQuestionId;
+                const userId = currentValue.userId;
+                previousValue[userId] = previousValue[userId] ?? {};
+                previousValue[userId][questionId] = previousValue[userId][questionId] ?? currentValue;
+                return previousValue;
+            }, {});
+
+            const gradeOverrides = _.keyByWithArrays(await StudentGradeOverride.findAll({
+                order: ['id'],
+                where: {
+                    active: true,
+                    studentGradeId: {
+                        [Sequelize.Op.in]: gradeIdsThatNeedRetro
+                    }
+                }
+            }), 'studentGradeId');
+            logger.info(`${baseMessage()} Finished getting grade overrides`);
+
             let gradeIndex: number | null = null;
             // using timeouts so it doesn't go indefinitely if there is a mistake, in theory I could add checks to break the timeout
             const progresstimeoutCallback = (): void => {
@@ -2316,7 +2373,10 @@ class CourseController {
                     studentGrade: grade,
                     workbooks: workbooksForGrade,
                     question: question,
-                    topic: topic
+                    topic: topic,
+                    topicOverride: topicOverrides[grade.userId] ?? null,
+                    questionOverride: questionOverrides[grade.userId]?.[question.id] ?? null,
+                    gradeOverrides: gradeOverrides[grade.id] ?? null
                 });
             });
         })
@@ -2330,7 +2390,7 @@ class CourseController {
                 clearTimeout(progressTimeoutHandle);
             }
             topic.retroStartedTime = null;
-            logger.info(`Retro: completed at ${performance.now() - startNow}ms`);
+            logger.info(`${baseMessage()} completed`);
             return topic.save();
         })
         .catch(err => logger.error('Unable to nullify topic.retroStartedTime', err));
@@ -2696,7 +2756,8 @@ class CourseController {
         workbooks,
         minDate,
         topicOverride,
-        questionOverride
+        questionOverride,
+        gradeOverrides
     }: ReGradeStudentGradeOptions): Promise<void> => {
         // Locked grades cannot be processed
         if (studentGrade.locked) {
@@ -2776,12 +2837,19 @@ class CourseController {
             studentGrade.firstAttempts = 0;
             studentGrade.latestAttempts = 0;
 
-            const gradeOverrides: StudentGradeOverride[] = await studentGrade.getOverrides({
-                order: ['id'],
-                where: {
-                    active: true
-                }
-            });
+            if (_.isUndefined(gradeOverrides)) {
+                gradeOverrides = await studentGrade.getOverrides({
+                    order: ['id'],
+                    where: {
+                        active: true
+                    }
+                });
+            }
+
+            if (_.isNull(gradeOverrides)) {
+                gradeOverrides = [];
+            }
+
 
             const workbooksAndOverrides: (StudentWorkbook | StudentGradeOverride)[] = [...workbooks, ...gradeOverrides];
             const sortedWorkbooksAndOverrides = workbooksAndOverrides.sort((first: StudentWorkbook | StudentGradeOverride, second: StudentWorkbook | StudentGradeOverride): number => {

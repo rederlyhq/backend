@@ -62,10 +62,6 @@ statusHandler({
             url: `${configurations.renderer.url}/version.txt`,
             crawl: true
         }, {
-            name: 'bulk-export-pdf',
-            url: `${configurations.bulkPdfExport.baseUrl}/export/utility/health`,
-            crawl: true    
-        }, {
             name: 'scheduler',
             url: `${configurations.scheduler.basePath}/health`,
             crawl: true
@@ -75,11 +71,11 @@ statusHandler({
             crawl: true
         }
     ],
-    // statusAccessibleOptions: [{
-    //     name: 'bulk-export-pdf',
-    //     url: `${configurations.bulkPdfExport.baseUrl}/export/utility/status`,
-    //     crawl: true
-    // }],
+    statusAccessibleOptions: [{
+        name: 'bulk-export-pdf',
+        url: `${configurations.bulkPdfExport.baseUrl}/export/utility/status`,
+        crawl: true
+    }],
     metaFetches: [{
         call: getMemoryStatistics,
         key: 'memory'

@@ -20,6 +20,7 @@ import { BucketDefFileResult, FindFilesDefFileResult } from '../../utilities/web
 import WebWorkDef from '@rederly/webwork-def-parser';
 import StudentEnrollment from '../../database/models/student-enrollment';
 import { TopicTypeFilters, ListCoursesFilters } from './course-controller';
+import StudentGradeOverride from '../../database/models/student-grade-override';
 
 export interface EnrollByCodeOptions {
     code: string;
@@ -612,8 +613,9 @@ export interface ReGradeStudentGradeOptions {
     question?: CourseWWTopicQuestion;
     workbooks?: Array<StudentWorkbook>;
     minDate?: Date;
-    topicOverride?: StudentTopicOverride;
-    questionOverride?: StudentTopicQuestionOverride;
+    topicOverride?: StudentTopicOverride | null;
+    questionOverride?: StudentTopicQuestionOverride | null;
+    gradeOverrides?: StudentGradeOverride[] | null;
 }
 
 export interface CanUserGradeAssessmentOptions {

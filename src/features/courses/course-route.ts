@@ -47,6 +47,11 @@ router.post('/:courseId/import-archive',
     // This is due to a typescript issue where the type mismatches extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, PostImportCourseArchiveRequest.body, PostImportCourseArchiveRequest.query>, _res: unknown, next: NextFunction) => {
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role === Role.STUDENT) {
+            throw new ForbiddenError('You do not have access to import an archive');
+        }
+
         if (_.isNil(req.file)) {
             throw new IllegalArgumentException('Missing file.');
         }
@@ -74,6 +79,11 @@ router.get('/statistics/units',
     authenticationMiddleware,
     validate(getStatisticsOnUnitsValidation),
     asyncHandler(async (req: RederlyExpressRequest<GetStatisticsOnUnitsRequest.params, unknown, GetStatisticsOnUnitsRequest.body, GetStatisticsOnUnitsRequest.query>, _res: Response, next: NextFunction) => {
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role === Role.STUDENT && (_.isNil(req.query.userId) || req.query.userId !== req.session?.userId)) {
+            throw new ForbiddenError('You do not have access to get course stats');
+        }
+
         const stats = await courseController.getStatisticsOnUnits({
             where: {
                 courseId: req.query.courseId,
@@ -95,6 +105,11 @@ router.get('/statistics/topics',
     authenticationMiddleware,
     validate(getStatisticsOnTopicsValidation),
     asyncHandler(async (req: RederlyExpressRequest<GetStatisticsOnTopicsRequest.params, unknown, GetStatisticsOnTopicsRequest.body, GetStatisticsOnTopicsRequest.query>, _res: Response, next: NextFunction) => {
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role === Role.STUDENT && (_.isNil(req.query.userId) || req.query.userId !== req.session?.userId)) {
+            throw new ForbiddenError('You do not have access to get unit stats');
+        }
+
         try {
             const stats = await courseController.getStatisticsOnTopics({
                 where: {
@@ -121,6 +136,11 @@ router.get('/statistics/questions',
     authenticationMiddleware,
     validate(getStatisticsOnQuestionsValidation),
     asyncHandler(async (req: RederlyExpressRequest<GetStatisticsOnQuestionsRequest.params, unknown, GetStatisticsOnQuestionsRequest.body, GetStatisticsOnQuestionsRequest.query>, _res: Response, next: NextFunction) => {
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role === Role.STUDENT && (_.isNil(req.query.userId) || req.query.userId !== req.session?.userId)) {
+            throw new ForbiddenError('You do not have access to get topic stats');
+        }
+
         try {
             const stats = await courseController.getStatisticsOnQuestions({
                 where: {
@@ -148,6 +168,11 @@ router.post('/def',
     paidMiddleware('Importing a topic'),
     fileUpload.single('def-file'),
     asyncHandler(async (req: RederlyExpressRequest<CreateQuestionsForTopicFromDefFileRequest.params, unknown, CreateQuestionsForTopicFromDefFileRequest.body, unknown>, _res: Response, next: NextFunction) => {
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role === Role.STUDENT) {
+            throw new ForbiddenError('You do not have access to import a def file.');
+        }
+
         const query = req.query as CreateQuestionsForTopicFromDefFileRequest.query;
         const results = await courseController.createQuestionsForTopicFromDefFileContent({
             webworkDefFileContent: req.file.buffer.toString(),
@@ -193,6 +218,11 @@ router.post('/unit',
     validate(createCourseUnitValidation),
     paidMiddleware('Adding units'),
     asyncHandler(async (req: RederlyExpressRequest<CreateCourseUnitRequest.params, unknown, CreateCourseUnitRequest.body, CreateCourseUnitRequest.query>, _res: Response, next: NextFunction) => {
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role === Role.STUDENT) {
+            throw new ForbiddenError('You do not have access to add a unit.');
+        }
+
         try {
             const newUnit = await courseController.createUnit({
                 ...req.body
@@ -208,7 +238,11 @@ router.post('/topic',
     authenticationMiddleware,
     validate(createCourseTopicValidation),
     paidMiddleware('Adding topics'),
-    asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role === Role.STUDENT) {
+            throw new ForbiddenError('You do not have access to edit a topic.');
+        }
         const newTopic = await courseController.createTopic({
             ...req.body
         });
@@ -376,6 +410,11 @@ router.post('/topic/:topicId/startExport',
     // This is due to a typescript issue where the type mismatches extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, BulkExportRequest.body, BulkExportRequest.query>, _res: Response, next: NextFunction) => {
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role === Role.STUDENT) {
+            throw new ForbiddenError('You do not have access to start an export.');
+        }
+
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
         }
@@ -427,6 +466,10 @@ router.put('/topic/extend',
     paidMiddleware('Modifying topic settings'),
     asyncHandler(
         async (req: RederlyExpressRequest<ExtendCourseTopicForUserRequest.params, ExtendCourseTopicForUserRequest.body, ExtendCourseTopicForUserRequest.query, unknown>, _res: Response, next: NextFunction) => {
+            const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+            if (role === Role.STUDENT) {
+                throw new ForbiddenError('You do not have access to edit topic extensions.');
+            }
             const query = req.query as ExtendCourseTopicForUserRequest.query;
             const body = req.body as ExtendCourseTopicForUserRequest.body;
 
@@ -449,6 +492,10 @@ router.put('/topic/:id/regrade',
     validate(regradeCourseTopicValidation),
     paidMiddleware('Regrading topic'),
     asyncHandler(async (req: RederlyExpressRequest, _res: Response, next: NextFunction) => {
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role === Role.STUDENT) {
+            throw new ForbiddenError('You do not have access to regrade this topic.');
+        }
         const topicId = req.params.id as unknown as number;
         const topic = await courseController.regradeNeededGradesOnTopic({
             topicId: topicId,
@@ -478,6 +525,11 @@ router.get('/topic/:id/regrade',
     // This is due to a typescript issue where the type mismatches extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseTopicRequest.body, UpdateCourseTopicRequest.query>, _res: Response, next: NextFunction) => {
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role === Role.STUDENT) {
+            throw new ForbiddenError('You do not have access to add a topic.');
+        }
+
         const params = req.params as UpdateCourseTopicRequest.params;
         const updatesResult = await courseController.updateTopic({
             where: {
@@ -580,6 +632,11 @@ router.delete('/unit/:id',
     // This is due to a typescript issue where the type mismatches extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, DeleteCourseUnitRequest.body, DeleteCourseUnitRequest.query>, _res: Response, next: NextFunction) => {
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role === Role.STUDENT) {
+            throw new ForbiddenError('You do not have access to delete a unit.');
+        }
+
         const params = req.params as DeleteCourseUnitRequest.params;
         try {
             const updatesResult = await courseController.softDeleteUnits({
@@ -602,6 +659,11 @@ router.delete('/topic/:id',
     // This is due to a typescript issue where the type mismatches extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, DeleteCourseTopicRequest.body, DeleteCourseTopicRequest.query>, _res: Response, next: NextFunction) => {
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role === Role.STUDENT) {
+            throw new ForbiddenError('You do not have access to delete a topic.');
+        }
+
         const params = req.params as DeleteCourseTopicRequest.params;
         try {
             const updatesResult = await courseController.softDeleteTopics({
@@ -624,6 +686,11 @@ router.delete('/question/:id',
     // This is due to a typescript issue where the type mismatches extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, DeleteCourseQuestionRequest.body, DeleteCourseQuestionRequest.query>, _res: Response, next: NextFunction) => {
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role === Role.STUDENT) {
+            throw new ForbiddenError('You do not have access to delete a question.');
+        }
+
         const params = req.params as DeleteCourseQuestionRequest.params;
         try {
             const updatesResult = await courseController.softDeleteQuestions({
@@ -646,6 +713,11 @@ router.put('/unit/:id',
     // This is to work around "extractMap" error
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseUnitRequest.body, UpdateCourseUnitRequest.query>, _res: Response, next: NextFunction) => {
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role === Role.STUDENT) {
+            throw new ForbiddenError('You do not have access to edit a unit.');
+        }
+
         try {
             const params = req.params as UpdateCourseUnitRequest.params;
             const updatesResult = await courseController.updateCourseUnit({
@@ -725,6 +797,11 @@ router.put('/question/extend',
     // This is due to a typescript issue where the type mismatches extractMap
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, ExtendCourseTopicQuestionRequest.body, unknown, any, unknown>, _res: Response, next: NextFunction) => {
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role === Role.STUDENT) {
+            throw new ForbiddenError('You do not have access to edit question extensions.');
+        }
+
         const query = req.query as ExtendCourseTopicQuestionRequest.query;
         const body = req.body as ExtendCourseTopicQuestionRequest.body;
 
@@ -746,6 +823,11 @@ router.put('/question/:id',
     // This is to work around "extractMap" error
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, UpdateCourseTopicQuestionRequest.body, UpdateCourseTopicQuestionRequest.query>, _res: Response, next: NextFunction) => {
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role === Role.STUDENT) {
+            throw new ForbiddenError('You do not have access to edit a question.');
+        }
+
         const params = req.params as UpdateCourseTopicQuestionRequest.params;
         const updatesResult = await courseController.updateQuestion({
             where: {
@@ -802,6 +884,11 @@ router.post('/question',
     validate(createCourseTopicQuestionValidation),
     paidMiddleware('Adding questions'),
     asyncHandler(async (req: RederlyExpressRequest<CreateCourseTopicQuestionRequest.params, unknown, CreateCourseTopicQuestionRequest.body, CreateCourseTopicQuestionRequest.query>, _res: Response, next: NextFunction) => {
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role === Role.STUDENT) {
+            throw new ForbiddenError('You do not have access to add a question.');
+        }
+
         const newQuestion = await courseController.addQuestion({
             question: {
                 ...req.body
@@ -1447,7 +1534,13 @@ router.get('/:id',
 router.post('/enroll',
     authenticationMiddleware,
     validate(enrollInCourseValidation),
+    paidMiddleware('Enrolling users'),
     asyncHandler(async (req: RederlyExpressRequest<EnrollInCourseRequest.params, unknown, EnrollInCourseRequest.body, EnrollInCourseRequest.query>, _res: Response, next: NextFunction) => {
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role === Role.STUDENT) {
+            throw new ForbiddenError('You do not have access to add a user.');
+        }
+
         try {
             if (_.isNil(req.body.userId) === _.isNil(req.body.studentEmail)) {
                 throw new IllegalArgumentException('Enrollment requires either userId or studentEmail, not both, not neither');
@@ -1514,6 +1607,11 @@ router.delete('/enroll',
     validate(deleteEnrollmentValidation),
     paidMiddleware('Un-enrolling users'),
     asyncHandler(async (req: RederlyExpressRequest<DeleteEnrollmentRequest.params, unknown, DeleteEnrollmentRequest.body, DeleteEnrollmentRequest.query>, _res: Response, next: NextFunction) => {
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role === Role.STUDENT) {
+            throw new ForbiddenError('You do not have access to drop this user.');
+        }
+
         try {
             const success = await courseController.softDeleteEnrollment({
                 ...req.body,

@@ -16,6 +16,9 @@ export interface CourseTopicContentInterface {
     partialExtend: boolean;
     createdAt: Date;
     updatedAt: Date;
+    originatingTopicContentId: number;
+    gradeIdsThatNeedRetro: number[];
+    retroStartedTime: Date | null;
 }
 
 export default class CourseTopicContent extends Model implements CourseTopicContentInterface {
@@ -26,6 +29,8 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
     public name!: string;
     public active!: boolean;
     public contentOrder!: number;
+    public gradeIdsThatNeedRetro!: number[];
+    public retroStartedTime!: Date | null;
 
     public startDate!: Date;
     public endDate!: Date;
@@ -40,6 +45,8 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
 
     // This is the count of errors in problems associated with this topic.
     public errors!: number;
+
+    public originatingTopicContentId!: number;
 
     public getCurriculumTopicContent!: BelongsToGetAssociationMixin<CurriculumTopicContent>;
     public getUnit!: BelongsToGetAssociationMixin<CourseUnitContent>;
@@ -99,6 +106,12 @@ export default class CourseTopicContent extends Model implements CourseTopicCont
             foreignKey: 'curriculumTopicContentId',
             targetKey: 'id',
             as: 'curriculumTopicContent'
+        });
+
+        CourseTopicContent.belongsTo(CourseTopicContent, {
+            foreignKey: 'originatingTopicContentId',
+            targetKey: 'id',
+            as: 'originatingTopicContent'
         });
 
         CourseTopicContent.belongsTo(CourseUnitContent, {
@@ -219,6 +232,12 @@ CourseTopicContent.init({
         allowNull: true,
         defaultValue: null,
     },
+    originatingTopicContentId: {
+        field: 'originating_topic_content_id',
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: null,
+    },
     workbookCount: {
         type: DataTypes.VIRTUAL,
         allowNull: true,
@@ -226,6 +245,18 @@ CourseTopicContent.init({
     versionCount: {
         type: DataTypes.VIRTUAL,
         allowNull: true,
+    },
+    gradeIdsThatNeedRetro: {
+        field: 'course_topic_content_grade_ids_that_need_retro',
+        type: DataTypes.ARRAY(DataTypes.INTEGER),
+        allowNull: false,
+        defaultValue: [],
+    },
+    retroStartedTime: {
+        field: 'course_topic_content_retro_started_time',
+        type: DataTypes.DATE,
+        allowNull: true,
+        defaultValue: null,
     },
 }, {
     tableName: 'course_topic_content',

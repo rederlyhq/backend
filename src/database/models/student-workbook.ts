@@ -21,6 +21,7 @@ export interface StudentWorkbookInterface {
     result: number;
     time: Date;
     wasLate: boolean;
+    wasEarly: boolean;
     wasExpired: boolean;
     wasAfterAttemptLimit: boolean;
     wasLocked: boolean;
@@ -31,6 +32,8 @@ export interface StudentWorkbookInterface {
 
     // This is a Quill Delta object, which we don't need to manipulate here.
     feedback: unknown;
+
+    credited: boolean;
 }
 
 export default class StudentWorkbook extends Model implements StudentWorkbookInterface {
@@ -48,13 +51,15 @@ export default class StudentWorkbook extends Model implements StudentWorkbookInt
     public result!: number
     public time!: Date;
     public wasLate!: boolean;
+    public wasEarly!: boolean;
     public wasExpired!: boolean;
     public wasAfterAttemptLimit!: boolean;
     public wasLocked!: boolean;
     public wasAutoSubmitted!: boolean;
     
     // This is a Quill Delta object, which we don't need to manipulate here.
-    feedback: unknown;
+    public feedback!: unknown;
+    public credited!: boolean;
 
     public getStudentGrade!: BelongsToGetAssociationMixin<StudentGrade>;
     public getUser!: BelongsToGetAssociationMixin<User>;
@@ -160,11 +165,23 @@ StudentWorkbook.init({
         allowNull: false,
         defaultValue: false
     },
+    wasEarly: {
+        field: 'student_workbook_was_early',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+    },
     feedback: {
         field: 'student_workbook_feedback',
         type: DataTypes.JSONB,
         allowNull: true,
         defaultValue: null,
+    },
+    credited: {
+        field: 'student_workbook_credited',
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
     },
 }, {
     tableName: 'student_workbook',

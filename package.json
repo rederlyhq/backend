@@ -1,6 +1,6 @@
 {
   "name": "backend",
-  "version": "1.10.13",
+  "version": "1.11.4",
   "description": "",
   "main": "index.js",
   "dependencies": {
@@ -108,7 +108,7 @@
     "run:build": "node ts-built/index.js",
     "sequelize": "npm run build && sequelize",
     "sequelize:migrations": "npm run sequelize -- db:migrate",
-    "sequelize:migrations:devundo": "npm run sequelize -- db:migrate:undo:all --to 20210125141500-bulk-export.js",
+    "sequelize:migrations:devundo": "npm run sequelize -- db:migrate:undo:all --to 20210218213139-description-and-feedback.js",
     "sequelize:built:migrations": "sequelize -- db:migrate",
     "lint": "eslint src/ --ext .ts",
     "clean": "node ./utility-scripts/clean.js",

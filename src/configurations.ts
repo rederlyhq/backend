@@ -145,6 +145,7 @@ const configurations = {
     },
     db: {
         host: readStringValue('DB_HOST', 'localhost'),
+        port: readIntValue('DB_PORT', 5432),
         name: readStringValue('DB_NAME', 'rederly'),
         user: readStringValue('DB_USER', 'postgres'),
         password: readStringValue('DB_PASSWORD', 'password'),
@@ -207,6 +208,8 @@ const configurations = {
         presignedUrlBasePath: readStringValue('ATTACHMENTS_PRESIGNED_URL_BASE_PATH', ''),
         baseUrl: readStringValue('ATTACHMENTS_BASE_URL', ''),
         presignedUrlTimeout: readIntValue('ATTACHMENTS_PRESIGNED_URL_TIMEOUT', 60000),
+        // Uploads use the same Base URL as attachments.
+        uploadsPresignedUrlBasePath: readStringValue('UPLOADS_PRESIGNED_URL_BASE_PATH', ''),
     },
     importer: {
         missingFileThreshold: readIntValue('IMPORTER_MISSING_FILE_THRESHOLD', 10),

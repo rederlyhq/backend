@@ -47,6 +47,12 @@ export namespace UpdateCourseTopicRequest {
     export type body = Joi.extractType<typeof validations.updateCourseTopicValidation.body>;
 };
 
+export namespace RegradeCourseTopicRequest {
+    export type params = Joi.extractType<typeof validations.regradeCourseTopicValidation.params>;
+    export type query = Joi.extractType<typeof validations.regradeCourseTopicValidation.query>;
+    export type body = Joi.extractType<typeof validations.regradeCourseTopicValidation.body>;
+};
+
 export namespace ExtendCourseTopicForUserRequest {
     export type params = Joi.extractType<typeof validations.extendCourseTopicForUserValidation.params>;
     export type query = Joi.extractType<typeof validations.extendCourseTopicForUserValidation.query>;
@@ -357,4 +363,34 @@ export namespace PostFeedbackRequest {
     export type params = Joi.extractType<typeof validations.postFeedbackValidation.params>;
     export type query = Joi.extractType<typeof validations.postFeedbackValidation.query>;
     export type body = Joi.extractType<typeof validations.postFeedbackValidation.body>;
+};
+
+export namespace PostUploadWorkbookFeedbackRequest {
+    export type params = Joi.extractType<typeof validations.postUploadWorkbookFeedbackValidation.params>;
+    export type query = Joi.extractType<typeof validations.postUploadWorkbookFeedbackValidation.query>;
+    export type body = Joi.extractType<typeof validations.postUploadWorkbookFeedbackValidation.body>;
+};
+
+export namespace PostUploadTopicFeedbackRequest {
+    export type params = Joi.extractType<typeof validations.postUploadTopicFeedbackValidation.params>;
+    export type query = Joi.extractType<typeof validations.postUploadTopicFeedbackValidation.query>;
+    export type body = Joi.extractType<typeof validations.postUploadTopicFeedbackValidation.body>;
+};
+
+export namespace PostUploadTopicDescriptionRequest {
+    export type params = Joi.extractType<typeof validations.postUploadTopicDescriptionValidation.params>;
+    export type query = Joi.extractType<typeof validations.postUploadTopicDescriptionValidation.query>;
+    export type body = Joi.extractType<typeof validations.postUploadTopicDescriptionValidation.body>;
+};
+
+export namespace PostTopicFeedbackRequest {
+    export type params = Joi.extractType<typeof validations.postTopicFeedbackValidation.params>;
+    export type query = Joi.extractType<typeof validations.postTopicFeedbackValidation.query>;
+    export type body = Joi.extractType<typeof validations.postTopicFeedbackValidation.body>;
+};
+
+export namespace GetTopicFeedbackRequest {
+    export type params = Joi.extractType<typeof validations.getTopicFeedbackValidation.params>;
+    export type query = Joi.extractType<typeof validations.getTopicFeedbackValidation.query>;
+    export type body = Joi.extractType<typeof validations.getTopicFeedbackValidation.body>;
 };

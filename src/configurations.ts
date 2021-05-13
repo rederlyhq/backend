@@ -220,6 +220,19 @@ const configurations = {
     libraryBrowser: {
         baseUrl: readStringValue('LIBRARY_BROWSER_BASE_URL', 'http://localhost:3004')
     },
+    lti: {
+        schema: readStringValue('LTI_SCHEMA', 'LTI'),
+        secret: readStringValue('LTI_SECRET', 'This should really be custom.'),
+        dynName: readStringValue('LTI_DYN_NAME', 'Rederly'),
+        dynUrl: readStringValue('LTI_DYN_URL', 'http://app.rederly.com/backend-api/lti'),
+        dynLogo: readStringValue('LTI_DYN_LOGO', ''),
+        dynDescription: readStringValue('LTI_DYN_DESCRIPTION', 'This is an LTI Tool based off of Rederly.'),
+        dynAutoActivate: readBooleanValue('LTI_DYN_AUTOACTIVATE', false),
+        useSecureCookies: readBooleanValue('LTI_SECURE_COOKIES', true),
+        sameSiteCookiesDomain: readStringValue('LTI_SAMESITE_COOKIES_DOMAIN', 'https://app.rederly.com'),
+        devMode: readBooleanValue('LTI_DEV_MODE', false),
+        
+    },
     loadPromise: new Promise<void>((resolve, reject) => {
         // Avoid cyclic dependency by deferring the logging until after all the imports are done
         setTimeout(() => {

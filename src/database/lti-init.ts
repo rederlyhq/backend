@@ -24,7 +24,6 @@ lti.setup(configurations.lti.secret,
         plugin: scopedLTIDB,
     },
     {
-        // TODO: Remove these in production?
         cookies: {
             secure: configurations.lti.useSecureCookies,
             sameSite: configurations.lti.sameSiteCookiesDomain,
@@ -42,13 +41,6 @@ lti.setup(configurations.lti.secret,
         }
     }
 );
-
-// Set lti launch callback
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-// lti.onConnect((token: any, req: any, res: any) => {
-//     console.log(token);
-//     return res.send('It\'s alive!');
-// });
 
 lti.deploy({serverless: true}).then(async ()=>{
     if (configurations.lti.devMode) {

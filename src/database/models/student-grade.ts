@@ -22,6 +22,10 @@ export interface StudentGradeInterface {
     locked: boolean;
     createdAt: Date;
     updatedAt: Date;
+
+    lastInfluencingAttemptId: number | null;
+    lastInfluencingLegalAttemptId: number | null;
+    lastInfluencingCreditedAttemptId: number | null;
 }
 
 export default class StudentGrade extends Model implements StudentGradeInterface {

@@ -1,5 +1,10 @@
 import * as _ from 'lodash';
 
+interface AnyKeyDictionary<ItemType> {
+    [key: string]: ItemType[];
+    [key: number]: ItemType[];
+};
+
 // https://stackoverflow.com/a/49942988
 declare module 'lodash' {
     interface LoDashStatic {
@@ -8,6 +13,10 @@ declare module 'lodash' {
         isSomething<T>(value: T | null | undefined): value is T;
         pickWithArrays(obj: unknown, ...paths: string[]): unknown;
         removeArrayIndexesFromDeepKeys(paths: string[]): string[];
+        diffObject<BaseObjectType, ObjectToCompareType>(baseObject: BaseObjectType, objectToCompare: ObjectToCompareType): [keyof ObjectToCompareType, unknown][];
+        assignEntries <ObjectType>(obj: ObjectType, changes: [string | number | symbol, unknown][]): ObjectType;
+        assignChanges <ObjectType, ChangesType>(obj: ObjectType, changes: ChangesType): ObjectType;
+        keyByWithArrays <ItemType extends object>(arr: Array<ItemType>, key: keyof ItemType): AnyKeyDictionary<ItemType>;
     }
 }
 
@@ -66,5 +75,54 @@ _.mixin({
             }
         }
         return result;
-    }
+    },
+    diffObject: <BaseObjectType, ObjectToCompareType>(baseObject: BaseObjectType, objectToCompare: ObjectToCompareType): [keyof ObjectToCompareType, unknown][] => {
+        return _.differenceWith(Object.entries(objectToCompare), Object.entries(baseObject), (a, b) => {
+            return a[0] === b[0] && _.isEqual(a[1], b[1]);
+        }) as [keyof ObjectToCompareType, unknown][];
+    },
+    assignEntries: <ObjectType>(obj: ObjectType, changes: [string | number | symbol, unknown][]): ObjectType => {
+        changes.forEach(change => {
+            // For assign it becomes difficult to be type safe
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (obj as any)[change[0]] = change[1];
+        });
+        return obj;
+    },
+    /*
+    Example
+    ```
+    const result = _.assignChanges({
+        a: 1,
+        b: 2,
+        c: 3,
+    }, {
+        a: 1,
+        b: 4,
+        d: 5
+    });
+    ```
+    Expected result
+    ```
+    a 1
+    b 4
+    c 3
+    d 5
+    ```
+    */
+    assignChanges: <ObjectType, ChangesType>(obj: ObjectType, changes: ChangesType): ObjectType => {
+        const actualChanges = _.diffObject(obj, changes);
+        return _.assignEntries(obj, actualChanges);
+    },
+    keyByWithArrays: <ItemType extends object>(arr: Array<ItemType>, key: keyof ItemType): AnyKeyDictionary<ItemType> => {
+        return _.reduce(arr, (agg: AnyKeyDictionary<ItemType>, n: ItemType): AnyKeyDictionary<ItemType> => {
+            const aggKey = n[key] as unknown as string | number;
+            if (_.isNil(agg[aggKey])) {
+                agg[aggKey] = [n];
+            } else {
+                agg[aggKey].push(n);
+            }
+            return agg;
+        }, {});
+    }    
 });

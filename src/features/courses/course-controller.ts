@@ -10,7 +10,7 @@ import CourseWWTopicQuestion, { CourseWWTopicQuestionInterface, CourseTopicQuest
 import rendererHelper, { GetProblemParameters, OutputFormat, RendererResponse } from '../../utilities/renderer-helper';
 import { stripTarGZExtension } from '../../utilities/file-helper';
 import StudentWorkbook from '../../database/models/student-workbook';
-import StudentGrade from '../../database/models/student-grade';
+import StudentGrade, { StudentGradeInterface } from '../../database/models/student-grade';
 import StudentGradeInstance from '../../database/models/student-grade-instance';
 import User from '../../database/models/user';
 import logger from '../../utilities/logger';
@@ -32,7 +32,7 @@ import Role from '../permissions/roles';
 import moment = require('moment');
 import RederlyExtendedError from '../../exceptions/rederly-extended-error';
 import { calculateGrade, WillGetCreditReason, WillTrackAttemptReason } from '../../utilities/grading-helper';
-import { useDatabaseTransaction } from '../../utilities/database-helper';
+import { assignModelChanges, useDatabaseTransaction } from '../../utilities/database-helper';
 import StudentTopicOverride, { StudentTopicOverrideInterface } from '../../database/models/student-topic-override';
 import StudentTopicQuestionOverride, { StudentTopicQuestionOverrideInterface } from '../../database/models/student-topic-question-override';
 import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
@@ -64,6 +64,7 @@ import qs = require('qs');
 import ForbiddenError from '../../exceptions/forbidden-error';
 import appSequelize from '../../database/app-sequelize';
 import { TopicTypeLookup } from '../../database/models/topic-type';
+import { performance } from 'perf_hooks';
 
 // When changing to import it creates the following compiling error (on instantiation): This expression is not constructable.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -81,6 +82,11 @@ export enum ListCoursesFilters {
     ALL = 'ALL',
     ACTIVE = 'ACTIVE',
     PAST = 'PAST'
+}
+
+interface ChangedValue<T> {
+    oldValue: T;
+    newValue: T;
 }
 
 class CourseController {
@@ -145,7 +151,7 @@ class CourseController {
         });
     }
 
-    getTopicById({id, userId, includeQuestions, includeWorkbookCount}: {id: number; userId?: number; includeQuestions?: boolean; includeWorkbookCount?: boolean}): Promise<CourseTopicContent> {
+    getTopicById({id, userId, includeQuestions, includeWorkbookCount, includeGradeIdsThatNeedRegrade}: {id: number; userId?: number; includeQuestions?: boolean; includeWorkbookCount?: boolean; includeGradeIdsThatNeedRegrade?: boolean}): Promise<CourseTopicContent> {
         const include = [];
         const subInclude = [];
         const questionSubInclude = [];
@@ -197,6 +203,21 @@ class CourseController {
                     as: 'workbooks',
                     required: false,
                     where: {
+                        active: true,
+                    },
+                });
+            }
+
+            if (includeGradeIdsThatNeedRegrade) {
+                questionSubInclude.push({
+                    model: StudentGrade,
+                    as: 'grades',
+                    required: false,
+                    attributes: ['id'],
+                    where: {
+                        [sequelize.Op.and]: [
+                            sequelize.literal(`"questions->grades"."${StudentGrade.rawAttributes[nameof<StudentGrade>('id')].field ?? ''}"= ANY("${CourseTopicContent.rawAttributes[nameof<CourseTopicContent>('gradeIdsThatNeedRetro')].field ?? ''}")`)
+                        ],
                         active: true,
                     },
                 });
@@ -578,6 +599,7 @@ class CourseController {
                             topicTypeId: originatingTopic.topicTypeId,
                             name: originatingTopic.name,
                             contentOrder: originatingTopic.contentOrder,
+                            description: originatingTopic.description,
 
                             startDate: createdCourse.end,
                             endDate: createdCourse.end,
@@ -812,6 +834,11 @@ class CourseController {
             id: options.where.id,
         });
 
+        if (_.isSomething(existingTopic.retroStartedTime)) {
+            // Really should just be bad request :shrug:
+            throw new IllegalArgumentException('This topic is currently being regraded. Please try again later.');
+        }
+
         const topicIsChangingTypes = !_.isNil(options.updates.topicTypeId) && (existingTopic.topicTypeId !== options.updates.topicTypeId);
         if (topicIsChangingTypes && await this.checkIfTopicIsUsed(existingTopic)) {
             throw new IllegalArgumentException('Topic type cannot be changed. Students have begun working on this topic.');
@@ -858,17 +885,30 @@ class CourseController {
 
             if (updateCourseTopicResult.updatedCount > 0) {
                 const topic = updateCourseTopicResult.updatedRecords[0];
-                await this.reGradeTopic({
-                    topic: topic,
-                    // We will need to fetch these on a per user basis
-                    topicOverride: undefined,
-                    userId: undefined,
-                    skipContext: {
-                        originalTopic: originalTopic,
-                        newTopic: topic,
-                        skipIfPossible: true,
-                    }
-                });
+                // Skip exams
+                if (topic.topicTypeId === TopicTypeLookup.EXAM) {
+                    return resultantUpdates;
+                }
+
+                const gradesThatNeedRegrade = (await this.getGradesThatNeedRegradeForTopicChange({
+                    topicId: topic.id,
+                    dates: {
+                        startDate: {
+                            oldValue: originalTopic.startDate,
+                            newValue: topic.startDate,
+                        },
+                        endDate: {
+                            oldValue: originalTopic.endDate,
+                            newValue: topic.endDate,
+                        },
+                        deadDate: {
+                            oldValue: originalTopic.deadDate,
+                            newValue: topic.deadDate,
+                        },
+                    },
+                })).map(grade => grade.id);
+                topic.gradeIdsThatNeedRetro = [...new Set([...topic.gradeIdsThatNeedRetro, ...gradesThatNeedRegrade])];
+                await topic.save();
             }
             return resultantUpdates;
         });
@@ -876,29 +916,47 @@ class CourseController {
 
     async extendTopicForUser(options: ExtendTopicForUserOptions): Promise<{extendTopicResult: UpsertResult<StudentTopicOverride>; extendTopicAssessmentResult: UpsertResult<StudentTopicAssessmentOverride>}> {
         return useDatabaseTransaction(async () =>  {
+            const topic = await courseRepository.getCourseTopic({
+                id: options.where.courseTopicContentId
+            });
+
+            if (_.isSomething(topic.retroStartedTime)) {
+                // Really should just be bad request :shrug:
+                throw new IllegalArgumentException('This topic is currently being regraded. Please try again later.');
+            }
+            
             const extendTopicResult = await courseRepository.extendTopicByUser(options);
             const extendTopicAssessmentResult = await courseRepository.extendTopicAssessmentByUser(options);
             if (extendTopicResult.updatedRecords.length > 0) {
-                const topic = await courseRepository.getCourseTopic({
-                    id: options.where.courseTopicContentId
-                });
                 const newOverride = extendTopicResult.updatedRecords[0];
                 const originalOverride: StudentTopicOverrideInterface = extendTopicResult.original as StudentTopicOverrideInterface;
 
                 const originalTopic: CourseTopicContentInterface = topic.getWithOverrides(originalOverride);
                 const newTopic: CourseTopicContentInterface = topic.getWithOverrides(newOverride);
 
-                await this.reGradeTopic({
-                    topic,
-                    topicOverride: newOverride,
-                    // We are only overriding for one user so filter the results by that
-                    userId: newOverride.userId,
-                    skipContext: {
-                        skipIfPossible: true,
-                        originalTopic,
-                        newTopic,
-                    }
-                });
+                // Skip exams
+                if (topic.topicTypeId !== TopicTypeLookup.EXAM) {
+                    const gradesThatNeedRegrade = (await this.getGradesThatNeedRegradeForTopicChange({
+                        topicId: topic.id,
+                        dates: {
+                            startDate: {
+                                oldValue: originalTopic.startDate,
+                                newValue: newTopic.startDate,
+                            },
+                            endDate: {
+                                oldValue: originalTopic.endDate,
+                                newValue: newTopic.endDate,
+                            },
+                            deadDate: {
+                                oldValue: originalTopic.deadDate,
+                                newValue: newTopic.deadDate,
+                            },
+                        },
+                        userId: options.where.userId,
+                    })).map(grade => grade.id);
+                    topic.gradeIdsThatNeedRetro = [...new Set([...topic.gradeIdsThatNeedRetro, ...gradesThatNeedRegrade])];
+                    await topic.save();
+                }
             }
             return {
                 extendTopicResult,
@@ -1305,6 +1363,12 @@ class CourseController {
             });
             const originalQuestion = existingQuestion.get({ plain: true }) as CourseWWTopicQuestionInterface;
 
+            const topic = await existingQuestion.getTopic();
+            if (_.isSomething(topic.retroStartedTime)) {
+                // Really should just be bad request :shrug:
+                throw new IllegalArgumentException('This topic is currently being regraded. Please try again later.');
+            }            
+
             // This is a set of all update results as they come in, since there are 5 updates that occur this will have 5 elements
             let updatesResults: UpdateResult<CourseWWTopicQuestion>[] = [];
             if (!_.isNil(options.updates.problemNumber)) {
@@ -1338,14 +1402,26 @@ class CourseController {
             if (updateQuestionResult.updatedCount > 0) {
                 const question = updateQuestionResult.updatedRecords[0];
                 const newQuestion = question.get({ plain: true }) as CourseWWTopicQuestionInterface;
-                await this.reGradeQuestion({
-                    question,
-                    skipContext: {
-                        skipIfPossible: true,
-                        originalQuestion,
-                        newQuestion,
+                // Skip exams
+                if (topic.topicTypeId === TopicTypeLookup.EXAM) {
+                    return resultantUpdates;
+                }
+
+                const gradesThatNeedRegrade = (await this.getGradesThatNeedRegradeForQuestionChange({
+                    questionId: question.id,
+                    numAttempts: {
+                        oldValue: originalQuestion.maxAttempts,
+                        newValue: newQuestion.maxAttempts
                     }
+                })).map(grade => grade.id);
+
+                assignModelChanges(topic, {
+                    gradeIdsThatNeedRetro: [...new Set([...topic.gradeIdsThatNeedRetro, ...gradesThatNeedRegrade])]
                 });
+
+                if (topic.changed()) {
+                    await topic.save();
+                }
             }
             return resultantUpdates;
         });
@@ -1554,6 +1630,8 @@ class CourseController {
                     // Currently, group imports are only supported by archive and fail completely if there are any bad paths.
                     // Thus, at this point, no errors are available to be set for courseQuestionAssessmentInfo.
 
+                    // Required for stress playground, given timing holding off on small refactor
+                    // const { question } = 
                     const question = await this.addQuestion({
                         question: {
                             // active: true,
@@ -1603,6 +1681,8 @@ class CourseController {
                         await topic.increment('errors');
                     }
 
+                    // Required for stress playground, given timing holding off on small refactor
+                    // const { question } = 
                     const question = await this.addQuestion({
                         question: {
                             // active: true,
@@ -1630,14 +1710,22 @@ class CourseController {
             });
         });
     }
-
+    
+    // Required for stress playground, given timing holding off on small refactor
+    // async addQuestion(options: AddQuestionOptions): Promise<{ question: CourseWWTopicQuestion; grades: StudentGrade[] }> {
     async addQuestion(options: AddQuestionOptions): Promise<CourseWWTopicQuestion> {
         return await useDatabaseTransaction(async () => {
             const result = await this.createQuestion(options.question);
+            // const grades = 
             await this.createGradesForQuestion({
                 questionId: result.id,
                 userIds: options.userIds
             });
+            // Required for stress playground, given timing holding off on small refactor
+            // return {
+            //     question: result,
+            //     grades: grades
+            // };
             return result;
         });
     }
@@ -1695,27 +1783,34 @@ class CourseController {
 
     async extendQuestionForUser(options: ExtendTopicQuestionForUserOptions): Promise<UpsertResult<StudentTopicQuestionOverride>> {
         return useDatabaseTransaction(async () =>  {
+            const question = await courseRepository.getQuestion({
+                id: options.where.courseTopicQuestionId
+            });
+            const topic = await question.getTopic();
+            if (_.isSomething(topic.retroStartedTime)) {
+                // Really should just be bad request :shrug:
+                throw new IllegalArgumentException('This topic is currently being regraded. Please try again later.');
+            }            
             const result = await courseRepository.extendTopicQuestionByUser(options);
             if (result.updatedRecords.length > 0) {
-                const question = await courseRepository.getQuestion({
-                    id: options.where.courseTopicQuestionId
-                });
                 const originalOverride: StudentTopicQuestionOverrideInterface = result.original as StudentTopicQuestionOverrideInterface;
                 const newOverride = result.updatedRecords[0];
                 // Since only the override is changing the question would be the same except the overrides
                 const originalQuestion: CourseWWTopicQuestionInterface  = question.getWithOverrides(originalOverride);
                 const newQuestion: CourseWWTopicQuestionInterface  = question.getWithOverrides(newOverride);
-                await this.reGradeQuestion({
-                    question,
-                    // We are only overriding for one user so filter the results by that
-                    userId: newOverride.userId,
-                    questionOverride: newOverride,
-                    skipContext: {
-                        skipIfPossible: true,
-                        originalQuestion,
-                        newQuestion,
-                    }
-                });
+                // Skip exams
+                if (topic.topicTypeId !== TopicTypeLookup.EXAM) {
+                    const gradesThatNeedRegrade = (await this.getGradesThatNeedRegradeForQuestionChange({
+                        questionId: question.id,
+                        numAttempts: {
+                            oldValue: originalQuestion.maxAttempts,
+                            newValue: newQuestion.maxAttempts
+                        },
+                        userId: options.where.userId
+                    })).map(grade => grade.id);
+                    topic.gradeIdsThatNeedRetro = [...new Set([...topic.gradeIdsThatNeedRetro, ...gradesThatNeedRegrade])];
+                    await topic.save();
+                }
             }
             return result;
         });
@@ -1901,33 +1996,36 @@ class CourseController {
         gradeResult,
         submitted,
         timeOfSubmission,
-        problemPath
+        problemPath,
+        saveGrade = true,
     }: SetGradeFromSubmissionOptions): Promise<StudentWorkbook | undefined> => {
         return useDatabaseTransaction(async (): Promise<StudentWorkbook | undefined> => {
+            const studentGradeData = _.cloneDeep(studentGrade.get()) as StudentGradeInterface;
             if (gradeResult.gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
-                if(studentGrade.numAttempts === 0) {
-                    studentGrade.firstAttempts = gradeResult.score;
+                if(studentGradeData.numAttempts === 0) {
+                    studentGradeData.firstAttempts = gradeResult.score;
                 }
-                studentGrade.latestAttempts = gradeResult.score;
-                studentGrade.numAttempts++;
+                studentGradeData.latestAttempts = gradeResult.score;
+                studentGradeData.numAttempts++;
                 if (gradeResult.gradingRationale.isOnTime && !gradeResult.gradingRationale.isLocked && gradeResult.gradingRationale.isWithinAttemptLimit) {
-                    studentGrade.numLegalAttempts++;
+                    studentGradeData.numLegalAttempts++;
                 }
                 if (!gradeResult.gradingRationale.isExpired && !gradeResult.gradingRationale.isLocked && gradeResult.gradingRationale.isWithinAttemptLimit) {
-                    studentGrade.numExtendedAttempts++;
+                    studentGradeData.numExtendedAttempts++;
                 }
 
                 if (_.isNil(workbook)) {
                     workbook = await StudentWorkbook.create({
-                        studentGradeId: studentGrade.id,
-                        userId: studentGrade.userId,
-                        courseWWTopicQuestionId: studentGrade.courseWWTopicQuestionId,
+                        studentGradeId: studentGradeData.id,
+                        userId: studentGradeData.userId,
+                        courseWWTopicQuestionId: studentGradeData.courseWWTopicQuestionId,
                         problemPath: problemPath,
-                        randomSeed: studentGrade.randomSeed,
+                        randomSeed: studentGradeData.randomSeed,
                         submitted: rendererHelper.cleanRendererResponseForTheDatabase(submitted as RendererResponse),
                         result: gradeResult.score,
                         time: timeOfSubmission ?? new Date(),
                         wasLate: gradeResult.gradingRationale.isLate,
+                        wasEarly: gradeResult.gradingRationale.isEarly,
                         wasExpired: gradeResult.gradingRationale.isExpired,
                         wasAfterAttemptLimit: !gradeResult.gradingRationale.isWithinAttemptLimit,
                         wasLocked: gradeResult.gradingRationale.isLocked,
@@ -1935,7 +2033,7 @@ class CourseController {
                     });
 
                     const attachments = await this.listAttachments({
-                        studentGradeId: studentGrade.id
+                        studentGradeId: studentGradeData.id
                     });
 
                     await attachments.asyncForEach(async (attachment: ProblemAttachment) => {
@@ -1950,62 +2048,70 @@ class CourseController {
                         }
                     });
                 } else {
-                    _.assign(workbook, {
+                    const targetChanges = {
                         wasLate: gradeResult.gradingRationale.isLate,
+                        wasEarly: gradeResult.gradingRationale.isEarly,
                         wasExpired: gradeResult.gradingRationale.isExpired,
                         wasAfterAttemptLimit: !gradeResult.gradingRationale.isWithinAttemptLimit,
                         wasLocked: gradeResult.gradingRationale.isLocked,
-                        active: true
-                    });
+                        credited: true
+                    };
 
-                    await workbook.save();
+                    assignModelChanges(workbook, targetChanges);
+
+                    if (workbook.changed()) {
+                        await workbook.save();
+                    }
                 }
 
                 if (!_.isNil(gradeResult.gradeUpdates.overallBestScore)) {
-                    studentGrade.overallBestScore = gradeResult.gradeUpdates.overallBestScore;
-                    studentGrade.lastInfluencingAttemptId = workbook.id;
-                } else if (_.isNil(studentGrade.lastInfluencingAttemptId) && gradeResult.gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
-                    studentGrade.lastInfluencingAttemptId = workbook.id;
+                    studentGradeData.overallBestScore = gradeResult.gradeUpdates.overallBestScore;
+                    studentGradeData.lastInfluencingAttemptId = workbook.id;
+                } else if (_.isNil(studentGradeData.lastInfluencingAttemptId) && gradeResult.gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
+                    studentGradeData.lastInfluencingAttemptId = workbook.id;
                 }
 
                 // TODO do we need to track "best score"
                 if (!_.isNil(gradeResult.gradeUpdates.bestScore)) {
-                    studentGrade.bestScore = gradeResult.gradeUpdates.bestScore;
-                    studentGrade.lastInfluencingAttemptId = workbook.id;
-                } else if (_.isNil(studentGrade.lastInfluencingAttemptId) && gradeResult.gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
-                    studentGrade.lastInfluencingAttemptId = workbook.id;
+                    studentGradeData.bestScore = gradeResult.gradeUpdates.bestScore;
+                    studentGradeData.lastInfluencingAttemptId = workbook.id;
+                } else if (_.isNil(studentGradeData.lastInfluencingAttemptId) && gradeResult.gradingRationale.willTrackAttemptReason === WillTrackAttemptReason.YES) {
+                    studentGradeData.lastInfluencingAttemptId = workbook.id;
                 }
 
                 if (!_.isNil(gradeResult.gradeUpdates.legalScore)) {
-                    studentGrade.legalScore = gradeResult.gradeUpdates.legalScore;
-                    studentGrade.lastInfluencingLegalAttemptId = workbook.id;
-                } else if (_.isNil(studentGrade.lastInfluencingLegalAttemptId) && gradeResult.gradingRationale.willGetCreditReason === WillGetCreditReason.YES) {
-                    studentGrade.lastInfluencingLegalAttemptId = workbook.id;
+                    studentGradeData.legalScore = gradeResult.gradeUpdates.legalScore;
+                    studentGradeData.lastInfluencingLegalAttemptId = workbook.id;
+                } else if (_.isNil(studentGradeData.lastInfluencingLegalAttemptId) && gradeResult.gradingRationale.willGetCreditReason === WillGetCreditReason.YES) {
+                    studentGradeData.lastInfluencingLegalAttemptId = workbook.id;
                 }
 
                 if (!_.isNil(gradeResult.gradeUpdates.partialCreditBestScore)) {
-                    studentGrade.partialCreditBestScore = gradeResult.gradeUpdates.partialCreditBestScore;
-                    studentGrade.lastInfluencingCreditedAttemptId = workbook.id;
-                } else if (_.isNil(studentGrade.lastInfluencingCreditedAttemptId) && (gradeResult.gradingRationale.willGetCreditReason === WillGetCreditReason.YES || gradeResult.gradingRationale.willGetCreditReason === WillGetCreditReason.YES_BUT_PARTIAL_CREDIT)) {
-                    studentGrade.lastInfluencingCreditedAttemptId = workbook.id;
+                    studentGradeData.partialCreditBestScore = gradeResult.gradeUpdates.partialCreditBestScore;
+                    studentGradeData.lastInfluencingCreditedAttemptId = workbook.id;
+                } else if (_.isNil(studentGradeData.lastInfluencingCreditedAttemptId) && (gradeResult.gradingRationale.willGetCreditReason === WillGetCreditReason.YES || gradeResult.gradingRationale.willGetCreditReason === WillGetCreditReason.YES_BUT_PARTIAL_CREDIT)) {
+                    studentGradeData.lastInfluencingCreditedAttemptId = workbook.id;
                 }
 
                 if (!_.isNil(gradeResult.gradeUpdates.effectiveScore)) {
-                    studentGrade.effectiveScore = gradeResult.gradeUpdates.effectiveScore;
+                    studentGradeData.effectiveScore = gradeResult.gradeUpdates.effectiveScore;
                     // We don't track the effective grade that altered the effective score, in part because it could be updated externally
                 }
             } else {
                 if (!_.isNil(workbook)) {
                     if (gradeResult.gradingRationale.willTrackAttemptReason !== WillTrackAttemptReason.UNKNOWN) {
-                        logger.error(`${workbook.id} now meets critieria that is should not be kept, marking it as active false (as well as audit fields)`);
-                        _.assign(workbook, {
+                        logger.info(`${workbook.id} now meets critieria that is should not be kept (${gradeResult.gradingRationale.willTrackAttemptReason}), marking it as credited false (as well as audit fields)`);
+                        assignModelChanges(workbook, {
                             wasLate: false,
+                            wasEarly: false,
                             wasExpired: false,
                             wasAfterAttemptLimit: false,
                             wasLocked: false,
-                            active: false
+                            credited: false
                         });
-                        await workbook.save();
+                        if (workbook.changed()) {
+                            await workbook.save();
+                        }
                     } else {
                         logger.error(`Did not regrade submission ${workbook.id} because of an error that occured in coming up with grading rationale`);
                     }
@@ -2014,9 +2120,14 @@ class CourseController {
                 }
             }
 
-
-            if(workbook?.randomSeed === studentGrade.originalRandomSeed) {
-                await studentGrade.save();
+            // since none of the changes are made on the model directly we can check the random seed here
+            if(workbook?.randomSeed === studentGradeData.originalRandomSeed) {
+                assignModelChanges(studentGrade, studentGradeData);
+                if (saveGrade) {
+                    if (studentGrade.changed()) {
+                        await studentGrade.save();
+                    }
+                }
             } else {
                 if (_.isNil(workbook)) {
                     logger.debug('Workbook not kept, did not update grade');
@@ -2024,9 +2135,462 @@ class CourseController {
                     logger.debug('Random seed was different, not saving due to SMA');
                 }
             }
+
             // If nil coming in and the attempt was tracked this will result in the new workbook
             return workbook;
         });
+    }
+
+    checkForRegrade = async ({
+        topicId,
+        userId,
+        questionId,
+    }: {
+        topicId: number;
+        userId?: number;
+        questionId?: number;
+    }): Promise<{
+        retroStartedTime: Date | null;
+        regradeCount: number;
+        gradeIdsThatNeedRetro: number[];
+    }> => {
+        const topic = await CourseTopicContent.findOne({
+            attributes: ['id', 'gradeIdsThatNeedRetro', 'retroStartedTime'] as (keyof CourseTopicContentInterface)[],
+            where: {
+                id: topicId
+            },
+        });
+
+        if (_.isNil(topic)) {
+            throw new NotFoundError('Could not find the topic');
+        }
+
+        let regradeCount = topic.gradeIdsThatNeedRetro.length;
+        if (_.isSomething(questionId) || _.isSomething(userId)) {
+            const questions = await topic.getQuestions({
+                attributes: ['id'],
+                where: _.omitBy({
+                    id: questionId
+                }, _.isUndefined) as sequelize.WhereAttributeHash,
+                include: [{
+                    model: StudentGrade,
+                    as: 'grades',
+                    attributes: ['id'],
+                    required: true,
+                    where: _.omitBy({
+                        userId: userId,
+                        id: {
+                            [Sequelize.Op.in]: topic.gradeIdsThatNeedRetro
+                        },
+                    }, _.isUndefined) as sequelize.WhereAttributeHash,
+                }]
+            });
+            regradeCount = _.sum(questions.map(question => (question.grades ?? []).length));
+        }
+
+        return {
+            retroStartedTime: topic.retroStartedTime,
+            regradeCount: regradeCount,
+            gradeIdsThatNeedRetro: topic.gradeIdsThatNeedRetro,
+        };
+    }
+
+    regradeNeededGradesOnTopic = async ({
+        topicId,
+        questionId,
+        userId
+    }: {
+        topicId: number;
+        questionId?: number;
+        userId?: number;
+    }): Promise<CourseTopicContent> => {
+        const startNow = performance.now();
+        const baseMessage = (): string => `Retro: Topic: ${topicId};${_.isNil(questionId) ? '' : ` Question: ${questionId};`}${_.isNil(userId) ? '' : ` User: ${userId};`} Time: ${performance.now() - startNow}ms;`;
+
+        const topic = await CourseTopicContent.findOne({
+            where: {
+                id: topicId,
+                active: true
+            }
+        });
+
+        if (_.isNil(topic)) {
+            throw new IllegalArgumentException('Cound not find topic to regrade');
+        }
+
+        if (topic.topicTypeId === TopicTypeLookup.EXAM) {
+            throw new IllegalArgumentException('Cannot retro exams');
+        }
+
+        if (!_.isNil(topic.retroStartedTime)) {
+            throw new IllegalArgumentException('Retro already started');
+        }
+
+        let gradeIdsThatNeedRetro = topic.gradeIdsThatNeedRetro;
+        if (_.isEmpty(gradeIdsThatNeedRetro)) {
+            throw new IllegalArgumentException('This topic does not need a retro.');
+        }
+
+        logger.info(`${baseMessage()} finished topic checks and is starting retro`);
+
+        // This is for logs
+        let progressTimeoutHandle: NodeJS.Timeout | null = null;
+
+        topic.retroStartedTime = new Date();
+        await topic.save();
+        
+        // orphan for pseudo job
+        useDatabaseTransaction(async () => {
+            const questionsFetch = await topic.getQuestions();
+            if (questionsFetch.length === 0) {
+                throw new IllegalArgumentException('This topic cannot be regraded because it does not have any questions');
+            }
+            const questions = _.keyBy(questionsFetch, 'id');
+            logger.info(`${baseMessage()} finished getting questions`);
+
+            const gradesWhere: sequelize.WhereAttributeHash = {
+                id: {
+                    [Sequelize.Op.in]: gradeIdsThatNeedRetro
+                }
+            };
+
+            if (_.isSomething(questionId)) {
+                gradesWhere.courseWWTopicQuestionId = questionId;
+            }
+
+            if (_.isSomething(userId)) {
+                gradesWhere.userId = userId;
+            }
+            const grades = await StudentGrade.findAll({
+                attributes: ['id', 'courseWWTopicQuestionId', 'userId', 'locked'] as (keyof StudentGrade)[],
+                where: gradesWhere
+            });
+            logger.info(`${baseMessage()} finished getting grades`);
+
+            if (_.isSomething(questionId) || _.isSomething(userId)) {
+                if (grades.length > topic.gradeIdsThatNeedRetro.length) {
+                    throw new RederlyError(`${baseMessage()} Grades count mismatch with question id`);
+                }
+            } else {
+                if (grades.length !== topic.gradeIdsThatNeedRetro.length) {
+                    throw new RederlyError(`${baseMessage()} Grades count mismatch`);
+                }
+            }
+
+            gradeIdsThatNeedRetro = grades.map(grade => grade.id);
+            if (_.isEmpty(gradeIdsThatNeedRetro)) {
+                throw new IllegalArgumentException('This topic\'s question does not need a retro.');
+            }
+    
+            const workbooks = _.keyByWithArrays(await StudentWorkbook.findAll({
+                attributes: ['id', 'wasLocked', 'result', 'time', 'studentGradeId', 'active', 'wasLate', 'wasEarly', 'wasExpired', 'wasAfterAttemptLimit', 'wasLocked', 'active'] as (keyof StudentWorkbook)[],
+                order: ['id'],
+                where: {
+                    studentGradeId: {
+                        [Sequelize.Op.in]: gradeIdsThatNeedRetro
+                    }
+                }
+            }), 'studentGradeId');
+            logger.info(`Retro: Finished getting workbooks at ${performance.now() - startNow}ms`);
+
+            const userIds = grades.map(grade => grade.userId);
+            const topicOverrides = _.keyBy(await StudentTopicOverride.findAll({
+                where: {
+                    active: true,
+                    userId: {
+                        [sequelize.Op.in]: userIds
+                    },
+                    courseTopicContentId: topicId
+                }
+            }), 'userId');
+            logger.info(`${baseMessage()} Finished getting topic overrides`);
+
+            const questionOverridesFetch = await StudentTopicQuestionOverride.findAll({
+                where: {
+                    active: true,
+                    userId: {
+                        [sequelize.Op.in]: userIds
+                    },
+                    courseTopicQuestionId: {
+                        [sequelize.Op.in]: questionsFetch.map(question => question.id)
+                    },
+                }
+            });
+            logger.info(`${baseMessage()} Finished getting question overrides`);
+
+            const questionOverrides = questionOverridesFetch.reduce<{
+                [userId: number]: {
+                    [questionId: number]: StudentTopicQuestionOverride;
+                };
+            }>((previousValue, currentValue) => {
+                const questionId = currentValue.courseTopicQuestionId;
+                const userId = currentValue.userId;
+                previousValue[userId] = previousValue[userId] ?? {};
+                previousValue[userId][questionId] = previousValue[userId][questionId] ?? currentValue;
+                return previousValue;
+            }, {});
+
+            const gradeOverrides = _.keyByWithArrays(await StudentGradeOverride.findAll({
+                order: ['id'],
+                where: {
+                    active: true,
+                    studentGradeId: {
+                        [Sequelize.Op.in]: gradeIdsThatNeedRetro
+                    }
+                }
+            }), 'studentGradeId');
+            logger.info(`${baseMessage()} Finished getting grade overrides`);
+
+            let gradeIndex: number | null = null;
+            // using timeouts so it doesn't go indefinitely if there is a mistake, in theory I could add checks to break the timeout
+            const progresstimeoutCallback = (): void => {
+                if (gradeIndex === null) {
+                    logger.info(`${baseMessage()} is still starting retro of ${grades.length} grades`);
+                } else {
+                    logger.info(`${baseMessage()} is at grade: ${gradeIndex + 1} of ${grades.length}`);
+                }
+                progressTimeoutHandle = setTimeout(progresstimeoutCallback, 30000);;
+            };
+            progresstimeoutCallback();
+    
+            await grades.sequentialAsyncForEach(async (grade, index) => {
+                gradeIndex = index;
+                const question = questions[grade.courseWWTopicQuestionId];
+                const workbooksForGrade = workbooks[grade.id];
+                if (_.isNil(question)) {
+                    throw new RederlyError('Nil question');
+                }
+
+                if (_.isNil(workbooksForGrade)) {
+                    throw new RederlyError('Nil workbooks');
+                }
+
+                if (question.active === false) {
+                    // skip deleted questions
+                    return;
+                }
+                await this.reGradeStudentGrade({
+                    studentGrade: grade,
+                    workbooks: workbooksForGrade,
+                    question: question,
+                    topic: topic,
+                    topicOverride: topicOverrides[grade.userId] ?? null,
+                    questionOverride: questionOverrides[grade.userId]?.[question.id] ?? null,
+                    gradeOverrides: gradeOverrides[grade.id] ?? null
+                });
+            });
+        })
+        .then(() => {
+            topic.gradeIdsThatNeedRetro = _.difference(topic.gradeIdsThatNeedRetro, gradeIdsThatNeedRetro);
+            // save occurs later so it can handler global finally as well
+        })
+        .catch(err => logger.error(`${baseMessage()} was unable to complete grade retro`, err))
+        .finally(() => {
+            if (progressTimeoutHandle !== null) {
+                clearTimeout(progressTimeoutHandle);
+            }
+            topic.retroStartedTime = null;
+            logger.info(`${baseMessage()} completed`);
+            return topic.save();
+        })
+        .catch(err => logger.error('Unable to nullify topic.retroStartedTime', err));
+
+        return topic;
+    }
+
+    getGradesThatNeedRegradeForQuestionChange = async({
+        numAttempts,
+        questionId,
+        userId
+    }: {
+        numAttempts?: ChangedValue<number>;
+        questionId: number;
+        userId?: number;
+    }): Promise<StudentGrade[]> => {
+        if (_.isNil(numAttempts)) {
+            logger.debug('Num attempts undefined');
+            return [];
+        }
+
+        if (numAttempts.oldValue <= 0) {
+            numAttempts.oldValue = Constants.Database.MAX_INTEGER_VALUE;
+        }
+
+        if (numAttempts.newValue <= 0) {
+            numAttempts.newValue = Constants.Database.MAX_INTEGER_VALUE;
+        }
+
+        if (numAttempts.oldValue === numAttempts.newValue) {
+            logger.debug('Num attempts unchanged');
+            return [];
+        }
+        const gradeWhere: sequelize.WhereOptions = {
+            active: true,
+            ['courseWWTopicQuestionId' as keyof typeof StudentGrade]: questionId,
+            ['numAttempts' as keyof typeof StudentGrade]: {
+                [Sequelize.Op.gt]: Math.min(numAttempts.oldValue, numAttempts.newValue)
+            }
+        };
+
+        const includes: sequelize.IncludeOptions[] = [];
+
+        if (_.isSomething(userId)) {
+            // If a userId is specified they have an extension and we already have all the info we need
+            gradeWhere.userId = userId;
+        } else {
+            // this may or may not get used
+            const questionIncludes: sequelize.IncludeOptions = {
+                model: CourseWWTopicQuestion,
+                as: 'question',
+                required: true,
+                attributes: [],
+                // limit: 1,
+                where: {
+                    active: true
+                },
+               include: [{
+                    model: StudentTopicQuestionOverride,
+                    as: 'studentTopicQuestionOverride',
+                    required: false,
+                    // limit: 1,
+                    attributes: [],
+                    where: {
+                        active: true
+                    },
+                }]
+            };
+            includes.push(questionIncludes);
+            // If userId wasn't present we are regrading an entire topic so we need to avoid  student's with extensions
+            gradeWhere[`$question->studentTopicQuestionOverride.${StudentTopicQuestionOverride.rawAttributes.id.field}$`] = null;
+        }
+
+        return StudentGrade.findAll({
+            // attributes: ['id', 'courseWWTopicQuestionId', 'userId', 'locked'] as (keyof StudentGrade)[],
+            attributes: ['id'] as (keyof StudentGrade)[],
+            where: gradeWhere,
+            include: includes
+        });
+    };
+
+    getGradesThatNeedRegradeForTopicChange = async({
+        dates,
+        topicId,
+        userId
+    }: {
+        dates: {
+            startDate?: ChangedValue<Date>;
+            endDate?: ChangedValue<Date>;
+            deadDate?: ChangedValue<Date>;    
+        };
+        topicId: number;
+        userId?: number;
+    }): Promise<StudentGrade[]> => {
+        if (_.isEmpty(_.compact(_.values(dates)))) {
+            logger.debug('No dates so no need to regrade');
+            return [];
+        }
+
+        const canSkip = moment.min(
+            _.compact(
+                _.flatten(
+                    _.values(dates).map(value => value?.oldValue.getTime() !== value?.newValue.getTime() ? [value?.oldValue, value?.newValue] : [])
+                )
+            ).map(date => date.toMoment())
+        ).isSameOrAfter(moment());
+
+        if (canSkip) {
+            logger.debug('None of the dates are in the past');
+            return [];
+        }
+
+        // Wanted to put limits on the includes but it forces sequelize to do seperate quieries
+        // and for 900 grades w/ 9k submissions it increased the time from 2 seconds to 42 seconds (which is the opposite of what we wanted)
+        const dateRangeConditions: sequelize.WhereAttributeHash[] = [];
+
+        Object.values(dates).forEach(value => {
+            if(!value) {
+                return;
+            }
+
+            const { oldValue, newValue } = value;
+            if(oldValue.getTime() === newValue.getTime()) {
+                logger.debug('Dates are equal skipping');
+                return;
+            }
+
+            const moments = [oldValue.toMoment(), newValue.toMoment()];
+            const condition = {
+                ['time' as keyof typeof StudentWorkbook]: {
+                    [Sequelize.Op.between]: [moment.min(moments).toDate(), moment.max(moments).toDate()]
+                }
+            };
+            dateRangeConditions.push(condition);
+        });
+
+        if (dateRangeConditions.length === 0) {
+            logger.debug('All dates are the same, this should have been caught in the can skip above');
+            return [];
+        }
+
+        const includes: sequelize.IncludeOptions[] = [{
+            model: CourseWWTopicQuestion,
+            as: 'questions',
+            required: false,
+            attributes: ['id'],
+            where: {
+                active: true,
+                ['courseTopicContentId' as keyof typeof CourseWWTopicQuestion]: topicId
+            },
+            include: [{
+                model: StudentGrade,
+                as: 'grades',
+                required: true,
+                attributes: ['id', 'userId'],
+                where: {
+                    active: true
+                },
+                include: [{
+                    model: StudentWorkbook,
+                    as: 'workbooks',
+                    required: true,
+                    attributes: [],
+                    where: {
+                        // Active is different in prod leaving this out for now
+                        // active: true,
+                        [Sequelize.Op.or]: dateRangeConditions
+                    },
+                }]    
+            }]
+        }];
+
+        const topic = await CourseTopicContent.findOne({
+            attributes: [],
+            include: includes,
+            where: {
+                id: topicId,
+                active: true
+            }
+        });
+
+        if (_.isNil(topic)) {
+            throw new IllegalArgumentException('Could not calculate regrade information');
+        }
+
+        let predicate: (grade: StudentGrade) => boolean;
+        if (_.isSomething(userId)) {
+            predicate = (grade): boolean => grade.userId === userId;
+        } else {
+            const userIdsWithExtensions: number[] = (await StudentTopicOverride.findAll({
+                where: {
+                    courseTopicContentId: topicId,
+                },
+                attributes: ['userId']
+            })).map(extension => extension.userId);
+            predicate = (grade): boolean => !userIdsWithExtensions.includes(grade.userId);
+        }
+
+        const grades = _.flatten(topic.questions?.map(question => question.grades?.filter(predicate) ?? []) ?? []);
+        return grades;
     }
 
     reGradeTopic = async ({
@@ -2088,7 +2652,8 @@ class CourseController {
                     active: true
                 }
             });
-            await questions.asyncForEach(async (question: CourseWWTopicQuestion) => {
+            // sequentialAsyncForEach
+            await questions.sequentialAsyncForEach(async (question: CourseWWTopicQuestion) => {
                 await this.reGradeQuestion({
                     topic,
                     question,
@@ -2135,11 +2700,12 @@ class CourseController {
             } else {
                 const lowestMaxAttempts = Math.min(...maxAttemptsArray);
                 grades = await question.getGrades({
+                    attributes: ['id', 'courseWWTopicQuestionId', 'userId', 'locked'],
                     where: _({
                         numAttempts: {
                             [Sequelize.Op.gt]: lowestMaxAttempts
                         },
-                        userId
+                        userId: userId
                     }).omitBy(_.isUndefined).value() as sequelize.WhereOptions, // Adding this suppresses the error of userId could be undefined, sequelize disregards undefined so that is a bad sequelize type
                 });
                 canSkip = _.isEmpty(grades);
@@ -2155,8 +2721,9 @@ class CourseController {
         return useDatabaseTransaction(async () => {
             // Validation that passed in values match up (fk) are done deeper
             grades = grades ?? await question.getGrades({
+                attributes: ['id', 'courseWWTopicQuestionId', 'userId', 'locked'] as (keyof StudentGrade)[],
                 where: _({
-                    userId,
+                    userId: userId,
                     active: true
                 }).omitBy(_.isUndefined).value() as sequelize.WhereOptions
             });
@@ -2168,7 +2735,8 @@ class CourseController {
 
             logger.debug(`Regrading ${grades.length} grades`);
 
-            await grades.asyncForEach(async (studentGrade: StudentGrade) => {
+            // sequentialAsyncForEach
+            await grades.sequentialAsyncForEach(async (studentGrade: StudentGrade) => {
                 await this.reGradeStudentGrade({
                     studentGrade,
                     question,
@@ -2188,7 +2756,8 @@ class CourseController {
         workbooks,
         minDate,
         topicOverride,
-        questionOverride
+        questionOverride,
+        gradeOverrides
     }: ReGradeStudentGradeOptions): Promise<void> => {
         // Locked grades cannot be processed
         if (studentGrade.locked) {
@@ -2205,6 +2774,7 @@ class CourseController {
             //     }
             // };
             workbooks = workbooks ?? await studentGrade.getWorkbooks({
+                attributes: ['id', 'wasLocked', 'result', 'time', 'studentGradeId', 'active', 'wasLate', 'wasEarly', 'wasExpired', 'wasAfterAttemptLimit', 'wasLocked', 'active'] as (keyof StudentWorkbook)[],
                 order: ['id'],
                 // I was thinking of using the active flag for the case where the solutions date would be available
                 // That shouldn't be possible, but this way we have a catch
@@ -2267,12 +2837,19 @@ class CourseController {
             studentGrade.firstAttempts = 0;
             studentGrade.latestAttempts = 0;
 
-            const gradeOverrides: StudentGradeOverride[] = await studentGrade.getOverrides({
-                order: ['id'],
-                where: {
-                    active: true
-                }
-            });
+            if (_.isUndefined(gradeOverrides)) {
+                gradeOverrides = await studentGrade.getOverrides({
+                    order: ['id'],
+                    where: {
+                        active: true
+                    }
+                });
+            }
+
+            if (_.isNull(gradeOverrides)) {
+                gradeOverrides = [];
+            }
+
 
             const workbooksAndOverrides: (StudentWorkbook | StudentGradeOverride)[] = [...workbooks, ...gradeOverrides];
             const sortedWorkbooksAndOverrides = workbooksAndOverrides.sort((first: StudentWorkbook | StudentGradeOverride, second: StudentWorkbook | StudentGradeOverride): number => {
@@ -2318,17 +2895,18 @@ class CourseController {
                         newScore: workbook.result,
                         question,
                         solutionDate,
-                        studentGrade,
+                        studentGrade: studentGrade,
                         topic,
 
                         timeOfSubmission: workbook.time.toMoment(),
                         submitted: null,
-                        workbook,
+                        workbook: workbook,
                         override: {
                             useOverride: true,
                             questionOverride: questionOverride,
                             topicOverride: topicOverride
-                        }
+                        },
+                        saveGrade: false,
                     });
                 } else if (workbookOrOverride instanceof StudentGradeOverride) {
                     // redundant but makes it easier to read
@@ -2339,8 +2917,10 @@ class CourseController {
                 }
             }
 
-            // Needs to be here in case grade was updated from override
-            await studentGrade.save();
+            // Needs to be here since we are not saving in loop
+            if (studentGrade.changed()) {
+                await studentGrade.save();
+            }
         });
     }
 
@@ -2357,12 +2937,14 @@ class CourseController {
         submitted,
         timeOfSubmission,
         workbook,
+        saveGrade = true,
         override: {
             useOverride = true,
             questionOverride,
             topicOverride
         } = {}
     }: GradeOptions): Promise<StudentWorkbook | undefined> => {
+        logger.debug('Regrading submission');
         let topic: CourseTopicContentInterface = passedTopic;
         let question: CourseWWTopicQuestionInterface = passedQuestion;
         let realSolutionDate: moment.Moment = solutionDate;
@@ -2412,8 +2994,9 @@ class CourseController {
             studentGrade,
             submitted,
             timeOfSubmission,
-            workbook,
+            workbook: workbook,
             problemPath: question.webworkQuestionPath,
+            saveGrade: saveGrade,
         });
     };
 
@@ -2472,6 +3055,11 @@ class CourseController {
                 }
             }]
         });
+
+        if (_.isSomething(topic.retroStartedTime)) {
+            // Really should just be bad request :shrug:
+            throw new IllegalArgumentException('This topic is currently being regraded. Please try again later.');
+        }
 
         const solutionDate = moment(topic.deadDate).add(Constants.Course.SHOW_SOLUTIONS_DELAY_IN_DAYS, 'days');
 
@@ -3054,6 +3642,7 @@ class CourseController {
                 // 'submitted',
                 'time',
                 'wasLate',
+                'wasEarly',
                 'wasExpired',
                 'wasAfterAttemptLimit',
                 'wasAutoSubmitted',
@@ -3810,8 +4399,9 @@ class CourseController {
         });
     }
 
-    async createGradesForQuestion(options: CreateGradesForQuestionOptions): Promise<number> {
-        return useDatabaseTransaction(async (): Promise<number> => {
+    async createGradesForQuestion(options: CreateGradesForQuestionOptions): Promise<StudentGrade[]> {
+        const results: StudentGrade[] = [];
+        return useDatabaseTransaction(async (): Promise<StudentGrade[]> => {
             const { questionId } = options;
             let userIds: Array<number> | undefined = options.userIds;
             if (_.isNil(userIds)) {
@@ -3821,12 +4411,14 @@ class CourseController {
                 userIds = results.map(result => result.userId);    
             }
             await userIds.asyncForEach(async (userId: number) => {
-                await this.createNewStudentGrade({
+                const newStudentGrade = await this.createNewStudentGrade({
                     courseTopicQuestionId: questionId,
                     userId: userId
                 });
+                results.push(newStudentGrade);
             });
-            return userIds.length;
+            return results;
+            // return userIds.length;
         });
     }
 
@@ -4202,6 +4794,10 @@ class CourseController {
                 message = `The topic "${topic.name}" has not started yet.`;
                 data.status = 'NOT_STARTED';
                 userCanStartNewVersion = false;
+            } else if (moment().isAfter(topic.endDate.toMoment())) {
+                message = `The topic "${topic.name}" has ended.`;
+                data.status = 'OVERDUE';
+                userCanStartNewVersion = false;
             } else if (topicInfo.maxVersions > 0 && versions.length >= topicInfo.maxVersions) {
             // check number of versions already used
                 if (versions[0].isClosed !== true) {
@@ -4347,6 +4943,7 @@ class CourseController {
                     result: result.questionResponse.problem_result.score,
                     time,
                     wasLate: false,
+                    wasEarly: false,
                     wasExpired: false,
                     wasAfterAttemptLimit: false,
                     wasLocked: false,

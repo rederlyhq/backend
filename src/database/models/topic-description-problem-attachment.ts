@@ -42,7 +42,7 @@ export default class TopicDescriptionProblemAttachment extends Model implements 
 
 TopicDescriptionProblemAttachment.init({
     id: {
-        field: 'id',
+        field: 'topic_description_problem_attachment_id',
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
@@ -58,7 +58,7 @@ TopicDescriptionProblemAttachment.init({
         allowNull: false,
     },
     active: {
-        field: 'active',
+        field: 'topic_description_problem_attachment_active',
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: true

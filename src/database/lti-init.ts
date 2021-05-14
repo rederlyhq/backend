@@ -26,7 +26,7 @@ lti.setup(configurations.lti.secret,
     {
         cookies: {
             secure: configurations.lti.useSecureCookies,
-            sameSite: configurations.lti.sameSiteCookiesDomain,
+            sameSite: 'none',
         },
         devMode: configurations.lti.devMode,
         dynReg: {

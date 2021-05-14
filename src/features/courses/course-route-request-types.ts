@@ -257,6 +257,12 @@ export namespace GetStatisticsOnQuestionsRequest {
     export type body = Joi.extractType<typeof validations.getStatisticsOnQuestionsValidation.body>;
 };
 
+export namespace GetStatisticsOnWorkbooksRequest {
+    export type params = Joi.extractType<typeof validations.getStatisticsOnWorkbooksValidation.params>;
+    export type query = Joi.extractType<typeof validations.getStatisticsOnWorkbooksValidation.query>;
+    export type body = Joi.extractType<typeof validations.getStatisticsOnWorkbooksValidation.body>;
+};
+
 export namespace GetProblemsRequest {
     export type params = Joi.extractType<typeof validations.getProblemsValidation.params>;
     export type query = Joi.extractType<typeof validations.getProblemsValidation.query>;

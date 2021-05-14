@@ -524,6 +524,16 @@ export const getStatisticsOnQuestionsValidation = {
     body: {},
 };
 
+export const getStatisticsOnWorkbooksValidation = {
+    params: {},
+    query: {
+        courseTopicQuestionId: Joi.number().optional(),
+        courseId: Joi.number().optional(),
+        userId: Joi.number().optional(),
+    },
+    body: {},
+};
+
 export const getProblemsValidation = {
     params: {},
     query: {

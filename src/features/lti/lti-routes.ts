@@ -20,6 +20,7 @@ import userRepository from '../users/user-repository';
 import { hashPassword } from '../../utilities/encryption-helper';
 import axios from 'axios';
 import configurations from '../../configurations';
+import StudentEnrollment from '../../database/models/student-enrollment';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 lti.onConnect(async (token: any, req: Request, res: Response, _next: NextFunction) => {
@@ -68,6 +69,28 @@ lti.onConnect(async (token: any, req: Request, res: Response, _next: NextFunctio
         // Strict can't be used because LMS has a different domain.
         sameSite: 'lax',
     });
+
+    // If LTI allows a student to launch a resource, we are assuming the student should be enrolled in that course.
+    const dest = token.platformContext?.custom?.redirect ?? token?.platformContext?.targetLinkUri;
+    const courseToEnrollIn = dest.match(/courses\/(\d+)/)[1];
+    const courseId = parseInt(courseToEnrollIn, 10);
+    if (courseId <= 0) {
+        logger.error('Could not parse course.');
+        return;
+    }
+
+    const enrol = await StudentEnrollment.findOrCreate({
+        where: {
+            courseId: courseId,
+            userId: user.id
+        },
+    });
+
+    // TODO: This can be initiated earlier, and it'll be a longer request.
+    // const response = await lti.NamesAndRoles.getMembers(res.locals.token);
+    // console.log(response);
+    // const result = await lti.NamesAndRoles.getMembers(res.locals.token, { resourceLinkId: true, role: 'Learner', limit: 10, pages: 1 });
+    // console.log(result);
 
     return lti.redirect(res, token.platformContext?.custom?.redirect ?? token?.platformContext?.targetLinkUri);
   }

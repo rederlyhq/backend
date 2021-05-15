@@ -5,6 +5,7 @@ import * as _ from 'lodash';
 import logger from '../logger';
 import RederlyError from '../../exceptions/rederly-error';
 import { getAllMatches } from '../string-helper';
+import WebWorkDef from '@rederly/webwork-def-parser';
 const fsPromises = fse.promises;
 
 export interface FindFilesImageFileOptions {
@@ -56,6 +57,7 @@ export interface FindFilesDefFileResult {
     defFileAbsolutePath: string;
     topicName: string;
     bucketDefFiles: { [key: string]: FindFilesDefFileResult};
+    parsedWebworkFile: null | WebWorkDef;
 }
 
 export interface FindFilesOptions {
@@ -72,7 +74,6 @@ export const findDefFiles = (filePath: string): Promise<Array<string>> => {
     return recursiveListFilesInDirectory(filePath, [], listFilters.endsWith('.def', false));
 };
 
-const pgFileInDefFileRegex = /^\s*source_file\s*=\s*(?:(group:\S*?|\S*?\.pg)\s*$)/igm;
 const httpNegativeLookAhead = '(?!\\s*https?:)';
 const assetInPgFileExtensions = '(?:' + // Non capture group to or all the extensions together
 [
@@ -239,12 +240,12 @@ export const findFilesFromDefFile = async ({ contentRootPath, defFilePath, bucke
         defFileRelativePath: defFileRelativePath,
         topicName: topicName,
         pgFiles: {},
-        bucketDefFiles: {}
+        bucketDefFiles: {},
+        parsedWebworkFile: null,
     };
-    const defFileContent = (await fsPromises.readFile (defFilePath)).toString();
-    const pgFileInDefFileMatches = getAllMatches(pgFileInDefFileRegex, defFileContent);
-    await pgFileInDefFileMatches.asyncForEach(async (pgFileInDefFileMatch) => {
-        const pgFilePathFromDefFile = pgFileInDefFileMatch[1];
+    defFileResult.parsedWebworkFile = new WebWorkDef((await fsPromises.readFile (defFilePath)).toString());
+    const pgFileInDefFileMatches = _.compact(defFileResult.parsedWebworkFile.problems.map(problem => problem.source_file));
+    await pgFileInDefFileMatches.asyncForEach(async (pgFilePathFromDefFile) => {
         if (pgFilePathFromDefFile.startsWith('group:')) {
             // DO EXAM THINGS
             bucketDefFiles[pgFilePathFromDefFile] = bucketDefFiles[pgFilePathFromDefFile] ?? [];

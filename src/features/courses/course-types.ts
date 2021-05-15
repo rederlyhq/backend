@@ -310,6 +310,15 @@ export interface GetStatisticsOnQuestionsOptions {
     followQuestionRules: boolean;
 }
 
+export interface GetStatisticsOnWorkbooksOptions {
+    where: {
+        courseTopicQuestionId?: number;
+        courseId?: number;
+        userId?: number;
+        userRole: Role;
+    };
+}
+
 export interface GetTopicsOptions {
     courseId?: number;
     isOpen?: boolean;

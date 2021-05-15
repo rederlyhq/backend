@@ -42,6 +42,8 @@ type StudentGradeLookup = Record<number, {
         attachments: {url: string; name: string}[] | undefined;
         effectiveScore: number;
         legalScore: number;
+        startTime?: Date;
+        submissionTime?: Date;
     }[]
 >;
 
@@ -137,12 +139,12 @@ export default class ExportPDFHelper {
                         id: influencingWorkbook,
                         active: true,
                     },
-                    attributes: ['id', 'submitted', 'randomSeed', 'problemPath'],
+                    attributes: ['id', 'submitted', 'randomSeed', 'problemPath', 'time'],
                     include: [
                         {
                             model: StudentGradeInstance,
                             as: 'studentGradeInstance',
-                            attributes: ['id', 'webworkQuestionPath', 'randomSeed'],
+                            attributes: ['id', 'webworkQuestionPath', 'randomSeed', 'createdAt'],
                             required: false,
                             where: {
                                 active: true,
@@ -200,7 +202,9 @@ export default class ExportPDFHelper {
                     })),
                     effectiveScore: grade.effectiveScore,
                     legalScore: grade.legalScore,
-                    srcdoc: src?.renderedHTML ?? 'Could not render this problem.'
+                    srcdoc: src?.renderedHTML ?? 'Could not render this problem.',
+                    startTime: gradeInstanceAttachments?.studentGradeInstance?.createdAt,
+                    submissionTime: gradeInstanceAttachments?.time,
                 });
             })
         );
@@ -227,7 +231,7 @@ export default class ExportPDFHelper {
                 firstName: user.firstName,
                 lastName: user.lastName,
                 problems: studentGrades,
-                professorUUID: professorUUID
+                professorUUID: professorUUID,
             };
             return await this.bulkExportAxios.post('export/', postObject, {
                 params: {

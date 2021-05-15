@@ -44,6 +44,7 @@ type StudentGradeLookup = Record<number, {
         legalScore: number;
         startTime?: Date;
         submissionTime?: Date;
+        weight: number;
     }[]
 >;
 
@@ -76,7 +77,7 @@ export default class ExportPDFHelper {
                     // Include all questions in the topic
                     model: CourseWWTopicQuestion,
                     as: 'questions',
-                    attributes: ['id', 'problemNumber', 'webworkQuestionPath'],
+                    attributes: ['id', 'problemNumber', 'webworkQuestionPath', 'weight'],
                     required: true,
                     where: {
                         active: true,
@@ -129,6 +130,7 @@ export default class ExportPDFHelper {
                         srcdoc: 'There is no record of this student attempting this problem.',
                         effectiveScore: grade.effectiveScore,
                         legalScore: grade.legalScore,
+                        weight: question.weight,
                     });
 
                     return;
@@ -205,6 +207,7 @@ export default class ExportPDFHelper {
                     srcdoc: src?.renderedHTML ?? 'Could not render this problem.',
                     startTime: gradeInstanceAttachments?.studentGradeInstance?.createdAt,
                     submissionTime: gradeInstanceAttachments?.time,
+                    weight: question.weight,
                 });
             })
         );

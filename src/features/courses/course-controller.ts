@@ -5741,7 +5741,7 @@ You can contact your student at ${options.student.email} or by replying to this 
             // get next content order needs to wait for the previous one to finish
             for (const key in discoveredFiles.defFiles) {
                 const defFile = discoveredFiles.defFiles[key];
-                const parsedWebworkDef = new WebWorkDef((await fs.promises.readFile(defFile.defFileAbsolutePath)).toString());
+                const parsedWebworkDef = defFile.parsedWebworkFile ?? new WebWorkDef((await fs.promises.readFile(defFile.defFileAbsolutePath)).toString());
                 const topic = await this.createTopic({
                     name: defFile.topicName,
                     startDate: course.end,

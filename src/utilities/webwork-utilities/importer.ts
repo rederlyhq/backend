@@ -57,6 +57,7 @@ export interface FindFilesDefFileResult {
     defFileAbsolutePath: string;
     topicName: string;
     bucketDefFiles: { [key: string]: FindFilesDefFileResult};
+    parsedWebworkFile: null | WebWorkDef;
 }
 
 export interface FindFilesOptions {
@@ -239,10 +240,11 @@ export const findFilesFromDefFile = async ({ contentRootPath, defFilePath, bucke
         defFileRelativePath: defFileRelativePath,
         topicName: topicName,
         pgFiles: {},
-        bucketDefFiles: {}
+        bucketDefFiles: {},
+        parsedWebworkFile: null,
     };
-    const defFileContent = (await fsPromises.readFile (defFilePath)).toString();
-    const pgFileInDefFileMatches = _.compact(new WebWorkDef(defFileContent).problems.map(problem => problem.source_file));
+    defFileResult.parsedWebworkFile = new WebWorkDef((await fsPromises.readFile (defFilePath)).toString());
+    const pgFileInDefFileMatches = _.compact(defFileResult.parsedWebworkFile.problems.map(problem => problem.source_file));
     await pgFileInDefFileMatches.asyncForEach(async (pgFilePathFromDefFile) => {
         if (pgFilePathFromDefFile.startsWith('group:')) {
             // DO EXAM THINGS

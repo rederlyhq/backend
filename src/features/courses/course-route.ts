@@ -233,9 +233,13 @@ router.post('/',
     validate(createCourseValidation),
     paidMiddleware('Creating a new course'),
     asyncHandler(async (req: RederlyExpressRequest<CreateCourseRequest.params, unknown, CreateCourseRequest.body, unknown>, _res: Response, next: NextFunction) => {
-        const query = req.query as CreateCourseRequest.query;
         if (_.isNil(req.session)) {
             throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role === Role.STUDENT) {
+            throw new ForbiddenError('You do not have access to add a course.');
         }
 
         const session = req.session;

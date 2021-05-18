@@ -156,6 +156,7 @@ export default class ExportPDFHelper {
                                     model: ProblemAttachment,
                                     as: 'problemAttachments',
                                     attributes: ['id', 'cloudFilename', 'userLocalFilename', 'updatedAt'],
+                                    required: false,
                                     where: {
                                         active: true,
                                     }

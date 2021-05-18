@@ -633,9 +633,8 @@ router.get('/assessment/topic/end/:id',
             throw new ForbiddenError('You cannot end an exam without making at least one attempt.');
         }
 
-        await courseController.endAssessmentEarly(version, true);
-
-        next(httpResponse.Ok('Assessment version has been closed.'));
+        const assessmentResult = await courseController.submitAndEndAssessment(version, false);
+        next(httpResponse.Ok('Assessment version has been closed.', assessmentResult));
     }));
 
 router.get('/assessment/topic/:id/start',

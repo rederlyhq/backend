@@ -5100,6 +5100,14 @@ class CourseController {
         }
     }
 
+    async submitAndEndAssessment(version: StudentTopicAssessmentInfo, wasAutoSubmitted: boolean): Promise<SubmitAssessmentAnswerResult> {
+        return useDatabaseTransaction(async (): Promise<SubmitAssessmentAnswerResult> => {
+            const assessmentResult = await this.submitAssessmentAnswers(version.id, wasAutoSubmitted);
+            await this.endAssessmentEarly(version, true);
+            return assessmentResult;    
+        });
+    }
+
     async canUserGradeAssessment({
         user,
         topicId

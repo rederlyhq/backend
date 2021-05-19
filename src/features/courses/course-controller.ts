@@ -17,7 +17,7 @@ import logger from '../../utilities/logger';
 import sequelize = require('sequelize');
 import WrappedError from '../../exceptions/wrapped-error';
 import AlreadyExistsError from '../../exceptions/already-exists-error';
-import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, ImportCourseTarballResult, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions, AddQuestionOptions, RequestNewProblemVersionOptions, BrowseProblemsCourseListOptions, GetSearchProblemResultsOptions, BrowseProblemsTopicListOptions, BrowseProblemsUnitListOptions, EnrollManuallyOptions, ManualEnrollmentResult, AddFeedbackOptions } from './course-types';
+import { GetTopicsOptions, CourseListOptions, UpdateUnitOptions, UpdateTopicOptions, EnrollByCodeOptions, GetGradesOptions, GetStatisticsOnQuestionsOptions, GetStatisticsOnTopicsOptions, GetStatisticsOnUnitsOptions, GetQuestionOptions, GetQuestionResult, SubmitAnswerOptions, SubmitAnswerResult, FindMissingGradesResult, GetQuestionsOptions, GetQuestionsThatRequireGradesForUserOptions, GetUsersThatRequireGradeForQuestionOptions, CreateGradesForUserEnrollmentOptions, CreateGradesForQuestionOptions, CreateNewStudentGradeOptions, UpdateQuestionOptions, UpdateCourseOptions, MakeProblemNumberAvailableOptions, MakeUnitContentOrderAvailableOptions, MakeTopicContentOrderAvailableOptions, CreateCourseOptions, CreateQuestionsForTopicFromDefFileContentOptions, DeleteQuestionsOptions, DeleteTopicsOptions, DeleteUnitsOptions, GetCalculatedRendererParamsOptions, GetCalculatedRendererParamsResponse, UpdateGradeOptions, DeleteUserEnrollmentOptions, ExtendTopicForUserOptions, GetQuestionRepositoryOptions, ExtendTopicQuestionForUserOptions, GradeOptions, ReGradeStudentGradeOptions, ReGradeQuestionOptions, ReGradeTopicOptions, SetGradeFromSubmissionOptions, CreateGradeInstancesForAssessmentOptions, CreateNewStudentGradeInstanceOptions, GetStudentTopicAssessmentInfoOptions, GetTopicAssessmentInfoByTopicIdOptions, SubmittedAssessmentResultContext, SubmitAssessmentAnswerResult, ScoreAssessmentResult, UserCanStartNewVersionOptions, UserCanStartNewVersionResult, UserCanStartNewVersionResultData, UpdateGradeInstanceOptions, PreviewQuestionOptions, CanUserGetQuestionsOptions, CanUserGetQuestionsResult, CanUserViewQuestionIdOptions, CanUserViewQuestionIdResult, CanUserGradeAssessmentOptions, GetAssessmentForGradingOptions, GetAssessmentForGradingResult, CreateAttachmentOptions, ListAttachmentOptions, DeleteAttachmentOptions, EmailProfOptions, GetAllContentForVersionOptions, GetGradeForQuestionOptions, ImportTarballOptions, ImportCourseTarballResult, OpenLabRedirectInfo, PrepareOpenLabRedirectOptions, CreateQuestionsForTopicFromParsedDefFileOptions, AddQuestionOptions, RequestNewProblemVersionOptions, BrowseProblemsCourseListOptions, GetSearchProblemResultsOptions, BrowseProblemsTopicListOptions, BrowseProblemsUnitListOptions, EnrollManuallyOptions, ManualEnrollmentResult, AddFeedbackOptions, GetStatisticsOnWorkbooksOptions } from './course-types';
 import { Constants } from '../../constants';
 import courseRepository from './course-repository';
 import { UpdateResult, UpsertResult } from '../../generic-interfaces/sequelize-generic-interfaces';
@@ -4104,6 +4104,68 @@ class CourseController {
         });
     }
 
+    getStatisticsOnWorkbooks(options: GetStatisticsOnWorkbooksOptions): Promise<StudentWorkbook[]> {
+        const includes: sequelize.IncludeOptions[] = [];
+        const where: sequelize.WhereAttributeHash = _.omitBy({
+            courseWWTopicQuestionId: options.where.courseTopicQuestionId,
+            userId: options.where.userId,
+        }, _.isUndefined) as sequelize.WhereAttributeHash;
+        if (_.isSomething(options.where.courseId)) {
+            const examFilterTopicInclude: sequelize.IncludeOptions[] = [];
+            if (options.where.userRole === Role.STUDENT) {
+                examFilterTopicInclude.push({
+                    model: TopicAssessmentInfo,
+                    as: 'topicAssessmentInfo',
+                    attributes: [],
+                    required: false,
+                });
+                where[`$studentGrade.question.topic.topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showTotalGradeImmediately.field}$`] = {
+                    [sequelize.Op.or]: [true, null]
+                };
+                where[`$studentGrade.question.topic.topicAssessmentInfo.${TopicAssessmentInfo.rawAttributes.showItemizedResults.field}$`] = {
+                    [sequelize.Op.or]: [true, null]
+                };
+            }
+            includes.push({
+                model: StudentGrade,
+                as: 'studentGrade',
+                attributes: [],
+                required: true,
+                include: [{
+                    model: CourseWWTopicQuestion,
+                    as: 'question',
+                    attributes: [],
+                    required: true,
+                    include: [{
+                        model: CourseTopicContent,
+                        as: 'topic',
+                        attributes: [],
+                        required: true,
+                        include: [...examFilterTopicInclude, {
+                            model: CourseUnitContent,
+                            as: 'unit',
+                            attributes: [],
+                            required: true,
+                            where: {
+                                courseId: options.where.courseId
+                            }
+                        }]
+                    }]
+                }]
+            });
+        }
+
+        if (_.isNil(options.where.courseTopicQuestionId)) {
+            throw new IllegalArgumentException('All attempts not currently supported');
+        }
+        
+        return StudentWorkbook.findAll({
+            attributes: ['id', 'submitted', 'result', 'time', 'courseWWTopicQuestionId'],
+            where: where,
+            include: includes
+        });
+    }
+
     async canUserGetQuestions(options: CanUserGetQuestionsOptions): Promise<CanUserGetQuestionsResult> {
         const {userId, courseTopicContentId, studentTopicAssessmentInfoId} = options;
         let message = '';
@@ -5679,7 +5741,7 @@ You can contact your student at ${options.student.email} or by replying to this 
             // get next content order needs to wait for the previous one to finish
             for (const key in discoveredFiles.defFiles) {
                 const defFile = discoveredFiles.defFiles[key];
-                const parsedWebworkDef = new WebWorkDef((await fs.promises.readFile(defFile.defFileAbsolutePath)).toString());
+                const parsedWebworkDef = defFile.parsedWebworkFile ?? new WebWorkDef((await fs.promises.readFile(defFile.defFileAbsolutePath)).toString());
                 const topic = await this.createTopic({
                     name: defFile.topicName,
                     startDate: course.end,

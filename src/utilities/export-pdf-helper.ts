@@ -41,7 +41,10 @@ type StudentGradeLookup = Record<number, {
         srcdoc: string;
         attachments: {url: string; name: string}[] | undefined;
         effectiveScore: number;
-        legalScore: number;
+        partialCreditBestScore: number;
+        startTime?: Date;
+        submissionTime?: Date;
+        weight: number;
     }[]
 >;
 
@@ -74,7 +77,7 @@ export default class ExportPDFHelper {
                     // Include all questions in the topic
                     model: CourseWWTopicQuestion,
                     as: 'questions',
-                    attributes: ['id', 'problemNumber', 'webworkQuestionPath'],
+                    attributes: ['id', 'problemNumber', 'webworkQuestionPath', 'weight'],
                     required: true,
                     where: {
                         active: true,
@@ -85,7 +88,7 @@ export default class ExportPDFHelper {
                             // Should be one Student Grade per Student for each Problem
                             model: StudentGrade,
                             as: 'grades',
-                            attributes: ['id', 'userId', 'lastInfluencingCreditedAttemptId', 'lastInfluencingAttemptId', 'effectiveScore', 'legalScore'],
+                            attributes: ['id', 'userId', 'lastInfluencingCreditedAttemptId', 'lastInfluencingAttemptId', 'effectiveScore', 'partialCreditBestScore'],
                             required: true,
                             where: {
                                 active: true,
@@ -126,7 +129,8 @@ export default class ExportPDFHelper {
                         attachments: [],
                         srcdoc: 'There is no record of this student attempting this problem.',
                         effectiveScore: grade.effectiveScore,
-                        legalScore: grade.legalScore,
+                        partialCreditBestScore: grade.partialCreditBestScore,
+                        weight: question.weight,
                     });
 
                     return;
@@ -137,12 +141,12 @@ export default class ExportPDFHelper {
                         id: influencingWorkbook,
                         active: true,
                     },
-                    attributes: ['id', 'submitted', 'randomSeed', 'problemPath'],
+                    attributes: ['id', 'submitted', 'randomSeed', 'problemPath', 'time'],
                     include: [
                         {
                             model: StudentGradeInstance,
                             as: 'studentGradeInstance',
-                            attributes: ['id', 'webworkQuestionPath', 'randomSeed'],
+                            attributes: ['id', 'webworkQuestionPath', 'randomSeed', 'createdAt'],
                             required: false,
                             where: {
                                 active: true,
@@ -152,6 +156,7 @@ export default class ExportPDFHelper {
                                     model: ProblemAttachment,
                                     as: 'problemAttachments',
                                     attributes: ['id', 'cloudFilename', 'userLocalFilename', 'updatedAt'],
+                                    required: false,
                                     where: {
                                         active: true,
                                     }
@@ -199,8 +204,11 @@ export default class ExportPDFHelper {
                         time: attachment.updatedAt,
                     })),
                     effectiveScore: grade.effectiveScore,
-                    legalScore: grade.legalScore,
-                    srcdoc: src?.renderedHTML ?? 'Could not render this problem.'
+                    partialCreditBestScore: grade.partialCreditBestScore,
+                    srcdoc: src?.renderedHTML ?? 'Could not render this problem.',
+                    startTime: gradeInstanceAttachments?.studentGradeInstance?.createdAt,
+                    submissionTime: gradeInstanceAttachments?.time,
+                    weight: question.weight,
                 });
             })
         );
@@ -227,7 +235,7 @@ export default class ExportPDFHelper {
                 firstName: user.firstName,
                 lastName: user.lastName,
                 problems: studentGrades,
-                professorUUID: professorUUID
+                professorUUID: professorUUID,
             };
             return await this.bulkExportAxios.post('export/', postObject, {
                 params: {

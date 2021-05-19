@@ -3130,26 +3130,26 @@ class CourseController {
     }
 
     async enroll(options: CreateGradesForUserEnrollmentOptions): Promise<StudentEnrollment> {
-        const fetchedEnrollment = await StudentEnrollment.findOne({
-            where: {
-                courseId: options.courseId,
-                userId: options.userId,
-            }
-        });
-        if (!_.isNil(fetchedEnrollment)) {
-            if (!_.isNil(fetchedEnrollment.dropDate)) {
-                if (options.reEnrollIfDropped ?? false) {
-                    fetchedEnrollment.dropDate = null;
-                    await fetchedEnrollment.save();
-                } else {
-                    throw new IllegalArgumentException('Cannot enroll with enrollment link if you have dropped the course');
+        return await useDatabaseTransaction(async () => {
+            const fetchedEnrollment = await StudentEnrollment.findOne({
+                where: {
+                    courseId: options.courseId,
+                    userId: options.userId,
+                }
+            });
+
+            if (!_.isNil(fetchedEnrollment)) {
+                if (!_.isNil(fetchedEnrollment.dropDate)) {
+                    if (options.reEnrollIfDropped ?? false) {
+                        fetchedEnrollment.dropDate = null;
+                        await fetchedEnrollment.save();
+                    } else {
+                        throw new IllegalArgumentException('Cannot enroll with enrollment link if you have dropped the course');
+                    }
                 }
             }
-            return fetchedEnrollment;
-        }
 
-        return await useDatabaseTransaction(async () => {
-            const result = await this.createStudentEnrollment({
+            const enrollment = fetchedEnrollment ?? await this.createStudentEnrollment({
                 userId: options.userId,
                 courseId: options.courseId,
                 enrollDate: new Date()
@@ -3158,7 +3158,7 @@ class CourseController {
                 courseId: options.courseId,
                 userId: options.userId,
             });
-            return result;
+            return enrollment;
         });
     }
 
@@ -4341,6 +4341,9 @@ class CourseController {
                     as: 'topic',
                     required: true,
                     attributes: [],
+                    where: {
+                        active: true,
+                    },
                     include: [{
                         model: CourseUnitContent,
                         as: 'unit',
@@ -4350,18 +4353,27 @@ class CourseController {
                         // We just don't want further results to propogate
                         // Also we don't need course in the join, we need to add a relationship to go through course
                         where: {
-                            courseId
+                            courseId,
+                            active: true,
                         },
                         include: [{
                             model: Course,
                             as: 'course',
                             required: true,
                             attributes: [],
+                            where: {
+                                active: true,
+                            },
                             include: [{
                                 model: StudentEnrollment,
                                 as: 'enrolledStudents',
                                 required: true,
                                 attributes: [],
+                                where: {
+                                    active: true,
+                                    userId: userId,
+                                    dropDate: null
+                                },
                             }]
                         }]
                     }]
@@ -4371,16 +4383,16 @@ class CourseController {
                     required: false,
                     attributes: [],
                     where: {
-                        id: {
-                            [Sequelize.Op.eq]: null
-                        }
+                        userId: userId,
+                        active: true
                     }
                 }],
                 attributes: [
                     'id'
                 ],
                 where: {
-                    ['$topic.unit.course.enrolledStudents.user_id$']: userId
+                    [`$grades.${StudentGrade.rawAttributes[nameof<StudentGrade>('id')].field}$`]: null,
+                    active: true
                 }
             });
         } catch (e) {
@@ -4401,16 +4413,25 @@ class CourseController {
                     as: 'course',
                     required: true,
                     attributes: [],
+                    where: {
+                        active: true,
+                    },
                     include: [{
                         model: CourseUnitContent,
                         as: 'units',
                         required: true,
                         attributes: [],
+                        where: {
+                            active: true,
+                        },
                         include: [{
                             model: CourseTopicContent,
                             as: 'topics',
                             required: true,
                             attributes: [],
+                            where: {
+                                active: true
+                            },
                             include: [{
                                 model: CourseWWTopicQuestion,
                                 required: true,
@@ -4418,13 +4439,17 @@ class CourseController {
                                 attributes: [],
                                 // This where is ok here because we just don't want results to propagate past this point
                                 where: {
-                                    id: questionId
+                                    id: questionId,
+                                    active: true,
                                 },
                                 include: [{
                                     model: StudentGrade,
                                     as: 'grades',
                                     required: false,
-                                    attributes: []
+                                    attributes: [],
+                                    where: {
+                                        active: true
+                                    }
                                 }]
                             }]
                         }]
@@ -4434,9 +4459,9 @@ class CourseController {
                     'userId'
                 ],
                 where: {
-                    ['$course.units.topics.questions.grades.student_grade_id$']: {
-                        [Sequelize.Op.eq]: null
-                    }
+                    [`$course.units.topics.questions.grades.${StudentGrade.rawAttributes[nameof<StudentGrade>('id')].field}$`]: null,
+                    dropDate: null,
+                    active: true,
                 }
             });
         } catch (e) {

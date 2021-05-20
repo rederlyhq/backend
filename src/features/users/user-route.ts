@@ -47,7 +47,7 @@ router.get('/session',
     validate(getSessionValidation),
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, any, any>, res: Response, next: NextFunction) => {
         if (_.isNil(req.cookies.sessionToken)) {
-            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+            throw new Error('The sessionToken was missing from an LTI launch.');
         }
 
         const uuid = req.cookies.sessionToken.split('_')[0];

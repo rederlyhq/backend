@@ -25,6 +25,7 @@ module.exports = {
         'semi': 1,
         'quotes': [
             1, 'single', 'avoid-escape'
-        ]
+        ],
+        '@typescript-eslint/no-unused-vars': ["warn", { "argsIgnorePattern": "^_" }]
     },
 };

@@ -5077,9 +5077,11 @@ class CourseController {
             if (showTotalGradeImmediately){
                 bestVersionScoreReturn = Math.max(bestVersionScore, problemScores.total);
                 bestOverallVersionReturn = Math.max(bestOverallVersion, problemScores.total);
+                // Problem weights don't need to be hidden and should be included to calculate the total.
+                problemWeightsReturn = problemWeights;
+
                 if (showItemizedResults) {
                     problemScoresReturn = problemScores;
-                    problemWeightsReturn = problemWeights;
                 } else {
                     problemScoresReturn = {total: problemScores.total};
                 }

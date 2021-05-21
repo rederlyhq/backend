@@ -36,6 +36,8 @@ import ExportPDFHelper from '../../utilities/export-pdf-helper';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import { canUserViewCourse } from '../../middleware/permissions/course-permissions';
 import courseRepository from './course-repository';
+import StudentGradeInstance from '../../database/models/student-grade-instance';
+import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 
 const fileUpload = multer();
 
@@ -818,6 +820,31 @@ router.put('/question/grade/instance/:id',
         }
 
         const params = req.params as UpdateGradeInstanceRequest.params;
+        // TODO should the below checks go into courseController.updateGradeInstance
+        const studentGradeInstance = await StudentGradeInstance.findOne({
+            attributes: ['studentTopicAssessmentInfoId'],
+            where: {
+                id: params.id
+            },
+        });
+
+        if (!studentGradeInstance) {
+            throw new NotFoundError('Cannot find the associated assessment grade to save');
+        }
+        const studentTopicAssessmentInfo = await StudentTopicAssessmentInfo.findOne({
+            attributes: ['endTime'],
+            where: {
+                id: studentGradeInstance.studentTopicAssessmentInfoId
+            }
+        });
+        if (!studentTopicAssessmentInfo) {
+            throw new NotFoundError('Cannot find the associated exam');
+        }
+
+        if (studentTopicAssessmentInfo.endTime < new Date()) {
+            throw new IllegalArgumentException('Cannot update problem after exam is completed');
+        }
+
         const updatesResult = await courseController.updateGradeInstance({
             where: {
                 id: params.id

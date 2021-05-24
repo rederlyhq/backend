@@ -35,58 +35,83 @@ lti.onDynamicRegistration(async (req: Request, res: Response, _next: NextFunctio
     }
 });
 
+// https://canvas.instructure.com/doc/api/file.tools_variable_substitutions.html
+const generateCanvasJSON = () => {
+    const template = {
+        'title': 'Rederly Tool',
+        'description': 'Rederly Mathematics.',
+        'privacy_level': 'public',
+        'oidc_initiation_url': 'http://test.rederly.com:3002/backend-api/lti/login',
+        'target_link_uri': 'http://test.rederly.com:3002/backend-api/lti',
+        'scopes': [
+            'https://purl.imsglobal.org/spec/lti-ags/scope/lineitem',
+            'https://purl.imsglobal.org/spec/lti-ags/scope/lineitem.readonly',
+            'https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly',
+            'https://purl.imsglobal.org/spec/lti-ags/scope/score',
+            'https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly',
+            'https://canvas.instructure.com/lti/public_jwk/scope/update',
+            'https://canvas.instructure.com/lti/account_lookup/scope/show',
+            'https://canvas.instructure.com/lti/data_services/scope/show',
+            'https://canvas.instructure.com/lti/data_services/scope/create',
+            'https://canvas.instructure.com/lti/data_services/scope/update'
+        ],
+        'extensions': [
+            {
+                'domain': 'test.rederly.com:3002',
+                'tool_id': 'rederly-tool-0.1',
+                'platform': 'canvas.instructure.com',
+                'settings': {
+                    'text': 'Launch Rederly',
+                    'icon_url': 'http://app.rederly.com/rederly-favicon.ico',
+                    'selection_height': 800,
+                    'selection_width': 800,
+                    'placements': [
+                        {
+                            'text': 'Select Rederly Topic',
+                            'enabled': true,
+                            'icon_url': 'http://app.rederly.com/rederly-favicon.ico',
+                            'placement': 'assignment_selection',
+                            'message_type': 'LtiDeepLinkingRequest',
+                            'target_link_uri': 'http://test.rederly.com:3002/backend-api/lti',
+                            'selection_height': 500,
+                            'selection_width': 500
+                        }
+                    ]
+                }
+            }
+        ],
+        'public_jwk_url': 'http://test.rederly.com:3002/backend-api/lti/keys',
+        'custom_fields': {
+            'userinfoemail': '$Person.email.primary'
+        }
+    };
+
+    return template;
+};
+
 // TODO: This will be an Admin-only route, where university admins can upload their LTI configurations for setup.
-// lti.whitelist('/platform/new');
-// lti.app.post('/platform/new', async (_req: Request, res: Response, _next: NextFunction) => {
-//     const result = await lti.registerPlatform({
-//         url: 'https://canvas.instructure.com',
-//         name: 'RedCanvas',
-//         clientId: '10000000000002',
-//         authenticationEndpoint:'http://localhost:80/api/lti/authorize_redirect',
-//         accesstokenEndpoint:'http://localhost:80/login/oauth2/token',
-//         authConfig: { 
-//           method: 'JWK_SET', 
-//           key: 'http://localhost:80/api/lti/security/jwks' }
-//      });
-//      console.log(result);
-//      console.log(result.platformJSON());
-//      const json = await result.platformJSON();
+lti.whitelist('/platform/new');
+lti.app.post('/platform/new', async (_req: Request, res: Response, _next: NextFunction) => {
+    const result = await lti.registerPlatform({
+        url: 'https://canvas.instructure.com',
+        name: 'RedCanvas',
+        clientId: '10000000000003',
+        authenticationEndpoint:'http://canvas.docker/api/lti/authorize_redirect',
+        accesstokenEndpoint:'http://canvas.docker/login/oauth2/token',
+        authConfig: { 
+          method: 'JWK_SET', 
+          key: 'http://canvas.docker/api/lti/security/jwks' }
+     });
+     console.log(result);
+     console.log(result.platformJSON());
+     const json = await result.platformJSON();
+     console.log(json);
 
-//      const registration = {
-//         // eslint-disable-next-line @typescript-eslint/camelcase
-//         application_type: 'web',
-//         // eslint-disable-next-line @typescript-eslint/camelcase
-//         response_types: ['id_token'],
-//         // eslint-disable-next-line @typescript-eslint/camelcase
-//         grant_types: ['implicit', 'client_credentials'],
-//         // eslint-disable-next-line @typescript-eslint/camelcase
-//         initiate_login_uri: lti.loginRoute(),
-//         // eslint-disable-next-line @typescript-eslint/camelcase
-//         redirect_uris: [lti.appRoute()],
-//         // eslint-disable-next-line @typescript-eslint/camelcase
-//         client_name: 'Rederly Tool',
-//         // eslint-disable-next-line @typescript-eslint/camelcase
-//         jwks_uri: lti.keysetRoute(),
-//         // eslint-disable-next-line @typescript-eslint/camelcase
-//         logo_uri: 'https://app.rederly.com/rederly-favicon.ico',
-//         // eslint-disable-next-line @typescript-eslint/camelcase
-//         token_endpoint_auth_method: 'private_key_jwt',
-//         scope: 'https://purl.imsglobal.org/spec/lti-ags/scope/lineitem.readonly https://purl.imsglobal.org/spec/lti-ags/scope/lineitem https://purl.imsglobal.org/spec/lti-ags/scope/score https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly',
-//         'https://purl.imsglobal.org/spec/lti-tool-configuration': {
-//         domain: 'test.rederly.com',
-//         description: 'This is a description, Gib?',
-//         // eslint-disable-next-line @typescript-eslint/camelcase
-//         target_link_uri: lti.appRoute(),
-//         // eslint-disable-next-line @typescript-eslint/camelcase
-//         //   custom_parameters: this.#customParameters,
-//         // This one seems like OpenID specific stuff.
-//         //   claims: configuration.claims_supported,
-//           messages: [
-//             { type: 'LtiDeepLinkingRequest' },
-//             { type: 'LtiResourceLink' }
-//           ]
-//         }
-//       };
+     const canvasJson = generateCanvasJSON();
+     res.json(canvasJson);
+});
 
-//      res.json(registration);
-// });
+lti.whitelist('/platform/canvas');
+lti.app.all('/platform/canvas', async (_req: Request, res: Response, _next: NextFunction) => {
+    res.json(generateCanvasJSON());
+});

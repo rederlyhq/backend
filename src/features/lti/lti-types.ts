@@ -55,6 +55,9 @@ export interface LTIPlatformContext {
     createdAt: Date;
     __v: number;
     __id: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    custom: any;
+    custom: {
+        // Apparently, Canvas limits us to lowercase.
+        userinfoemail?: string;
+        redirect?: string;
+    };
 };

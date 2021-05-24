@@ -20,8 +20,8 @@ import { LTIKToken } from './lti-types';
 import Role from '../permissions/roles';
 
 const autoEnrollOnConnect = async (token: LTIKToken, user: User): Promise<[StudentEnrollment, boolean] | null> => {
-    const dest = token.platformContext?.custom?.redirect ?? token?.platformContext?.targetLinkUri;
-    const courseToEnrollIn = dest.match(/courses\/(\d+)/)[1];
+    const dest = token.platformContext?.custom?.redirect ?? token?.platformContext?.targetLinkUri ?? 'app.rederly.com';
+    const courseToEnrollIn = dest.match(/courses\/(\d+)/)?.[1] ?? '0';
     const courseId = parseInt(courseToEnrollIn, 10);
 
     if (courseId <= 0) {
@@ -38,14 +38,16 @@ const autoEnrollOnConnect = async (token: LTIKToken, user: User): Promise<[Stude
 };
 
 lti.onConnect(async (token: LTIKToken, req: Request, res: Response, _next: NextFunction) => {
-    if (_.isNil(token?.userInfo?.email)) {
+    console.log(token);
+    const email = token?.userInfo?.email ?? token?.platformContext?.custom?.userinfoemail;
+    if (_.isNil(email)) {
         return res.send('There is a problem with this LTI connect. No email found.');
     }
     // TODO: Session.email == ltik.email
     // Find the connecting user based on the email address that the institution uses for LTI.
     let user = await User.findOne({
         where: {
-            email: token.userInfo.email.toLowerCase()
+            email: email.toLowerCase()
         }
     });
 
@@ -53,7 +55,7 @@ lti.onConnect(async (token: LTIKToken, req: Request, res: Response, _next: NextF
     if (_.isNil(user)) {
         // TODO: Currently, parsing from the email is still how universities get set.
         // Ideally, when registration occurs, we should associate the Platform ID with a University and use the LTIK to pick the university.
-        const universityFromEmail = await universityController.getUniversitiesAssociatedWithEmail({ emailDomain: token.userInfo.email.split('@')[1] });
+        const universityFromEmail = await universityController.getUniversitiesAssociatedWithEmail({ emailDomain: email.split('@')[1] });
 
         // TODO: Send email so actuallyVerified gets set.
         user = await userController.createUser({
@@ -61,9 +63,10 @@ lti.onConnect(async (token: LTIKToken, req: Request, res: Response, _next: NextF
             universityId: universityFromEmail.first?.id,
             // TODO: Convert LTI Roles into Rederly Roles.
             roleId: Role.STUDENT,
+            // TODO: Add custom fields to get from Canvas, mark as optional in interface.
             firstName: token.userInfo.given_name,
             lastName: token.userInfo.family_name,
-            email: token.userInfo.email,
+            email: email,
             password: '',
             verified: true,
             actuallyVerified: false,

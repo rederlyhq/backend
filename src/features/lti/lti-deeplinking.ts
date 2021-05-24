@@ -9,13 +9,14 @@ import { LTIKToken } from './lti-types';
 // TODO: If no course mapping exists for the context, have form prompt for a course to bind, then grab topics for that course.
 lti.onDeepLinking(async (token: LTIKToken, _req: Request, res: Response) => {
     console.log(token);
+    const email = token?.userInfo?.email ?? token?.platformContext?.custom?.userinfoemail;
     if (!token.platformContext?.deepLinkingSettings) {
         throw new Error('This platform does not support deep linking and did not provide a deep_link_return_url');
     }
 
     const user = await User.findOne({
         where: {
-            email: token.userInfo.email
+            email: email
         }
     });
 

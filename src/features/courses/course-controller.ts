@@ -1532,6 +1532,10 @@ class CourseController {
                 model: StudentEnrollment,
                 as: 'enrolledStudents',
                 attributes: ['userId'],
+                required: false,
+                where: {
+                    dropDate: null
+                }
             }]
         });
 
@@ -1563,6 +1567,10 @@ class CourseController {
                         model: StudentEnrollment,
                         as: 'enrolledStudents',
                         attributes: ['userId'],
+                        required: false,
+                        where: {
+                            dropDate: null
+                        }
                     }]
                 }]
             }]

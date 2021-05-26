@@ -5,10 +5,12 @@ import CourseUnitContent from '../../database/models/course-unit-content';
 import Course from '../../database/models/course';
 import lti from '../../database/lti-init';
 import { LTIKToken } from './lti-types';
+import configurations from '../../configurations';
+import logger from '../../utilities/logger';
 
 // TODO: If no course mapping exists for the context, have form prompt for a course to bind, then grab topics for that course.
 lti.onDeepLinking(async (token: LTIKToken, _req: Request, res: Response) => {
-    console.log(token);
+    logger.debug(token);
     const email = token?.userInfo?.email ?? token?.platformContext?.custom?.userinfoemail;
     if (!token.platformContext?.deepLinkingSettings) {
         throw new Error('This platform does not support deep linking and did not provide a deep_link_return_url');
@@ -54,12 +56,10 @@ lti.onDeepLinking(async (token: LTIKToken, _req: Request, res: Response) => {
         return ({
             type: 'ltiResourceLink',
             // The URL is supposed to be a fully qualified URL to the resource, but not every route we have is directly accessible via LTI.
-            // so instead, we use custom for redirecting.
-            // url: `http://test.rederly.com:3002/common/courses/${topic.unit?.course?.id}/topic/${topic.id}`,
-            // url: `http://test.rederly.com:3002/backend-api/lti?redir=${encodeURIComponent(`common/courses/${topic.unit?.course?.id}/topic/${topic.id}`)}`,
-            url: 'http://test.rederly.com:3002/backend-api/lti',
+            // so instead, we use custom for redirecting and the LTI redirect URL for the main URL.
+            url: `${configurations.app.baseDomain}/backend-api/lti`,
             custom: {
-                redirect: `http://test.rederly.com:3002/common/courses/${topic.unit?.course?.id}/topic/${topic.id}`
+                redirect: `${configurations.app.baseDomain}/common/courses/${topic.unit?.course?.id}/topic/${topic.id}`
             },
             title: topic.name,
             text: topic.description,
@@ -69,7 +69,7 @@ lti.onDeepLinking(async (token: LTIKToken, _req: Request, res: Response) => {
             },
             available: {
                 startDateTime: topic.startDate.toISOString(),
-                // Topics always accessible after end date? Unless exam?
+                // TODO: Limit availability for certain topic settings.
                 // endDateTime: topic.endDate.toISOString(),
             },
             submission: {
@@ -79,6 +79,7 @@ lti.onDeepLinking(async (token: LTIKToken, _req: Request, res: Response) => {
         });
     });
 
+    // TODO: Reuse Library Browser form for filtering topics.
     const form = await Promise.all(objs.map(async (obj) => `
                 <div class="card">
                     <div>${obj.title}</div>

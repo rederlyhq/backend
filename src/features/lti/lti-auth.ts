@@ -9,7 +9,7 @@ import _ = require('lodash');
 import universityController from '../universities/university-controller';
 import { updateNilPasswordValidation } from '../users/user-route-validation';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
-import { UpdatePasswordRequest } from '../users/user-route-request-types';
+import { UpdateNilPasswordRequest } from '../users/user-route-request-types';
 import * as asyncHandler from 'express-async-handler';
 import validate from '../../middleware/joi-validator';
 import userRepository from '../users/user-repository';
@@ -20,7 +20,13 @@ import { LTIKToken } from './lti-types';
 import Role from '../permissions/roles';
 
 const autoEnrollOnConnect = async (token: LTIKToken, user: User): Promise<[StudentEnrollment, boolean] | null> => {
-    const dest = token.platformContext?.custom?.redirect ?? token?.platformContext?.targetLinkUri ?? 'app.rederly.com';
+    const dest = token.platformContext?.custom?.redirect ?? token?.platformContext?.targetLinkUri;
+
+    if (_.isNil(dest)) {
+        logger.debug('No destination was found in the redirect or targetLinkUri. Skipping autoenrollment.');
+        return null;
+    }
+
     const courseToEnrollIn = dest.match(/courses\/(\d+)/)?.[1] ?? '0';
     const courseId = parseInt(courseToEnrollIn, 10);
 
@@ -38,7 +44,7 @@ const autoEnrollOnConnect = async (token: LTIKToken, user: User): Promise<[Stude
 };
 
 lti.onConnect(async (token: LTIKToken, req: Request, res: Response, _next: NextFunction) => {
-    console.log(token);
+    logger.debug(token);
     const email = token?.userInfo?.email ?? token?.platformContext?.custom?.userinfoemail;
     if (_.isNil(email)) {
         return res.send('There is a problem with this LTI connect. No email found.');
@@ -95,11 +101,9 @@ lti.onConnect(async (token: LTIKToken, req: Request, res: Response, _next: NextF
         autoEnrollOnConnect(token, user);
     }
 
-    // TODO: This can be initiated earlier, and it'll be a longer request.
-    const response = await lti.NamesAndRoles.getMembers(res.locals.token);
-    console.log(response);
-    const result = await lti.NamesAndRoles.getMembers(res.locals.token, { resourceLinkId: true, role: 'Learner', limit: 1, pages: 1 });
-    console.log(result);
+    // TODO: Names and Roles may be initiated here to capitalize on the LTIK's availability.
+    // const response = await lti.NamesAndRoles.getMembers(res.locals.token);
+    // const result = await lti.NamesAndRoles.getMembers(res.locals.token, { resourceLinkId: true, role: 'Learner', limit: 1, pages: 1 });
 
     return lti.redirect(res, token.platformContext?.custom?.redirect ?? token?.platformContext?.targetLinkUri);
   }
@@ -108,8 +112,8 @@ lti.onConnect(async (token: LTIKToken, req: Request, res: Response, _next: NextF
 
 lti.app.put('/update-nil-password',
 validate(updateNilPasswordValidation),
-asyncHandler(async (req: RederlyExpressRequest<UpdatePasswordRequest.params, unknown, UpdatePasswordRequest.body, UpdatePasswordRequest.query>, res: Response, next: NextFunction) => {
-    const hashedPassword = await hashPassword((req.body as any).newPassword);
+asyncHandler(async (req: RederlyExpressRequest<UpdateNilPasswordRequest.params, unknown, UpdateNilPasswordRequest.body, UpdateNilPasswordRequest.query>, res: Response, next: NextFunction) => {
+    const hashedPassword = await hashPassword(req.body.newPassword);
     await userRepository.updateUser({
         updates: {
             password: hashedPassword

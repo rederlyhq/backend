@@ -3,8 +3,8 @@ import { Response, NextFunction } from 'express';
 import userController from './user-controller';
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator';
-import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation, updatePasswordValidation, updateForgottonPasswordValidation, resendVerificationValidation, userStatusValidation, impersonateValidation, getSessionValidation, updateNilPasswordValidation } from './user-route-validation';
-import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest, ForgotPasswordRequest, UpdatePasswordRequest, UpdateForgottonPasswordRequest, ResendVerificationRequest, UserStatusRequest, ImpersonateRequest } from './user-route-request-types';
+import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation, updatePasswordValidation, updateForgottonPasswordValidation, resendVerificationValidation, userStatusValidation, impersonateValidation, getSessionValidation } from './user-route-validation';
+import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest, ForgotPasswordRequest, UpdatePasswordRequest, UpdateForgottonPasswordRequest, ResendVerificationRequest, UserStatusRequest, ImpersonateRequest, GetSessionRequest } from './user-route-request-types';
 import Boom = require('boom');
 import passport = require('passport');
 import { authenticationMiddleware } from '../../middleware/auth';
@@ -14,8 +14,8 @@ import IncludeGradeOptions from './include-grade-options';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
 import logger from '../../utilities/logger';
 import { Constants } from '../../constants';
-import User from '../../database/models/user';
 import Session from '../../database/models/session';
+import configurations from '../../configurations';
 
 router.all('/check-in',
     // No validation
@@ -45,9 +45,13 @@ router.post('/impersonate',
 
 router.get('/session',
     validate(getSessionValidation),
-    asyncHandler(async (req: RederlyExpressRequest<any, unknown, any, any>, res: Response, next: NextFunction) => {
+    asyncHandler(async (req: RederlyExpressRequest<GetSessionRequest.params, unknown, GetSessionRequest.body, qs.ParsedQs | GetSessionRequest.query>, res: Response, next: NextFunction) => {
         if (_.isNil(req.cookies.sessionToken)) {
             throw new Error('The sessionToken was missing from an LTI launch.');
+        }
+
+        if (typeof req.query.ltik !== 'string') {
+            throw new Error('The LTI Token was not passed in as a string.');
         }
 
         const uuid = req.cookies.sessionToken.split('_')[0];
@@ -91,7 +95,7 @@ router.post('/login',
             const token = `${newSession.uuid}_${newSession.expiresAt.getTime()}`;
             res.cookie('sessionToken', token, {
                 expires: newSession.expiresAt,
-                domain: 'test.rederly.com',
+                domain: configurations.lti.sameSiteCookiesDomain,
                 sameSite: 'none',
             });
             next(httpResponse.Ok(null, {
@@ -207,7 +211,7 @@ router.post('/logout',
         }
         await userController.logout(req.session.dataValues.uuid);
         res.clearCookie('sessionToken', {
-            domain: 'test.rederly.com',
+            domain: configurations.lti.sameSiteCookiesDomain,
             sameSite: 'none',
         });
         next(httpResponse.Ok('Logged out'));

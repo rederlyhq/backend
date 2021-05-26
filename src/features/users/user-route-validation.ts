@@ -16,7 +16,7 @@ export const getSessionValidation = {
         ltik: Joi.string().required(),
     },
     body: {},
-}
+};
 
 export const forgotPasswordValidation = {
     params: {},

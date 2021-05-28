@@ -91,9 +91,6 @@ lti.onConnect(async (token: LTIKToken, req: Request, res: Response, _next: NextF
     logger.info(`Setting cookie (${cookietoken}) for ${configurations.lti.sameSiteCookiesDomain} that expires at ${moment(newSession.expiresAt).calendar()}`);
     res.cookie('sessionToken', cookietoken, {
         expires: newSession.expiresAt,
-        domain: configurations.lti.sameSiteCookiesDomain,
-        // Strict can't be used because LMS has a different domain. Lax also seems to fail.
-        sameSite: 'none',
     });
 
     // If LTI allows a student to launch a resource, we are assuming the student should be enrolled in that course.

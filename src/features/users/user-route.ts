@@ -95,8 +95,6 @@ router.post('/login',
             const token = `${newSession.uuid}_${newSession.expiresAt.getTime()}`;
             res.cookie('sessionToken', token, {
                 expires: newSession.expiresAt,
-                domain: configurations.lti.sameSiteCookiesDomain,
-                sameSite: 'none',
             });
             next(httpResponse.Ok(null, {
                 roleId: role.id,
@@ -210,10 +208,7 @@ router.post('/logout',
             throw new Error('Session is nil even after authentication middleware');
         }
         await userController.logout(req.session.dataValues.uuid);
-        res.clearCookie('sessionToken', {
-            domain: configurations.lti.sameSiteCookiesDomain,
-            sameSite: 'none',
-        });
+        res.clearCookie('sessionToken');
         next(httpResponse.Ok('Logged out'));
     }));
 

@@ -25,7 +25,7 @@ import curriculumRepository from '../curriculum/curriculum-repository';
 import CurriculumUnitContent from '../../database/models/curriculum-unit-content';
 import CurriculumTopicContent from '../../database/models/curriculum-topic-content';
 import CurriculumWWTopicQuestion from '../../database/models/curriculum-ww-topic-question';
-import WebWorkDef, { Problem } from '@rederly/webwork-def-parser';
+import WebWorkDef, { Problem } from '@rederly/rederly-utils/lib/webwork-def-parser';
 import { getTopicSettingsFromDefFile } from '@rederly/rederly-utils';
 import { nameof } from '../../utilities/typescript-helpers';
 import Role from '../permissions/roles';
@@ -1641,7 +1641,7 @@ class CourseController {
                             weight: parseInt(problem.value ?? '1'),
                             maxAttempts: parseInt(problem.max_attempts ?? '-1'),
                             hidden: false,
-                            optional: false,
+                            optional: problem.rederlyOptional === 'true'
                         },
                         userIds: userIds
                     });
@@ -1692,7 +1692,7 @@ class CourseController {
                             weight: parseInt(problem.value ?? '1'),
                             maxAttempts: parseInt(problem.max_attempts ?? '-1'),
                             hidden: false,
-                            optional: false,
+                            optional: problem.rederlyOptional === 'true',
                             errors: errors ?? null,
                         },
                         userIds: userIds

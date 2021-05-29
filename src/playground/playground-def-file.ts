@@ -1,5 +1,5 @@
 import logger from '../utilities/logger';
-import WebWorkDef from '@rederly/webwork-def-parser';
+import WebWorkDef from '@rederly/rederly-utils/lib/webwork-def-parser';
 
 const v1ProblemListDefFileContent = `
 openDate          = 08/05/2020 at 12:00pm EDT

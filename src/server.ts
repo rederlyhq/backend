@@ -258,7 +258,7 @@ app.use((obj: any, req: Request, res: Response, next: NextFunction) => {
         return res.status(obj.status).json(obj);
     } else {
         const rederlyReference = `rederly-reference-${new Date().getTime()}-${Math.floor(Math.random() * 1000000)}`;
-        logger.error(`${rederlyReference} - ${obj.stack}`);
+        logger.error(`${rederlyReference} - ${obj.combinedStack ?? obj.stack}`);
         const data: ErrorResponse = {
             statusCode: 500,
             status: 'Internal Server Error',

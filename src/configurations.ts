@@ -131,7 +131,7 @@ const configurations = {
         }
     },
     server: {
-        port: readStringValue('SERVER_PORT', '3001'),
+        port: readIntValue('SERVER_PORT', 3001),
         basePath: readStringValue('SERVER_BASE_PATH', '/backend-api'),
         logInvalidlyPrefixedRequests: readBooleanValue('SERVER_LOG_INVALIDLY_PREFIXED_REQUESTS', true),
         blockInvalidlyPrefixedRequests: readBooleanValue('SERVER_BLOCK_INVALIDLY_PREFIXED_REQUESTS', true),

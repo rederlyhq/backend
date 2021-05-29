@@ -69,7 +69,11 @@ statusHandler({
             name: 'library-browser',
             url: `${configurations.libraryBrowser.baseUrl}/library-browser/version`,
             crawl: true
-        }
+        }, {
+            name: 'course-exporter',
+            url: `${configurations.courseExporter.baseUrl}/course-exports/version`,
+            crawl: true
+        },
     ],
     statusAccessibleOptions: [{
         name: 'bulk-export-pdf',

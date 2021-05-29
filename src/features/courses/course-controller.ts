@@ -6072,6 +6072,65 @@ You can contact your student at ${options.student.email} or by replying to this 
             }
         });
     }
+
+    fetchDataForExport({
+        courseId
+    }: { courseId: number }): Promise<Course | null> {
+        return Course.findOne({
+            where: {
+                active: true,
+                id: courseId
+            },
+            attributes: ['id', 'name'],
+            include: [{
+                model: CourseUnitContent,
+                as: 'units',
+                where: {
+                    active: true,
+                },
+                order: ['contentOrder'],
+                attributes: ['id', 'name'],
+                required: false,
+                include: [{
+                    model: CourseTopicContent,
+                    as: 'topics',
+                    where: {
+                        active: true
+                    },
+                    attributes: ['id', 'name', 'topicTypeId', 'startDate', 'endDate', 'deadDate', 'partialExtend', 'description'],
+                    required: false,
+                    order: ['contentOrder'],
+                    include: [{
+                        model: CourseWWTopicQuestion,
+                        as: 'questions',
+                        where: {
+                            active: true
+                        },
+                        order: ['problemOrder'],
+                        attributes: ['id', 'problemNumber', 'webworkQuestionPath', 'weight', 'maxAttempts', 'optional'],
+                        required: false,
+                        include: [{
+                            model: CourseQuestionAssessmentInfo,
+                            as: 'courseQuestionAssessmentInfo',
+                            where: {
+                                active: true
+                            },
+                            attributes: ['randomSeedSet', 'additionalProblemPaths'],
+                            required: false,
+                        }]
+                    }, {
+                        model: TopicAssessmentInfo,
+                        as: 'topicAssessmentInfo',
+                        where: {
+                            active: true
+                        },
+                        attributes: ['duration', 'hardCutoff', 'hideHints', 'hideProblemsAfterFinish', 'maxGradedAttemptsPerVersion', 'maxVersions', 'randomizeOrder', 'showItemizedResults', 'showTotalGradeImmediately', 'versionDelay'],
+                        required: false,
+                    }]
+                }]
+            }]
+        });
+    }
 }
 
 export const courseController = new CourseController();

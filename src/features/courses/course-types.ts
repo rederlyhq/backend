@@ -17,7 +17,7 @@ import { DeepPartial } from '../../utilities/typescript-helpers';
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
 import ProblemAttachment from '../../database/models/problem-attachment';
 import { BucketDefFileResult, FindFilesDefFileResult } from '../../utilities/webwork-utilities/importer';
-import WebWorkDef from '@rederly/webwork-def-parser';
+import WebWorkDef from '@rederly/rederly-utils/lib/webwork-def-parser';
 import StudentEnrollment from '../../database/models/student-enrollment';
 import { TopicTypeFilters, ListCoursesFilters } from './course-controller';
 import StudentGradeOverride from '../../database/models/student-grade-override';

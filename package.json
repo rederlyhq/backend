@@ -1,11 +1,11 @@
 {
   "name": "backend",
   "version": "1.11.9",
-  "description": "",
+  "description": "The core backend of the Rederly platform.",
   "main": "index.js",
   "dependencies": {
     "@hapi/joi": "^15.1.1",
-    "@rederly/rederly-utils": "https://github.com/rederlyhq/rederly-utils/releases/download/v0.0.3/rederly-rederly-utils-0.0.3.tgz",
+    "@rederly/rederly-utils": "https://github.com/rederlyhq/rederly-utils/releases/download/v0.1.0/rederly-rederly-utils-0.1.0.tgz",
     "aws-sdk": "^2.815.0",
     "axios": "^0.21.1",
     "bcrypt": "^5.0.0",

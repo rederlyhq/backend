@@ -6073,7 +6073,7 @@ You can contact your student at ${options.student.email} or by replying to this 
         });
     }
 
-    fetchDataForExport({
+    fetchDataForCourseArchiveExport({
         courseId
     }: { courseId: number }): Promise<Course | null> {
         return Course.findOne({

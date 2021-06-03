@@ -1,13 +1,13 @@
 import * as Joi from '@hapi/joi';
-import Boom = require('boom');
-import Extend = require('extend');
-import { NextFunction, Response } from 'express';
+import * as _ from 'lodash';
+import * as Boom from 'boom';
+import { NextFunction, Request, Response, RequestHandler } from 'express';
 
-export default function validate(schema: Joi.SchemaLike, options: Joi.ValidationOptions = {}): (req: Request, res: Response, next: NextFunction) => void {
+export default function validate(schema: Joi.SchemaLike, options: Joi.ValidationOptions = {}): RequestHandler {
     options.abortEarly = false;
 
     // Using Request from express I get typescript errors
-    return function validateRequest(req: Request, res: Response, next: NextFunction): void {
+    return function validateRequest(req: Request, _res: Response, next: NextFunction): void {
         // This is a generic callback which can be used for any object, thus this can be any as well
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const toValidate: any = {};
@@ -34,7 +34,7 @@ export default function validate(schema: Joi.SchemaLike, options: Joi.Validation
             }
 
             // copy the validated data to the req object
-            Extend(req, validated);
+            _.extend(req, validated);
 
             return next();
         };

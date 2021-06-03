@@ -3,8 +3,8 @@ import { Response, NextFunction } from 'express';
 import userController from './user-controller';
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator';
-import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation, updatePasswordValidation, updateForgottonPasswordValidation, resendVerificationValidation, userStatusValidation, impersonateValidation, getSessionValidation } from './user-route-validation';
-import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest, ForgotPasswordRequest, UpdatePasswordRequest, UpdateForgottonPasswordRequest, ResendVerificationRequest, UserStatusRequest, ImpersonateRequest, GetSessionRequest } from './user-route-request-types';
+import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation, updatePasswordValidation, updateForgottonPasswordValidation, resendVerificationValidation, userStatusValidation, impersonateValidation, getSessionValidation, getJWTValidation } from './user-route-validation';
+import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest, ForgotPasswordRequest, UpdatePasswordRequest, UpdateForgottonPasswordRequest, ResendVerificationRequest, UserStatusRequest, ImpersonateRequest, GetSessionRequest, GetJWTRequest } from './user-route-request-types';
 import Boom = require('boom');
 import passport = require('passport');
 import { authenticationMiddleware } from '../../middleware/auth';
@@ -16,6 +16,7 @@ import logger from '../../utilities/logger';
 import { Constants } from '../../constants';
 import Session from '../../database/models/session';
 import configurations from '../../configurations';
+import * as jwt from 'jsonwebtoken';
 
 router.all('/check-in',
     // No validation
@@ -243,6 +244,34 @@ router.get('/status',
 
         next(httpResponse.Ok('fetched user status', response));
     }));
+
+
+router.post('/jwt',
+    authenticationMiddleware,
+    validate(getJWTValidation),
+    asyncHandler(async (req: RederlyExpressRequest<GetJWTRequest.params, unknown, GetJWTRequest.body, GetJWTRequest.query>, res: Response, next: NextFunction) => {
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+
+        const notifScope = {
+            // Implicitly given access to self-directed-notifications
+            userId: req.session.userId
+        };
+
+        const token = jwt.sign({
+            data: notifScope,
+        }, 'TODO: Change this secret', {
+            expiresIn: '15min'
+        });
+
+        // Transmitting this over HTTPS should be secure enough.
+        // I considered making this a cookie, but we don't need it on every request and it's likely to change.
+        // https://hasura.io/blog/best-practices-of-using-jwt-with-graphql/#jwt_persist
+        next(httpResponse.Ok(null, token));
+    })
+);
+
 
 router.get('/:id',
     authenticationMiddleware,

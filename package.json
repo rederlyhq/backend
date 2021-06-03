@@ -7,6 +7,7 @@
     "@hapi/joi": "^15.1.1",
     "@rederly/rederly-utils": "https://github.com/rederlyhq/rederly-utils/releases/download/v0.0.3/rederly-rederly-utils-0.0.3.tgz",
     "@rederly/webwork-def-parser": "https://github.com/rederlyhq/def-parser/releases/download/v1.0.2/rederly-webwork-def-parser-1.0.2.tgz",
+    "@types/jsonwebtoken": "^8.5.1",
     "aws-sdk": "^2.815.0",
     "axios": "^0.21.1",
     "bcrypt": "^5.0.0",
@@ -25,6 +26,7 @@
     "fs-extra": "^9.0.1",
     "jira-client": "^6.21.1",
     "joi-extract-type": "^15.0.8",
+    "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.20",
     "ltijs": "^5.7.7",
     "ltijs-sequelize": "^2.4.0",
@@ -116,27 +118,6 @@
     "clean": "node ./utility-scripts/clean.js",
     "package": "node ./utility-scripts/package.js",
     "build:package": "npm run build && npm run package"
-  },
-  "nodemonConfig": {
-    "ignore": [
-      "**/*.test.ts",
-      "**/*.spec.ts",
-      "node_modules/**/node_modules/**",
-      "node_modules/@rederly/**/src/**"
-    ],
-    "ignoreRoot": [
-      ".git",
-      "public"
-    ],
-    "watch": [
-      "src",
-      "node_modules/@rederly"
-    ],
-    "ext": "ts",
-    "execMap": {
-      "ts": "node --require ts-node/register"
-    },
-    "signal": "SIGINT"
   },
   "repository": {
     "type": "git",

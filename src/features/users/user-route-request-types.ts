@@ -106,3 +106,9 @@ export namespace UserStatusRequest {
     export type query = Joi.extractType<typeof validations.userStatusValidation.query>;
     export type body = Joi.extractType<typeof validations.userStatusValidation.body>;
 };
+
+export namespace GetJWTRequest {
+    export type params = Joi.extractType<typeof validations.getJWTValidation.params>;
+    export type query = Joi.extractType<typeof validations.getJWTValidation.query>;
+    export type body = Joi.extractType<typeof validations.getJWTValidation.body>;
+};

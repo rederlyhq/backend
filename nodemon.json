@@ -1,0 +1,26 @@
+{
+    "ignore": [
+      "**/*.test.ts",
+      "**/*.spec.ts",
+      "node_modules/**/node_modules/**",
+      "node_modules/@rederly/**/src/**"
+    ],
+    "ignoreRoot": [
+      ".git",
+      "public"
+    ],
+    "watch": [
+      "src",
+      ".env",
+      "node_modules/@rederly/**/lib/**"
+    ],
+    "ext": "json,js,ts",
+    "execMap": {
+      "ts": "node --require ts-node/register"
+    },
+    "events": {
+      "start": "node -e \"process.stdout.write('\u001b[3J\u001b[1J');console.clear();\""
+    },
+    "signal": "SIGINT",
+    "delay": "1000"
+  }

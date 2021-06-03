@@ -141,3 +141,13 @@ export const userStatusValidation = {
     query: {},
     body: {},
 };
+
+export const getJWTValidation = {
+    params: {},
+    query: {},
+    body: {
+        // TODO: Expand on scopes that JWT can access. userId is implicit and doesn't need to be passed.
+        // This should be specific content types + their ids.
+        scopes: Joi.object().optional(),
+    },
+};

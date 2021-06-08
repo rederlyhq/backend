@@ -245,7 +245,6 @@ router.get('/status',
         next(httpResponse.Ok('fetched user status', response));
     }));
 
-
 router.post('/jwt',
     authenticationMiddleware,
     validate(getJWTValidation),
@@ -271,7 +270,6 @@ router.post('/jwt',
         next(httpResponse.Ok(null, token));
     })
 );
-
 
 router.get('/:id',
     authenticationMiddleware,

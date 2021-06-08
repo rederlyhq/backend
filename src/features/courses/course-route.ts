@@ -36,6 +36,10 @@ import ExportPDFHelper from '../../utilities/export-pdf-helper';
 import CourseTopicContent from '../../database/models/course-topic-content';
 import { canUserViewCourse } from '../../middleware/permissions/course-permissions';
 import courseRepository from './course-repository';
+import * as WebSocket from 'ws';
+import * as jwt from 'jsonwebtoken';
+import { Queue } from 'bullmq';
+const ws = new WebSocket('ws://localhost:3010/');
 
 const fileUpload = multer();
 
@@ -395,8 +399,22 @@ router.put('/topic/:topicId/endExport',
             logger.error('The Exporter failed to successfully export a topic.');
             topic.exportUrl = null;
             topic.lastExported = null;
+            
+            try {
+                ws.send(jwt.sign({data: {userId: 884, message: 'Your export encountered an error.'}}, 'TODO: Change this secret', { expiresIn: '15min' }));
+            } catch(e) {
+                console.log(e);
+            }
+
         } else {
             topic.exportUrl = req.body.exportUrl;
+            
+            try {
+                ws.send(jwt.sign({data: {userId: 884, message: `Your export of ${topic.name} has finished.`}}, 'TODO: Change this secret', { expiresIn: '15min' }));
+            } catch(e) {
+                console.log(e);
+            }
+
         }
         await topic.save();
 
@@ -454,7 +472,8 @@ router.post('/topic/:topicId/startExport',
                 topic.lastExported = null;
                 topic.save();
             });
-            
+
+            ws.send(jwt.sign({data: {userId: 884, message: 'Started export'}}, 'TODO: Change this secret', { expiresIn: '15min' }));
             next(httpResponse.Ok('Loading', exportDetails));
         }
     })

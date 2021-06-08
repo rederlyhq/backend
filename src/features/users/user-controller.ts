@@ -580,6 +580,8 @@ class UserController {
         user.forgotPasswordTokenExpiresAt = new Date();
         await user.save();
     }
+
+    
 }
 const userController = new UserController();
 export default userController;

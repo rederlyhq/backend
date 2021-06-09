@@ -4585,24 +4585,29 @@ class CourseController {
         return result;
     }
 
-    async createNewStudentGrade(options: CreateNewStudentGradeOptions): Promise<StudentGrade> {
+    generateStudentGrade(options: CreateNewStudentGradeOptions): Partial<StudentGradeInterface> {
+        const randomSeed = this.generateRandomSeed();
         const {
             userId,
             courseTopicQuestionId
         } = options;
+
+        return {
+            userId: userId,
+            courseWWTopicQuestionId: courseTopicQuestionId,
+            randomSeed: randomSeed,
+            originalRandomSeed: randomSeed,
+            bestScore: 0,
+            overallBestScore: 0,
+            numAttempts: 0,
+            firstAttempts: 0,
+            latestAttempts: 0,
+        };
+    }
+
+    async createNewStudentGrade(options: CreateNewStudentGradeOptions): Promise<StudentGrade> {
         try {
-            const randomSeed = this.generateRandomSeed();
-            return await StudentGrade.create({
-                userId: userId,
-                courseWWTopicQuestionId: courseTopicQuestionId,
-                randomSeed: randomSeed,
-                originalRandomSeed: randomSeed,
-                bestScore: 0,
-                overallBestScore: 0,
-                numAttempts: 0,
-                firstAttempts: 0,
-                latestAttempts: 0,
-            });
+            return await StudentGrade.create(this.generateStudentGrade(options));
         } catch (e) {
             throw new WrappedError('Could not create new student grade', e);
         }

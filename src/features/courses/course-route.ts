@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
+import * as express from 'express';
+import { Response, NextFunction } from 'express';
 import courseController, { TopicTypeFilters, ListCoursesFilters } from './course-controller';
-const router = require('express').Router();
 import validate from '../../middleware/joi-validator';
 import { authenticationMiddleware, paidMiddleware, userIdMeMiddleware } from '../../middleware/auth';
 import httpResponse from '../../utilities/http-response';
@@ -38,7 +38,9 @@ import { canUserViewCourse } from '../../middleware/permissions/course-permissio
 import courseRepository from './course-repository';
 import StudentGradeInstance from '../../database/models/student-grade-instance';
 import StudentTopicAssessmentInfo from '../../database/models/student-topic-assessment-info';
+import enrollmentRoutes from './enrollments/enrollment-route';
 
+const router = express.Router();
 const fileUpload = multer();
 
 router.post('/:courseId/import-archive',
@@ -1600,6 +1602,8 @@ router.get('/:id',
         }));
     })
 );
+
+router.use('/enroll', enrollmentRoutes);
 
 router.post('/enroll',
     authenticationMiddleware,

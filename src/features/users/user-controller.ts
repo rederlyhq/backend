@@ -33,6 +33,9 @@ import ForbiddenError from '../../exceptions/forbidden-error';
 import RederlyExtendedError from '../../exceptions/rederly-extended-error';
 import StudentGradeInstance from '../../database/models/student-grade-instance';
 import sequelize = require('sequelize');
+import PendingEnrollment from '../../database/models/pending-enrollment';
+import courseController from '../courses/course-controller';
+import { useNewDatabaseTransaction } from '../../utilities/database-helper';
 
 const {
     sessionLife
@@ -441,6 +444,44 @@ class UserController {
             refreshVerifyToken: false,
             user: newUser,
         });
+
+        /**
+         * Async iffy to avoid transaction
+         * We don't want to block registration because there is a bug with pending enrollment
+         * We should check for pending enrollment when trying to access a course too
+         */
+        (async (): Promise<void> => {
+            try {
+                const pendingEnrollments = await PendingEnrollment.findAll({
+                    where: {
+                        email: newUser.email,
+                        active: true
+                    }
+                });
+
+                await pendingEnrollments.asyncForEach(pendingEnrollment => useNewDatabaseTransaction(async () => {
+                    try {
+                        await courseController.enrollManually({
+                            courseId: pendingEnrollment.courseId,
+                            userId: newUser.id,
+                        });
+
+                        await PendingEnrollment.update({
+                            active: false,
+                        }, {
+                            where: {
+                                active: true,
+                                id: pendingEnrollment.id
+                            }
+                        });
+                    } catch (err) {
+                        logger.error(`Could not enroll newly registered user ${newUser.id} in ${pendingEnrollment.courseId}`, err);
+                    }
+                }));
+            } catch(err) {
+                logger.error(`Uncaught error enrolling newly registered user ${newUser.id}`, err);
+            }
+        })();
 
         return {
             id: newUser.id,

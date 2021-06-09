@@ -1933,4 +1933,17 @@ router.post('/feedback/topic/:topicId/user/:userId',
     })
 );
 
+
+router.post('/:id/export-archive',
+authenticationMiddleware,
+asyncHandler(async (req, _res, next) => {
+    const courseId = parseInt(req.params.id, 10);
+    const course = await courseController.fetchDataForCourseArchiveExport({ courseId });
+    req.body = course;
+    next();
+}),
+proxy(configurations.courseExporter.baseUrl, {
+    proxyReqPathResolver: () => '/course-exports/course'
+}));
+
 module.exports = router;

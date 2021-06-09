@@ -57,6 +57,7 @@ const sequelizeConfig: SequelizeOptions = {
         min: 0,
         idle: 10000
     },
+    minifyAliases: true
 };
 
 // Sequelize requires it like this

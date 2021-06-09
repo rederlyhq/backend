@@ -25,7 +25,7 @@ import curriculumRepository from '../curriculum/curriculum-repository';
 import CurriculumUnitContent from '../../database/models/curriculum-unit-content';
 import CurriculumTopicContent from '../../database/models/curriculum-topic-content';
 import CurriculumWWTopicQuestion from '../../database/models/curriculum-ww-topic-question';
-import WebWorkDef, { Problem } from '@rederly/webwork-def-parser';
+import WebWorkDef, { Problem } from '@rederly/rederly-utils/lib/webwork-def-parser';
 import { getTopicSettingsFromDefFile } from '@rederly/rederly-utils';
 import { nameof } from '../../utilities/typescript-helpers';
 import Role from '../permissions/roles';
@@ -1532,6 +1532,10 @@ class CourseController {
                 model: StudentEnrollment,
                 as: 'enrolledStudents',
                 attributes: ['userId'],
+                required: false,
+                where: {
+                    dropDate: null
+                }
             }]
         });
 
@@ -1563,6 +1567,10 @@ class CourseController {
                         model: StudentEnrollment,
                         as: 'enrolledStudents',
                         attributes: ['userId'],
+                        required: false,
+                        where: {
+                            dropDate: null
+                        }
                     }]
                 }]
             }]
@@ -1641,7 +1649,7 @@ class CourseController {
                             weight: parseInt(problem.value ?? '1'),
                             maxAttempts: parseInt(problem.max_attempts ?? '-1'),
                             hidden: false,
-                            optional: false,
+                            optional: problem.rederlyOptional === 'true'
                         },
                         userIds: userIds
                     });
@@ -1692,7 +1700,7 @@ class CourseController {
                             weight: parseInt(problem.value ?? '1'),
                             maxAttempts: parseInt(problem.max_attempts ?? '-1'),
                             hidden: false,
-                            optional: false,
+                            optional: problem.rederlyOptional === 'true',
                             errors: errors ?? null,
                         },
                         userIds: userIds
@@ -3130,26 +3138,26 @@ class CourseController {
     }
 
     async enroll(options: CreateGradesForUserEnrollmentOptions): Promise<StudentEnrollment> {
-        const fetchedEnrollment = await StudentEnrollment.findOne({
-            where: {
-                courseId: options.courseId,
-                userId: options.userId,
-            }
-        });
-        if (!_.isNil(fetchedEnrollment)) {
-            if (!_.isNil(fetchedEnrollment.dropDate)) {
-                if (options.reEnrollIfDropped ?? false) {
-                    fetchedEnrollment.dropDate = null;
-                    await fetchedEnrollment.save();
-                } else {
-                    throw new IllegalArgumentException('Cannot enroll with enrollment link if you have dropped the course');
+        return await useDatabaseTransaction(async () => {
+            const fetchedEnrollment = await StudentEnrollment.findOne({
+                where: {
+                    courseId: options.courseId,
+                    userId: options.userId,
+                }
+            });
+
+            if (!_.isNil(fetchedEnrollment)) {
+                if (!_.isNil(fetchedEnrollment.dropDate)) {
+                    if (options.reEnrollIfDropped ?? false) {
+                        fetchedEnrollment.dropDate = null;
+                        await fetchedEnrollment.save();
+                    } else {
+                        throw new IllegalArgumentException('Cannot enroll with enrollment link if you have dropped the course');
+                    }
                 }
             }
-            return fetchedEnrollment;
-        }
 
-        return await useDatabaseTransaction(async () => {
-            const result = await this.createStudentEnrollment({
+            const enrollment = fetchedEnrollment ?? await this.createStudentEnrollment({
                 userId: options.userId,
                 courseId: options.courseId,
                 enrollDate: new Date()
@@ -3158,7 +3166,7 @@ class CourseController {
                 courseId: options.courseId,
                 userId: options.userId,
             });
-            return result;
+            return enrollment;
         });
     }
 
@@ -4341,6 +4349,9 @@ class CourseController {
                     as: 'topic',
                     required: true,
                     attributes: [],
+                    where: {
+                        active: true,
+                    },
                     include: [{
                         model: CourseUnitContent,
                         as: 'unit',
@@ -4350,18 +4361,27 @@ class CourseController {
                         // We just don't want further results to propogate
                         // Also we don't need course in the join, we need to add a relationship to go through course
                         where: {
-                            courseId
+                            courseId,
+                            active: true,
                         },
                         include: [{
                             model: Course,
                             as: 'course',
                             required: true,
                             attributes: [],
+                            where: {
+                                active: true,
+                            },
                             include: [{
                                 model: StudentEnrollment,
                                 as: 'enrolledStudents',
                                 required: true,
                                 attributes: [],
+                                where: {
+                                    active: true,
+                                    userId: userId,
+                                    dropDate: null
+                                },
                             }]
                         }]
                     }]
@@ -4371,16 +4391,16 @@ class CourseController {
                     required: false,
                     attributes: [],
                     where: {
-                        id: {
-                            [Sequelize.Op.eq]: null
-                        }
+                        userId: userId,
+                        active: true
                     }
                 }],
                 attributes: [
                     'id'
                 ],
                 where: {
-                    ['$topic.unit.course.enrolledStudents.user_id$']: userId
+                    [`$grades.${StudentGrade.rawAttributes[nameof<StudentGrade>('id')].field}$`]: null,
+                    active: true
                 }
             });
         } catch (e) {
@@ -4401,16 +4421,25 @@ class CourseController {
                     as: 'course',
                     required: true,
                     attributes: [],
+                    where: {
+                        active: true,
+                    },
                     include: [{
                         model: CourseUnitContent,
                         as: 'units',
                         required: true,
                         attributes: [],
+                        where: {
+                            active: true,
+                        },
                         include: [{
                             model: CourseTopicContent,
                             as: 'topics',
                             required: true,
                             attributes: [],
+                            where: {
+                                active: true
+                            },
                             include: [{
                                 model: CourseWWTopicQuestion,
                                 required: true,
@@ -4418,13 +4447,17 @@ class CourseController {
                                 attributes: [],
                                 // This where is ok here because we just don't want results to propagate past this point
                                 where: {
-                                    id: questionId
+                                    id: questionId,
+                                    active: true,
                                 },
                                 include: [{
                                     model: StudentGrade,
                                     as: 'grades',
                                     required: false,
-                                    attributes: []
+                                    attributes: [],
+                                    where: {
+                                        active: true
+                                    }
                                 }]
                             }]
                         }]
@@ -4434,9 +4467,9 @@ class CourseController {
                     'userId'
                 ],
                 where: {
-                    ['$course.units.topics.questions.grades.student_grade_id$']: {
-                        [Sequelize.Op.eq]: null
-                    }
+                    [`$course.units.topics.questions.grades.${StudentGrade.rawAttributes[nameof<StudentGrade>('id')].field}$`]: null,
+                    dropDate: null,
+                    active: true,
                 }
             });
         } catch (e) {
@@ -6070,6 +6103,65 @@ You can contact your student at ${options.student.email} or by replying to this 
             where: {
                 id: workbookId
             }
+        });
+    }
+
+    fetchDataForCourseArchiveExport({
+        courseId
+    }: { courseId: number }): Promise<Course | null> {
+        return Course.findOne({
+            where: {
+                active: true,
+                id: courseId
+            },
+            attributes: ['id', 'name'],
+            include: [{
+                model: CourseUnitContent,
+                as: 'units',
+                where: {
+                    active: true,
+                },
+                order: ['contentOrder'],
+                attributes: ['id', 'name'],
+                required: false,
+                include: [{
+                    model: CourseTopicContent,
+                    as: 'topics',
+                    where: {
+                        active: true
+                    },
+                    attributes: ['id', 'name', 'topicTypeId', 'startDate', 'endDate', 'deadDate', 'partialExtend', 'description'],
+                    required: false,
+                    order: ['contentOrder'],
+                    include: [{
+                        model: CourseWWTopicQuestion,
+                        as: 'questions',
+                        where: {
+                            active: true
+                        },
+                        order: ['problemOrder'],
+                        attributes: ['id', 'problemNumber', 'webworkQuestionPath', 'weight', 'maxAttempts', 'optional'],
+                        required: false,
+                        include: [{
+                            model: CourseQuestionAssessmentInfo,
+                            as: 'courseQuestionAssessmentInfo',
+                            where: {
+                                active: true
+                            },
+                            attributes: ['randomSeedSet', 'additionalProblemPaths'],
+                            required: false,
+                        }]
+                    }, {
+                        model: TopicAssessmentInfo,
+                        as: 'topicAssessmentInfo',
+                        where: {
+                            active: true
+                        },
+                        attributes: ['duration', 'hardCutoff', 'hideHints', 'hideProblemsAfterFinish', 'maxGradedAttemptsPerVersion', 'maxVersions', 'randomizeOrder', 'showItemizedResults', 'showTotalGradeImmediately', 'versionDelay'],
+                        required: false,
+                    }]
+                }]
+            }]
         });
     }
 }

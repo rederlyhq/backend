@@ -1,6 +1,6 @@
 {
   "name": "backend",
-  "version": "1.11.9",
+  "version": "1.11.10",
   "description": "The core backend of the Rederly platform.",
   "main": "index.js",
   "dependencies": {

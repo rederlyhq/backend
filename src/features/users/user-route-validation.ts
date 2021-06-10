@@ -117,19 +117,12 @@ export const userStatusValidation = {
     body: {},
 };
 
-export const setPaidUntilValidation = {
+export const adminUpdateValidation = {
     params: {},
     query: {},
     body: {
         email: Joi.string().email().required(),
-        paidUntil: Joi.date().required(),
-    },
-};
-
-export const forceVerifyValidation = {
-    params: {},
-    query: {},
-    body: {
-        email: Joi.string().email().required(),
+        paidUntil: Joi.date().optional(),
+        verified: Joi.boolean().optional(),
     },
 };

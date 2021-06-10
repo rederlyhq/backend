@@ -3,8 +3,8 @@ import { Response, NextFunction } from 'express';
 import userController from './user-controller';
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator';
-import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation, updatePasswordValidation, updateForgottonPasswordValidation, resendVerificationValidation, userStatusValidation, impersonateValidation } from './user-route-validation';
-import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest, ForgotPasswordRequest, UpdatePasswordRequest, UpdateForgottonPasswordRequest, ResendVerificationRequest, UserStatusRequest, ImpersonateRequest } from './user-route-request-types';
+import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation, updatePasswordValidation, updateForgottonPasswordValidation, resendVerificationValidation, userStatusValidation, impersonateValidation, setPaidUntilValidation, forceVerifyValidation } from './user-route-validation';
+import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest, ForgotPasswordRequest, UpdatePasswordRequest, UpdateForgottonPasswordRequest, ResendVerificationRequest, UserStatusRequest, ImpersonateRequest, SetPaidUntilRequest, ForceVerifyRequest } from './user-route-request-types';
 import Boom = require('boom');
 import passport = require('passport');
 import { authenticationMiddleware } from '../../middleware/auth';
@@ -14,6 +14,9 @@ import IncludeGradeOptions from './include-grade-options';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
 import logger from '../../utilities/logger';
 import { Constants } from '../../constants';
+import User from '../../database/models/user';
+import Role from '../permissions/roles';
+import ForbiddenError from '../../exceptions/forbidden-error';
 
 router.all('/check-in',
     // No validation
@@ -203,6 +206,56 @@ router.get('/status',
         };
 
         next(httpResponse.Ok('fetched user status', response));
+    }));
+
+    router.post('/paidUntil',
+    authenticationMiddleware,
+    validate(setPaidUntilValidation),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, SetPaidUntilRequest.body, SetPaidUntilRequest.query>, res: Response, next: NextFunction) => {
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role !== Role.SUPERADMIN) {
+            throw new ForbiddenError('You do not have access to update payment information.');
+        }
+
+        const result = await User.update({
+            paidUntil: req.body.paidUntil,
+        }, {
+            where: {
+                email: req.body.email,
+            }
+        });
+
+        next(httpResponse.Ok(null, result));
+    }));
+
+router.post('/forceVerify',
+    authenticationMiddleware,
+    validate(forceVerifyValidation),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, ForceVerifyRequest.body, ForceVerifyRequest.query>, res: Response, next: NextFunction) => {
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+        
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role !== Role.SUPERADMIN) {
+            throw new ForbiddenError('You do not have access to force verification.');
+        }
+
+        const result = await User.update({
+            verified: true
+        }, {
+            where: {
+                email: req.body.email,
+            }
+        });
+
+        next(httpResponse.Ok(null, result));
     }));
 
 router.get('/:id',

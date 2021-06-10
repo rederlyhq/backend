@@ -89,14 +89,8 @@ export namespace UserStatusRequest {
     export type body = Joi.extractType<typeof validations.userStatusValidation.body>;
 };
 
-export namespace SetPaidUntilRequest {
-    export type params = Joi.extractType<typeof validations.setPaidUntilValidation.params>;
-    export type query = Joi.extractType<typeof validations.setPaidUntilValidation.query>;
-    export type body = Joi.extractType<typeof validations.setPaidUntilValidation.body>;
-};
-
-export namespace ForceVerifyRequest {
-    export type params = Joi.extractType<typeof validations.forceVerifyValidation.params>;
-    export type query = Joi.extractType<typeof validations.forceVerifyValidation.query>;
-    export type body = Joi.extractType<typeof validations.forceVerifyValidation.body>;
+export namespace AdminUpdateRequest {
+    export type params = Joi.extractType<typeof validations.adminUpdateValidation.params>;
+    export type query = Joi.extractType<typeof validations.adminUpdateValidation.query>;
+    export type body = Joi.extractType<typeof validations.adminUpdateValidation.body>;
 };

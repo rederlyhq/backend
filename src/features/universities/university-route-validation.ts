@@ -13,10 +13,10 @@ export const postUniversity = {
     params: {},
     query: {},
     body: {
-        name: Joi.string().required(),
-        professorDomain: Joi.string().required(),
-        studentDomain: Joi.string().required(),
-        autoVerify: Joi.bool().optional().default(false),
+        universityName: Joi.string().required(),
+        profEmailDomain: Joi.string().required(),
+        studentEmailDomain: Joi.string().required(),
+        verifyInstitutionalEmail: Joi.bool().optional().default(true),
         paidUntil: Joi.date().optional().default(new Date()),
     },
 };

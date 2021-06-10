@@ -10,7 +10,7 @@ import University from '../../database/models/university';
 import Role from '../permissions/roles';
 import ForbiddenError from '../../exceptions/forbidden-error';
 
-router.post('/university',
+router.post('/',
 validate(postUniversity),
 authenticationMiddleware,
 asyncHandler(async (req: RederlyExpressRequest, _res: Response, next: NextFunction) => {

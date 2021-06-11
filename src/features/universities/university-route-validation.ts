@@ -17,6 +17,6 @@ export const postUniversity = {
         profEmailDomain: Joi.string().required(),
         studentEmailDomain: Joi.string().required(),
         verifyInstitutionalEmail: Joi.bool().optional().default(true),
-        paidUntil: Joi.date().optional().default(new Date()),
+        paidUntil: Joi.date().optional().default(() => new Date(), 'Paid until date'),
     },
 };

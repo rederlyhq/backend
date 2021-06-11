@@ -124,5 +124,7 @@ export const adminUpdateValidation = {
         email: Joi.string().email().required(),
         paidUntil: Joi.date().optional(),
         verified: Joi.boolean().optional(),
+        firstName: Joi.string().optional(),
+        lastName: Joi.string().optional(),
     },
 };

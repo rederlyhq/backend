@@ -17,6 +17,7 @@ import { Constants } from '../../constants';
 import User from '../../database/models/user';
 import Role from '../permissions/roles';
 import ForbiddenError from '../../exceptions/forbidden-error';
+import IllegalArgumentException from '../../exceptions/illegal-argument-exception';
 
 router.all('/check-in',
     // No validation
@@ -208,7 +209,7 @@ router.get('/status',
         next(httpResponse.Ok('fetched user status', response));
     }));
 
-    router.post('/adminUpdate',
+    router.post('/super-admin-update',
     authenticationMiddleware,
     validate(adminUpdateValidation),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -222,16 +223,24 @@ router.get('/status',
             throw new ForbiddenError('You do not have access to update payment information.');
         }
 
-        const result = await User.update({
-            paidUntil: req.body.paidUntil,
-            verified: req.body.verified,
-        }, {
-            where: {
-                email: req.body.email,
-            }
-        });
+        const updates = _.omitBy(_.pick(req.body, ['paidUntil', 'verified', 'firstName', 'lastName']), _.isUndefined);
 
-        next(httpResponse.Ok(null, result));
+        try {
+            const result = await User.update(updates, {
+                where: {
+                    email: req.body.email.trim().toLowerCase(),
+                }
+            });
+
+            if (result[0] === 0) {
+                throw new IllegalArgumentException('No user was found.');
+            }
+            
+            next(httpResponse.Ok(null, result));
+        } catch (e) {
+            logger.error('super-admin-update', e);
+            throw new IllegalArgumentException(e.message);
+        }
     }));
 
 router.get('/:id',

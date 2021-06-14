@@ -89,6 +89,12 @@ export namespace UserStatusRequest {
     export type body = Joi.extractType<typeof validations.userStatusValidation.body>;
 };
 
+export namespace GetUserByEmailRequest {
+    export type params = Joi.extractType<typeof validations.getUserByEmailValidation.params>;
+    export type query = Joi.extractType<typeof validations.getUserByEmailValidation.query>;
+    export type body = Joi.extractType<typeof validations.getUserByEmailValidation.body>;
+};
+
 export namespace AdminUpdateRequest {
     export type params = Joi.extractType<typeof validations.adminUpdateValidation.params>;
     export type query = Joi.extractType<typeof validations.adminUpdateValidation.query>;

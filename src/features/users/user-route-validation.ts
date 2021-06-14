@@ -117,6 +117,14 @@ export const userStatusValidation = {
     body: {},
 };
 
+export const getUserByEmailValidation = {
+    params: {
+        email: Joi.string().email().required(),
+    },
+    query: {},
+    body: {},
+};
+
 export const adminUpdateValidation = {
     params: {},
     query: {},

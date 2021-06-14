@@ -3,8 +3,8 @@ import { Response, NextFunction } from 'express';
 import userController from './user-controller';
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator';
-import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation, updatePasswordValidation, updateForgottonPasswordValidation, resendVerificationValidation, userStatusValidation, impersonateValidation, adminUpdateValidation } from './user-route-validation';
-import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest, ForgotPasswordRequest, UpdatePasswordRequest, UpdateForgottonPasswordRequest, ResendVerificationRequest, UserStatusRequest, ImpersonateRequest, AdminUpdateRequest } from './user-route-request-types';
+import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation, updatePasswordValidation, updateForgottonPasswordValidation, resendVerificationValidation, userStatusValidation, impersonateValidation, adminUpdateValidation, getUserByEmailValidation } from './user-route-validation';
+import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest, ForgotPasswordRequest, UpdatePasswordRequest, UpdateForgottonPasswordRequest, ResendVerificationRequest, UserStatusRequest, ImpersonateRequest, AdminUpdateRequest, GetUserByEmailRequest } from './user-route-request-types';
 import Boom = require('boom');
 import passport = require('passport');
 import { authenticationMiddleware } from '../../middleware/auth';
@@ -209,9 +209,35 @@ router.get('/status',
         next(httpResponse.Ok('fetched user status', response));
     }));
 
-    router.post('/super-admin-update',
+router.get('/email/:email',
+    authenticationMiddleware,
+    validate(getUserByEmailValidation),
+    // ParamsDictionary mismatch.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asyncHandler(async (req: RederlyExpressRequest<any, unknown, GetUserByEmailRequest.body, GetUserByEmailRequest.query>, res: Response, next: NextFunction) => {
+        if (_.isNil(req.session)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+
+        const role = req.rederlyUserRole ?? req.rederlyUser?.roleId ?? Role.STUDENT;
+        if (role !== Role.SUPERADMIN) {
+            throw new ForbiddenError('You do not have access to user information.');
+        }
+
+        const user = await User.findOne({
+            attributes: ['id', 'firstName', 'lastName', 'universityId', 'roleId', 'email', 'verified', 'actuallyVerified', 'uuid', 'paidUntil', 'updatedAt'],
+            where: {
+                email: (req.params as GetUserByEmailRequest.params).email.trim().toLowerCase(),
+            }
+        });
+
+        next(httpResponse.Ok('fetched user', user));
+    }));
+
+router.post('/super-admin-update',
     authenticationMiddleware,
     validate(adminUpdateValidation),
+    // ParamsDictionary mismatch.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asyncHandler(async (req: RederlyExpressRequest<any, unknown, AdminUpdateRequest.body, AdminUpdateRequest.query>, res: Response, next: NextFunction) => {
         if (_.isNil(req.session)) {

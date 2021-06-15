@@ -249,7 +249,7 @@ router.post('/super-admin-update',
             throw new ForbiddenError('You do not have access to update payment information.');
         }
 
-        const updates = _.omitBy(_.pick(req.body, ['paidUntil', 'verified', 'firstName', 'lastName']), _.isUndefined);
+        const updates = _.omitBy(_.pick(req.body, ['paidUntil', 'verified', 'firstName', 'lastName', 'roleId']), _.isUndefined);
 
         try {
             const result = await User.update(updates, {

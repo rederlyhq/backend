@@ -1933,4 +1933,16 @@ router.post('/feedback/topic/:topicId/user/:userId',
     })
 );
 
+router.post('/:id/export-archive',
+authenticationMiddleware,
+asyncHandler(async (req, _res, next) => {
+    req.body = {
+        courseId: req.params.id
+    };
+    next();
+}),
+proxy(configurations.courseExporter.baseUrl, {
+    proxyReqPathResolver: () => '/course-exports/course'
+}));
+
 module.exports = router;

@@ -7,7 +7,7 @@ export default {
   up: async (queryInterface: QueryInterface): Promise<void> => {
     // Transactions are automatically use because a namespace is injected into sequelize when fetching configurations
     await queryInterface.sequelize.transaction(async () => {
-        Permission.create({
+        await Permission.create({
           id: 3,
           active: true,
           roleName: 'superadmin',
@@ -19,7 +19,7 @@ export default {
   down: async (queryInterface: QueryInterface): Promise<void> => {
     // Transactions are automatically use because a namespace is injected into sequelize when fetching configurations
     await queryInterface.sequelize.transaction(async () => {
-        Permission.destroy({
+      await Permission.destroy({
           where: {
             id: 3
           }

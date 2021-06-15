@@ -159,3 +159,18 @@
 | Environment variable | Description | Default value |
 | --- | --- | --- |
 | IMPORTER_MISSING_FILE_THRESHOLD | The total amount of PG and asset files allowed to be missing while declaring a course archive import successful | 10 |
+
+##### Course Export
+| Environment variable | Description | Default value |
+| --- | --- | --- |
+| COURSE_EXPORT_URL | The location of the course exporter | 'http://localhost:3008' |
+
+##### Bulk PDF Export
+| Environment variable | Description | Default value |
+| --- | --- | --- |
+| BULK_PDF_EXPORT_URL | The location of the bulk pdf exporter | 'http://localhost:3005' |
+
+##### Library Browser
+| Environment variable | Description | Default value |
+| --- | --- | --- |
+| LIBRARY_BROWSER_BASE_URL | The location of the library browser | 'http://localhost:3004' |

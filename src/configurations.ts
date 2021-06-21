@@ -214,6 +214,9 @@ const configurations = {
     importer: {
         missingFileThreshold: readIntValue('IMPORTER_MISSING_FILE_THRESHOLD', 10),
     },
+    courseExporter: {
+        baseUrl: readStringValue('COURSE_EXPORT_URL', 'http://localhost:3008')
+    },
     bulkPdfExport: {
         baseUrl: readStringValue('BULK_PDF_EXPORT_URL', 'http://localhost:3005'),
     },

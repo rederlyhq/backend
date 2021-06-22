@@ -1,6 +1,6 @@
 {
   "name": "backend",
-  "version": "1.11.10",
+  "version": "1.12.0",
   "description": "The core backend of the Rederly platform.",
   "main": "index.js",
   "dependencies": {
@@ -107,7 +107,7 @@
     "run:build": "node ts-built/index.js",
     "sequelize": "npm run build && sequelize",
     "sequelize:migrations": "npm run sequelize -- db:migrate",
-    "sequelize:migrations:devundo": "npm run sequelize -- db:migrate:undo:all --to 20210218213139-description-and-feedback.js",
+    "sequelize:migrations:devundo": "npm run sequelize -- db:migrate:undo:all --to 20210608181809-superadmin.js",
     "sequelize:built:migrations": "sequelize -- db:migrate",
     "lint": "eslint src/ --ext .ts",
     "clean": "node ./utility-scripts/clean.js",

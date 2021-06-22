@@ -1933,7 +1933,6 @@ router.post('/feedback/topic/:topicId/user/:userId',
     })
 );
 
-
 router.post('/:id/export-archive',
 authenticationMiddleware,
 asyncHandler(async (req, _res, next) => {
@@ -1945,5 +1944,21 @@ asyncHandler(async (req, _res, next) => {
 proxy(configurations.courseExporter.baseUrl, {
     proxyReqPathResolver: () => '/course-exports/course'
 }));
+
+/**
+ * This was a route developed to avoid deploying major change of sequelize alias flag (in hotfix)
+ * This method expects the micro service to have a db connection while the above expects it to just receive all the data
+ */
+// router.post('/:id/export-archive',
+// authenticationMiddleware,
+// asyncHandler(async (req, _res, next) => {
+//     req.body = {
+//         courseId: req.params.id
+//     };
+//     next();
+// }),
+// proxy(configurations.courseExporter.baseUrl, {
+//     proxyReqPathResolver: () => '/course-exports/course'
+// }));
 
 module.exports = router;

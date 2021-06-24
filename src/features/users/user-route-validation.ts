@@ -10,6 +10,14 @@ export const impersonateValidation = {
     },
 };
 
+export const getSessionValidation = {
+    params: {},
+    query: {
+        ltik: Joi.string().required(),
+    },
+    body: {},
+};
+
 export const forgotPasswordValidation = {
     params: {},
     query: {},
@@ -24,6 +32,15 @@ export const updatePasswordValidation = {
     body: {
         newPassword: Joi.string().min(Constants.Application.MIN_PASSWORD_LENGTH).max(Constants.Application.MAX_PASSWORD_LENGTH).required(),
         oldPassword: Joi.string().required(),
+    },
+};
+
+export const updateNilPasswordValidation = {
+    params: {},
+    query: {},
+    body: {
+        newPassword: Joi.string().min(Constants.Application.MIN_PASSWORD_LENGTH).max(Constants.Application.MAX_PASSWORD_LENGTH).required(),
+        ltik: Joi.string().required(),
     },
 };
 
@@ -45,6 +62,14 @@ export const registerValidation = {
         lastName: Joi.string().trim().required(),
         email: Joi.string().email().required(),
         password: Joi.string().min(Constants.Application.MIN_PASSWORD_LENGTH).max(Constants.Application.MAX_PASSWORD_LENGTH).required(),
+    },
+};
+
+export const ltikValidation = {
+    params: {},
+    query: {},
+    body: {
+        ltik: Joi.string().required(),
     },
 };
 

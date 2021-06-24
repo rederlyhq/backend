@@ -312,13 +312,14 @@ class UserController {
         });
     }
 
-    createSession(userId: number): Bluebird<Session> {
+    createSession(userId: number, ltik: string | null = null): Bluebird<Session> {
         const expiresAt: Date = moment().add(sessionLife, 'minute').toDate();
         return Session.create({
             userId,
             uuid: uuidv4(),
             expiresAt: expiresAt,
-            active: true
+            active: true,
+            ltik
         });
     }
 
@@ -519,7 +520,7 @@ class UserController {
     }: UpdatePasswordOptions): Promise<void> {
         let validated = false;
         const user = await this.getUserById(id);
-        if(await comparePassword(oldPassword, user.password)) {
+        if (await comparePassword(oldPassword, user.password)) {
             validated = true;
         } else {
             throw new IllegalArgumentException('Invalid password');
@@ -534,7 +535,7 @@ class UserController {
             id
         }).omitBy(_.isUndefined).value() as WhereOptions;
 
-        if(Object.keys(where).length !== 1) {
+        if (Object.keys(where).length !== 1) {
             logger.error('Impossible! Somehow with all the checks I had the xor of id and email got through');
             throw new Error('An application error occurred');
         }

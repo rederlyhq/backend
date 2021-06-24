@@ -23,6 +23,8 @@ import { rederlyRequestNamespaceMiddleware } from './middleware/rederly-request-
 import { RederlyExpressRequest } from './extensions/rederly-express-request';
 import { v4 as uuidv4 } from 'uuid';
 import * as fse from 'fs-extra';
+import lti from './features/lti/lti-routes';
+
 
 interface ErrorResponse {
     statusCode: number;
@@ -154,6 +156,9 @@ app.use((req, res, next) => {
     res.setTimeout(apiTimeout, timeoutHandler);
     next();
 });
+
+
+app.use(basePath + '/lti', lti.app);
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));

@@ -17,6 +17,12 @@ export namespace ImpersonateRequest {
     export type body = Joi.extractType<typeof validations.impersonateValidation.body>;
 };
 
+export namespace GetSessionRequest {
+    export type params = Joi.extractType<typeof validations.getSessionValidation.params>;
+    export type query = Joi.extractType<typeof validations.getSessionValidation.query>;
+    export type body = Joi.extractType<typeof validations.getSessionValidation.body>;
+};
+
 export namespace ForgotPasswordRequest {
     export type params = Joi.extractType<typeof validations.forgotPasswordValidation.params>;
     export type query = Joi.extractType<typeof validations.forgotPasswordValidation.query>;
@@ -29,6 +35,12 @@ export namespace UpdatePasswordRequest {
     export type body = Joi.extractType<typeof validations.updatePasswordValidation.body>;
 };
 
+export namespace UpdateNilPasswordRequest {
+    export type params = Joi.extractType<typeof validations.updateNilPasswordValidation.params>;
+    export type query = Joi.extractType<typeof validations.updateNilPasswordValidation.query>;
+    export type body = Joi.extractType<typeof validations.updateNilPasswordValidation.body>;
+};
+
 export namespace UpdateForgottonPasswordRequest {
     export type params = Joi.extractType<typeof validations.updateForgottonPasswordValidation.params>;
     export type query = Joi.extractType<typeof validations.updateForgottonPasswordValidation.query>;
@@ -39,6 +51,12 @@ export namespace RegisterRequest {
     export type params = Joi.extractType<typeof validations.registerValidation.params>;
     export type query = Joi.extractType<typeof validations.registerValidation.query>;
     export type body = Joi.extractType<typeof validations.registerValidation.body>;
+};
+
+export namespace LtikRequest {
+    export type params = Joi.extractType<typeof validations.ltikValidation.params>;
+    export type query = Joi.extractType<typeof validations.ltikValidation.query>;
+    export type body = Joi.extractType<typeof validations.ltikValidation.body>;
 };
 
 export namespace LoginRequest {

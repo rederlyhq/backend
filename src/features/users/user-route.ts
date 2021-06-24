@@ -3,8 +3,8 @@ import { Response, NextFunction } from 'express';
 import userController from './user-controller';
 const router = require('express').Router();
 import validate from '../../middleware/joi-validator';
-import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation, updatePasswordValidation, updateForgottonPasswordValidation, resendVerificationValidation, userStatusValidation, impersonateValidation } from './user-route-validation';
-import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest, ForgotPasswordRequest, UpdatePasswordRequest, UpdateForgottonPasswordRequest, ResendVerificationRequest, UserStatusRequest, ImpersonateRequest } from './user-route-request-types';
+import { registerValidation, loginValidation, verifyValidation, listUsersValidation, emailUsersValidation, getUserValidation, logoutValidation, forgotPasswordValidation, updatePasswordValidation, updateForgottonPasswordValidation, resendVerificationValidation, userStatusValidation, impersonateValidation, getSessionValidation } from './user-route-validation';
+import { RegisterRequest, LoginRequest, VerifyRequest, ListUsersRequest, GetUserRequest, EmailUsersRequest, LogoutRequest, ForgotPasswordRequest, UpdatePasswordRequest, UpdateForgottonPasswordRequest, ResendVerificationRequest, UserStatusRequest, ImpersonateRequest, GetSessionRequest } from './user-route-request-types';
 import Boom = require('boom');
 import passport = require('passport');
 import { authenticationMiddleware } from '../../middleware/auth';
@@ -14,6 +14,8 @@ import IncludeGradeOptions from './include-grade-options';
 import { RederlyExpressRequest } from '../../extensions/rederly-express-request';
 import logger from '../../utilities/logger';
 import { Constants } from '../../constants';
+import Session from '../../database/models/session';
+import configurations from '../../configurations';
 
 router.all('/check-in',
     // No validation
@@ -41,6 +43,44 @@ router.post('/impersonate',
         next(httpResponse.Ok());
     });
 
+router.get('/session',
+    validate(getSessionValidation),
+    asyncHandler(async (req: RederlyExpressRequest<GetSessionRequest.params, unknown, GetSessionRequest.body, qs.ParsedQs | GetSessionRequest.query>, res: Response, next: NextFunction) => {
+        if (_.isNil(req.cookies.sessionToken)) {
+            throw new Error('The sessionToken was missing from an LTI launch.');
+        }
+
+        if (typeof req.query.ltik !== 'string') {
+            throw new Error('The LTI Token was not passed in as a string.');
+        }
+
+        const uuid = req.cookies.sessionToken.split('_')[0];
+        const newSession = await Session.findOne({
+            where: {
+                uuid: uuid,
+                ltik: req.query.ltik,
+                active: true,
+            }
+        });
+
+        if (_.isNil(newSession)) {
+            throw new Error(Constants.ErrorMessage.NIL_SESSION_MESSAGE);
+        }
+        
+        const user = await newSession.getUser();
+        const role = await user.getRole();
+
+        next(httpResponse.Ok(null, {
+            roleId: role.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            userId: user.id,
+            uuid: user.uuid,
+            hasPassword: !_.isEmpty(user.password),
+        }));
+    }
+));
+
 router.post('/login',
     validate(loginValidation),
     passport.authenticate('local'),
@@ -52,11 +92,10 @@ router.post('/login',
         const user = await newSession.getUser();
         const role = await user.getRole();
         if (newSession) {
-            const cookieOptions = {
-                expires: newSession.expiresAt
-            };
             const token = `${newSession.uuid}_${newSession.expiresAt.getTime()}`;
-            res.cookie('sessionToken', token, cookieOptions);
+            res.cookie('sessionToken', token, {
+                expires: newSession.expiresAt,
+            });
             next(httpResponse.Ok(null, {
                 roleId: role.id,
                 firstName: user.firstName,

@@ -21,7 +21,8 @@ RUN touch /app/.env
 # Builds and creates the package, does not create an archive
 RUN REDERLY_PACKAGER_ARCHIVE=false npm run build:package
 
-RUN npm run sequelize:built:migrations
+# This was used to auto run migrations initially
+# RUN npm run sequelize:built:migrations
 
 # The instructions for second stage
 FROM node:14.15.3-alpine

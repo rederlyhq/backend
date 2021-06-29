@@ -1,6 +1,7 @@
 node_modules
 ts-built
-.env
+*.env
+!example.env
 logs
 *.DS_Store
 tmp

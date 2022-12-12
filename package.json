@@ -15,7 +15,7 @@
     "cookie-parser": "^1.4.5",
     "dotenv": "^8.2.0",
     "email-templates": "^8.0.2",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "express-async-handler": "^1.1.4",
     "express-http-proxy": "^1.6.2",
     "express-rate-limit": "^5.2.3",
